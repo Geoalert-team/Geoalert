@@ -128,3 +128,7 @@ GDAL_LIBRARY_PATH = os.path.join(
 GEOS_LIBRARY_PATH = os.path.join(
     BASE_DIR, 'venv', 'Lib', 'site-packages', 'osgeo', 'geos_c.dll'
 )
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
