@@ -1,14 +1,22 @@
 from django.contrib.auth import authenticate, login, logout
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.http import JsonResponse
 from django.utils import timezone
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
+
 from datetime import timedelta
+
 
 from apps.accounts.models import User
 from apps.accounts.serializers import LoginSerializer, UserSerializer
 
+@ensure_csrf_cookie
+def csrf_view(request):
+    return JsonResponse({'message': 'CSRF cookie set'})
 
 class LoginView(APIView):
     permission_classes = [AllowAny]

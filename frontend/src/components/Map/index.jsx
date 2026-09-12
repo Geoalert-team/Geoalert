@@ -1,8 +1,10 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, GeoJSON, useMapEvents } from 'react-leaflet';
-import { api } from '../api/client';
+import { barangaysApi } from '../../api/barangaysApi';
+import { useHazards } from '../../hooks/useHazards';
+import { severityColor } from '../../utils/severityColor';
 
-const SEV_COLOR = { Red: '#D6483F', Orange: '#E08A3C', Green: '#4E9E6E' };
+// Talisay City, Cebu â€” used purely to center the map.
 const TALISAY_CENTER = [10.2446, 123.8473];
 
 function BboxWatcher({ onBboxChange }) {
@@ -15,25 +17,14 @@ function BboxWatcher({ onBboxChange }) {
   return null;
 }
 
-export default function HazardMap({ onSelectHazard, refreshKey }) {
+export default function Map({ onSelectHazard, refreshKey }) {
   const [barangays, setBarangays] = useState(null);
-  const [hazards, setHazards] = useState(null);
   const [bbox, setBbox] = useState(null);
-  const [error, setError] = useState('');
+  const { hazards, error } = useHazards(bbox, refreshKey);
 
   useEffect(() => {
-    api.barangays().then(setBarangays).catch((e) => setError(e.message));
+    barangaysApi.list().then(setBarangays).catch(() => {});
   }, []);
-
-  useEffect(() => {
-    api.hazards(bbox).then(setHazards).catch((e) => setError(e.message));
-  }, [bbox, refreshKey]);
-
-  const hazardStyle = useMemo(() => (feature) => ({
-    color: SEV_COLOR[feature.properties.severity] || '#7E9296',
-    weight: 2,
-    fillOpacity: 0.35,
-  }), []);
 
   return (
     <div style={{ height: '100%', width: '100%' }}>
@@ -54,7 +45,7 @@ export default function HazardMap({ onSelectHazard, refreshKey }) {
           <GeoJSON
             key={JSON.stringify(hazards).length}
             data={hazards}
-            style={hazardStyle}
+            style={(feature) => ({ color: severityColor(feature.properties.severity), weight: 2, fillOpacity: 0.35 })}
             onEachFeature={(feature, layer) => {
               layer.on('click', () => onSelectHazard?.(feature.properties.id));
             }}
