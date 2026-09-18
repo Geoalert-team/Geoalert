@@ -140,4 +140,5 @@ class ResponseStatusReportView(APIView):
             'total_hazard_events':  zones.count(),
             'total_alerts_issued':  alerts.count(),
             'alerts_by_severity':   alerts_by_severity,
+            
         })
