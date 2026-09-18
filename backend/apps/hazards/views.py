@@ -124,3 +124,105 @@ class HazardTypeListView(APIView):
     def get(self, request):
         types = HazardType.objects.filter(is_active=True)
         return Response(HazardTypeSerializer(types, many=True).data)
+
+
+class HazardUnifiedView(APIView):
+    """
+    GET /api/hazards/unified/
+    Returns all active hazard zones grouped by hazard type.
+    Supports layer toggle: ?types=Flood,Fire
+    Public access — no login required.
+    Used by Leaflet.js unified display with layer control.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        zones = HazardZone.objects.filter(
+            status='Active'
+        ).select_related('hazard_type', 'barangay')
+
+        # Filter by hazard types if specified
+        # Example: ?types=Flood,Fire
+        types_param = request.query_params.get('types')
+        if types_param:
+            type_names = [t.strip() for t in types_param.split(',')]
+            zones = zones.filter(hazard_type__name__in=type_names)
+
+        # Filter by severity if specified
+        # Example: ?severity=Red
+        severity = request.query_params.get('severity')
+        if severity:
+            zones = zones.filter(severity=severity)
+
+        # Filter by bbox if specified
+        bbox = request.query_params.get('bbox')
+        if bbox:
+            try:
+                xmin, ymin, xmax, ymax = [
+                    float(x) for x in bbox.split(',')
+                ]
+                from django.contrib.gis.geos import Polygon
+                bbox_polygon = Polygon.from_bbox(
+                    (xmin, ymin, xmax, ymax)
+                )
+                bbox_polygon.srid = 4326
+                zones = zones.filter(
+                    geometry__intersects=bbox_polygon
+                )
+            except (ValueError, Exception):
+                pass
+
+        serializer = HazardZoneGeoSerializer(zones, many=True)
+        return Response({
+            'type': 'FeatureCollection',
+            'count': zones.count(),
+            'features': serializer.data['features']
+        })
+
+
+class HazardLayerListView(APIView):
+     """
+    GET /api/hazards/layers/
+    Returns available hazard layers with counts.
+    Used by Leaflet.js layer control panel.
+    Public access.
+    """
+     permission_classes = [AllowAny]
+
+     def get(self, request):
+        from apps.hazards.models import HazardType
+        from django.db.models import Count
+
+        layers = []
+        hazard_types = HazardType.objects.filter(is_active=True)
+
+        for ht in hazard_types:
+            active_count = HazardZone.objects.filter(
+                hazard_type=ht,
+                status='Active'
+            ).count()
+
+            severity_counts = {
+                'Red':    HazardZone.objects.filter(hazard_type=ht, status='Active', severity='Red').count(),
+                'Orange': HazardZone.objects.filter(hazard_type=ht, status='Active', severity='Orange').count(),
+                'Green':  HazardZone.objects.filter(hazard_type=ht, status='Active', severity='Green').count(),
+            }
+
+            layers.append({
+                'id': ht.id,
+                'name': ht.name,
+                'logo_class': ht.logo_class,
+                'active_count': active_count,
+                'severity_counts': severity_counts,
+                'color_legend': {
+                    'Red': 'Extreme Risk',
+                    'Orange': 'Moderate Risk',
+                    'Green': 'Low Risk'
+                }
+            })
+
+        return Response({
+            'Layers': layers,
+            'Total_active_hazards':  HazardZone.objects.filter(status='Active').count(),
+        })
+
