@@ -20,30 +20,14 @@ export default function Navbar() {
   const visible = LINKS.filter((l) => !l.roles || l.roles.includes(roleName));
 
   return (
-    <header
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '10px 20px',
-        borderBottom: '1px solid var(--line)',
-        background: 'var(--panel)',
-        flexWrap: 'wrap',
-        gap: 10,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
-        <strong style={{ fontSize: 16 }}>GeoAlert</strong>
-        <nav style={{ display: 'flex', gap: 4 }}>
+    <header className="navbar">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
+        <span className="brand">GeoAlert</span>
+        <nav className="nav-links">
           {visible.map((l) => (
             <button
               key={l.to}
-              className="btn"
-              style={{
-                fontSize: 12.5,
-                borderColor: location.pathname === l.to ? 'var(--accent)' : 'var(--line)',
-                color: location.pathname === l.to ? 'var(--accent)' : 'var(--text)',
-              }}
+              className={`nav-link ${location.pathname === l.to ? 'active' : ''}`}
               onClick={() => navigate(l.to)}
             >
               {l.label}
@@ -52,10 +36,8 @@ export default function Navbar() {
           ))}
         </nav>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ fontSize: 12.5 }}>
-          {user?.email} <span style={{ color: 'var(--text-muted)' }}>({roleName})</span>
-        </span>
+      <div className="navbar-user">
+        <span><strong>{user?.email}</strong> ({roleName})</span>
         <button className="btn" onClick={logout}>Log out</button>
       </div>
     </header>

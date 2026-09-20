@@ -37,43 +37,49 @@ export default function Home() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="app-shell">
       <Navbar />
 
-      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        <aside style={{ width: 300, borderRight: '1px solid var(--line)', background: 'var(--panel)', padding: 16, overflowY: 'auto' }}>
-          <h2 style={{ fontSize: 13, color: 'var(--text-muted)' }}>Hazard types</h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
-            {hazardTypes.map((t) => <span key={t.id} className="btn" style={{ fontSize: 12 }}>{t.name}</span>)}
+      <div className="content-row">
+        <aside className="sidebar">
+          <div className="section">
+            <h2>Hazard types</h2>
+            <div className="chip-row">
+              {hazardTypes.map((t) => <span key={t.id} className="chip">{t.name}</span>)}
+            </div>
           </div>
 
-          <button className="btn primary" style={{ width: '100%', marginBottom: 20 }}
-                  disabled={!canPublish} onClick={() => setShowPublish(true)}
-                  title={canPublish ? '' : 'DRRMO Officer or System Admin only'}>
+          <button
+            className="btn primary"
+            style={{ width: '100%', marginBottom: 24 }}
+            disabled={!canPublish}
+            onClick={() => setShowPublish(true)}
+            title={canPublish ? '' : 'DRRMO Officer or System Admin only'}
+          >
             Publish hazard
           </button>
 
-          <h2 style={{ fontSize: 13, color: 'var(--text-muted)' }}>Barangays ({barangays.length})</h2>
-          <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid var(--line)' }}>
-            {barangays.map((f) => (
-              <div key={f.properties.id} style={{ padding: '8px 10px', borderBottom: '1px solid var(--line)', fontSize: 13 }}>
-                {f.properties.name}
-              </div>
-            ))}
+          <div className="section">
+            <h2>Barangays ({barangays.length})</h2>
+            <div className="barangay-list">
+              {barangays.map((f) => (
+                <div key={f.properties.id} className="barangay-item">
+                  {f.properties.name}
+                </div>
+              ))}
+            </div>
           </div>
 
           {selectedHazard && (
-            <div style={{ marginTop: 20, border: '1px solid var(--line)', padding: 12 }}>
-              <div style={{ marginBottom: 6 }}>
-                <strong>{selectedHazard.hazard_type_name}</strong>
-              </div>
+            <div className="hazard-detail">
+              <div className="title">{selectedHazard.hazard_type_name}</div>
               <div style={{ marginBottom: 6 }}>
                 <SeverityBadge severity={selectedHazard.severity} />
               </div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>
-                {selectedHazard.status} Â· since {new Date(selectedHazard.activated_at).toLocaleDateString()}
+              <div className="meta">
+                {selectedHazard.status} · since {new Date(selectedHazard.activated_at).toLocaleDateString()}
               </div>
-              <p style={{ fontSize: 12.5 }}>{selectedHazard.description}</p>
+              <p>{selectedHazard.description}</p>
               {canPublish && selectedHazard.status === 'Active' && (
                 <button className="btn primary" style={{ width: '100%' }} onClick={resolveSelected}>Mark resolved</button>
               )}
@@ -81,8 +87,10 @@ export default function Home() {
           )}
         </aside>
 
-        <main style={{ flex: 1 }}>
-          <Map onSelectHazard={handleSelectHazard} refreshKey={refreshKey} />
+        <main className="map-pane">
+          <div className="map-inner">
+            <Map onSelectHazard={handleSelectHazard} refreshKey={refreshKey} />
+          </div>
         </main>
       </div>
 
