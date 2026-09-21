@@ -40,8 +40,13 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
-    await authApi.logout();
-    setUser(null);
+    try {
+      await authApi.logout();
+    } catch {
+      // Already logged out (e.g. a duplicate click) — that's fine, not an error.
+    } finally {
+      setUser(null);
+    }
   }
 
   const canPublish = user && ['DRRMO_Officer', 'System_Admin'].includes(user.role?.name || user.role);
