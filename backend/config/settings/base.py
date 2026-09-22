@@ -121,13 +121,15 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 
-GDAL_LIBRARY_PATH = os.path.join(
-    BASE_DIR, 'venv', 'Lib', 'site-packages', 'osgeo', 'gdal.dll'
-)
 
-GEOS_LIBRARY_PATH = os.path.join(
-    BASE_DIR, 'venv', 'Lib', 'site-packages', 'osgeo', 'geos_c.dll'
-)
+GDAL_LIBRARY_PATH = env('GDAL_LIBRARY_PATH', default=str(
+    BASE_DIR / 'venv' / 'Lib' / 'site-packages' / 'osgeo' / 'gdal.dll'
+))
+GEOS_LIBRARY_PATH = env('GEOS_LIBRARY_PATH', default=str(
+    BASE_DIR / 'venv' / 'Lib' / 'site-packages' / 'osgeo' / 'geos_c.dll'
+))
+
+
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",

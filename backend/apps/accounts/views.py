@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.authentication import SessionAuthentication
 from rest_framework import status
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -19,6 +20,15 @@ from apps.accounts.serializers import LoginSerializer, UserSerializer
 @ensure_csrf_cookie
 def csrf_view(request):
     return JsonResponse({'message': 'CSRF cookie set'})
+
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    """Session auth that skips DRF's own CSRF check — used on endpoints
+    that already handle CSRF elsewhere (e.g. via csrf_exempt) but still
+    need to know who the logged-in user is."""
+    def enforce_csrf(self, request):
+        return
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
@@ -79,6 +89,7 @@ class LoginView(APIView):
 @method_decorator(csrf_exempt, name='dispatch')
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
+    authentication_classes = [CsrfExemptSessionAuthentication]
 
     def post(self, request):
         logout(request)
