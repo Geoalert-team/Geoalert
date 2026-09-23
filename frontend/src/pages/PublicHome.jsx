@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
+import hero1 from '../assets/images/drrmo1.jpg';
+import hero2 from '../assets/images/drrmo2.jpg';
+
+const HERO_IMAGES = [hero1, hero2];
 
 const HOTLINES = [
   { name: 'Talisay DRRMO', number: '(032) 407-5928' },
@@ -11,13 +15,41 @@ const HOTLINES = [
 
 export default function PublicHome() {
   const navigate = useNavigate();
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % HERO_IMAGES.length);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div className="public-page">
       <PublicNavbar />
 
       <section className="hero">
-        <div className="hero-image" />
+        <div className="hero-image">
+          {HERO_IMAGES.map((img, i) => (
+            <img
+              key={i}
+              src={img}
+              alt={`GeoAlert community outreach ${i + 1}`}
+              className={i === activeSlide ? 'active' : ''}
+            />
+          ))}
+          <div className="hero-dots">
+            {HERO_IMAGES.map((_, i) => (
+              <button
+                key={i}
+                className={`hero-dot ${i === activeSlide ? 'active' : ''}`}
+                onClick={() => setActiveSlide(i)}
+                aria-label={`Show slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+
         <div className="hero-text">
           <h1>Welcome to <span className="hero-accent">GeoAlert</span></h1>
           <p>
@@ -30,6 +62,8 @@ export default function PublicHome() {
           </button>
         </div>
       </section>
+
+   
 
       <section className="hazards-section">
         <h2 className="section-title">Hazards We Monitor</h2>
