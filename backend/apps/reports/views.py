@@ -8,6 +8,15 @@ from apps.hazards.models import HazardZone, HazardAlert
 from apps.history.models import HistoricalRecord
 from utils.permissions import IsDRRMOOfficer
 
+from django.utils import timezone
+from apps.reports.models import IncidentReport
+from apps.reports.serializers import (
+    IncidentReportSerializer,
+    IncidentReportCreateSerializer,
+    IncidentReportReviewSerializer,
+)
+from utils.permissions import IsBarangayPersonnel
+
 
 class HazardSummaryReportView(APIView):
     """
@@ -142,3 +151,63 @@ class ResponseStatusReportView(APIView):
             'alerts_by_severity':   alerts_by_severity,
             
         })
+
+
+class IncidentReportListCreateView(APIView):
+    """
+    GET  /api/reports/incidents/   → List reports
+         Barangay Personnel see only their own submissions.
+         DRRMO Officer / System Admin see all submissions.
+    POST /api/reports/incidents/   → Submit a new report
+         Barangay Personnel only.
+    """
+    permission_classes = [IsAuthenticated, IsBarangayPersonnel]
+
+    def get(self, request):
+        reports = IncidentReport.objects.all()
+
+        role = request.user.role.name if request.user.role else None
+        if role == 'Barangay_Personnel':
+            reports = reports.filter(submitted_by=request.user)
+
+        status_filter = request.query_params.get('status')
+        if status_filter:
+            reports = reports.filter(status=status_filter)
+
+        return Response(IncidentReportSerializer(reports, many=True).data)
+
+    def post(self, request):
+        serializer = IncidentReportCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        report = serializer.save(submitted_by=request.user)
+        return Response(
+            IncidentReportSerializer(report).data,
+            status=status.HTTP_201_CREATED
+        )
+
+
+class IncidentReportReviewView(APIView):
+    """
+    PATCH /api/reports/incidents/<id>/review/
+    DRRMO Officer / System Admin only.
+    Body: { "status": "Validated" | "Rejected", "review_note": "..." }
+    """
+    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+
+    def patch(self, request, pk):
+        try:
+            report = IncidentReport.objects.get(pk=pk)
+        except IncidentReport.DoesNotExist:
+            return Response({'error': 'Report not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = IncidentReportReviewSerializer(report, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        report = serializer.save(
+            reviewed_by=request.user,
+            reviewed_at=timezone.now()
+        )
+        return Response(IncidentReportSerializer(report).data)
