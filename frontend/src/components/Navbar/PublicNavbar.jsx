@@ -7,6 +7,7 @@ const PUBLIC_LINKS = [
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
   { to: '/what-to-do', label: 'What To Do' },
+  // { to: '/post-report', label: 'Post Report' },
 ];
 
 export default function PublicNavbar() {
@@ -16,7 +17,6 @@ export default function PublicNavbar() {
   return (
     <header className="public-navbar">
       <div className="public-navbar-brand" onClick={() => navigate('/')}>
-        <span className="public-logo-dot" />
         <span>GeoAlert</span>
       </div>
       <nav className="public-nav-links">

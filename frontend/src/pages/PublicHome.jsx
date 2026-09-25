@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import hero1 from '../assets/images/drrmo1.jpg';
 import hero2 from '../assets/images/drrmo2.jpg';
+import hero3 from '../assets/images/drrmo3.jpg';
 
-const HERO_IMAGES = [hero1, hero2];
+const HERO_IMAGES = [hero1, hero2, hero3];
 
 const HOTLINES = [
   { name: 'Talisay DRRMO', number: '(032) 407-5928' },
@@ -71,32 +72,35 @@ export default function PublicHome() {
           GeoAlert tracks real-time hazard data using color-coded indicators so you can instantly
           identify risk levels in your community.
         </p>
-        <div className="hazard-cards">
-          <div className="hazard-card flood">
-            <div className="hazard-card-title">Floods</div>
-            <ul className="risk-list">
-              <li><span className="dot green" /> Low Risk</li>
-              <li><span className="dot orange" /> Medium Risk</li>
-              <li><span className="dot red" /> High Risk</li>
-            </ul>
-          </div>
-          <div className="hazard-card landslide">
-            <div className="hazard-card-title">Landslides</div>
-            <ul className="risk-list">
-              <li><span className="dot green" /> Low Risk</li>
-              <li><span className="dot orange" /> Medium Risk</li>
-              <li><span className="dot red" /> High Risk</li>
-            </ul>
-          </div>
-          <div className="hazard-card fire">
-            <div className="hazard-card-title">Fires</div>
-            <ul className="risk-list">
-              <li><span className="dot green" /> Low Risk</li>
-              <li><span className="dot orange" /> Medium Risk</li>
-              <li><span className="dot red" /> High Risk</li>
-            </ul>
-          </div>
-        </div>
+      <div className="hazard-cards">
+      <div className="hazard-card flood">
+        <div className="hazard-card-icon">💧</div>
+        <div className="hazard-card-title">Floods</div>
+        <ul className="risk-list">
+          <li><span className="dot green" /> Low Risk</li>
+          <li><span className="dot orange" /> Medium Risk</li>
+          <li><span className="dot red" /> High Risk</li>
+        </ul>
+      </div>
+      <div className="hazard-card landslide">
+        <div className="hazard-card-icon">⛰️</div>
+        <div className="hazard-card-title">Landslides</div>
+        <ul className="risk-list">
+          <li><span className="dot green" /> Low Risk</li>
+          <li><span className="dot orange" /> Medium Risk</li>
+          <li><span className="dot red" /> High Risk</li>
+        </ul>
+      </div>
+      <div className="hazard-card fire">
+        <div className="hazard-card-icon">🔥</div>
+        <div className="hazard-card-title">Fires</div>
+        <ul className="risk-list">
+          <li><span className="dot green" /> Low Risk</li>
+          <li><span className="dot orange" /> Medium Risk</li>
+          <li><span className="dot red" /> High Risk</li>
+        </ul>
+      </div>
+    </div>
       </section>
 
       <section className="risk-legend-section">
