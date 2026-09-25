@@ -4,11 +4,11 @@ import { useAuth } from '../../context/AuthContext';
 import AlertBadge from '../AlertBadge';
 
 const LINKS = [
-  { to: '/', label: 'Map', roles: null, badge: false },
-  { to: '/dashboard', label: 'Dashboard', roles: null, badge: true },
-  { to: '/guidance', label: 'Guidance Library', roles: null, badge: false },
-  { to: '/history', label: 'Historical Data', roles: ['DRRMO_Officer', 'System_Admin'], badge: false },
-  { to: '/security', label: 'Security', roles: null, badge: false },
+  { to: '/app', label: 'Map', roles: null, badge: false },
+  { to: '/app/dashboard', label: 'Dashboard', roles: null, badge: true },
+  { to: '/app/guidance', label: 'Guidance Library', roles: null, badge: false },
+  { to: '/app/history', label: 'Historical Data', roles: ['DRRMO_Officer', 'System_Admin'], badge: false },
+  { to: '/app/security', label: 'Security', roles: null, badge: false },
 ];
 
 export default function Navbar() {

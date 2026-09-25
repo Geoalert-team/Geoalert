@@ -71,18 +71,24 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        # Success
-        user.failed_login_count = 0
-        user.locked_until = None
-        user.last_login = timezone.now()
-        user.save()
+        # Success — use auth_user from here on, NOT the earlier `user` object.
+        # authenticate() may have silently upgraded the password hash in the
+        # database (e.g. rehashing to a newer algorithm/iteration count).
+        # `user` was loaded BEFORE that happened, so saving it would overwrite
+        # the DB's updated password hash with the old one — which then makes
+        # every session's auth hash mismatch the DB on the very next request,
+        # silently logging the user right back out.
+        auth_user.failed_login_count = 0
+        auth_user.locked_until = None
+        auth_user.last_login = timezone.now()
+        auth_user.save()
 
         login(request, auth_user)
 
         return Response({
             'message': 'Login successful',
-            'user': UserSerializer(user).data,
-            'role': user.role.name if user.role else None,
+            'user': UserSerializer(auth_user).data,
+            'role': auth_user.role.name if auth_user.role else None,
         }, status=status.HTTP_200_OK)
 
 

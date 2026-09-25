@@ -24,7 +24,7 @@ export default function Login() {
       if (require2fa) {
         setAwaiting2fa(true);
       } else {
-        navigate('/');
+        navigate('/app');
       }
     } catch (err) {
       setError(err.message || 'Invalid email or password');
@@ -40,7 +40,7 @@ export default function Login() {
 
     try {
       await verifyLoginCode(code);
-      navigate('/');
+      navigate('/app');
     } catch (err) {
       setError(err.message || 'Incorrect code');
     } finally {
@@ -49,36 +49,22 @@ export default function Login() {
   }
 
   return (
-    <div className="login-page">
+    <div className="login-page-mini">
+      <button
+        type="button"
+        className="back-to-home-btn-mini"
+        onClick={() => navigate('/')}
+      >
+        ← Back to Home
+      </button>
 
-      {/* Left Green Section */}
-      <div className="login-brand">
-        <div className="brand-content">
-          <div className="brand-icon">G</div>
+      <div className="login-card-mini">
+        <div className="login-logo-mini">G</div>
+        <h1 className="login-brand-title">GeoAlert</h1>
 
-          <h1>GeoAlert</h1>
-
-          <p>
-            Community Geospatial Hazard Guidance
-            and Risk Awareness System
-          </p>
-
-          <div className="brand-line"></div>
-
-          <span>
-            Stay informed. Stay prepared. Stay safe.
-          </span>
-        </div>
-      </div>
-
-      {/* Right White Section */}
-      <div className="login-section">
         {!awaiting2fa ? (
-          <form
-            onSubmit={handlePasswordSubmit}
-            className="login-card"
-          >
-            <div className="login-header">
+          <form onSubmit={handlePasswordSubmit}>
+            <div className="login-header-mini">
               <h2>Welcome back</h2>
               <p>Log in to your GeoAlert account</p>
             </div>
@@ -109,51 +95,30 @@ export default function Login() {
               />
             </div>
 
-            {error && (
-              <div className="login-error">
-                {error}
-              </div>
-            )}
+            {error && <div className="login-error">{error}</div>}
 
-            <button
-              type="submit"
-              className="login-button"
-              disabled={busy}
-            >
+            <button type="submit" className="login-button-mini" disabled={busy}>
               {busy ? 'Logging in...' : 'Log in'}
             </button>
 
-            <p className="login-footer">
-              GeoAlert Disaster Risk Awareness System
-            </p>
+            <p className="login-footer">GeoAlert Disaster Risk Awareness System</p>
           </form>
         ) : (
-          <form
-            onSubmit={handleCodeSubmit}
-            className="login-card"
-          >
-            <div className="login-header">
-              <div className="security-icon">✓</div>
-
+          <form onSubmit={handleCodeSubmit}>
+            <div className="login-header-mini">
+              <div className="security-icon-mini">✓</div>
               <h2>Verify your account</h2>
-
-              <p>
-                Open your authenticator app and enter
-                the 6-digit security code.
-              </p>
+              <p>Open your authenticator app and enter the 6-digit security code.</p>
             </div>
 
             <div className="login-field">
               <label htmlFor="code">Authenticator code</label>
-
               <input
                 id="code"
                 inputMode="numeric"
                 maxLength={6}
                 value={code}
-                onChange={(e) =>
-                  setCode(e.target.value.replace(/\D/g, ''))
-                }
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                 autoComplete="one-time-code"
                 autoFocus
                 placeholder="000000"
@@ -162,15 +127,11 @@ export default function Login() {
               />
             </div>
 
-            {error && (
-              <div className="login-error">
-                {error}
-              </div>
-            )}
+            {error && <div className="login-error">{error}</div>}
 
             <button
               type="submit"
-              className="login-button"
+              className="login-button-mini"
               disabled={busy || code.length !== 6}
             >
               {busy ? 'Verifying...' : 'Verify code'}
@@ -190,7 +151,6 @@ export default function Login() {
           </form>
         )}
       </div>
-
     </div>
   );
 }

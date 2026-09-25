@@ -1,12 +1,13 @@
-﻿import React, { createContext, useContext, useEffect, useState } from 'react';
-import { authApi } from '../api/authApi';
-import { primeCsrf } from '../api/axiosClient';
+﻿import React, { createContext, useContext, useEffect, useState } from "react";
+import { authApi } from "../api/authApi";
+import { primeCsrf } from "../api/axiosClient";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -40,19 +41,39 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
+    if (loggingOut) return; // ignore repeat taps while a logout is already in flight
+    setLoggingOut(true);
     try {
       await authApi.logout();
-    } catch {
-      // Already logged out (e.g. a duplicate click) — that's fine, not an error.
+    } catch (error) {
+      // Session may already be gone server-side — that's fine,
+      // we're logging out either way.
+      console.warn(
+        "Logout request failed (session likely already cleared):",
+        error,
+      );
     } finally {
       setUser(null);
+      setLoggingOut(false);
     }
   }
 
-  const canPublish = user && ['DRRMO_Officer', 'System_Admin'].includes(user.role?.name || user.role);
+  const canPublish =
+    user &&
+    ["DRRMO_Officer", "System_Admin"].includes(user.role?.name || user.role);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, verifyLoginCode, logout, canPublish, setUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        verifyLoginCode,
+        logout,
+        canPublish,
+        setUser,
+        loggingOut,
+      }}>
       {children}
     </AuthContext.Provider>
   );
