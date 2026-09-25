@@ -70,7 +70,13 @@ export default function Contact() {
           <div className="office-info-card">
             <div className="name">DRRMO Office</div>
             <div className="address">Talisay City DRRM Office<br />7R3J+4HR, Cebu South Coastal Rd</div>
-            <button className="btn primary" style={{ width: '100%' }}>📍 Get Directions</button>
+            <button
+            className="btn primary"
+            style={{ width: '100%' }}
+            onClick={() => window.open('https://www.google.com/maps/dir/?api=1&destination=10.2539713,123.8286349', '_blank')}
+          >📍 Get Directions
+          </button>
+            
           </div>
         </div>
       </div>
