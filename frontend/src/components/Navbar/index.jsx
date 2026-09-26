@@ -19,6 +19,15 @@ export default function Navbar() {
 
   const visible = LINKS.filter((l) => !l.roles || l.roles.includes(roleName));
 
+  const [loggingOut, setLoggingOut] = React.useState(false);
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    await logout();
+    navigate('/login');
+  }
+
   return (
     <header className="navbar">
       <div style={{ display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
@@ -38,7 +47,9 @@ export default function Navbar() {
       </div>
       <div className="navbar-user">
         <span><strong>{user?.email}</strong> ({roleName})</span>
-        <button className="btn" onClick={logout}>Log out</button>
+        <button className="btn" onClick={handleLogout} disabled={loggingOut}>
+          {loggingOut ? 'Logging out…' : 'Log out'}
+        </button>
       </div>
     </header>
   );

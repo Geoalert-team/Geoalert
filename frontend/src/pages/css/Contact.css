@@ -1,0 +1,209 @@
+/* =========================================================
+   Contact page styles (ct-)
+   Shared styles (ph-) come from PublicHome.css
+   ========================================================= */
+
+/* ---------- Hero: navy band with an emergency callout ---------- */
+.ct-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 64px 0 72px;
+  background: var(--ph-navy);
+  border-top: 1px solid rgba(255, 255, 255, .08);
+  color: #d6deea;
+}
+
+/* Blurred photo behind the hero */
+.ct-hero::before {
+  content: "";
+  position: absolute;
+  inset: -24px; /* bigger than the hero so the blurred edges don't show */
+  background: url('../../assets/images/p1.jpg') center / cover no-repeat;
+  filter: blur(4px);
+}
+
+/* Navy tint on top of the photo so the white text stays easy to read */
+.ct-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(28, 46, 74, .72);
+}
+
+/* Keep the text and buttons above the photo and tint */
+.ct-hero > .ph-container {
+  position: relative;
+  z-index: 1;
+}
+
+.ct-hero-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+.ct-hero-place {
+  display: inline-block;
+  margin-bottom: 18px;
+  padding: 6px 14px;
+  border-radius: var(--ph-pill);
+  background: rgba(255, 255, 255, .1);
+  color: var(--ph-white);
+  font-weight: 700;
+  font-size: .92rem;
+}
+
+.ph .ct-hero-title {
+  max-width: 14ch;
+  color: var(--ph-white);
+  font-size: clamp(2.2rem, 4.6vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.ct-hero-lead {
+  max-width: 32rem;
+  margin-top: 18px;
+  font-size: 1.15rem;
+}
+
+/* Emergency callout: the most important thing on the page */
+.ct-urgent {
+  padding: 28px;
+  border-radius: var(--ph-radius-lg);
+  background: var(--ph-high);
+  color: var(--ph-white);
+}
+.ct-urgent-title {
+  font-family: var(--ph-font-head);
+  font-weight: 800;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+.ct-urgent-text { margin-top: 6px; color: #fde4e4; }
+
+.ct-urgent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+.ct-urgent-actions .ph-btn { flex-wrap: wrap; column-gap: .35em; }
+.ct-nowrap { white-space: nowrap; }
+.ct-btn-white { background: var(--ph-white); color: #a12f2f; }
+.ct-btn-white:hover { background: #fde4e4; }
+.ct-btn-ghost { border-color: rgba(255, 255, 255, .8); color: var(--ph-white); }
+.ct-btn-ghost:hover { background: rgba(255, 255, 255, .15); }
+
+/* ---------- Get in touch ---------- */
+.ct-contact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.ct-contact-card {
+  padding: 28px;
+  border: 1px solid var(--ph-line);
+  border-radius: var(--ph-radius);
+  background: var(--ph-white);
+}
+.ct-contact-card h3 { font-size: 1.3rem; font-weight: 800; }
+
+.ct-contact-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 18px;
+  border-radius: 14px;
+}
+.ct-contact-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ct-icon-email { background: #e6effb; color: #2f6fd1; }
+.ct-icon-social { background: #efeafb; color: #6546c3; }
+
+.ct-contact-note { margin-top: 4px; color: var(--ph-soft); }
+
+.ct-contact-list {
+  display: grid;
+  gap: 14px;
+  margin: 20px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--ph-line);
+}
+.ct-contact-list dt {
+  color: var(--ph-soft);
+  font-size: .88rem;
+  font-weight: 700;
+}
+.ct-contact-list dd { margin: 2px 0 0; }
+.ct-contact-list a {
+  color: var(--ph-navy);
+  font-weight: 700;
+  word-break: break-word;
+  text-underline-offset: 3px;
+}
+.ct-contact-list a:hover { color: var(--ph-navy-hover); }
+
+/* ---------- Office location ---------- */
+.ct-office {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.ct-office-map {
+  width: 100%;
+  min-height: 320px;
+  height: 100%;
+  border: 1px solid var(--ph-line);
+  border-radius: var(--ph-radius);
+  background: var(--ph-mist);
+}
+
+.ct-office-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 32px;
+  border: 1px solid var(--ph-line);
+  border-radius: var(--ph-radius);
+  background: var(--ph-mist);
+}
+.ct-office-info h3 { font-size: 1.4rem; font-weight: 800; }
+.ct-office-address { margin-top: 8px; }
+
+.ct-office-actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 960px) {
+  .ct-hero-grid { grid-template-columns: 1fr; gap: 32px; }
+  .ph .ct-hero-title { max-width: none; }
+  .ct-office { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .ct-hero { padding: 44px 0 52px; }
+  .ct-contact-grid { grid-template-columns: 1fr; }
+  .ct-urgent { padding: 22px; }
+  .ct-urgent-actions .ph-btn { width: 100%; }
+  .ct-office-map { min-height: 260px; }
+  .ct-office-info { padding: 24px; }
+}
