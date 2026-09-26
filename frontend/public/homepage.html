@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GeoAlert | Talisay City Hazard Awareness</title>
+  <meta name="description" content="Community hazard awareness for Talisay City. Check flood, landslide and fire risk levels and find emergency hotlines." />
+
+  <!-- Fonts: Bricolage Grotesque (headings) + Atkinson Hyperlegible (body, built for readability) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="assets/css/homepage.css" />
+</head>
+<body>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- ============ NAVIGATION ============ -->
+  <header class="site-header">
+    <div class="container nav-inner">
+      <a class="brand" href="homepage.html" aria-label="GeoAlert home">
+                <span class="logo-frame">
+          <img src="assets/images/logo1.png" alt="">
+        </span>
+        <span class="brand-name">GeoAlert</span>
+      </a>
+
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="visually-hidden">Open menu</span>
+      </button>
+
+      <!-- Links point to the existing React routes in src/App.jsx -->
+      <nav id="site-nav" class="site-nav" aria-label="Main">
+        <ul class="nav-links">
+          <li><a href="homepage.html" aria-current="page">Home</a></li>
+          <li><a href="/map">Map</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/what-to-do">What to do</a></li>
+        </ul>
+        <a class="btn btn-light btn-sm" href="/login">Log in</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="hero-place">Talisay City, Cebu</p>
+          <h1>See which parts of Talisay are at risk, and what to do about it.</h1>
+          <p class="hero-lead">
+            GeoAlert is a community hazard map for Talisay City. Check the current risk level
+            for floods, landslides, storm surges and fires in your barangay, then follow clear
+            safety steps.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="/map">Explore the map</a>
+            <a class="btn btn-outline" href="/what-to-do">See safety steps</a>
+          </div>
+          <p class="hero-note">No account needed to view the map.</p>
+        </div>
+
+        <!-- Photo slider: swap each .photo-frame placeholder for an <img> -->
+        <div class="hero-media">
+          <div class="slider" data-slider>
+                                    <div class="slider-track">
+              <div class="slide">
+                <img src="assets/images/p1.jpg" alt="Rescue team loading a stretcher into an ambulance">
+              </div>
+              <div class="slide">
+                <img src="assets/images/p2.jpg" alt="Residents taking part in a community drill">
+              </div>
+              <div class="slide">
+                <img src="assets/images/p3.jpg" alt="Talisay City coastline">
+              </div>
+            </div>
+
+            <div class="slider-dots" role="group" aria-label="Choose photo">
+              <button type="button" class="slider-dot is-active" aria-label="Photo 1"></button>
+              <button type="button" class="slider-dot" aria-label="Photo 2"></button>
+              <button type="button" class="slider-dot" aria-label="Photo 3"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HAZARDS ============ -->
+    <section class="section" id="hazards">
+      <div class="container">
+        <div class="section-head">
+          <h2>Hazards we monitor</h2>
+          <p>Each hazard is rated low, medium or high so you can tell at a glance how worried to be.</p>
+        </div>
+
+        <div class="hazard-grid">
+          <article class="hazard-card hazard-flood">
+            <div class="hazard-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" /></svg>
+            </div>
+            <h3>Floods</h3>
+            <p>Rising water from heavy rain, overflowing rivers and blocked drainage.</p>
+            <ul class="level-list">
+              <li><span class="dot dot-low"></span>Low risk</li>
+              <li><span class="dot dot-medium"></span>Medium risk</li>
+              <li><span class="dot dot-high"></span>High risk</li>
+            </ul>
+          </article>
+
+          <article class="hazard-card hazard-landslide">
+            <div class="hazard-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M3 20l6-12 4 7 3-4 5 9z" /></svg>
+            </div>
+            <h3>Landslides</h3>
+            <p>Soil and rock movement on slopes, most likely after days of steady rain.</p>
+            <ul class="level-list">
+              <li><span class="dot dot-low"></span>Low risk</li>
+              <li><span class="dot dot-medium"></span>Medium risk</li>
+              <li><span class="dot dot-high"></span>High risk</li>
+            </ul>
+          </article>
+
+          <article class="hazard-card hazard-fire">
+            <div class="hazard-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 3c1 4 5 5.5 5 10.5A5 5 0 0 1 7 13.5C7 11 8.5 9.5 9.5 8.5c0 2 1 3 2 3 0-3-.5-5.5.5-8.5z" /></svg>
+            </div>
+            <h3>Fires</h3>
+            <p>Fire risk in closely built neighborhoods, especially during the dry months.</p>
+            <ul class="level-list">
+              <li><span class="dot dot-low"></span>Low risk</li>
+              <li><span class="dot dot-medium"></span>Medium risk</li>
+              <li><span class="dot dot-high"></span>High risk</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RISK LEVELS (one connected scale) ============ -->
+    <section class="section section-tint" id="risk-levels">
+      <div class="container">
+        <div class="section-head">
+          <h2>What the colors mean</h2>
+          <p>The map uses the same three colors everywhere. Here is what each one asks of you.</p>
+        </div>
+
+        <ol class="risk-scale">
+          <li class="risk-step risk-low">
+            <h3>Low risk</h3>
+            <p class="risk-meaning">The area is safe. Standard monitoring is in place.</p>
+            <p class="risk-action"><strong>You:</strong> go about your day and keep your go-bag ready.</p>
+          </li>
+          <li class="risk-step risk-medium">
+            <h3>Medium risk</h3>
+            <p class="risk-meaning">Conditions could get worse. Stay alert.</p>
+            <p class="risk-action"><strong>You:</strong> watch weather updates and know your evacuation route.</p>
+          </li>
+          <li class="risk-step risk-high">
+            <h3>High risk</h3>
+            <p class="risk-meaning">Immediate action is required.</p>
+            <p class="risk-action"><strong>You:</strong> prepare to evacuate and follow barangay officials.</p>
+          </li>
+        </ol>
+
+        <div class="center">
+          <a class="btn btn-primary" href="/what-to-do">Learn safety protocols</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HOW IT WORKS (a real sequence, so numbered) ============ -->
+    <section class="section" id="how-it-works">
+      <div class="container">
+        <div class="section-head">
+          <h2>How to use GeoAlert</h2>
+        </div>
+
+        <ol class="steps">
+          <li class="step">
+            <span class="step-num" aria-hidden="true">1</span>
+            <h3>Open the map</h3>
+            <p>No sign-up needed. The map opens centered on Talisay City.</p>
+          </li>
+          <li class="step">
+            <span class="step-num" aria-hidden="true">2</span>
+            <h3>Find your barangay</h3>
+            <p>Zoom in to your area and tap a shaded zone to see its risk level.</p>
+          </li>
+          <li class="step">
+            <span class="step-num" aria-hidden="true">3</span>
+            <h3>Follow the guidance</h3>
+            <p>Each hazard shows simple steps for before, during and after an event.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============ HOTLINES ============ -->
+    <section class="section section-tint" id="hotlines">
+      <div class="container">
+        <div class="section-head">
+          <h2>Emergency hotlines</h2>
+          <p>Tap a number to call it on your phone, or copy it to save for later.</p>
+        </div>
+
+        <!--
+          Static list for now. homepage.js can replace it with data from Django later
+          (see loadHotlines). Keep the same markup so the styles still apply.
+        -->
+        <ul class="hotline-grid" id="hotline-list">
+          <li class="hotline-card">
+            <h3>Talisay DRRMO</h3>
+            <a class="hotline-number" href="tel:+63324075928">(032) 407-5928</a>
+            <button type="button" class="btn-copy" data-copy="(032) 407-5928">Copy number</button>
+          </li>
+          <li class="hotline-card">
+            <h3>Fire station</h3>
+            <a class="hotline-number" href="tel:+63324075928">(032) 407-5928</a>
+            <button type="button" class="btn-copy" data-copy="(032) 407-5928">Copy number</button>
+          </li>
+          <li class="hotline-card">
+            <h3>Police</h3>
+            <a class="hotline-number" href="tel:+63324075928">(032) 407-5928</a>
+            <button type="button" class="btn-copy" data-copy="(032) 407-5928">Copy number</button>
+          </li>
+          <li class="hotline-card">
+            <h3>Social welfare</h3>
+            <a class="hotline-number" href="tel:+63324075928">(032) 407-5928</a>
+            <button type="button" class="btn-copy" data-copy="(032) 407-5928">Copy number</button>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+                <span class="logo-frame">
+          <img src="assets/images/logo1.png" alt="">
+        </span>
+        <div>
+          <p class="footer-name">GeoAlert</p>
+          <p class="footer-tagline">Community geospatial hazard guidance and risk awareness for Talisay City.</p>
+        </div>
+      </div>
+      <ul class="footer-links">
+        <li><a href="/map">Map</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/contact">Contact</a></li>
+        <li><a href="/what-to-do">What to do</a></li>
+      </ul>
+    </div>
+    <p class="footer-copy container">&copy; <span id="year">2026</span> GeoAlert</p>
+  </footer>
+
+  <script src="assets/js/homepage.js"></script>
+</body>
+</html>

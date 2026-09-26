@@ -1,4 +1,4 @@
-﻿import React from 'react';
+﻿import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
@@ -7,11 +7,18 @@ import Security from './pages/Security';
 import GuidanceLibrary from './pages/GuidanceLibrary';
 import HistoricalData from './pages/HistoricalData';
 import Dashboard from './pages/Dashboard';
-import PublicHome from './pages/PublicHome';
 import PublicMap from './pages/PublicMap';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import WhatToDo from './pages/WhatToDo';
+
+// Sends "/" to the static homepage in public/homepage.html
+function StaticHome() {
+  useEffect(() => {
+    window.location.replace('/homepage.html');
+  }, []);
+  return null;
+}
 
 function Gate({ children, roles }) {
   const { user, loading } = useAuth();
@@ -26,7 +33,7 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public, no login required */}
-      <Route path="/" element={<PublicHome />} />
+      <Route path="/" element={<StaticHome />} />
       <Route path="/map" element={<PublicMap />} />
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
