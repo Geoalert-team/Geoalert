@@ -72,6 +72,7 @@ export default function PublicHome() {
           GeoAlert tracks real-time hazard data using color-coded indicators so you can instantly
           identify risk levels in your community.
         </p>
+      
       <div className="hazard-cards">
       <div className="hazard-card flood">
         <div className="hazard-card-icon">💧</div>
