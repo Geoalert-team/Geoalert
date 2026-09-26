@@ -1,5 +1,5 @@
 /* Fonts for the public site: Bricolage Grotesque (headings) + Atkinson Hyperlegible (body) */
-@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap");
 
 /* =========================================================
    Public navbar (used on Home, Map, About, Contact, What to do)
@@ -86,10 +86,18 @@
   text-decoration: none;
   font-weight: 700;
   font-size: 0.98rem;
-  transition: background-color .2s ease, color .2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
-.pn-link:hover { color: var(--pn-white); background: rgba(255, 255, 255, .08); }
-.pn-link.is-active { color: var(--pn-white); background: rgba(255, 255, 255, .14); }
+.pn-link:hover {
+  color: var(--pn-white);
+  background: rgba(255, 255, 255, 0.08);
+}
+.pn-link.is-active {
+  color: var(--pn-white);
+  background: rgba(255, 255, 255, 0.14);
+}
 
 .pn-login {
   display: inline-flex;
@@ -102,9 +110,11 @@
   font-weight: 700;
   font-size: 0.95rem;
   text-decoration: none;
-  transition: background-color .2s ease;
+  transition: background-color 0.2s ease;
 }
-.pn-login:hover { background: #dfe7f3; }
+.pn-login:hover {
+  background: #dfe7f3;
+}
 
 .pn-header a:focus-visible,
 .pn-header button:focus-visible {
@@ -119,7 +129,7 @@
   height: 44px;
   border: 0;
   border-radius: 10px;
-  background: rgba(255, 255, 255, .1);
+  background: rgba(255, 255, 255, 0.1);
   cursor: pointer;
   flex-direction: column;
   align-items: center;
@@ -131,11 +141,19 @@
   height: 2px;
   border-radius: 2px;
   background: var(--pn-white);
-  transition: transform .2s ease, opacity .2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
-.pn-toggle[aria-expanded="true"] .pn-toggle-bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-.pn-toggle[aria-expanded="true"] .pn-toggle-bar:nth-child(2) { opacity: 0; }
-.pn-toggle[aria-expanded="true"] .pn-toggle-bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.pn-toggle[aria-expanded="true"] .pn-toggle-bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.pn-toggle[aria-expanded="true"] .pn-toggle-bar:nth-child(2) {
+  opacity: 0;
+}
+.pn-toggle[aria-expanded="true"] .pn-toggle-bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
 
 .pn-visually-hidden {
   position: absolute;
@@ -147,7 +165,9 @@
 }
 
 @media (max-width: 860px) {
-  .pn-toggle { display: flex; }
+  .pn-toggle {
+    display: flex;
+  }
 
   .pn-menu {
     display: none;
@@ -160,15 +180,132 @@
     gap: 16px;
     padding: 16px 24px 24px;
     background: var(--pn-navy);
-    border-top: 1px solid rgba(255, 255, 255, .1);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
   }
-  .pn-menu.is-open { display: flex; }
+  .pn-menu.is-open {
+    display: flex;
+  }
 
-  .pn-links { flex-direction: column; gap: 2px; }
-  .pn-link { padding: 12px 14px; border-radius: 10px; }
-  .pn-login { justify-content: center; }
+  .pn-links {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .pn-link {
+    padding: 12px 14px;
+    border-radius: 10px;
+  }
+  .pn-login {
+    justify-content: center;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pn-header *, .pn-header *::before, .pn-header *::after { transition: none !important; }
+  .pn-header *,
+  .pn-header *::before,
+  .pn-header *::after {
+    transition: none !important;
+  }
+}
+
+/* User menu (shown instead of Log in when logged in) */
+.pn-user {
+  position: relative;
+}
+
+.pn-user-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 4px 16px 4px 6px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--pn-white);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: background-color 0.2s ease;
+}
+.pn-user-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.pn-user-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--pn-white);
+  color: var(--pn-navy);
+}
+.pn-user-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pn-user-name {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pn-user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 140px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--pn-white);
+  box-shadow: 0 12px 28px rgba(10, 20, 40, 0.25);
+  z-index: 20;
+}
+
+.pn-user-logout {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pn-navy);
+  text-align: left;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.pn-user-logout:hover {
+  background: #eef2f7;
+}
+
+/* Mobile: stacked menu, so the user button/dropdown go full-width instead of floating */
+@media (max-width: 860px) {
+  .pn-user-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .pn-user-dropdown {
+    position: static;
+    margin-top: 8px;
+    box-shadow: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .pn-user-logout {
+    color: var(--pn-white);
+  }
+  .pn-user-logout:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
 }
