@@ -1,46 +1,56 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { barangaysApi } from '../../api/barangaysApi';
-import { reportsApi, guidanceApi } from '../../api/mockApi';
+import { reportsApi } from '../../api/reportApi';
+import { guidanceApi } from '../../api/guidanceApi';
+import { hazardsApi } from '../../api/hazardsApi';
 import Navbar from '../../components/Navbar';
 
-const HAZARD_OPTIONS = ['Flood', 'Fire', 'Landslide'];
 const STATUS_COLOR = { Pending: 'var(--sev-orange)', Validated: 'var(--sev-green)', Rejected: 'var(--sev-red)' };
 
 export default function BarangayDashboard() {
   const { user } = useAuth();
   const [reports, setReports] = useState([]);
-  const [barangayNames, setBarangayNames] = useState([]);
+  const [barangays, setBarangays] = useState([]);
+  const [hazardTypes, setHazardTypes] = useState([]);
   const [guidance, setGuidance] = useState([]);
 
-  const [barangayName, setBarangayName] = useState('');
-  const [hazardType, setHazardType] = useState(HAZARD_OPTIONS[0]);
+  const [barangayId, setBarangayId] = useState('');
+  const [hazardTypeId, setHazardTypeId] = useState('');
   const [description, setDescription] = useState('');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     refreshReports();
-    barangaysApi.list().then((geo) => setBarangayNames((geo.features || []).map((f) => f.properties.name))).catch(() => {});
-    guidanceApi.list().then((all) => setGuidance(all.slice(0, 2)));
+    barangaysApi.list()
+      .then((geo) => setBarangays((geo.features || []).map((f) => ({ id: f.properties.id, name: f.properties.name }))))
+      .catch(() => {});
+    hazardsApi.types().then(setHazardTypes).catch(() => {});
+    guidanceApi.list().then((all) => setGuidance(all.slice(0, 2))).catch(() => {});
   }, []);
 
   async function refreshReports() {
-    const all = await reportsApi.list();
-    setReports(all.filter((r) => r.reported_by === (user?.full_name || user?.email)));
+    try {
+      setReports(await reportsApi.list());
+    } catch {
+      setReports([]);
+    }
   }
 
   async function submitReport(e) {
     e.preventDefault();
     setBusy(true);
-    await reportsApi.submit({
-      barangay_name: barangayName || barangayNames[0] || 'Poblacion',
-      hazard_type: hazardType,
-      description,
-      reported_by: user?.full_name || user?.email,
-    });
-    setDescription('');
-    setBusy(false);
-    refreshReports();
+    try {
+      await reportsApi.submit({
+        barangay: barangayId || barangays[0]?.id,
+        hazard_type: hazardTypeId || hazardTypes[0]?.id,
+        description,
+      });
+      setDescription('');
+      refreshReports();
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -49,29 +59,29 @@ export default function BarangayDashboard() {
       <div style={{ flex: 1, overflowY: 'auto', padding: 24, maxWidth: 780, margin: '0 auto', width: '100%' }}>
         <h2 style={{ marginBottom: 4 }}>Barangay dashboard</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 20 }}>
-          Mock data â€” apps/reports has no backend yet.
+          Submit incident reports for DRRMO validation.
         </p>
 
         <form onSubmit={submitReport} style={{ border: '1px solid var(--line)', background: 'var(--panel)', padding: 18, marginBottom: 24 }}>
           <h3 style={{ marginTop: 0 }}>Submit a report</h3>
           <div className="field">
             <label>Barangay</label>
-            <select value={barangayName} onChange={(e) => setBarangayName(e.target.value)}>
-              {(barangayNames.length ? barangayNames : ['Poblacion']).map((b) => <option key={b} value={b}>{b}</option>)}
+            <select value={barangayId} onChange={(e) => setBarangayId(Number(e.target.value))}>
+              {barangays.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </div>
           <div className="field">
             <label>Hazard type</label>
-            <select value={hazardType} onChange={(e) => setHazardType(e.target.value)}>
-              {HAZARD_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+            <select value={hazardTypeId} onChange={(e) => setHazardTypeId(Number(e.target.value))}>
+              {hazardTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
           </div>
           <div className="field">
             <label>What are you seeing?</label>
             <textarea rows={3} required value={description} onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Describe the situation â€” location detail, how bad it looks, anyone affected" />
+                      placeholder="Describe the situation — location detail, how bad it looks, anyone affected" />
           </div>
-          <button className="btn primary" disabled={busy}>{busy ? 'Submittingâ€¦' : 'Submit report'}</button>
+          <button className="btn primary" disabled={busy}>{busy ? 'Submitting…' : 'Submit report'}</button>
         </form>
 
         <h3>Your submitted reports</h3>
@@ -82,11 +92,14 @@ export default function BarangayDashboard() {
             {reports.map((r) => (
               <div key={r.id} style={{ border: '1px solid var(--line)', background: 'var(--panel)', padding: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap', gap: 6 }}>
-                  <strong>{r.hazard_type} Â· {r.barangay_name}</strong>
+                  <strong>{r.hazard_type_detail?.name} · {r.barangay_detail?.name}</strong>
                   <span style={{ color: STATUS_COLOR[r.status], fontSize: 12.5, fontWeight: 600 }}>{r.status}</span>
                 </div>
                 <p style={{ fontSize: 13, margin: '0 0 6px' }}>{r.description}</p>
                 <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{new Date(r.created_at).toLocaleString()}</div>
+                {r.review_note && (
+                  <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>Note: {r.review_note}</div>
+                )}
               </div>
             ))}
           </div>
@@ -97,7 +110,7 @@ export default function BarangayDashboard() {
           {guidance.map((g) => (
             <div key={g.id} style={{ border: '1px solid var(--line)', background: 'var(--panel)', padding: 12 }}>
               <strong>{g.title}</strong>
-              <span style={{ marginLeft: 8, fontSize: 11.5, color: 'var(--accent)' }}>{g.hazard_type}</span>
+              <span style={{ marginLeft: 8, fontSize: 11.5, color: 'var(--accent)' }}>{g.hazard_type_detail?.name}</span>
             </div>
           ))}
         </div>
