@@ -28,7 +28,7 @@ export default function Login() {
       if (require2fa) {
         setAwaiting2fa(true);
       } else {
-        navigate('/app');
+        navigate('/app/dashboard');
       }
     } catch (err) {
       setError(err.message || 'Invalid email or password');
@@ -45,7 +45,7 @@ export default function Login() {
 
     try {
       await verifyLoginCode(code);
-      navigate('/app');
+      navigate('/app/dashboard');
     } catch (err) {
       setError(err.message || 'Incorrect code');
     } finally {

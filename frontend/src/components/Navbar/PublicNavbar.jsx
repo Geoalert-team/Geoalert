@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/images/logo1.png";
 import "./css/PublicNavbar.css";
 
+// Shown to everyone who is NOT logged in (residents) — unchanged from before.
 const PUBLIC_LINKS = [
   { to: "/", label: "Home" },
   { to: "/map", label: "Map" },
@@ -11,6 +12,25 @@ const PUBLIC_LINKS = [
   { to: "/contact", label: "Contact" },
   { to: "/what-to-do", label: "What to do" },
 ];
+
+// Shown INSTEAD of the public links once a staff account is logged in.
+// Barangay Personnel don't get History (matches the /app/history route gate).
+const ROLE_LINKS = {
+  System_Admin: [
+    { to: "/app/dashboard", label: "Dashboard" },
+    { to: "/app/guidance", label: "Guidance" },
+    { to: "/app/history", label: "History" },
+  ],
+  DRRMO_Officer: [
+    { to: "/app/dashboard", label: "Dashboard" },
+    { to: "/app/guidance", label: "Guidance" },
+    { to: "/app/history", label: "History" },
+  ],
+  Barangay_Personnel: [
+    { to: "/app/dashboard", label: "Dashboard" },
+    { to: "/app/guidance", label: "Guidance" },
+  ],
+};
 
 export default function PublicNavbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -41,11 +61,17 @@ export default function PublicNavbar() {
   }
 
   const displayName = user?.full_name || user?.email;
+  const roleName = user?.role?.name || user?.role;
+
+  // Residents (no user) keep the exact links as before.
+  // Logged-in staff see ONLY their role's links — public links are hidden.
+  const links = user ? (ROLE_LINKS[roleName] || []) : PUBLIC_LINKS;
+  const brandTo = user ? "/app/dashboard" : "/";
 
   return (
     <header className="pn-header">
       <div className="pn-inner">
-        <Link to="/" className="pn-brand" onClick={closeMenu}>
+        <Link to={brandTo} className="pn-brand" onClick={closeMenu}>
           <span className="pn-logo">
             <img src={logo} alt="" />
           </span>
@@ -72,7 +98,7 @@ export default function PublicNavbar() {
           className={`pn-menu ${menuOpen ? "is-open" : ""}`}
           aria-label="Main">
           <ul className="pn-links">
-            {PUBLIC_LINKS.map((link) => (
+            {links.map((link) => (
               <li key={link.to}>
                 <NavLink
                   to={link.to}
