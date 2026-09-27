@@ -28,6 +28,12 @@ class HazardZone(models.Model):
         ('Resolved', 'Resolved'),
         ('Archived', 'Archived'),
     ]
+    
+    VERIFICATION_CHOICES = [
+        ('Pending',   'Awaiting barangay confirmation'),
+        ('Confirmed', 'Confirmed by barangay'),
+        ('Disputed',  'Disputed by barangay'),
+    ]
 
     id           = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     barangay     = models.ForeignKey(Barangay, on_delete=models.SET_NULL, null=True)
@@ -40,11 +46,28 @@ class HazardZone(models.Model):
     activated_at = models.DateTimeField(auto_now_add=True)
     resolved_at  = models.DateTimeField(null=True, blank=True)
 
+    verification_status = models.CharField(
+        max_length=20, choices=VERIFICATION_CHOICES, default='Pending'
+    )
+    verified_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='verified_hazard_zones',  # published_by already uses the default name
+    )
+    verified_at       = models.DateTimeField(null=True, blank=True)
+    verification_note = models.TextField(blank=True, default='')
+
     class Meta:
         db_table = 'hazard_zone'
 
     def __str__(self):
         return f'{self.hazard_type} - {self.severity} - {self.status}'
+
+    def reset_verification(self):
+        """Call when severity or shape changes: the old confirmation no longer applies."""
+        self.verification_status = 'Pending'
+        self.verified_by         = None
+        self.verified_at         = None
+        self.verification_note   = ''
 
 
 class HazardAlert(models.Model):

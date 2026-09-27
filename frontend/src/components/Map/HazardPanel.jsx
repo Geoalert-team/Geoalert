@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { severityInfo, hazardIconPath, guidanceFor, DRRMO_HOTLINE } from './hazardInfo';
+import { severityInfo, hazardIconPath, hazardColor, guidanceFor, DRRMO_HOTLINE } from './hazardInfo';
+import VerificationNotice from './VerificationNotice';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -14,7 +15,7 @@ function formatDate(iso) {
 }
 
 // Slides in from the left (desktop) or up from the bottom (mobile)
-export default function HazardPanel({ item, open, onClose }) {
+ export default function HazardPanel({ item, open, onClose, onVerified }) {
   const [tab, setTab] = useState('overview');
   const closeRef = useRef(null);
 
@@ -32,7 +33,7 @@ export default function HazardPanel({ item, open, onClose }) {
         <div className="pm-panel-inner">
           {/* ---------- Header ---------- */}
           <div className="pm-panel-head">
-            <div className="pm-panel-icon" style={{ background: sev.tint, color: sev.color }} aria-hidden="true">
+            <div className="pm-panel-icon" style={{ background: sev.tint, color: hazardColor(item.type) }} aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d={hazardIconPath(item.type)} /></svg>
             </div>
             <div className="pm-panel-title">
@@ -85,6 +86,7 @@ export default function HazardPanel({ item, open, onClose }) {
                 <div className="pm-callout" style={{ background: sev.tint, borderColor: sev.color, color: sev.text }}>
                   <strong>{sev.label}:</strong> {sev.advice}
                 </div>
+                <VerificationNotice item={item} onVerified={onVerified} />
                 <dl className="pm-facts">
                   <div>
                     <dt>Status</dt>
