@@ -38,6 +38,15 @@ export default function VerificationNotice({ item, onVerified }) {
   const status = item.verificationStatus || 'Pending';
   const v = verificationInfo(status);
 
+  // Button wording follows the current state, so staff can tell what each one will do.
+  // action is the status the first button sends ('Pending' = unconfirm).
+  const LABELS = {
+    Pending: { first: 'Confirm conditions', action: 'Confirmed', primary: true, dispute: 'Report different conditions' },
+    Confirmed: { first: 'Undo confirmation', action: 'Pending', primary: false, dispute: 'Report different conditions' },
+    Disputed: { first: 'Conditions now match the map', action: 'Confirmed', primary: true, dispute: 'Update my report' },
+  };
+  const labels = LABELS[status] || LABELS.Pending;
+
   async function submit(verificationStatus) {
     setBusy(true);
     setError('');
@@ -82,19 +91,22 @@ export default function VerificationNotice({ item, onVerified }) {
         <div className="pm-verify-actions">
           <button
             type="button"
-            className="pm-btn pm-btn-primary"
+            className={`pm-btn ${labels.primary ? 'pm-btn-primary' : 'pm-btn-outline'}`}
             disabled={busy}
-            onClick={() => submit('Confirmed')}
+            onClick={() => submit(labels.action)}
           >
-            {busy ? 'Saving…' : 'Confirm conditions'}
+            {busy ? 'Saving…' : labels.first}
           </button>
           <button
             type="button"
             className="pm-btn pm-btn-outline"
             disabled={busy}
-            onClick={() => setDisputing(true)}
+            onClick={() => {
+              setNote(status === 'Disputed' ? item.verificationNote || '' : '');
+              setDisputing(true);
+            }}
           >
-            Report different conditions
+            {labels.dispute}
           </button>
         </div>
       )}

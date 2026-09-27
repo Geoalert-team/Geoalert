@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.gis.geos import Polygon
+from django.utils import timezone
 
 from apps.hazards.models import HazardType, HazardZone, HazardAlert
 from apps.hazards.serializers import (
@@ -268,10 +269,13 @@ class HazardZoneVerifyView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        zone.verification_status = serializer.validated_data['verification_status']
-        zone.verification_note   = serializer.validated_data['verification_note']
-        zone.verified_by         = request.user
-        zone.verified_at         = timezone.now()
+        if serializer.validated_data['verification_status'] == 'Pending':
+            zone.reset_verification()
+        else:
+            zone.verification_status = serializer.validated_data['verification_status']
+            zone.verification_note   = serializer.validated_data['verification_note']
+            zone.verified_by         = request.user
+            zone.verified_at         = timezone.now()
         zone.save(update_fields=[
             'verification_status', 'verification_note',
             'verified_by', 'verified_at',

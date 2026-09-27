@@ -181,6 +181,7 @@
 .pm-verify-disclaimer { margin-top: 10px; color: var(--pm-body); font-size: .9rem; }
 
 .pm-verify-actions { display: grid; gap: 8px; margin-top: 12px; }
+.pm-verify-prompt { margin: 0; color: var(--pm-body); font-size: .88rem; }
 .pm-verify .pm-btn { font-family: inherit; cursor: pointer; }
 .pm-verify .pm-btn-outline { background: transparent; }
 .pm-verify .pm-btn-outline:hover { background: var(--pm-navy); }

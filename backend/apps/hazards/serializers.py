@@ -71,7 +71,7 @@ class HazardZoneVerifySerializer(serializers.Serializer):
     Body for POST /api/hazards/<id>/verify/
     Barangay personnel report what they see on the ground.
     """
-    verification_status = serializers.ChoiceField(choices=['Confirmed', 'Disputed'])
+    verification_status = serializers.ChoiceField(choices=['Pending', 'Confirmed', 'Disputed'])
     verification_note   = serializers.CharField(
         required=False, allow_blank=True, max_length=1000
     )
