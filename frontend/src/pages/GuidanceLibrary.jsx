@@ -1,92 +1,142 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import PublicNavbar from '../components/Navbar/PublicNavbar';
 import { useAuth } from '../context/AuthContext';
-import { guidanceApi } from '../api/mockApi';
-import Navbar from '../components/Navbar';
+import { guidanceApi } from '../api/guidanceApi';
+import { hazardsApi } from '../api/hazardsApi';
+import './css/Dashboard.css';
 
-const HAZARD_OPTIONS = ['Flood', 'Fire', 'Landslide'];
+const PHASES = ['Before', 'During', 'After'];
 
 export default function GuidanceLibrary() {
-  const { user, canPublish } = useAuth();
-  const [articles, setArticles] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [title, setTitle] = useState('');
-  const [hazardType, setHazardType] = useState(HAZARD_OPTIONS[0]);
-  const [body, setBody] = useState('');
+  const { canPublish } = useAuth();
+  const [guidance, setGuidance] = useState([]);
+  const [hazardTypes, setHazardTypes] = useState([]);
+  const [filterType, setFilterType] = useState('All');
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => { refresh(); }, []);
-  async function refresh() { setArticles(await guidanceApi.list()); }
+  const [form, setForm] = useState({ hazard_type: '', title: '', body: '', timeline_phase: 'Before' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  function startNew() { setEditing(null); setTitle(''); setHazardType(HAZARD_OPTIONS[0]); setBody(''); setShowForm(true); }
-  function startEdit(a) { setEditing(a.id); setTitle(a.title); setHazardType(a.hazard_type); setBody(a.body); setShowForm(true); }
-
-  async function save(e) {
-    e.preventDefault();
-    if (editing) await guidanceApi.update(editing, { title, hazard_type: hazardType, body });
-    else await guidanceApi.create({ title, hazard_type: hazardType, body, created_by: user?.full_name || user?.email });
-    setShowForm(false);
+  useEffect(() => {
     refresh();
+    hazardsApi.types().then(setHazardTypes).catch(() => {});
+  }, []);
+
+  async function refresh() {
+    setLoading(true);
+    try {
+      const data = await guidanceApi.list();
+      setGuidance(data.results || data);
+    } catch {
+      setGuidance([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function createGuidance(e) {
+    e.preventDefault();
+    setError('');
+    setSaving(true);
+    try {
+      await guidanceApi.create(form);
+      setForm({ hazard_type: '', title: '', body: '', timeline_phase: 'Before' });
+      refresh();
+    } catch (err) {
+      setError(err.message || 'Could not save guidance');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function remove(id) {
-    if (window.confirm('Delete this guidance article?')) { await guidanceApi.remove(id); refresh(); }
+    if (!window.confirm('Delete this guidance entry?')) return;
+    await guidanceApi.remove(id);
+    refresh();
   }
 
+  const visible = guidance.filter(
+    (g) => filterType === 'All' || (g.hazard_type_detail?.name || g.hazard_type) === filterType
+  );
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Navbar />
-      <div style={{ flex: 1, overflowY: 'auto', padding: 24, maxWidth: 780, margin: '0 auto', width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-          <h2 style={{ margin: 0 }}>Guidance library</h2>
-          {canPublish && <button className="btn primary" onClick={startNew}>Add guidance</button>}
+    <div className="db">
+      <PublicNavbar />
+      <div className="db-wrap">
+        <div className="db-header">
+          <h1>Guidance library</h1>
+          <p>Before / during / after safety steps shown to residents on the map.</p>
         </div>
-        <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 20 }}>
-          Mock data â€” no backend yet (apps/guidance is still empty in Django).
-        </p>
 
-        {showForm && (
-          <form onSubmit={save} style={{ border: '1px solid var(--line)', background: 'var(--panel)', padding: 18, marginBottom: 24 }}>
-            <h3 style={{ marginTop: 0 }}>{editing ? 'Edit article' : 'New article'}</h3>
-            <div className="field">
-              <label>Title</label>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} required />
-            </div>
-            <div className="field">
-              <label>Hazard type</label>
-              <select value={hazardType} onChange={(e) => setHazardType(e.target.value)}>
-                {HAZARD_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div className="field">
-              <label>Guidance text</label>
-              <textarea rows={4} required value={body} onChange={(e) => setBody(e.target.value)} />
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn" type="button" onClick={() => setShowForm(false)}>Cancel</button>
-              <button className="btn primary">{editing ? 'Save changes' : 'Publish'}</button>
-            </div>
-          </form>
-        )}
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {articles.map((a) => (
-            <div key={a.id} style={{ border: '1px solid var(--line)', background: 'var(--panel)', padding: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
-                <strong>{a.title}</strong>
-                <span style={{ fontSize: 11.5, color: 'var(--accent)' }}>{a.hazard_type}</span>
-              </div>
-              <p style={{ fontSize: 13, margin: '8px 0' }}>{a.body}</p>
-              <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                By {a.created_by} Â· updated {new Date(a.updated_at).toLocaleDateString()}
-              </div>
-              {canPublish && (
-                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  <button className="btn" onClick={() => startEdit(a)}>Edit</button>
-                  <button className="btn" onClick={() => remove(a.id)}>Delete</button>
-                </div>
-              )}
-            </div>
+        <div className="db-tabs" role="tablist">
+          {['All', ...hazardTypes.map((t) => t.name)].map((name) => (
+            <button
+              key={name}
+              type="button"
+              role="tab"
+              aria-selected={filterType === name}
+              className={`db-tab ${filterType === name ? 'is-active' : ''}`}
+              onClick={() => setFilterType(name)}>
+              {name}
+            </button>
           ))}
+        </div>
+
+        <div className={canPublish ? 'db-grid-2' : ''}>
+          {canPublish && (
+            <form onSubmit={createGuidance} className="db-card">
+              <h2>Add guidance</h2>
+              <div className="field">
+                <label>Hazard type</label>
+                <select required value={form.hazard_type} onChange={(e) => setForm({ ...form, hazard_type: e.target.value })}>
+                  <option value="">Select…</option>
+                  {hazardTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
+              <div className="field">
+                <label>Timeline</label>
+                <select value={form.timeline_phase} onChange={(e) => setForm({ ...form, timeline_phase: e.target.value })}>
+                  {PHASES.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+              <div className="field">
+                <label>Title</label>
+                <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+              </div>
+              <div className="field">
+                <label>Guidance text</label>
+                <textarea rows={4} required value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
+              </div>
+              {error && <p className="error-text">{error}</p>}
+              <button className="btn primary" disabled={saving}>{saving ? 'Saving…' : 'Publish guidance'}</button>
+            </form>
+          )}
+
+          <div className="db-card">
+            <h2>All entries</h2>
+            {loading ? (
+              <p className="db-empty">Loading…</p>
+            ) : visible.length === 0 ? (
+              <p className="db-empty">No guidance entries yet.</p>
+            ) : (
+              <div className="db-list">
+                {visible.map((g) => (
+                  <div key={g.id} className="db-item">
+                    <div className="db-item-head">
+                      <span className="db-item-title">{g.title}</span>
+                      <span className="db-badge">{g.timeline_phase}</span>
+                    </div>
+                    <div className="db-item-meta">{g.hazard_type_detail?.name || g.hazard_type}</div>
+                    <p style={{ fontSize: '.92rem', margin: '8px 0' }}>{g.body}</p>
+                    {canPublish && (
+                      <button className="db-btn db-btn-danger" onClick={() => remove(g.id)}>Delete</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

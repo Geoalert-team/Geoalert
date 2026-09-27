@@ -1,7 +1,8 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import PublicNavbar from '../../components/Navbar/PublicNavbar';
 import { hazardsApi } from '../../api/hazardsApi';
 import { reportsApi } from '../../api/reportApi';
-import Navbar from '../../components/Navbar';
+import '../css/Dashboard.css';
 
 export default function DRRMODashboard() {
   const [hazards, setHazards] = useState(null);
@@ -30,49 +31,55 @@ export default function DRRMODashboard() {
   const resolvedCount = features.filter((f) => f.properties.status === 'Resolved').length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Navbar />
-      <div style={{ flex: 1, overflowY: 'auto', padding: 24, maxWidth: 880, margin: '0 auto', width: '100%' }}>
-        <h2 style={{ marginBottom: 4 }}>DRRMO dashboard</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 20 }}>
-          Monitor active hazard zones and review incident reports from barangay personnel.
-        </p>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 24 }}>
-          {[
-            ['Active hazard zones', features.length],
-            ['Resolved', resolvedCount],
-            ['Reports pending review', reports.length],
-          ].map(([label, value]) => (
-            <div key={label} style={{ border: '1px solid var(--line)', background: 'var(--panel)', padding: 14 }}>
-              <div style={{ fontSize: 24, fontWeight: 700 }}>{value}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{label}</div>
-            </div>
-          ))}
+    <div className="db">
+      <PublicNavbar />
+      <div className="db-wrap">
+        <div className="db-header">
+          <h1>DRRMO dashboard</h1>
+          <p>Monitor active hazard zones and review incident reports from barangay personnel.</p>
         </div>
 
-        <h3>Reports awaiting validation</h3>
-        {reports.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)' }}>Nothing pending.</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {reports.map((r) => (
-              <div key={r.id} style={{ border: '1px solid var(--line)', background: 'var(--panel)', padding: 14 }}>
-                <strong>{r.hazard_type_detail?.name} · {r.barangay_detail?.name}</strong>
-                <p style={{ fontSize: 13, margin: '6px 0' }}>{r.description}</p>
-                <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginBottom: 10 }}>
-                  Reported by {r.submitted_by_name} · {new Date(r.created_at).toLocaleString()}
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn primary" onClick={() => review(r.id, 'Validated')}>Validate</button>
-                  <button className="btn" onClick={() => review(r.id, 'Rejected')}>Reject</button>
-                </div>
-              </div>
-            ))}
+        <div className="db-stats">
+          <div className="db-stat">
+            <div className="db-stat-value">{features.length}</div>
+            <div className="db-stat-label">Active hazard zones</div>
           </div>
-        )}
+          <div className="db-stat">
+            <div className="db-stat-value">{resolvedCount}</div>
+            <div className="db-stat-label">Resolved</div>
+          </div>
+          <div className="db-stat">
+            <div className="db-stat-value">{reports.length}</div>
+            <div className="db-stat-label">Reports pending review</div>
+          </div>
+        </div>
 
-        <p style={{ marginTop: 24, fontSize: 12.5, color: 'var(--text-muted)' }}>
+        <div className="db-card">
+          <h2>Reports awaiting validation</h2>
+          {reports.length === 0 ? (
+            <p className="db-empty">Nothing pending.</p>
+          ) : (
+            <div className="db-list">
+              {reports.map((r) => (
+                <div key={r.id} className="db-item">
+                  <div className="db-item-head">
+                    <span className="db-item-title">{r.hazard_type_detail?.name} · {r.barangay_detail?.name}</span>
+                  </div>
+                  <p style={{ fontSize: '.92rem', margin: '6px 0' }}>{r.description}</p>
+                  <div className="db-item-meta">
+                    Reported by {r.submitted_by_name} · {new Date(r.created_at).toLocaleString()}
+                  </div>
+                  <div className="db-btn-row" style={{ marginTop: 12 }}>
+                    <button className="db-btn db-btn-primary" onClick={() => review(r.id, 'Validated')}>Validate</button>
+                    <button className="db-btn db-btn-outline" onClick={() => review(r.id, 'Rejected')}>Reject</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <p style={{ marginTop: 8, fontSize: '.9rem', color: 'var(--db-soft)' }}>
           To publish a new hazard zone, go to the Map page.
         </p>
       </div>

@@ -1,51 +1,34 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import PublicNavbar from '../../components/Navbar/PublicNavbar';
 import { adminApi } from '../../api/adminApi';
-import Navbar from '../../components/Navbar';
+import '../css/Dashboard.css';
 
-const TABS = ['Users', 'Logs & Performance'];
-const ROLE_OPTIONS = [
-  { id: 1, name: 'System_Admin' },
-  { id: 2, name: 'DRRMO_Officer' },
-  { id: 3, name: 'Barangay_Personnel' },
-];
+const TABS = ['Overview', 'Users', 'Logs'];
 
 export default function AdminDashboard() {
-  const [tab, setTab] = useState('Users');
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Navbar />
-      <div style={{ flex: 1, overflowY: 'auto', padding: 24, maxWidth: 880, margin: '0 auto', width: '100%' }}>
-        <h2 style={{ marginBottom: 4 }}>Admin dashboard</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 16 }}>
-          Manage GeoAlert user accounts and review system activity.
-        </p>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
-          {TABS.map((t) => (
-            <button key={t} className="btn" style={{ borderColor: tab === t ? 'var(--accent)' : 'var(--line)', color: tab === t ? 'var(--accent)' : 'var(--text)' }}
-                    onClick={() => setTab(t)}>{t}</button>
-          ))}
-        </div>
-        {tab === 'Users' && <UsersTab />}
-        {tab === 'Logs & Performance' && <LogsTab />}
-      </div>
-    </div>
-  );
-}
-
-function UsersTab() {
+  const [tab, setTab] = useState('Overview');
+  const [metrics, setMetrics] = useState(null);
   const [users, setUsers] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [roleId, setRoleId] = useState(ROLE_OPTIONS[2].id);
-  const [tempPassword, setTempPassword] = useState(null);
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [newUser, setNewUser] = useState({ full_name: '', email: '', role_id: '' });
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => { refresh(); }, []);
-  async function refresh() {
+  useEffect(() => {
+    adminApi.metrics().then(setMetrics).catch(() => setMetrics(null)).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'Users') refreshUsers();
+    if (tab === 'Logs') adminApi.logs().then(setLogs).catch(() => setLogs([]));
+  }, [tab]);
+
+  async function refreshUsers() {
     try {
-      setUsers(await adminApi.users.list());
+      const data = await adminApi.users.list();
+      setUsers(data.results || data);
     } catch {
       setUsers([]);
     }
@@ -54,125 +37,203 @@ function UsersTab() {
   async function createUser(e) {
     e.preventDefault();
     setError('');
+    setCreating(true);
     try {
-      const res = await adminApi.users.create({ full_name: fullName, email, role_id: roleId });
-      setTempPassword(res.temporary_password);
-      setFullName(''); setEmail(''); setShowForm(false);
-      refresh();
+      await adminApi.users.create(newUser);
+      setNewUser({ full_name: '', email: '', role_id: '' });
+      refreshUsers();
     } catch (err) {
       setError(err.message || 'Could not create user');
+    } finally {
+      setCreating(false);
     }
   }
 
-  async function toggleActive(u) {
-    if (u.is_active) {
-      await adminApi.users.deactivate(u.id);
-    } else {
-      await adminApi.users.update(u.id, { is_active: true });
-    }
-    refresh();
+  async function deactivate(id) {
+    if (!window.confirm('Deactivate this account?')) return;
+    await adminApi.users.deactivate(id);
+    refreshUsers();
   }
 
-  async function resetPassword(u) {
-    const res = await adminApi.users.resetPassword(u.id);
-    setTempPassword(res.temporary_password);
+  async function resetPassword(id) {
+    await adminApi.users.resetPassword(id);
+    window.alert('A password reset was triggered for this user.');
   }
 
   return (
-    <div>
-      {tempPassword && (
-        <div style={{ border: '1px solid var(--sev-green)', background: 'var(--panel)', padding: 12, marginBottom: 16, fontSize: 13 }}>
-          Temporary password: <strong>{tempPassword}</strong>
-          <button className="btn" style={{ marginLeft: 12 }} onClick={() => setTempPassword(null)}>Dismiss</button>
+    <div className="db">
+      <PublicNavbar />
+      <div className="db-wrap">
+        <div className="db-header">
+          <h1>Admin dashboard</h1>
+          <p>System-wide metrics, user accounts, and activity logs.</p>
         </div>
-      )}
-      {error && <div style={{ color: 'var(--sev-red)', fontSize: 13, marginBottom: 12 }}>{error}</div>}
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-        <button className="btn primary" onClick={() => setShowForm((s) => !s)}>{showForm ? 'Cancel' : 'Add user'}</button>
-      </div>
-      {showForm && (
-        <form onSubmit={createUser} style={{ border: '1px solid var(--line)', background: 'var(--panel)', padding: 16, marginBottom: 16 }}>
-          <div className="field"><label>Full name</label><input value={fullName} onChange={(e) => setFullName(e.target.value)} required /></div>
-          <div className="field"><label>Email</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
-          <div className="field">
-            <label>Role</label>
-            <select value={roleId} onChange={(e) => setRoleId(Number(e.target.value))}>
-              {ROLE_OPTIONS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
-          </div>
-          <button className="btn primary">Create</button>
-        </form>
-      )}
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-        <thead>
-          <tr style={{ textAlign: 'left', color: 'var(--text-muted)', borderBottom: '1px solid var(--line)' }}>
-            <th style={{ padding: 8 }}>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((u) => (
-            <tr key={u.id} style={{ borderBottom: '1px solid var(--line)' }}>
-              <td style={{ padding: 8 }}>{u.full_name}</td>
-              <td>{u.email}</td>
-              <td>{u.role?.name}</td>
-              <td style={{ color: u.is_active ? 'var(--sev-green)' : 'var(--sev-red)' }}>{u.is_active ? 'Active' : 'Deactivated'}</td>
-              <td style={{ display: 'flex', gap: 6 }}>
-                <button className="btn" onClick={() => toggleActive(u)}>{u.is_active ? 'Deactivate' : 'Reactivate'}</button>
-                <button className="btn" onClick={() => resetPassword(u)}>Reset password</button>
-              </td>
-            </tr>
+        <div className="db-tabs" role="tablist">
+          {TABS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              role="tab"
+              aria-selected={tab === t}
+              className={`db-tab ${tab === t ? 'is-active' : ''}`}
+              onClick={() => setTab(t)}>
+              {t}
+            </button>
           ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+        </div>
 
-function LogsTab() {
-  const [logs, setLogs] = useState([]);
-  const [metrics, setMetrics] = useState(null);
+        {tab === 'Overview' && (
+          loading ? (
+            <p style={{ color: 'var(--db-soft)' }}>Loading metrics…</p>
+          ) : metrics ? (
+            <>
+              {/* Simple number/string/boolean fields become stat cards.
+                  Arrays/objects (e.g. a list of recent users) are NOT
+                  stat cards — dumping raw JSON there breaks the layout. */}
+              <div className="db-stats">
+                {Object.entries(metrics)
+                  .filter(([, value]) => value === null || typeof value !== 'object')
+                  .map(([key, value]) => (
+                    <div key={key} className="db-stat">
+                      <div className="db-stat-value">{String(value)}</div>
+                      <div className="db-stat-label">{key.replace(/_/g, ' ')}</div>
+                    </div>
+                  ))}
+              </div>
 
-  useEffect(() => {
-    adminApi.logs().then((res) => setLogs(res.results || [])).catch(() => setLogs([]));
-    adminApi.metrics().then(setMetrics).catch(() => setMetrics(null));
-  }, []);
+              {/* Any array/object fields render as their own readable card
+                  instead of being skipped silently or JSON-dumped. */}
+              {Object.entries(metrics)
+                .filter(([, value]) => value !== null && typeof value === 'object')
+                .map(([key, value]) => (
+                  <div key={key} className="db-card">
+                    <h2>{key.replace(/_/g, ' ')}</h2>
+                    {Array.isArray(value) ? (
+                      value.length === 0 ? (
+                        <p className="db-empty">Nothing here yet.</p>
+                      ) : (
+                        <div className="db-list">
+                          {value.map((item, i) => (
+                            <div key={item.id ?? i} className="db-item">
+                              {typeof item === 'object' && item !== null ? (
+                                Object.entries(item).map(([k, v]) => (
+                                  <div key={k} className="db-item-meta">
+                                    <strong style={{ color: 'var(--db-heading)' }}>{k.replace(/_/g, ' ')}:</strong>{' '}
+                                    {typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v)}
+                                  </div>
+                                ))
+                              ) : (
+                                <span>{String(item)}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    ) : (
+                      <div className="db-list">
+                        {Object.entries(value).map(([k, v]) => (
+                          <div key={k} className="db-item">
+                            <div className="db-item-title">{k.replace(/_/g, ' ')}</div>
+                            <div className="db-item-meta">
+                              {typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </>
+          ) : (
+            <p style={{ color: 'var(--db-soft)' }}>Metrics unavailable right now.</p>
+          )
+        )}
 
-  return (
-    <div>
-      {metrics && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 20 }}>
-          {[
-            ['Total users', metrics.total_users],
-            ['Active users', metrics.active_users],
-            ['Active hazards', metrics.active_hazards],
-            ['Published guidance', metrics.published_guidance],
-            ['System status', metrics.system_status],
-          ].map(([label, value]) => (
-            <div key={label} style={{ border: '1px solid var(--line)', background: 'var(--panel)', padding: 12 }}>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>{value}</div>
-              <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{label}</div>
+        {tab === 'Users' && (
+          <div className="db-grid-2">
+            <form onSubmit={createUser} className="db-card">
+              <h2>Add a user</h2>
+              <p className="db-card-sub">Create an account for barangay or DRRMO personnel.</p>
+              <div className="field">
+                <label>Full name</label>
+                <input required value={newUser.full_name}
+                  onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })} />
+              </div>
+              <div className="field">
+                <label>Email</label>
+                <input type="email" required value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
+              </div>
+              <div className="field">
+                <label>Role ID</label>
+                <input required value={newUser.role_id}
+                  onChange={(e) => setNewUser({ ...newUser, role_id: e.target.value })}
+                  placeholder="e.g. 2 for DRRMO Officer" />
+              </div>
+              {error && <p className="error-text">{error}</p>}
+              <button className="btn primary" disabled={creating}>
+                {creating ? 'Creating…' : 'Create user'}
+              </button>
+            </form>
+
+            <div className="db-card">
+              <h2>All users</h2>
+              <p className="db-card-sub">{users.length} account{users.length === 1 ? '' : 's'}</p>
+              {users.length === 0 ? (
+                <p className="db-empty">No users yet.</p>
+              ) : (
+                <table className="db-table">
+                  <thead>
+                    <tr><th>Name</th><th>Email</th><th>Role</th><th /></tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u) => (
+                      <tr key={u.id}>
+                        <td>{u.full_name}</td>
+                        <td>{u.email}</td>
+                        <td>{u.role?.name || u.role}</td>
+                        <td>
+                          <div className="db-btn-row">
+                            <button className="db-btn db-btn-outline" onClick={() => resetPassword(u.id)}>Reset password</button>
+                            <button className="db-btn db-btn-danger" onClick={() => deactivate(u.id)}>Deactivate</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
-          ))}
-        </div>
-      )}
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
-        <thead>
-          <tr style={{ textAlign: 'left', color: 'var(--text-muted)', borderBottom: '1px solid var(--line)' }}>
-            <th style={{ padding: 8 }}>Time</th><th>User</th><th>Action</th><th>Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          {logs.map((l) => (
-            <tr key={l.id} style={{ borderBottom: '1px solid var(--line)' }}>
-              <td style={{ padding: 8 }}>{new Date(l.created_at).toLocaleString()}</td>
-              <td>{l.user_name}</td>
-              <td>{l.action}</td>
-              <td>{l.details}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          </div>
+        )}
+
+        {tab === 'Logs' && (
+          <div className="db-card">
+            <h2>Audit logs</h2>
+            <p className="db-card-sub">Recent system activity.</p>
+            {logs.length === 0 ? (
+              <p className="db-empty">No activity recorded yet.</p>
+            ) : (
+              <div className="db-list">
+                {(logs.results || logs).map((log) => (
+                  <div key={log.id} className="db-item">
+                    <div className="db-item-head">
+                      <span className="db-item-title">{log.action || log.event}</span>
+                      <span className="db-item-meta">
+                        {new Date(log.created_at || log.timestamp).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="db-item-meta">
+                      {log.actor_name || log.user} {log.detail ? `— ${log.detail}` : ''}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
