@@ -181,7 +181,10 @@ class IncidentReportListCreateView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        report = serializer.save(submitted_by=request.user)
+        report = serializer.save(
+            submitted_by=request.user,
+            reporter_name=request.user.full_name,
+        )
         return Response(
             IncidentReportSerializer(report).data,
             status=status.HTTP_201_CREATED
@@ -206,8 +209,12 @@ class IncidentReportReviewView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        extra = {}
+        if serializer.validated_data.get('status') == 'Validated':
+            extra = {'validated_by': request.user, 'validated_at': timezone.now()}
         report = serializer.save(
             reviewed_by=request.user,
-            reviewed_at=timezone.now()
+            reviewed_at=timezone.now(),
+            **extra,
         )
         return Response(IncidentReportSerializer(report).data)

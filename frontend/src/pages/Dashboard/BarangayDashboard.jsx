@@ -17,6 +17,9 @@ export default function BarangayDashboard() {
   const [barangayId, setBarangayId] = useState('');
   const [hazardTypeId, setHazardTypeId] = useState('');
   const [description, setDescription] = useState('');
+  const [dead, setDead] = useState(0);
+  const [injured, setInjured] = useState(0);
+  const [missing, setMissing] = useState(0);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -44,8 +47,14 @@ export default function BarangayDashboard() {
         barangay: barangayId || barangays[0]?.id,
         hazard_type: hazardTypeId || hazardTypes[0]?.id,
         description,
+        casualties_dead: Number(dead) || 0,
+        casualties_injured: Number(injured) || 0,
+        casualties_missing: Number(missing) || 0,
       });
       setDescription('');
+      setDead(0);
+      setInjured(0);
+      setMissing(0);
       refreshReports();
     } finally {
       setBusy(false);
@@ -81,6 +90,29 @@ export default function BarangayDashboard() {
               <textarea rows={3} required value={description} onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe the situation — location detail, how bad it looks, anyone affected" />
             </div>
+
+            <fieldset className="db-fieldset">
+              <legend>Casualties &amp; injured</legend>
+              <div className="db-field-row db-field-row-3">
+                <div className="field">
+                  <label htmlFor="rep-dead">Casualties (dead)</label>
+                  <input id="rep-dead" type="number" min="0" inputMode="numeric"
+                    value={dead} onChange={(e) => setDead(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label htmlFor="rep-injured">Injured</label>
+                  <input id="rep-injured" type="number" min="0" inputMode="numeric"
+                    value={injured} onChange={(e) => setInjured(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label htmlFor="rep-missing">Missing</label>
+                  <input id="rep-missing" type="number" min="0" inputMode="numeric"
+                    value={missing} onChange={(e) => setMissing(e.target.value)} />
+                </div>
+              </div>
+              <p className="db-hint">Enter 0 if no one was hurt.</p>
+            </fieldset>
+
             <button className="btn primary" disabled={busy}>{busy ? 'Submitting…' : 'Submit report'}</button>
           </form>
 
@@ -94,10 +126,15 @@ export default function BarangayDashboard() {
                 {reports.map((r) => (
                   <div key={r.id} className="db-item">
                     <div className="db-item-head">
-                      <span className="db-item-title">{r.hazard_type_detail?.name} · {r.barangay_detail?.name}</span>
+                      <span className="db-item-title">{r.hazard_type_details?.name} · {r.barangay_details?.name}</span>
                       <span className={`db-badge ${STATUS_BADGE[r.status] || ''}`}>{r.status}</span>
                     </div>
                     <p style={{ fontSize: '.92rem', margin: '6px 0' }}>{r.description}</p>
+                    <div className="db-chips">
+                      <span className={`db-chip ${r.casualties_dead > 0 ? 'db-chip-danger' : ''}`}>Casualties: {r.casualties_dead ?? 0}</span>
+                      <span className={`db-chip ${r.casualties_injured > 0 ? 'db-chip-warn' : ''}`}>Injured: {r.casualties_injured ?? 0}</span>
+                      <span className="db-chip">Missing: {r.casualties_missing ?? 0}</span>
+                    </div>
                     <div className="db-item-meta">{new Date(r.created_at).toLocaleString()}</div>
                     {r.review_note && <div className="db-item-meta" style={{ marginTop: 4 }}>Note: {r.review_note}</div>}
                   </div>

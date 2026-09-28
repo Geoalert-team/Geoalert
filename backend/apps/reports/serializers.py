@@ -20,12 +20,21 @@ class IncidentReportSerializer(serializers.ModelSerializer):
             'hazard_type',
             'hazard_type_details',
             'description',
+            'casualties_dead',
+            'casualties_injured',
+            'casualties_missing',
+            'displaced',
+            'reporter_name',
+            'agency',
+            'position',
+            'severity_estimate',
             'status',
             'review_note',
             'reviewed_by',
             'reviewed_by_name',
             'created_at',
             'reviewed_at',
+            'validated_at',
         ]
 
 class IncidentReportCreateSerializer(serializers.ModelSerializer):
@@ -35,7 +44,18 @@ class IncidentReportCreateSerializer(serializers.ModelSerializer):
             'barangay',
             'hazard_type',
             'description',
+            'casualties_dead',
+            'casualties_injured',
+            'casualties_missing',
+            'agency',
+            'position',
+            'severity_estimate',
         ]
+        extra_kwargs = {
+            'casualties_dead':    {'min_value': 0, 'required': False},
+            'casualties_injured': {'min_value': 0, 'required': False},
+            'casualties_missing': {'min_value': 0, 'required': False},
+        }
 
 class IncidentReportReviewSerializer(serializers.ModelSerializer):
     class Meta:
