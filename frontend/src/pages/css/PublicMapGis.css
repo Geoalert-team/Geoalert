@@ -212,3 +212,60 @@
 @media (prefers-reduced-motion: reduce) {
   .pm-drop, .pm-basemap button { transition: none; }
 }
+/* ---------- Editable "What to do" steps ---------- */
+.pm-guide .pm-btn { font-family: inherit; cursor: pointer; }
+.pm-guide .pm-btn-outline { background: transparent; }
+.pm-guide .pm-btn-outline:hover { background: var(--pm-navy); color: var(--pm-white); }
+.pm-guide .pm-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.pm-phase-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.pm-phase-tab {
+  flex: 1;
+  min-height: 34px;
+  border: 1px solid var(--pm-line);
+  border-radius: 999px;
+  background: var(--pm-white);
+  color: var(--pm-body);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: .88rem;
+  cursor: pointer;
+}
+.pm-phase-tab:hover { background: var(--pm-mist); }
+.pm-phase-tab.is-active { background: var(--pm-navy); border-color: var(--pm-navy); color: var(--pm-white); }
+
+.pm-guide-tools { display: grid; gap: 8px; margin-top: 16px; }
+
+.pm-guide-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--pm-heading);
+  font-weight: 700;
+  font-size: .92rem;
+}
+.pm-guide-form textarea {
+  width: 100%;
+  min-height: 160px;
+  padding: 10px 12px;
+  border: 1px solid var(--pm-line);
+  border-radius: 12px;
+  background: var(--pm-white);
+  color: var(--pm-heading);
+  font: inherit;
+  resize: vertical;
+}
+.pm-guide-form textarea:focus-visible { outline: 3px solid var(--pm-navy); outline-offset: 1px; }
+.pm-guide-hint { margin-top: 6px; color: var(--pm-soft); font-size: .86rem; }
+.pm-guide-error { margin-top: 8px; color: #a12f2f; font-weight: 700; font-size: .9rem; }
+.pm-guide-link {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #a12f2f;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: .88rem;
+  text-decoration: underline;
+  cursor: pointer;
+}

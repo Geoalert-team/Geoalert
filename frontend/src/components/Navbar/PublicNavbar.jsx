@@ -19,19 +19,16 @@ const ROLE_LINKS = {
   System_Admin: [
     { to: "/app/dashboard", label: "Dashboard" },
     { to: "/map", label: "Map" },
-    { to: "/app/guidance", label: "Guidance" },
     { to: "/app/history", label: "History" },
   ],
   DRRMO_Officer: [
     { to: "/app/dashboard", label: "Dashboard" },
     { to: "/map", label: "Map" },
-    { to: "/app/guidance", label: "Guidance" },
     { to: "/app/history", label: "History" },
   ],
   Barangay_Personnel: [
     { to: "/app/dashboard", label: "Dashboard" },
     { to: "/map", label: "Map" },
-    { to: "/app/guidance", label: "Guidance" },
   ],
 };
 

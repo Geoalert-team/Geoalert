@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import { hazardIconPath, DRRMO_HOTLINE } from '../components/Map/hazardInfo';
 import { GUIDES, PHASES, UNIVERSAL_TIPS, VIDEOS } from '../data/safetyGuides';
+import { hazardsApi } from '../api/hazardsApi';
+import { guidanceApi } from '../api/guidanceApi';
 import logo from '../assets/images/logo1.png';
-import './css/PublicHome.css'; // shared ph- styles: sections, buttons, footer
-import './css/WhatToDo.css';   // styles only used on this page (wt-)
+import './css/PublicHome.css';
+import './css/WhatToDo.css';
 
 const HAZARDS = Object.keys(GUIDES); // ['Flood', 'Landslide', 'Fire']
 
-// Simple line icons for the universal tips
 const TIP_ICONS = {
   connected: 'M5 3h14v18H5z M9 18h6',
   routes: 'M4 19c4 0 4-7 8-7s4 7 8 7 M12 5v3 M9 8h6',
@@ -17,16 +18,57 @@ const TIP_ICONS = {
   kit: 'M4 8h16v12H4z M9 8V5h6v3 M12 11v6 M9 14h6',
 };
 
+// timeline_phase values expected by the backend (Before/During/After only).
+// First aid is not a backend phase, so it stays static.
+const PHASE_TO_API = { before: 'Before', during: 'During', after: 'After' };
+
 export default function WhatToDo() {
   const [hazard, setHazard] = useState('Flood');
   const [phase, setPhase] = useState('before');
-  const [packed, setPacked] = useState({}); // { "Flood:Whistle": true }
+  const [packed, setPacked] = useState({});
   const [videoId, setVideoId] = useState(VIDEOS[0]?.id);
 
-  const guide = GUIDES[hazard];
-  const currentPhase = PHASES.find((p) => p.key === phase);
+  const [hazardTypeMap, setHazardTypeMap] = useState({}); // { Flood: '<uuid>', ... }
+  const [liveArticles, setLiveArticles] = useState([]);
+  const [loadingArticles, setLoadingArticles] = useState(false);
 
-  // Videos for the chosen hazard come first in the list
+  const guide = GUIDES[hazard];
+  const currentPhase = PHASES.find((p) => p.key === phase) || PHASES[0];
+
+  // One numbered step per line of every published article, oldest first
+  const liveSteps = [...liveArticles]
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    .flatMap((a) => (a.body || '').split('\n').map((s) => s.trim()).filter(Boolean));
+
+  // Load real hazard type IDs once, so guidance can be filtered by the backend hazard_type
+  useEffect(() => {
+    hazardsApi
+      .types()
+      .then((types) => {
+        const list = Array.isArray(types) ? types : types?.results || [];
+        const map = {};
+        list.forEach((t) => {
+          map[t.name] = t.id;
+        });
+        setHazardTypeMap(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Fetch real guidance whenever the hazard or phase changes (not for first aid)
+  useEffect(() => {
+    if (phase === 'firstaid') return;
+    const hazardTypeId = hazardTypeMap[hazard];
+    if (!hazardTypeId) return;
+
+    setLoadingArticles(true);
+    guidanceApi
+      .list({ hazard_type: hazardTypeId, phase: PHASE_TO_API[phase] })
+      .then((data) => setLiveArticles(Array.isArray(data) ? data : data?.results || []))
+      .catch(() => setLiveArticles([]))
+      .finally(() => setLoadingArticles(false));
+  }, [hazard, phase, hazardTypeMap]);
+
   const sortedVideos = [...VIDEOS].sort(
     (a, b) => Number(b.hazard === hazard) - Number(a.hazard === hazard),
   );
@@ -67,7 +109,6 @@ export default function WhatToDo() {
         {/* ============ HAZARD GUIDE ============ */}
         <section className="ph-section">
           <div className="ph-container">
-            {/* Hazard switcher */}
             <div className="wt-hazard-tabs" role="tablist" aria-label="Choose a hazard">
               {HAZARDS.map((name) => (
                 <button
@@ -78,7 +119,9 @@ export default function WhatToDo() {
                   className={`wt-hazard-tab wt-hazard-${name.toLowerCase()} ${hazard === name ? 'is-active' : ''}`}
                   onClick={() => chooseHazard(name)}
                 >
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d={hazardIconPath(name)} /></svg>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d={hazardIconPath(name)} />
+                  </svg>
                   {name}
                 </button>
               ))}
@@ -110,25 +153,46 @@ export default function WhatToDo() {
             </div>
 
             <div className="wt-guide-body">
-              {/* Steps for the chosen phase */}
               <div className="wt-steps-card" role="tabpanel">
                 <h3>
                   {currentPhase.key === 'firstaid'
                     ? `First aid for ${hazard.toLowerCase()} injuries`
                     : `${currentPhase.title} a ${hazard.toLowerCase()}`}
                 </h3>
-                <ol className="wt-steps">
-                  {guide.phases[phase].map((step) => (
-                    <li key={step}>{step}</li>
-                  ))}
-                </ol>
+
+                {currentPhase.key === 'firstaid' ? (
+                  // First aid is always the static sample content
+                  <ol className="wt-steps">
+                    {guide.phases.firstaid.map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ol>
+                ) : loadingArticles ? (
+                  <p className="wt-muted">Loading guidance…</p>
+                ) : liveSteps.length > 0 ? (
+                  // Real, DRRMO-published guidance, one numbered step per line
+                  <ol className="wt-steps">
+                    {liveSteps.map((step, i) => (
+                      <li key={`${i}-${step}`}>{step}</li>
+                    ))}
+                  </ol>
+                ) : (
+                  // Fallback to static content until DRRMO publishes something for this combination
+                  <ol className="wt-steps">
+                    {guide.phases[phase].map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ol>
+                )}
               </div>
 
-              {/* Go-bag checklist */}
+              {/* Go-bag checklist (static) */}
               <aside className="wt-supplies-card">
                 <div className="wt-supplies-head">
                   <h3>Go-bag checklist</h3>
-                  <span className="wt-supplies-count">{packedCount} of {guide.supplies.length} packed</span>
+                  <span className="wt-supplies-count">
+                    {packedCount} of {guide.supplies.length} packed
+                  </span>
                 </div>
                 <p className="wt-supplies-note">
                   Pack these before {hazard.toLowerCase()} season and keep the bag somewhere easy to grab.
@@ -167,7 +231,9 @@ export default function WhatToDo() {
               {UNIVERSAL_TIPS.map((tip) => (
                 <li key={tip.key} className="wt-tip">
                   <span className="wt-tip-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d={TIP_ICONS[tip.key]} /></svg>
+                    <svg viewBox="0 0 24 24">
+                      <path d={TIP_ICONS[tip.key]} />
+                    </svg>
                   </span>
                   <h3>{tip.title}</h3>
                   <p>{tip.text}</p>
@@ -203,12 +269,7 @@ export default function WhatToDo() {
                       <span className="wt-video-tag">{activeVideo.hazard}</span>
                       <h3>{activeVideo.title}</h3>
                     </div>
-                    <a
-                      className="wt-youtube-link"
-                      href={`https://www.youtube.com/watch?v=${activeVideo.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                    <a className="wt-youtube-link" href={`https://www.youtube.com/watch?v=${activeVideo.id}`} target="_blank" rel="noopener noreferrer">
                       Watch on YouTube
                     </a>
                   </div>
@@ -256,7 +317,7 @@ export default function WhatToDo() {
         </section>
       </main>
 
-      {/* ============ FOOTER (same as homepage) ============ */}
+      {/* ============ FOOTER ============ */}
       <footer className="ph-footer">
         <div className="ph-container ph-footer-inner">
           <div className="ph-footer-brand">

@@ -8,7 +8,6 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import WhatToDo from "./pages/WhatToDo";
 import Dashboard from "./pages/Dashboard";
-import GuidanceLibrary from "./pages/GuidanceLibrary";
 import HistoricalData from "./pages/HistoricalData";
 
 function Gate({ children, roles }) {
@@ -31,9 +30,8 @@ function AppRoutes() {
       <Route path="/what-to-do" element={<WhatToDo />} />
       <Route path="/login" element={<Login />} />
 
-      {/* Logged-in users */}
+      {/* Logged-in staff */}
       <Route path="/app/dashboard" element={<Gate><Dashboard /></Gate>} />
-      <Route path="/app/guidance" element={<Gate><GuidanceLibrary /></Gate>} />
       <Route
         path="/app/history"
         element={

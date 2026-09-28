@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { severityInfo, hazardIconPath, hazardColor, guidanceFor, DRRMO_HOTLINE } from './hazardInfo';
+import { severityInfo, hazardIconPath, hazardColor, DRRMO_HOTLINE } from './hazardInfo';
 import VerificationNotice from './VerificationNotice';
+import GuidanceSteps from './GuidanceSteps';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -15,7 +16,7 @@ function formatDate(iso) {
 }
 
 // Slides in from the left (desktop) or up from the bottom (mobile)
- export default function HazardPanel({ item, open, onClose, onVerified }) {
+export default function HazardPanel({ item, open, onClose, onVerified }) {
   const [tab, setTab] = useState('overview');
   const closeRef = useRef(null);
 
@@ -103,11 +104,7 @@ function formatDate(iso) {
             {tab === 'todo' && (
               <>
                 <h3>What to do</h3>
-                <ol className="pm-steps">
-                  {guidanceFor(item.type).map((step) => (
-                    <li key={step}>{step}</li>
-                  ))}
-                </ol>
+                <GuidanceSteps type={item.type} />
                 <div className="pm-panel-actions">
                   <a className="pm-btn pm-btn-primary" href={DRRMO_HOTLINE.tel}>
                     Call DRRMO {DRRMO_HOTLINE.label}
