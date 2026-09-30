@@ -32,6 +32,20 @@ function stepsFrom(body = '') {
   return body.split('\n').map((s) => s.trim()).filter(Boolean);
 }
 
+// Combines several articles' steps into one list with no repeated lines.
+// This is the actual fix: two guidance rows for the same hazard type + phase
+// (e.g. saved twice, or a stray leftover row) used to just get concatenated,
+// so a line stored in both showed up twice.
+function dedupe(lines) {
+  const seen = new Set();
+  return lines.filter((line) => {
+    const key = line.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function messageFor(err) {
   const status = err?.response?.status;
   if (status === 401 || status === 403) {
@@ -47,7 +61,7 @@ export default function GuidanceSteps({ type }) {
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState('During');
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
+  const [draftSteps, setDraftSteps] = useState(['']);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -88,32 +102,45 @@ export default function GuidanceSteps({ type }) {
 
   const hasLive = articles.length > 0;
   const phaseArticles = articles.filter((a) => a.timeline_phase === phase);
-  const liveSteps = phaseArticles.flatMap((a) => stepsFrom(a.body));
+  const liveSteps = dedupe(phaseArticles.flatMap((a) => stepsFrom(a.body)));
   const steps = hasLive ? liveSteps : guidanceFor(type);
 
-  // What the editor starts with for a given phase
+  // What the editor starts with for a given phase — one box per step,
+  // duplicates already removed so old repeated rows don't reappear.
   function seedFor(p) {
-    const existing = articles
-      .filter((a) => a.timeline_phase === p)
-      .flatMap((a) => stepsFrom(a.body));
-    if (existing.length) return existing.join('\n');
-    return hasLive ? '' : guidanceFor(type).join('\n');
+    const existing = dedupe(
+      articles.filter((a) => a.timeline_phase === p).flatMap((a) => stepsFrom(a.body)),
+    );
+    if (existing.length) return existing;
+    return hasLive ? [''] : [...guidanceFor(type)];
   }
 
   function startEdit() {
-    setDraft(seedFor(phase));
+    setDraftSteps(seedFor(phase));
     setError('');
     setEditing(true);
   }
 
   function changePhaseInEditor(p) {
     setPhase(p);
-    setDraft(seedFor(p));
+    setDraftSteps(seedFor(p));
     setError('');
   }
 
+  function updateDraftStep(i, value) {
+    setDraftSteps((prev) => prev.map((s, idx) => (idx === i ? value : s)));
+  }
+
+  function removeDraftStep(i) {
+    setDraftSteps((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  function addDraftStep() {
+    setDraftSteps((prev) => [...prev, '']);
+  }
+
   async function save() {
-    const lines = stepsFrom(draft);
+    const lines = dedupe(draftSteps.map((s) => s.trim()).filter(Boolean));
     if (lines.length === 0) {
       setError('Add at least one step.');
       return;
@@ -182,21 +209,43 @@ export default function GuidanceSteps({ type }) {
       <div className="pm-guide">
         {phaseTabs(changePhaseInEditor)}
         <div className="pm-guide-form">
-          <label htmlFor="pm-guide-draft">
+          <label>
             {hazardType.name} steps for {phase.toLowerCase()}
           </label>
-          <textarea
-            id="pm-guide-draft"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="One step per line"
-          />
           <p className="pm-guide-hint">
-            Each line becomes one numbered step. This applies to every {hazardType.name.toLowerCase()} zone.
+            One box per step. This applies to every {hazardType.name.toLowerCase()} zone.
           </p>
+
+          <ol className="pm-guide-steps">
+            {draftSteps.map((step, i) => (
+              <li key={i} className="pm-guide-step">
+                <span className="pm-guide-step-num" aria-hidden="true">{i + 1}</span>
+                <textarea
+                  value={step}
+                  onChange={(e) => updateDraftStep(i, e.target.value)}
+                  rows={2}
+                  aria-label={`Step ${i + 1}`}
+                />
+                <button
+                  type="button"
+                  className="pm-guide-remove"
+                  aria-label={`Remove step ${i + 1}`}
+                  onClick={() => removeDraftStep(i)}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
+              </li>
+            ))}
+          </ol>
+
+          <button type="button" className="pm-btn pm-btn-outline pm-guide-add" onClick={addDraftStep}>
+            + Add step
+          </button>
+
           {phaseArticles.length > 1 && (
             <p className="pm-guide-hint">
-              This phase has {phaseArticles.length} guidance articles. Saving combines them into one.
+              This phase had {phaseArticles.length} separate guidance entries — saving combines
+              them into one and removes any repeated steps.
             </p>
           )}
           {error && <p className="pm-guide-error" role="alert">{error}</p>}

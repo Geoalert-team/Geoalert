@@ -9,11 +9,13 @@ from apps.accounts.models import User
 from apps.hazards.models import HazardZone
 from apps.guidance.models import GuidanceContent
 from apps.admin_dashboard.models import AuditLog
+from apps.accounts.models import User, Role
 from apps.admin_dashboard.serializers import (
     UserListSerializer,
     UserCreateSerializer,
     UserUpdateSerializer,
     AuditLogSerializer,
+    RolesSerializer,
 )
 from utils.permissions import IsSystemAdmin
 
@@ -225,3 +227,16 @@ class AuditLogListView(APIView):
         page = paginator.paginate_queryset(logs, request)
         serializer = AuditLogSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
+    
+
+class RolesListView(APIView):
+    """
+    GET /api/admin-dashboard/roles/
+    Returns all roles, for populating the role dropdown on user creation.
+    System Admin only.
+    """
+    permission_classes = [IsAuthenticated, IsSystemAdmin]
+
+    def get(self, request):
+        roles = Role.objects.all().order_by('id')
+        return Response(RolesSerializer(roles, many=True).data)

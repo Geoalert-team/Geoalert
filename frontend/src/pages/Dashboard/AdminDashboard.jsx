@@ -9,6 +9,7 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState('Overview');
   const [metrics, setMetrics] = useState(null);
   const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -16,13 +17,29 @@ export default function AdminDashboard() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
 
+  // Shown after creating a user or resetting a password — the backend only
+  // returns the plain temporary password this one time, so it has to be
+  // shown now or it's gone.
+  const [revealedPassword, setRevealedPassword] = useState(null); // { email, password }
+  const [copied, setCopied] = useState(false);
+
   useEffect(() => {
     adminApi.metrics().then(setMetrics).catch(() => setMetrics(null)).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
-    if (tab === 'Users') refreshUsers();
+    if (tab === 'Users') {
+      refreshUsers();
+      if (roles.length === 0) {
+        adminApi.roles().then((data) => {
+          const list = data.results || data;
+          setRoles(list);
+          if (list[0]) setNewUser((u) => (u.role_id ? u : { ...u, role_id: list[0].id }));
+        }).catch(() => setRoles([]));
+      }
+    }
     if (tab === 'Logs') adminApi.logs().then(setLogs).catch(() => setLogs([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
   async function refreshUsers() {
@@ -39,8 +56,10 @@ export default function AdminDashboard() {
     setError('');
     setCreating(true);
     try {
-      await adminApi.users.create(newUser);
-      setNewUser({ full_name: '', email: '', role_id: '' });
+      const result = await adminApi.users.create(newUser);
+      setRevealedPassword({ email: newUser.email, password: result.temporary_password });
+      setCopied(false);
+      setNewUser({ full_name: '', email: '', role_id: roles[0]?.id || '' });
       refreshUsers();
     } catch (err) {
       setError(err.message || 'Could not create user');
@@ -55,9 +74,14 @@ export default function AdminDashboard() {
     refreshUsers();
   }
 
-  async function resetPassword(id) {
-    await adminApi.users.resetPassword(id);
-    window.alert('A password reset was triggered for this user.');
+  async function resetPassword(id, email) {
+    const result = await adminApi.users.resetPassword(id);
+    setRevealedPassword({ email, password: result.temporary_password });
+    setCopied(false);
+  }
+
+  function copyPassword() {
+    navigator.clipboard.writeText(revealedPassword.password).then(() => setCopied(true));
   }
 
   return (
@@ -88,9 +112,6 @@ export default function AdminDashboard() {
             <p style={{ color: 'var(--db-soft)' }}>Loading metrics…</p>
           ) : metrics ? (
             <>
-              {/* Simple number/string/boolean fields become stat cards.
-                  Arrays/objects (e.g. a list of recent users) are NOT
-                  stat cards — dumping raw JSON there breaks the layout. */}
               <div className="db-stats">
                 {Object.entries(metrics)
                   .filter(([, value]) => value === null || typeof value !== 'object')
@@ -102,8 +123,6 @@ export default function AdminDashboard() {
                   ))}
               </div>
 
-              {/* Any array/object fields render as their own readable card
-                  instead of being skipped silently or JSON-dumped. */}
               {Object.entries(metrics)
                 .filter(([, value]) => value !== null && typeof value === 'object')
                 .map(([key, value]) => (
@@ -152,30 +171,78 @@ export default function AdminDashboard() {
 
         {tab === 'Users' && (
           <div className="db-grid-2">
-            <form onSubmit={createUser} className="db-card">
-              <h2>Add a user</h2>
-              <p className="db-card-sub">Create an account for barangay or DRRMO personnel.</p>
-              <div className="field">
-                <label>Full name</label>
-                <input required value={newUser.full_name}
-                  onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })} />
-              </div>
-              <div className="field">
-                <label>Email</label>
-                <input type="email" required value={newUser.email}
-                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
-              </div>
-              <div className="field">
-                <label>Role ID</label>
-                <input required value={newUser.role_id}
-                  onChange={(e) => setNewUser({ ...newUser, role_id: e.target.value })}
-                  placeholder="e.g. 2 for DRRMO Officer" />
-              </div>
-              {error && <p className="error-text">{error}</p>}
-              <button className="btn primary" disabled={creating}>
-                {creating ? 'Creating…' : 'Create user'}
-              </button>
-            </form>
+            <div>
+              {revealedPassword && (
+                <div
+                  className="db-card"
+                  style={{ marginBottom: 16, border: '2px solid #2563eb', background: '#eff6ff' }}
+                >
+                  <h2 style={{ margin: 0 }}>Temporary password for {revealedPassword.email}</h2>
+                  <p className="db-card-sub" style={{ marginBottom: 12 }}>
+                    This is shown once. Copy it now and share it with the user securely.
+                  </p>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <code
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        background: '#fff',
+                        border: '1px solid var(--db-line, #cbd5e1)',
+                        borderRadius: 8,
+                        fontFamily: 'monospace',
+                        fontSize: 15,
+                        wordBreak: 'break-all',
+                      }}
+                    >
+                      {revealedPassword.password}
+                    </code>
+                    <button type="button" className="btn" onClick={copyPassword}>
+                      {copied ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ marginTop: 10 }}
+                    onClick={() => setRevealedPassword(null)}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
+
+              <form onSubmit={createUser} className="db-card">
+                <h2>Add a user</h2>
+                <p className="db-card-sub">Create an account for barangay or DRRMO personnel.</p>
+                <div className="field">
+                  <label>Full name</label>
+                  <input required value={newUser.full_name}
+                    onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })} />
+                </div>
+                <div className="field">
+                  <label>Email</label>
+                  <input type="email" required value={newUser.email}
+                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
+                </div>
+                <div className="field">
+                  <label>Role</label>
+                  <select
+                    required
+                    value={newUser.role_id}
+                    onChange={(e) => setNewUser({ ...newUser, role_id: e.target.value })}
+                  >
+                    {roles.length === 0 && <option value="">Loading roles…</option>}
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
+                {error && <p className="error-text">{error}</p>}
+                <button className="btn primary" disabled={creating || roles.length === 0}>
+                  {creating ? 'Creating…' : 'Create user'}
+                </button>
+              </form>
+            </div>
 
             <div className="db-card">
               <h2>All users</h2>
@@ -195,7 +262,7 @@ export default function AdminDashboard() {
                         <td>{u.role?.name || u.role}</td>
                         <td>
                           <div className="db-btn-row">
-                            <button className="db-btn db-btn-outline" onClick={() => resetPassword(u.id)}>Reset password</button>
+                            <button className="db-btn db-btn-outline" onClick={() => resetPassword(u.id, u.email)}>Reset password</button>
                             <button className="db-btn db-btn-danger" onClick={() => deactivate(u.id)}>Deactivate</button>
                           </div>
                         </td>

@@ -212,7 +212,7 @@
 @media (prefers-reduced-motion: reduce) {
   .pm-drop, .pm-basemap button { transition: none; }
 }
-/* ---------- Editable "What to do" steps ---------- */
+/* ---------- Editable "What to do" steps: one box per step ---------- */
 .pm-guide .pm-btn { font-family: inherit; cursor: pointer; }
 .pm-guide .pm-btn-outline { background: transparent; }
 .pm-guide .pm-btn-outline:hover { background: var(--pm-navy); color: var(--pm-white); }
@@ -243,18 +243,6 @@
   font-weight: 700;
   font-size: .92rem;
 }
-.pm-guide-form textarea {
-  width: 100%;
-  min-height: 160px;
-  padding: 10px 12px;
-  border: 1px solid var(--pm-line);
-  border-radius: 12px;
-  background: var(--pm-white);
-  color: var(--pm-heading);
-  font: inherit;
-  resize: vertical;
-}
-.pm-guide-form textarea:focus-visible { outline: 3px solid var(--pm-navy); outline-offset: 1px; }
 .pm-guide-hint { margin-top: 6px; color: var(--pm-soft); font-size: .86rem; }
 .pm-guide-error { margin-top: 8px; color: #a12f2f; font-weight: 700; font-size: .9rem; }
 .pm-guide-link {
@@ -269,3 +257,60 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* One numbered box per step, instead of one big textarea — this is what
+   actually fixes the "everything merged together" look: each step is its
+   own clearly separated field instead of long sentences wrapping inside
+   a single cramped box. */
+.pm-guide-steps {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+}
+.pm-guide-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.pm-guide-step-num {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--pm-navy);
+  color: var(--pm-white);
+  font-weight: 700;
+  font-size: .8rem;
+}
+.pm-guide-step textarea {
+  flex: 1;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--pm-line);
+  border-radius: 10px;
+  background: var(--pm-white);
+  color: var(--pm-heading);
+  font: inherit;
+  line-height: 1.4;
+  resize: vertical;
+}
+.pm-guide-step textarea:focus-visible { outline: 3px solid var(--pm-navy); outline-offset: 1px; }
+.pm-guide-remove {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--pm-mist);
+  color: var(--pm-soft);
+  cursor: pointer;
+}
+.pm-guide-remove:hover { background: #fcebeb; color: #a12f2f; }
+.pm-guide-remove svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.pm-guide-add { width: 100%; }

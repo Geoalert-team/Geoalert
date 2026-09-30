@@ -4,6 +4,9 @@ export const adminApi = {
   metrics: () =>
     client.get('/api/admin-dashboard/metrics/').then((r) => r.data),
 
+  roles: () =>
+    client.get('/api/admin-dashboard/roles/').then((r) => r.data),
+
   users: {
     list: (params) =>
       client.get('/api/admin-dashboard/users/', { params }).then((r) => r.data),
