@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
-from apps.accounts.models import Role
-from apps.hazards.models import HazardType
+from apps.accounts.accounts_models import Role
+from apps.hazards.hazards_models import HazardType
 
 
 class Command(BaseCommand):
