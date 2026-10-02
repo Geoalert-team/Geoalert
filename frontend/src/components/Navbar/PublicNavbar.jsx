@@ -20,15 +20,18 @@ const ROLE_LINKS = {
     { to: "/app/dashboard", label: "Dashboard" },
     { to: "/map", label: "Map" },
     { to: "/app/history", label: "History" },
+    { to: "/app/security", label: "Security" },
   ],
   DRRMO_Officer: [
     { to: "/app/dashboard", label: "Dashboard" },
     { to: "/map", label: "Map" },
     { to: "/app/history", label: "History" },
+    { to: "/app/security", label: "Security" },
   ],
   Barangay_Personnel: [
     { to: "/app/dashboard", label: "Dashboard" },
     { to: "/map", label: "Map" },
+    { to: "/app/security", label: "Security" },
   ],
 };
 

@@ -9,6 +9,7 @@ import Contact from "./pages/Contact";
 import WhatToDo from "./pages/WhatToDo";
 import Dashboard from "./pages/Dashboard";
 import HistoricalData from "./pages/HistoricalData";
+import Security from "./pages/Security";
 
 function Gate({ children, roles }) {
   const { user, loading } = useAuth();
@@ -29,6 +30,7 @@ function AppRoutes() {
       <Route path="/contact" element={<Contact />} />
       <Route path="/what-to-do" element={<WhatToDo />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/app/security" element={<Gate><Security /></Gate>} />
 
       {/* Logged-in staff */}
       <Route path="/app/dashboard" element={<Gate><Dashboard /></Gate>} />

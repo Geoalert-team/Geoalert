@@ -4,6 +4,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.gis.geos import Polygon
 from django.utils import timezone
+from apps.notifications.models import Notification
+from apps.accounts.models import User
 
 from apps.hazards.models import HazardType, HazardZone, HazardAlert
 from apps.hazards.serializers import (
@@ -69,13 +71,24 @@ class HazardZoneCreateView(APIView):
         zone = serializer.save(published_by=request.user)
 
         # Create alert record
-        HazardAlert.objects.create(
+        alert = HazardAlert.objects.create(
             hazard_zone = zone,
             issued_by   = request.user,
             hazard_type = zone.hazard_type,
             severity    = zone.severity,
             notes       = zone.description,
         )
+
+        # Notify every active user except whoever just published this alert
+        affected_users = User.objects.filter(is_active=True).exclude(id=request.user.id)
+        Notification.objects.bulk_create([
+            Notification(
+                hazard_alert=alert,
+                recipient=u,
+                content=f'{zone.hazard_type.name} alert ({zone.severity}) published for {zone.barangay.name if zone.barangay else "Talisay City"}.'
+            )
+            for u in affected_users
+        ])
 
         return Response(
             HazardZoneSerializer(zone).data,

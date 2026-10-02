@@ -50,3 +50,5 @@ class IncidentReport(models.Model):
 
     def __str__(self):
         return f'{self.hazard_type} — {self.barangay} — {self.status}'
+    
+    
