@@ -10,3 +10,8 @@ Pillow==10.3.0
 
 pyotp==2.9.0
 qrcode==7.4.2
+
+# Only needed to rebuild the hazard map (python manage.py build_hazard_index)
+numpy==2.4.2
+requests==2.32.5
+scipy==1.17.1

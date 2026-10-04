@@ -53,11 +53,6 @@
 }
 .pm-legend-title-sub { margin-top: 12px; }
 
-/* ---------- Risk halos ---------- */
-/* Holds the gradient definitions; must stay rendered (not display:none) */
-.pm-halo-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
-.pm .leaflet-interactive.pm-halo { cursor: pointer; transition: fill-opacity .2s ease; }
-
 /* ---------- Base map toggle (Satellite / Map) ---------- */
 .pm-basemap {
   position: absolute;

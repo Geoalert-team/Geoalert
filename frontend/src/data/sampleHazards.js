@@ -67,3 +67,44 @@ export const SAMPLE_HAZARDS = [
     position: [10.2555, 123.848],
   },
 ];
+
+// ---------------------------------------------------------------------------
+// TEST PINS: shown on top of the real hazards, for trying out the map.
+// (The Poblacion flood and Bulacao fire tests already live in Supabase, so they're not repeated here.)
+// They live only in this file (nothing is saved to the database), so you can
+// add, move or delete them freely. Set SHOW_TEST_PINS to false before committing.
+//
+// Each pin needs: a unique id, type ('Flood' | 'Fire' | 'Landslide'),
+// severity ('Red' = Extreme, 'Orange' = Moderate, 'Green' = Low) and a
+// position [latitude, longitude]. Tip: right-click a spot in Google Maps to copy it.
+// ---------------------------------------------------------------------------
+
+export const SHOW_TEST_PINS = false;
+
+export const TEST_HAZARDS = [
+  {
+    id: 'test-fire-gym',
+    sample: true,
+    location: 'Poblacion',
+    type: 'Fire',
+    severity: 'Red',
+    status: 'Active',
+    activatedAt: daysAgo(0),
+    description: 'Test fire near Gymnasium 2, overlapping the Poblacion flood in Supabase.',
+    verificationStatus: 'Pending',
+    position: [10.2456, 123.8475],
+  },
+  {
+    id: 'test-landslide-maghaway',
+    sample: true,
+    location: 'Maghaway',
+    type: 'Landslide',
+    severity: 'Red',
+    status: 'Active',
+    activatedAt: daysAgo(1),
+    description: 'Test landslide on the upland slopes.',
+    verificationStatus: 'Disputed',
+    verificationNote: 'Test note: only minor soil movement seen on the road.',
+    position: [10.2775, 123.8178],
+  },
+];

@@ -1,73 +1,51 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, Circle, ZoomControl } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, ZoomControl, ScaleControl, Pane, ImageOverlay } from 'react-leaflet';
 import L from 'leaflet';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import HazardPanel from '../components/Map/HazardPanel';
 import BarangayPanel from '../components/Map/BarangayPanel';
+import { LAYER_FOR_FILTER, useSusceptibility } from '../components/Map/susceptibility';
+import { HAZARD_LEVELS, useHazardLevelLayer } from '../components/Map/hazardLevels';
 import { HAZARD_TYPES, SEVERITY, severityInfo, hazardKey, hazardIconPath, hazardColor } from '../components/Map/hazardInfo';
 import { hazardsApi } from '../api/hazardsApi';
 import { barangaysApi } from '../api/barangaysApi';
-import { SAMPLE_HAZARDS, SHOW_SAMPLE_DATA } from '../data/sampleHazards';
+import { SAMPLE_HAZARDS, SHOW_SAMPLE_DATA, SHOW_TEST_PINS, TEST_HAZARDS } from '../data/sampleHazards';
 import './css/PublicMap.css';
 import './css/PublicMapGis.css';
+import './css/PublicMapLayers.css';
 
 // Talisay City, Cebu
 const TALISAY_CENTER = [10.2446, 123.8473];
 const PANEL_WIDTH = 400; // keep in sync with .pm-panel width in PublicMap.css
 const MOBILE_BREAKPOINT = 860; // keep in sync with the @media rule in PublicMap.css
 
-// Base maps. Satellite uses Esri imagery with a road/place-name overlay on top.
+// Base maps (no API key needed).
+//   Map     quiet light gray map with place names drawn above the hazard colors
+//   Streets OpenStreetMap, for street-level detail
+const ESRI_ATTRIBUTION = 'Tiles &copy; Esri, HERE, Garmin, &copy; OpenStreetMap contributors';
 const BASEMAPS = {
-  satellite: {
-    label: 'Satellite',
-    layers: [
-      {
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
-      },
-      {
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
-        attribution: '',
-      },
-      {
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-        attribution: '',
-      },
-    ],
-  },
-  street: {
+  map: {
     label: 'Map',
-    layers: [
-      {
-        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        attribution: '&copy; OpenStreetMap contributors',
-      },
-    ],
+    base: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    labels: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+    attribution: ESRI_ATTRIBUTION,
+    nativeZoom: 16,
+    layerOpacity: 0.7,
+  },
+  streets: {
+    label: 'Streets',
+    base: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    labels: null,
+    attribution: '&copy; OpenStreetMap contributors',
+    nativeZoom: 19,
+    layerOpacity: 0.6,
   },
 };
 
-// Risk halo around each hazard: one circle filled with a radial gradient that
-// blends Extreme -> Moderate -> Low and fades out at the edge (no outline).
-// An Extreme hazard runs red -> orange -> green; Moderate runs orange -> green;
-// Low is green only. Stops are [offset, severity code, opacity].
-const HALO = {
-  Red: {
-    scale: 2, // outer edge = 2x the core radius
-    stops: [[0, 'Red', 0.62], [0.34, 'Red', 0.55], [0.56, 'Orange', 0.46], [0.72, 'Orange', 0.38], [0.86, 'Green', 0.3], [1, 'Green', 0]],
-  },
-  Orange: {
-    scale: 1.6,
-    stops: [[0, 'Orange', 0.56], [0.45, 'Orange', 0.46], [0.72, 'Green', 0.34], [1, 'Green', 0]],
-  },
-  Green: {
-    scale: 1.3,
-    stops: [[0, 'Green', 0.5], [0.6, 'Green', 0.36], [1, 'Green', 0]],
-  },
-};
-const haloFor = (code) => HALO[code] || HALO.Green;
-const DEFAULT_RADIUS = 120; // meters, for sample pins without a drawn zone
+// Size limits for a drawn zone's core (used for zooming to sample pins)
 const MIN_RADIUS = 60;
 const MAX_RADIUS = 600;
+const SAMPLE_ZOOM_RADIUS = 500; // meters shown around a pin when it is selected
 
 /* ---------- Helpers ---------- */
 
@@ -107,35 +85,12 @@ function featureToItem(feature) {
   };
 }
 
-// Core ring radius from the size of the drawn zone: half its shorter side
+// Core radius from the size of the drawn zone: half its shorter side
 function coreRadius(bounds) {
   const c = bounds.getCenter();
   const width = L.latLng(c.lat, bounds.getWest()).distanceTo(L.latLng(c.lat, bounds.getEast()));
   const height = L.latLng(bounds.getSouth(), c.lng).distanceTo(L.latLng(bounds.getNorth(), c.lng));
   return Math.min(MAX_RADIUS, Math.max(MIN_RADIUS, Math.min(width, height) / 2));
-}
-
-// Gradient definitions used by the halos (referenced as fill="url(#pm-halo-Red)").
-// Kept in a tiny off-screen SVG; display:none would stop some browsers rendering them.
-function HaloGradients() {
-  return (
-    <svg className="pm-halo-defs" width="0" height="0" aria-hidden="true" focusable="false">
-      <defs>
-        {Object.entries(HALO).map(([code, halo]) => (
-          <radialGradient key={code} id={`pm-halo-${code}`} cx="50%" cy="50%" r="50%">
-            {halo.stops.map(([offset, sev, opacity]) => (
-              <stop
-                key={offset}
-                offset={offset}
-                stopColor={severityInfo(sev).color}
-                stopOpacity={opacity}
-              />
-            ))}
-          </radialGradient>
-        ))}
-      </defs>
-    </svg>
-  );
 }
 
 // Turns one GeoJSON feature from /api/barangays/ into the shape this page uses
@@ -149,8 +104,31 @@ function featureToBarangay(feature) {
   };
 }
 
-// Real hazards link to a barangay by id; sample pins only have a name
+// Is a [lat, lng] point inside a barangay's boundary?
+function pointInRing(lat, lng, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    if ((yi > lat) !== (yj > lat) && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+function containsPoint(feature, position) {
+  const g = feature?.geometry;
+  if (!g || !position) return false;
+  const [lat, lng] = position;
+  const polygons = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : [];
+  return polygons.some(
+    (rings) => pointInRing(lat, lng, rings[0]) && !rings.slice(1).some((hole) => pointInRing(lat, lng, hole)),
+  );
+}
+
+// A hazard belongs to the barangay its pin is in. Falls back to the saved
+// barangay when boundaries aren't loaded.
 function isInBarangay(hazard, barangay) {
+  if (barangay.feature?.geometry && hazard.position) return containsPoint(barangay.feature, hazard.position);
   if (hazard.barangayId != null) return String(hazard.barangayId) === String(barangay.id);
   return hazard.location === barangay.name;
 }
@@ -182,6 +160,18 @@ function pinIcon(item, selected) {
   });
 }
 
+function NorthArrow() {
+  return (
+    <div className="pm-north" aria-label="North is up" role="img">
+      <svg viewBox="0 0 24 34" aria-hidden="true">
+        <path d="M12 2 4 26l8-5 8 5z" />
+        <path d="M12 2v19l8 5z" className="pm-north-shade" />
+      </svg>
+      <span>N</span>
+    </div>
+  );
+}
+
 /* ---------- Page ---------- */
 
 export default function PublicMap() {
@@ -195,7 +185,8 @@ export default function PublicMap() {
   const [query, setQuery] = useState('');
   const [selection, setSelection] = useState(null); // { kind: 'hazard' | 'barangay', id }
   const [panelOpen, setPanelOpen] = useState(false);
-  const [basemap, setBasemap] = useState('satellite');
+  const [basemap, setBasemap] = useState('streets');
+  const susceptibility = useSusceptibility();
 
   // Load hazards and barangay outlines once
   useEffect(() => {
@@ -226,11 +217,25 @@ export default function PublicMap() {
 
   // Use real hazards when there are any; otherwise show the labelled samples
   const usingSample = SHOW_SAMPLE_DATA && !loading && liveHazards.length === 0;
-  const hazards = usingSample ? SAMPLE_HAZARDS : liveHazards;
+  // Test pins from sampleHazards.js are added on top while SHOW_TEST_PINS is true
+  const rawHazards = useMemo(() => {
+    const base = usingSample ? SAMPLE_HAZARDS : liveHazards;
+    return SHOW_TEST_PINS ? [...base, ...TEST_HAZARDS] : base;
+  }, [usingSample, liveHazards]);
 
   const barangays = useMemo(
     () => (barangayGeo?.features || []).map(featureToBarangay),
     [barangayGeo],
+  );
+
+  // Name each hazard after the barangay its pin actually sits in
+  const hazards = useMemo(
+    () =>
+      rawHazards.map((h) => {
+        const home = barangays.find((b) => containsPoint(b.feature, h.position));
+        return home && home.name !== h.location ? { ...h, location: home.name, barangayId: home.id } : h;
+      }),
+    [rawHazards, barangays],
   );
 
   const visibleHazards = useMemo(
@@ -286,11 +291,9 @@ export default function PublicMap() {
     setQuery('');
     if (!map) return;
 
-    // Zoom so the whole risk halo fills the space next to (or above) the panel
-    const code = HALO[item.severity] ? item.severity : 'Green';
-    const haloRadius = (item.radius || DEFAULT_RADIUS) * haloFor(code).scale;
-    const bounds = L.latLng(item.position).toBounds(haloRadius * 1.1);
-    map.flyToBounds(bounds, { ...panelPadding(), maxZoom: 18, duration: 0.8 });
+    // Zoom to the area around the pin, beside the panel
+    const bounds = L.latLng(item.position).toBounds(SAMPLE_ZOOM_RADIUS * 2);
+    map.flyToBounds(bounds, { ...panelPadding(), maxZoom: 17, duration: 0.8 });
   }
 
   function selectBarangay(barangay) {
@@ -322,17 +325,20 @@ export default function PublicMap() {
     setLiveHazards((prev) => prev.map((h) => (h.id === updated.id ? updated : h)));
   }
 
+  // Thin dark boundaries, like sub-catchment lines on a GIS map. Transparent fill keeps them clickable.
   function barangayStyle(feature) {
     const selected = selectedBarangayId != null && String(featureId(feature)) === String(selectedBarangayId);
-    const line = basemap === 'satellite' ? '#ffffff' : '#1c2e4a';
     return selected
-      ? { className: 'pm-brgy', color: line, weight: 3, opacity: 0.95, fillColor: line, fillOpacity: 0.08 }
-      : { className: 'pm-brgy', color: line, weight: 1, opacity: 0.6, fillOpacity: 0.02 };
+      ? { className: 'pm-brgy', color: '#111111', weight: 2.6, opacity: 1, fillColor: '#1c2e4a', fillOpacity: 0.07 }
+      : { className: 'pm-brgy', color: '#2b2b2b', weight: 1, opacity: 0.8, fillOpacity: 0 };
   }
+
+  const layerKey = LAYER_FOR_FILTER[typeFilter] || 'all';
+  const levelUrl = useHazardLevelLayer(susceptibility.index, hazards, layerKey);
+  const layerName = typeFilter === 'All' ? 'All hazards' : typeFilter;
 
   return (
     <div className="pm">
-      <HaloGradients />
       <PublicNavbar />
 
       <div className="pm-stage">
@@ -344,21 +350,47 @@ export default function PublicMap() {
           zoom={14}
           zoomControl={false}
         >
-          {BASEMAPS[basemap].layers.map((layer) => (
+          {BASEMAPS[basemap].base && (
             <TileLayer
-              key={layer.url}
-              url={layer.url}
-              attribution={layer.attribution}
-              maxNativeZoom={19}
+              key={`base-${basemap}`}
+              url={BASEMAPS[basemap].base}
+              attribution={BASEMAPS[basemap].attribution}
+              maxNativeZoom={BASEMAPS[basemap].nativeZoom}
               maxZoom={20}
             />
-          ))}
+          )}
           <ZoomControl position="bottomright" />
+          <ScaleControl position="bottomright" imperial={false} />
 
-          {/* Barangay outlines: hover for the name, click for barangay-specific hazards */}
+          {/* Hazard levels from active reports, spread over susceptible ground */}
+          <Pane name="hazard-levels" style={{ zIndex: 350 }}>
+            {levelUrl && (
+              <ImageOverlay
+                key={levelUrl.length}
+                url={levelUrl}
+                bounds={susceptibility.index.bounds}
+                opacity={BASEMAPS[basemap].layerOpacity}
+                className="pm-levels"
+              />
+            )}
+          </Pane>
+
+          {/* Street and place names above the hazard layer */}
+          {BASEMAPS[basemap].labels && (
+            <Pane name="basemap-labels" style={{ zIndex: 450, pointerEvents: 'none' }}>
+              <TileLayer
+                key={`labels-${basemap}`}
+                url={BASEMAPS[basemap].labels}
+                maxNativeZoom={BASEMAPS[basemap].nativeZoom}
+                maxZoom={20}
+              />
+            </Pane>
+          )}
+
+          {/* Barangay boundaries: hover for the name, click for barangay-specific hazards */}
           {barangayGeo && (
             <GeoJSON
-              key={`brgy-${selectedBarangayId ?? 'none'}-${basemap}`}
+              key={`brgy-${selectedBarangayId ?? 'none'}`}
               data={barangayGeo}
               style={barangayStyle}
               onEachFeature={(feature, layer) => {
@@ -377,25 +409,6 @@ export default function PublicMap() {
             />
           )}
 
-          {/* Risk halos: gradient fill, no outline, fades out at the edge */}
-          {visibleHazards.map((h) => {
-            const selected = h.id === selectedHazardId;
-            const code = HALO[h.severity] ? h.severity : 'Green';
-            return (
-              <Circle
-                key={`halo-${h.id}-${selected}`}
-                center={h.position}
-                radius={(h.radius || DEFAULT_RADIUS) * haloFor(code).scale}
-                pathOptions={{
-                  stroke: false,
-                  fillColor: `url(#pm-halo-${code})`,
-                  fillOpacity: selected ? 1 : 0.85,
-                  className: 'pm-halo',
-                }}
-                eventHandlers={{ click: () => selectHazard(h) }}
-              />
-            );
-          })}
 
           {visibleHazards.map((h) => (
             <Marker
@@ -484,11 +497,25 @@ export default function PublicMap() {
           {!loading && !usingSample && hazards.length === 0 && !loadFailed && (
             <span className="pm-pill">No active hazards right now</span>
           )}
+          {susceptibility.status === 'missing' && (
+            <span className="pm-pill pm-pill-error">Hazard layer data not built yet</span>
+          )}
         </div>
+
+        <NorthArrow />
 
         {/* ============ LEGEND ============ */}
         <div className={`pm-legend ${panelOpen ? 'is-hidden-mobile' : ''}`}>
-          <p className="pm-legend-title">Risk level</p>
+          <p className="pm-legend-title">Hazard level: {layerName.toLowerCase()}</p>
+          <ul>
+            {[...HAZARD_LEVELS].reverse().map((l) => (
+              <li key={l.key}>
+                <span className="pm-legend-swatch" style={{ background: l.color }} />
+                {l.label}
+              </li>
+            ))}
+          </ul>
+          <p className="pm-legend-title pm-legend-title-sub">Pin color</p>
           <ul>
             {Object.entries(SEVERITY).map(([code, sev]) => (
               <li key={code}>
