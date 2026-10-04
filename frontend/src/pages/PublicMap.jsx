@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, ZoomControl, ScaleControl, Pane, ImageOverlay } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, ZoomControl, ScaleControl, Pane, ImageOverlay, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import HazardPanel from '../components/Map/HazardPanel';
@@ -158,6 +158,12 @@ function pinIcon(item, selected) {
     iconSize: [44, 56],
     iconAnchor: [22, 54],
   });
+}
+
+// Clicking empty map (not a barangay or pin) closes the panel
+function MapClickCloser({ onClose }) {
+  useMapEvents({ click: onClose });
+  return null;
 }
 
 function NorthArrow() {
@@ -327,7 +333,9 @@ export default function PublicMap() {
 
   // Thin dark boundaries, like sub-catchment lines on a GIS map. Transparent fill keeps them clickable.
   function barangayStyle(feature) {
-    const selected = selectedBarangayId != null && String(featureId(feature)) === String(selectedBarangayId);
+    // Bold only while its panel is open
+    const selected =
+      panelOpen && selectedBarangayId != null && String(featureId(feature)) === String(selectedBarangayId);
     return selected
       ? { className: 'pm-brgy', color: '#111111', weight: 2.6, opacity: 1, fillColor: '#1c2e4a', fillOpacity: 0.07 }
       : { className: 'pm-brgy', color: '#2b2b2b', weight: 1, opacity: 0.8, fillOpacity: 0 };
@@ -361,6 +369,7 @@ export default function PublicMap() {
           )}
           <ZoomControl position="bottomright" />
           <ScaleControl position="bottomright" imperial={false} />
+          <MapClickCloser onClose={() => setPanelOpen(false)} />
 
           {/* Hazard levels from active reports, spread over susceptible ground */}
           <Pane name="hazard-levels" style={{ zIndex: 350 }}>
@@ -390,9 +399,10 @@ export default function PublicMap() {
           {/* Barangay boundaries: hover for the name, click for barangay-specific hazards */}
           {barangayGeo && (
             <GeoJSON
-              key={`brgy-${selectedBarangayId ?? 'none'}`}
+              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}`}
               data={barangayGeo}
               style={barangayStyle}
+              bubblingMouseEvents={false}
               onEachFeature={(feature, layer) => {
                 layer.bindTooltip(feature.properties?.name || 'Barangay', {
                   sticky: true,
