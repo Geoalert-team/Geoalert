@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import PublicNavbar from '../../components/Navbar/PublicNavbar';
+import { useAuth } from '../../context/AuthContext';
 import { adminApi } from '../../api/adminApi';
 import '../css/Dashboard.css';
 
 const TABS = ['Overview', 'Users', 'Logs'];
 
 export default function AdminDashboard() {
+  const { user: currentUser } = useAuth();
   const [tab, setTab] = useState('Overview');
   const [metrics, setMetrics] = useState(null);
   const [users, setUsers] = useState([]);
@@ -16,6 +18,10 @@ export default function AdminDashboard() {
   const [newUser, setNewUser] = useState({ full_name: '', email: '', role_id: '' });
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+
+  // Which user's status (activate/deactivate) is currently being saved,
+  // so only that row's buttons disable instead of the whole table.
+  const [statusBusyId, setStatusBusyId] = useState(null);
 
   // Shown after creating a user or resetting a password — the backend only
   // returns the plain temporary password this one time, so it has to be
@@ -69,9 +75,24 @@ export default function AdminDashboard() {
   }
 
   async function deactivate(id) {
-    if (!window.confirm('Deactivate this account?')) return;
-    await adminApi.users.deactivate(id);
-    refreshUsers();
+    if (!window.confirm('Deactivate this account? They will not be able to log in until reactivated.')) return;
+    setStatusBusyId(id);
+    try {
+      await adminApi.users.deactivate(id);
+      refreshUsers();
+    } finally {
+      setStatusBusyId(null);
+    }
+  }
+
+  async function activate(id) {
+    setStatusBusyId(id);
+    try {
+      await adminApi.users.update(id, { is_active: true });
+      refreshUsers();
+    } finally {
+      setStatusBusyId(null);
+    }
   }
 
   async function resetPassword(id, email) {
@@ -252,22 +273,52 @@ export default function AdminDashboard() {
               ) : (
                 <table className="db-table">
                   <thead>
-                    <tr><th>Name</th><th>Email</th><th>Role</th><th /></tr>
+                    <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th /></tr>
                   </thead>
                   <tbody>
-                    {users.map((u) => (
-                      <tr key={u.id}>
-                        <td>{u.full_name}</td>
-                        <td>{u.email}</td>
-                        <td>{u.role?.name || u.role}</td>
-                        <td>
-                          <div className="db-btn-row">
-                            <button className="db-btn db-btn-outline" onClick={() => resetPassword(u.id, u.email)}>Reset password</button>
-                            <button className="db-btn db-btn-danger" onClick={() => deactivate(u.id)}>Deactivate</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {users.map((u) => {
+                      const isSelf = currentUser && String(currentUser.id) === String(u.id);
+                      const busy = statusBusyId === u.id;
+                      return (
+                        <tr key={u.id}>
+                          <td>{u.full_name}</td>
+                          <td>{u.email}</td>
+                          <td>{u.role?.name || u.role}</td>
+                          <td>
+                            {/* Reusing existing badge classes: "validated" (green) for
+                                active, "rejected" (red) for inactive — no new CSS needed. */}
+                            <span className={`db-badge ${u.is_active ? 'db-badge-validated' : 'db-badge-rejected'}`}>
+                              {u.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="db-btn-row">
+                              <button className="db-btn db-btn-outline" onClick={() => resetPassword(u.id, u.email)}>
+                                Reset password
+                              </button>
+                              {u.is_active ? (
+                                <button
+                                  className="db-btn db-btn-danger"
+                                  disabled={isSelf || busy}
+                                  title={isSelf ? "You can't deactivate your own account" : undefined}
+                                  onClick={() => deactivate(u.id)}
+                                >
+                                  {busy ? 'Working…' : 'Deactivate'}
+                                </button>
+                              ) : (
+                                <button
+                                  className="db-btn db-btn-primary"
+                                  disabled={busy}
+                                  onClick={() => activate(u.id)}
+                                >
+                                  {busy ? 'Working…' : 'Activate'}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
