@@ -7,12 +7,52 @@ import './css/Dashboard.css';
 export default function Security() {
   const { user, setUser } = useAuth();
 
+  // ---- Change password ----
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwError, setPwError] = useState('');
+  const [pwMessage, setPwMessage] = useState('');
+
+  // ---- 2FA ----
   const [setupData, setSetupData] = useState(null); // { secret, qr_code }
   const [confirmCode, setConfirmCode] = useState('');
   const [disableCode, setDisableCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+
+  async function changePassword(e) {
+    e.preventDefault();
+    setPwError('');
+    setPwMessage('');
+
+    if (newPassword !== confirmPassword) {
+      setPwError('New password and confirmation do not match.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPwError('New password must be at least 8 characters long.');
+      return;
+    }
+
+    setPwBusy(true);
+    try {
+      await authApi.changePassword({
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setPwMessage('Your password has been changed.');
+    } catch (err) {
+      setPwError(err.message || 'Could not change your password.');
+    } finally {
+      setPwBusy(false);
+    }
+  }
 
   async function startSetup() {
     setError('');
@@ -69,9 +109,60 @@ export default function Security() {
       <div className="db-wrap">
         <div className="db-header">
           <h1>Security</h1>
-          <p>Add a second step to your login using an authenticator app like Google Authenticator.</p>
+          <p>Manage your password and add a second step to your login.</p>
         </div>
 
+        {/* ============ CHANGE PASSWORD ============ */}
+        <div className="db-card">
+          <h2>Change password</h2>
+          <p className="db-card-sub">Update the password you use to log in.</p>
+
+          <form onSubmit={changePassword} style={{ maxWidth: 320 }}>
+            <div className="field">
+              <label>Current password</label>
+              <input
+                type="password"
+                required
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label>New password</label>
+              <input
+                type="password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="At least 8 characters"
+              />
+            </div>
+            <div className="field">
+              <label>Confirm new password</label>
+              <input
+                type="password"
+                required
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+
+            {pwError && <p className="error-text">{pwError}</p>}
+            {pwMessage && (
+              <p style={{ color: 'var(--db-heading, #0f172a)', marginBottom: 12 }}>{pwMessage}</p>
+            )}
+
+            <button className="btn primary" disabled={pwBusy}>
+              {pwBusy ? 'Saving…' : 'Change password'}
+            </button>
+          </form>
+        </div>
+
+        {/* ============ TWO-FACTOR AUTHENTICATION ============ */}
         {message && <p style={{ color: 'var(--db-heading, #0f172a)', marginBottom: 16 }}>{message}</p>}
 
         {enabled && !setupData && (

@@ -9,4 +9,7 @@ export const authApi = {
   setup2fa: () => client.post('/api/auth/2fa/setup/').then((r) => r.data),
   confirm2fa: (code) => client.post('/api/auth/2fa/confirm/', { code }).then((r) => r.data),
   disable2fa: (code) => client.post('/api/auth/2fa/disable/', { code }).then((r) => r.data),
+
+  changePassword: ({ current_password, new_password }) =>
+    client.post('/api/auth/change-password/', { current_password, new_password }).then((r) => r.data),
 };
