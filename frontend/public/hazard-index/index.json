@@ -1,0 +1,765 @@
+{
+ "generated": "2026-10-04T06:51:25+00:00",
+ "bounds": [
+  [
+   10.229619796808128,
+   123.77334594726562
+  ],
+  [
+   10.342699980654269,
+   123.87694358825684
+  ]
+ ],
+ "cellSizeM": 9.4,
+ "classes": [
+  {
+   "key": "very-low",
+   "label": "Very low",
+   "color": "#a8a8a8"
+  },
+  {
+   "key": "low",
+   "label": "Low",
+   "color": "#ffb100"
+  },
+  {
+   "key": "medium",
+   "label": "Medium",
+   "color": "#8fe800"
+  },
+  {
+   "key": "high",
+   "label": "High",
+   "color": "#1f3cff"
+  },
+  {
+   "key": "very-high",
+   "label": "Very high",
+   "color": "#ff0000"
+  }
+ ],
+ "layers": {
+  "flood": "flood.png",
+  "landslide": "landslide.png",
+  "fire": "fire.png",
+  "all": "all.png"
+ },
+ "rivers": "rivers.geojson",
+ "method": "Weighted overlay of reclassified factors, five equal-interval classes",
+ "factors": {
+  "flood": [
+   {
+    "factor": "elevation",
+    "breaks": [
+     5,
+     10,
+     20,
+     50
+    ],
+    "direction": "down",
+    "weight": 0.25
+   },
+   {
+    "factor": "hand",
+    "breaks": [
+     2,
+     5,
+     10,
+     20
+    ],
+    "direction": "down",
+    "weight": 0.25
+   },
+   {
+    "factor": "dist_water",
+    "breaks": [
+     100,
+     200,
+     400,
+     800
+    ],
+    "direction": "down",
+    "weight": 0.2
+   },
+   {
+    "factor": "slope",
+    "breaks": [
+     1,
+     3,
+     8,
+     15
+    ],
+    "direction": "down",
+    "weight": 0.15
+   },
+   {
+    "factor": "dist_coast",
+    "breaks": [
+     200,
+     500,
+     1000,
+     2000
+    ],
+    "direction": "down",
+    "weight": 0.15
+   }
+  ],
+  "landslide": [
+   {
+    "factor": "slope",
+    "breaks": [
+     5,
+     10,
+     18,
+     30
+    ],
+    "direction": "up",
+    "weight": 0.45
+   },
+   {
+    "factor": "relief",
+    "breaks": [
+     5,
+     15,
+     30,
+     60
+    ],
+    "direction": "up",
+    "weight": 0.15
+   },
+   {
+    "factor": "elevation",
+    "breaks": [
+     20,
+     60,
+     150,
+     300
+    ],
+    "direction": "up",
+    "weight": 0.1
+   },
+   {
+    "factor": "dist_water",
+    "breaks": [
+     50,
+     150,
+     300,
+     500
+    ],
+    "direction": "down",
+    "weight": 0.15
+   },
+   {
+    "factor": "dist_road",
+    "breaks": [
+     50,
+     100,
+     200,
+     400
+    ],
+    "direction": "down",
+    "weight": 0.15
+   }
+  ],
+  "fire": [
+   {
+    "factor": "building_density",
+    "breaks": [
+     2,
+     8,
+     20,
+     40
+    ],
+    "direction": "up",
+    "weight": 0.4
+   },
+   {
+    "factor": "urban_landuse",
+    "breaks": [
+     1.5,
+     2.5,
+     3.5,
+     4.5
+    ],
+    "direction": "up",
+    "weight": 0.15
+   },
+   {
+    "factor": "dist_fire_station",
+    "breaks": [
+     1000,
+     2000,
+     3500,
+     5000
+    ],
+    "direction": "up",
+    "weight": 0.2
+   },
+   {
+    "factor": "dist_main_road",
+    "breaks": [
+     100,
+     250,
+     500,
+     800
+    ],
+    "direction": "up",
+    "weight": 0.15
+   },
+   {
+    "factor": "dist_road",
+    "breaks": [
+     25,
+     50,
+     100,
+     200
+    ],
+    "direction": "up",
+    "weight": 0.1
+   }
+  ]
+ },
+ "sources": [
+  "Elevation: AWS Terrain Tiles (SRTM, ~30 m)",
+  "Rivers, coastline, roads, buildings, land use, fire stations: (c) OpenStreetMap contributors"
+ ],
+ "osmCounts": {
+  "waterways": 175,
+  "coastline": 25,
+  "roads": 10526,
+  "main_roads": 636,
+  "landuse": 834,
+  "buildings": 21928,
+  "fire_stations": 18
+ },
+ "barangays": {
+  "2": {
+   "name": "Bulacao",
+   "flood": [
+    3.7,
+    8.6,
+    26.2,
+    60.8,
+    0.7
+   ],
+   "landslide": [
+    55.9,
+    25.9,
+    16.4,
+    1.7,
+    0.0
+   ],
+   "fire": [
+    50.5,
+    45.1,
+    4.4,
+    0.0,
+    0.0
+   ]
+  },
+  "23": {
+   "name": "Cadulawan",
+   "flood": [
+    74.7,
+    11.3,
+    10.3,
+    3.7,
+    0.0
+   ],
+   "landslide": [
+    5.4,
+    5.8,
+    40.6,
+    40.4,
+    7.8
+   ],
+   "fire": [
+    30.2,
+    67.2,
+    2.7,
+    0.0,
+    0.0
+   ]
+  },
+  "5": {
+   "name": "Cansojong",
+   "flood": [
+    0.0,
+    0.0,
+    3.2,
+    53.6,
+    43.2
+   ],
+   "landslide": [
+    72.3,
+    25.8,
+    1.9,
+    0.0,
+    0.0
+   ],
+   "fire": [
+    84.6,
+    15.1,
+    0.3,
+    0.0,
+    0.0
+   ]
+  },
+  "6": {
+   "name": "Dumlog",
+   "flood": [
+    0.0,
+    0.0,
+    9.8,
+    47.3,
+    42.9
+   ],
+   "landslide": [
+    65.5,
+    30.2,
+    4.3,
+    0.0,
+    0.0
+   ],
+   "fire": [
+    46.1,
+    42.2,
+    11.4,
+    0.3,
+    0.0
+   ]
+  },
+  "7": {
+   "name": "Jaclupan",
+   "flood": [
+    54.3,
+    15.4,
+    24.3,
+    6.1,
+    0.0
+   ],
+   "landslide": [
+    8.8,
+    11.9,
+    38.1,
+    35.7,
+    5.5
+   ],
+   "fire": [
+    90.6,
+    8.2,
+    1.2,
+    0.0,
+    0.0
+   ]
+  },
+  "8": {
+   "name": "Lagtang",
+   "flood": [
+    60.2,
+    19.3,
+    16.3,
+    4.2,
+    0.0
+   ],
+   "landslide": [
+    7.8,
+    8.3,
+    26.6,
+    43.2,
+    14.1
+   ],
+   "fire": [
+    68.8,
+    31.0,
+    0.2,
+    0.0,
+    0.0
+   ]
+  },
+  "9": {
+   "name": "Lawaan I",
+   "flood": [
+    4.4,
+    56.4,
+    34.4,
+    4.8,
+    0.0
+   ],
+   "landslide": [
+    31.2,
+    44.3,
+    24.0,
+    0.5,
+    0.0
+   ],
+   "fire": [
+    93.9,
+    6.1,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "12": {
+   "name": "Linao",
+   "flood": [
+    0.0,
+    13.2,
+    35.2,
+    44.4,
+    7.2
+   ],
+   "landslide": [
+    31.7,
+    36.4,
+    30.2,
+    1.7,
+    0.0
+   ],
+   "fire": [
+    96.1,
+    3.9,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "13": {
+   "name": "Maghaway",
+   "flood": [
+    75.0,
+    15.7,
+    8.6,
+    0.8,
+    0.0
+   ],
+   "landslide": [
+    1.9,
+    4.2,
+    38.4,
+    39.1,
+    16.4
+   ],
+   "fire": [
+    91.5,
+    8.3,
+    0.2,
+    0.0,
+    0.0
+   ]
+  },
+  "14": {
+   "name": "Manipis",
+   "flood": [
+    83.9,
+    11.1,
+    4.9,
+    0.0,
+    0.0
+   ],
+   "landslide": [
+    1.6,
+    4.6,
+    16.0,
+    53.2,
+    24.6
+   ],
+   "fire": [
+    90.9,
+    8.8,
+    0.2,
+    0.0,
+    0.0
+   ]
+  },
+  "15": {
+   "name": "Mohon",
+   "flood": [
+    0.0,
+    0.7,
+    42.5,
+    46.0,
+    10.8
+   ],
+   "landslide": [
+    49.1,
+    41.7,
+    9.0,
+    0.2,
+    0.0
+   ],
+   "fire": [
+    93.4,
+    6.6,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "16": {
+   "name": "Poblacion",
+   "flood": [
+    0.0,
+    0.0,
+    2.8,
+    41.4,
+    55.8
+   ],
+   "landslide": [
+    69.3,
+    24.5,
+    6.2,
+    0.0,
+    0.0
+   ],
+   "fire": [
+    86.7,
+    13.3,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "17": {
+   "name": "Pooc",
+   "flood": [
+    0.0,
+    0.0,
+    1.8,
+    35.0,
+    63.2
+   ],
+   "landslide": [
+    67.7,
+    29.2,
+    3.1,
+    0.0,
+    0.0
+   ],
+   "fire": [
+    90.2,
+    9.8,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "18": {
+   "name": "San Isidro",
+   "flood": [
+    0.0,
+    0.0,
+    22.3,
+    76.1,
+    1.5
+   ],
+   "landslide": [
+    72.3,
+    22.2,
+    5.5,
+    0.0,
+    0.0
+   ],
+   "fire": [
+    98.3,
+    1.7,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "19": {
+   "name": "San Roque",
+   "flood": [
+    0.0,
+    0.0,
+    1.9,
+    33.5,
+    64.6
+   ],
+   "landslide": [
+    68.8,
+    27.7,
+    3.6,
+    0.0,
+    0.0
+   ],
+   "fire": [
+    55.9,
+    43.2,
+    0.9,
+    0.0,
+    0.0
+   ]
+  },
+  "20": {
+   "name": "Tabunok",
+   "flood": [
+    0.0,
+    0.2,
+    36.2,
+    63.7,
+    0.0
+   ],
+   "landslide": [
+    77.2,
+    20.0,
+    2.8,
+    0.0,
+    0.0
+   ],
+   "fire": [
+    62.4,
+    31.2,
+    6.4,
+    0.0,
+    0.0
+   ]
+  },
+  "21": {
+   "name": "Tangke",
+   "flood": [
+    0.0,
+    0.0,
+    0.0,
+    13.0,
+    87.0
+   ],
+   "landslide": [
+    73.9,
+    25.0,
+    1.1,
+    0.0,
+    0.0
+   ],
+   "fire": [
+    9.6,
+    75.9,
+    14.5,
+    0.0,
+    0.0
+   ]
+  },
+  "22": {
+   "name": "Tapul",
+   "flood": [
+    74.2,
+    16.8,
+    9.0,
+    0.0,
+    0.0
+   ],
+   "landslide": [
+    1.2,
+    2.6,
+    24.5,
+    55.7,
+    16.0
+   ],
+   "fire": [
+    81.6,
+    11.3,
+    7.1,
+    0.0,
+    0.0
+   ]
+  },
+  "1": {
+   "name": "Biasong",
+   "flood": [
+    0.0,
+    0.0,
+    3.6,
+    46.5,
+    50.0
+   ],
+   "landslide": [
+    63.7,
+    32.2,
+    4.2,
+    0.0,
+    0.0
+   ],
+   "fire": [
+    84.5,
+    13.5,
+    2.0,
+    0.0,
+    0.0
+   ]
+  },
+  "4": {
+   "name": "Camp IV",
+   "flood": [
+    81.1,
+    9.4,
+    9.5,
+    0.1,
+    0.0
+   ],
+   "landslide": [
+    0.6,
+    1.8,
+    18.5,
+    64.3,
+    14.8
+   ],
+   "fire": [
+    92.7,
+    5.8,
+    1.5,
+    0.0,
+    0.0
+   ]
+  },
+  "10": {
+   "name": "Lawaan II",
+   "flood": [
+    0.0,
+    3.2,
+    37.6,
+    56.6,
+    2.5
+   ],
+   "landslide": [
+    55.6,
+    36.6,
+    7.8,
+    0.0,
+    0.0
+   ],
+   "fire": [
+    95.7,
+    4.3,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "11": {
+   "name": "Lawaan III",
+   "flood": [
+    24.4,
+    38.4,
+    20.0,
+    17.1,
+    0.0
+   ],
+   "landslide": [
+    20.3,
+    34.4,
+    43.2,
+    2.2,
+    0.0
+   ],
+   "fire": [
+    81.6,
+    18.4,
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ }
+}

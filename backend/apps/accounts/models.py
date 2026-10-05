@@ -33,15 +33,19 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    id                 = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    role               = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
-    full_name          = models.CharField(max_length=150)
-    email              = models.EmailField(unique=True)
-    failed_login_count = models.IntegerField(default=0)
-    locked_until       = models.DateTimeField(null=True, blank=True)
-    is_active          = models.BooleanField(default=True)
-    is_staff           = models.BooleanField(default=False)
-    created_at         = models.DateTimeField(auto_now_add=True)
+    id                  = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    role                = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
+    full_name           = models.CharField(max_length=150)
+    email               = models.EmailField(unique=True)
+    failed_login_count  = models.IntegerField(default=0)
+    locked_until        = models.DateTimeField(null=True, blank=True)
+    is_active           = models.BooleanField(default=True)
+    is_staff            = models.BooleanField(default=False)
+    created_at          = models.DateTimeField(auto_now_add=True)
+
+    # Two-factor authentication (Google Authenticator / any TOTP app)
+    two_factor_enabled  = models.BooleanField(default=False)
+    two_factor_secret   = models.CharField(max_length=32, blank=True, null=True)
 
     objects = UserManager()
 

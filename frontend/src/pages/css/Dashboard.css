@@ -1,0 +1,131 @@
+/* =========================================================
+   Shared dashboard styling (Admin/Barangay/DRRMO/Guidance/History)
+   Same visual language as PublicHome: navy #1c2e4a, mist bg,
+   pill buttons, rounded cards. Prefix: db-
+   ========================================================= */
+
+.db {
+  --db-navy: #1c2e4a;
+  --db-navy-hover: #2a4268;
+  --db-white: #ffffff;
+  --db-mist: #f2f5f9;
+  --db-line: #dde3ec;
+  --db-heading: #1c2e4a;
+  --db-body: #43516a;
+  --db-soft: #6a778d;
+  --db-low: #1f9d55; --db-low-tint: #e8f6ee;
+  --db-medium: #d99a00; --db-medium-tint: #fdf5de;
+  --db-high: #d64545; --db-high-tint: #fcebeb;
+  --db-font-head: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --db-font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --db-radius: 16px;
+  --db-pill: 999px;
+
+  min-height: 100vh;
+  background: var(--db-mist);
+  color: var(--db-body);
+  font-family: var(--db-font-body);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+:where(.db) h1, :where(.db) h2, :where(.db) h3 {
+  margin: 0; font-family: var(--db-font-head); color: var(--db-heading); line-height: 1.2;
+}
+:where(.db) p { margin: 0; }
+:where(.db) ul, :where(.db) ol { margin: 0; padding: 0; list-style: none; }
+
+.db-wrap { max-width: 1160px; margin: 0 auto; padding: 40px 24px 64px; }
+
+.db-header { margin-bottom: 28px; }
+.db-header h1 { font-size: clamp(1.6rem, 3vw, 2.1rem); font-weight: 800; letter-spacing: -0.02em; }
+.db-header p { margin-top: 6px; color: var(--db-soft); font-size: 1rem; }
+
+/* Stat cards */
+.db-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.db-stat { padding: 20px; border: 1px solid var(--db-line); border-radius: var(--db-radius); background: var(--db-white); }
+.db-stat-value { font-family: var(--db-font-head); font-size: 1.8rem; font-weight: 800; color: var(--db-heading); }
+.db-stat-label { margin-top: 4px; font-size: .86rem; color: var(--db-soft); text-transform: capitalize; }
+
+/* Panels / cards */
+.db-card { padding: 24px; border: 1px solid var(--db-line); border-radius: var(--db-radius); background: var(--db-white); margin-bottom: 24px; }
+.db-card h2, .db-card h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
+.db-card-sub { color: var(--db-soft); font-size: .92rem; margin-bottom: 18px; }
+
+/* Item list (reports, guidance, logs, history) */
+.db-list { display: flex; flex-direction: column; gap: 10px; }
+.db-item { padding: 16px; border: 1px solid var(--db-line); border-radius: 12px; background: var(--db-white); }
+.db-item-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.db-item-title { font-weight: 800; color: var(--db-heading); }
+.db-item-meta { font-size: .82rem; color: var(--db-soft); margin-top: 4px; }
+.db-empty { padding: 24px; text-align: center; color: var(--db-soft); }
+
+/* Badges (status/severity) */
+.db-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--db-pill); font-size: .82rem; font-weight: 700; background: var(--db-mist); color: var(--db-heading); }
+.db-badge-pending  { background: var(--db-medium-tint); color: #7a5700; }
+.db-badge-validated, .db-badge-resolved, .db-badge-low   { background: var(--db-low-tint); color: #16693a; }
+.db-badge-rejected,  .db-badge-archived, .db-badge-high  { background: var(--db-high-tint); color: #a12f2f; }
+.db-badge-active,    .db-badge-medium                    { background: var(--db-medium-tint); color: #7a5700; }
+
+/* Buttons — same pill language as ph-btn */
+.db-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 42px; padding: 0 20px; border: 2px solid transparent;
+  border-radius: var(--db-pill); font-family: var(--db-font-body);
+  font-size: .92rem; font-weight: 700; cursor: pointer;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+.db-btn-primary { background: var(--db-navy); color: var(--db-white); }
+.db-btn-primary:hover { background: var(--db-navy-hover); }
+.db-btn-outline { background: transparent; color: var(--db-navy); border-color: var(--db-navy); }
+.db-btn-outline:hover { background: var(--db-navy); color: var(--db-white); }
+.db-btn-danger { background: transparent; color: var(--db-high); border-color: var(--db-high); }
+.db-btn-danger:hover { background: var(--db-high); color: var(--db-white); }
+.db-btn:disabled { opacity: .5; cursor: not-allowed; }
+.db-btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Tabs */
+.db-tabs { display: flex; gap: 4px; padding: 4px; border-radius: var(--db-pill); background: var(--db-mist); width: fit-content; margin-bottom: 20px; flex-wrap: wrap; }
+.db-tab { min-height: 36px; padding: 0 16px; border: 0; border-radius: var(--db-pill); background: transparent; color: var(--db-body); font-weight: 700; font-size: .88rem; cursor: pointer; }
+.db-tab.is-active { background: var(--db-white); color: var(--db-heading); box-shadow: 0 1px 4px rgba(28,46,74,.15); }
+
+/* Two-column layout */
+.db-grid-2 { display: grid; grid-template-columns: 1fr 1.3fr; gap: 24px; align-items: start; }
+@media (max-width: 900px) { .db-grid-2 { grid-template-columns: 1fr; } }
+
+/* Table (users, logs) */
+.db-table { width: 100%; border-collapse: collapse; }
+.db-table th { text-align: left; padding: 10px 12px; font-size: .8rem; color: var(--db-soft); border-bottom: 1px solid var(--db-line); }
+.db-table td { padding: 12px; font-size: .92rem; border-bottom: 1px solid var(--db-line); color: var(--db-body); }
+.db-table tr:last-child td { border-bottom: 0; }
+
+@media (max-width: 560px) {
+  .db-wrap { padding: 24px 16px 48px; }
+  .db-stats { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---- Casualties & injured (report form + chips) ---- */
+.db-fieldset { border: 1px solid var(--db-line); border-radius: 12px; padding: 12px 16px 4px; margin: 4px 0 16px; }
+.db-fieldset legend { padding: 0 8px; font-weight: 800; color: var(--db-heading); font-size: .92rem; }
+.db-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.db-hint { font-size: .8rem; color: var(--db-soft); margin: 0 0 10px; }
+.db-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+.db-chip { display: inline-flex; padding: 3px 10px; border-radius: var(--db-pill); font-size: .8rem; font-weight: 700; background: var(--db-mist); color: var(--db-body); }
+.db-chip-danger { background: var(--db-high-tint); color: #a12f2f; }
+.db-chip-warn { background: var(--db-medium-tint); color: #7a5700; }
+
+/* ---- Clickable report rows + full-report modal (DRRMO) ---- */
+.db-item-clickable { cursor: pointer; transition: border-color .2s ease, box-shadow .2s ease; }
+.db-item-clickable:hover, .db-item-clickable:focus-visible { border-color: var(--db-navy); box-shadow: 0 2px 10px rgba(28,46,74,.12); outline: none; }
+
+.db-modal-backdrop { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(28,46,74,.55); }
+.db-modal { width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; padding: 24px; background: var(--db-white); border-radius: var(--db-radius); box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+.db-modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.db-modal-section { padding: 14px 0; border-top: 1px solid var(--db-line); }
+.db-modal-section h3 { font-size: .95rem; margin-bottom: 8px; }
+.db-dl { display: grid; grid-template-columns: 120px 1fr; gap: 6px 12px; margin: 0; font-size: .9rem; }
+.db-dl dt { color: var(--db-soft); }
+.db-dl dd { margin: 0; color: var(--db-body); }
+@media (max-width: 560px) { .db-field-row { grid-template-columns: 1fr; } .db-dl { grid-template-columns: 1fr; } .db-dl dt { margin-top: 6px; } }
+
+.db-field-row-3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 560px) { .db-field-row-3 { grid-template-columns: 1fr; } }

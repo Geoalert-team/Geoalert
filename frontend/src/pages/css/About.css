@@ -1,0 +1,176 @@
+/* =========================================================
+   About page styles (ab-)
+   Shared styles (ph-) come from PublicHome.css
+   ========================================================= */
+
+/* ---------- Hero: navy band that continues from the navbar ---------- */
+.ab-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 72px 0 80px;
+  background: var(--ph-navy);
+  border-top: 1px solid rgba(255, 255, 255, .08);
+  color: #d6deea;
+}
+
+/* Blurred photo behind the hero */
+.ab-hero::before {
+  content: "";
+  position: absolute;
+  inset: -24px; /* bigger than the hero so the blurred edges don't show */
+  background: url('../../assets/images/p2.jpg') center / cover no-repeat;
+  filter: blur(4px);
+}
+
+/* Navy tint on top of the photo so the white text stays easy to read */
+.ab-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(28, 46, 74, .72);
+}
+
+/* Keep the text above the photo and tint */
+.ab-hero > .ph-container {
+  position: relative;
+  z-index: 1;
+}
+
+.ab-hero-place {
+  display: inline-block;
+  margin-bottom: 18px;
+  padding: 6px 14px;
+  border-radius: var(--ph-pill);
+  background: rgba(255, 255, 255, .1);
+  color: var(--ph-white);
+  font-weight: 700;
+  font-size: .92rem;
+}
+
+.ph .ab-hero-title {
+  color: var(--ph-white);
+  font-size: clamp(2.4rem, 5vw, 3.75rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.ab-hero-lead {
+  max-width: 36rem;
+  margin-top: 18px;
+  font-size: 1.2rem;
+}
+
+/* ---------- Mission + features ---------- */
+.ab-mission {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 64px;
+  align-items: start;
+}
+
+.ab-mission-text h2 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  max-width: 16ch;
+}
+.ab-mission-text p { margin-top: 18px; max-width: 34rem; }
+
+.ab-mission-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 32px;
+}
+
+.ab-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.ab-feature {
+  padding: 24px;
+  border: 1px solid var(--ph-line);
+  border-radius: var(--ph-radius);
+  background: var(--ph-white);
+}
+.ab-feature h3 { font-size: 1.15rem; font-weight: 800; }
+.ab-feature p { margin-top: 6px; font-size: .96rem; }
+
+.ab-feature-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+}
+.ab-feature-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ab-feature-realtime .ab-feature-icon { background: #fbe9e6; color: #cc3d2e; }
+.ab-feature-guidance .ab-feature-icon { background: #e6effb; color: #2f6fd1; }
+.ab-feature-history .ab-feature-icon { background: #e8f6ee; color: #1f7a45; }
+.ab-feature-secure .ab-feature-icon { background: #fdf5de; color: #9a6c00; }
+
+/* Risk scale without a button underneath */
+.ph-risk-scale.ab-risk-scale { margin-bottom: 0; }
+
+/* ---------- Team ---------- */
+.ab-team-card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px;
+  border: 1px solid var(--ph-line);
+  border-radius: var(--ph-radius-lg);
+  background: var(--ph-white);
+}
+
+/* Photo placeholder frame */
+.ab-team-photo {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 88px;
+  height: 88px;
+  border: 2px dashed #b9c4d4;
+  border-radius: 50%;
+  background: var(--ph-mist);
+  color: var(--ph-soft);
+  overflow: hidden;
+}
+.ab-team-photo svg {
+  width: 36px;
+  height: 36px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.ab-team-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+.ab-team-card h3 { font-size: 1.35rem; font-weight: 800; }
+.ab-team-org { margin-top: 4px; font-weight: 700; color: var(--ph-heading); }
+.ab-team-role { margin-top: 6px; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 960px) {
+  .ab-mission { grid-template-columns: 1fr; gap: 40px; }
+}
+
+@media (max-width: 560px) {
+  .ab-hero { padding: 48px 0 56px; }
+  .ab-feature-grid { grid-template-columns: 1fr; }
+  .ab-mission-actions .ph-btn { width: 100%; }
+  .ab-team-card { flex-direction: column; text-align: center; padding: 24px; }
+}

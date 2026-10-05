@@ -1,0 +1,311 @@
+.pm .pm-drop-wrap { background: none; border: 0; }
+
+.pm-drop {
+  position: relative;
+  display: block;
+  width: 44px;
+  height: 56px;
+  transform-origin: 50% 96%;
+  transition: transform .15s ease;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .35));
+  cursor: pointer;
+}
+.pm-drop svg { display: block; width: 100%; height: 100%; }
+.pm-drop-body { fill: var(--pm-navy); stroke: #fff; stroke-width: 2; }
+.pm-drop-wrap:hover .pm-drop { transform: scale(1.08); }
+.pm-drop.is-selected,
+.pm-drop-wrap:hover .pm-drop.is-selected { transform: scale(1.2); }
+
+/* Barangay-check badge (on pins and in the legend) */
+.pm-drop-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 800;
+  font-size: 11px;
+  line-height: 1;
+}
+.pm-drop-badge svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.pm-drop-badge.is-confirmed { background: #1f9d55; }
+.pm-drop-badge.is-disputed { background: #b86b00; }
+.pm-drop-badge.is-pending { background: #8a96a8; }
+
+.pm-drop-badge.is-static {
+  position: static;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px var(--pm-line);
+}
+.pm-legend-title-sub { margin-top: 12px; }
+
+/* ---------- Base map toggle (Satellite / Map) ---------- */
+.pm-basemap {
+  position: absolute;
+  right: 16px;
+  bottom: 104px;
+  z-index: 800;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--pm-white);
+  box-shadow: var(--pm-shadow);
+}
+.pm-basemap button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pm-body);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: .88rem;
+  cursor: pointer;
+  transition: background-color .2s ease, color .2s ease;
+}
+.pm-basemap button:hover { color: var(--pm-heading); }
+.pm-basemap button.is-active { background: var(--pm-navy); color: var(--pm-white); }
+.pm-basemap button:focus-visible { outline: 3px solid var(--pm-navy); outline-offset: 2px; }
+
+@media (max-width: 860px) {
+  .pm-basemap.is-hidden-mobile { display: none; }
+}
+
+/* ---------- Barangay outlines ---------- */
+.pm .leaflet-interactive.pm-brgy {
+  transition: stroke-width .15s ease, fill-opacity .15s ease;
+}
+.pm .leaflet-interactive.pm-brgy:hover {
+  stroke-width: 2.5;
+  stroke-opacity: .9;
+  fill-opacity: .08;
+}
+
+.pm .pm-brgy-tip {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pm-navy);
+  box-shadow: var(--pm-shadow);
+  color: var(--pm-white);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: .85rem;
+}
+.pm .pm-brgy-tip.leaflet-tooltip-top::before { border-top-color: var(--pm-navy); }
+
+/* Barangay rows in the search results: hollow dot = place, filled dot = hazard */
+.pm-results-dot-brgy {
+  background: transparent;
+  border: 2px solid var(--pm-navy);
+}
+
+/* ---------- Barangay panel: hazard list ---------- */
+.pm-brgy-list {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pm-brgy-list button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--pm-line);
+  border-radius: 14px;
+  background: var(--pm-white);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-brgy-list button:hover { background: var(--pm-mist); }
+.pm-brgy-list button:focus-visible { outline: 3px solid var(--pm-navy); outline-offset: 2px; }
+.pm-brgy-list strong { display: block; color: var(--pm-heading); }
+.pm-brgy-list small { color: var(--pm-soft); font-size: .88rem; }
+
+.pm-brgy-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+.pm-brgy-icon svg { width: 18px; height: 18px; fill: currentColor; }
+
+/* ---------- Barangay confirmation box (inside the hazard panel) ---------- */
+.pm-verify {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid;
+  border-radius: 14px;
+}
+.pm-verify-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+.pm-verify-meta { margin-top: 4px; color: var(--pm-soft); font-size: .88rem; }
+.pm-verify-note {
+  margin: 10px 0 0;
+  padding-left: 12px;
+  border-left: 3px solid currentColor;
+  color: var(--pm-heading);
+  font-size: .95rem;
+}
+.pm-verify-disclaimer { margin-top: 10px; color: var(--pm-body); font-size: .9rem; }
+
+.pm-verify-actions { display: grid; gap: 8px; margin-top: 12px; }
+.pm-verify-prompt { margin: 0; color: var(--pm-body); font-size: .88rem; }
+.pm-verify .pm-btn { font-family: inherit; cursor: pointer; }
+.pm-verify .pm-btn-outline { background: transparent; }
+.pm-verify .pm-btn-outline:hover { background: var(--pm-navy); }
+.pm-verify .pm-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.pm-verify-form { margin-top: 12px; }
+.pm-verify-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--pm-heading);
+  font-weight: 700;
+  font-size: .92rem;
+}
+.pm-verify-form textarea {
+  width: 100%;
+  min-height: 88px;
+  padding: 10px 12px;
+  border: 1px solid var(--pm-line);
+  border-radius: 12px;
+  background: var(--pm-white);
+  color: var(--pm-heading);
+  font: inherit;
+  resize: vertical;
+}
+.pm-verify-form textarea:focus-visible { outline: 3px solid var(--pm-navy); outline-offset: 1px; }
+.pm-verify-error { margin-top: 8px; color: #a12f2f; font-weight: 700; font-size: .9rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-drop, .pm-basemap button { transition: none; }
+}
+/* ---------- Editable "What to do" steps: one box per step ---------- */
+.pm-guide .pm-btn { font-family: inherit; cursor: pointer; }
+.pm-guide .pm-btn-outline { background: transparent; }
+.pm-guide .pm-btn-outline:hover { background: var(--pm-navy); color: var(--pm-white); }
+.pm-guide .pm-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.pm-phase-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.pm-phase-tab {
+  flex: 1;
+  min-height: 34px;
+  border: 1px solid var(--pm-line);
+  border-radius: 999px;
+  background: var(--pm-white);
+  color: var(--pm-body);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: .88rem;
+  cursor: pointer;
+}
+.pm-phase-tab:hover { background: var(--pm-mist); }
+.pm-phase-tab.is-active { background: var(--pm-navy); border-color: var(--pm-navy); color: var(--pm-white); }
+
+.pm-guide-tools { display: grid; gap: 8px; margin-top: 16px; }
+
+.pm-guide-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--pm-heading);
+  font-weight: 700;
+  font-size: .92rem;
+}
+.pm-guide-hint { margin-top: 6px; color: var(--pm-soft); font-size: .86rem; }
+.pm-guide-error { margin-top: 8px; color: #a12f2f; font-weight: 700; font-size: .9rem; }
+.pm-guide-link {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #a12f2f;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: .88rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* One numbered box per step, instead of one big textarea — this is what
+   actually fixes the "everything merged together" look: each step is its
+   own clearly separated field instead of long sentences wrapping inside
+   a single cramped box. */
+.pm-guide-steps {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+}
+.pm-guide-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.pm-guide-step-num {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--pm-navy);
+  color: var(--pm-white);
+  font-weight: 700;
+  font-size: .8rem;
+}
+.pm-guide-step textarea {
+  flex: 1;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--pm-line);
+  border-radius: 10px;
+  background: var(--pm-white);
+  color: var(--pm-heading);
+  font: inherit;
+  line-height: 1.4;
+  resize: vertical;
+}
+.pm-guide-step textarea:focus-visible { outline: 3px solid var(--pm-navy); outline-offset: 1px; }
+.pm-guide-remove {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--pm-mist);
+  color: var(--pm-soft);
+  cursor: pointer;
+}
+.pm-guide-remove:hover { background: #fcebeb; color: #a12f2f; }
+.pm-guide-remove svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.pm-guide-add { width: 100%; }

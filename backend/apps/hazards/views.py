@@ -3,15 +3,19 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.gis.geos import Polygon
+from django.utils import timezone
+from apps.notifications.models import Notification
+from apps.accounts.models import User
 
 from apps.hazards.models import HazardType, HazardZone, HazardAlert
 from apps.hazards.serializers import (
     HazardZoneGeoSerializer,
     HazardZoneSerializer,
     HazardZoneCreateSerializer,
+    HazardZoneVerifySerializer,
     HazardTypeSerializer,
 )
-from utils.permissions import IsDRRMOOfficer
+from utils.permissions import IsDRRMOOfficer, IsBarangayPersonnel
 
 
 class HazardZoneListView(APIView):
@@ -24,7 +28,15 @@ class HazardZoneListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        zones = HazardZone.objects.filter(status='Active')
+        zones = (
+            HazardZone.objects
+            .filter(status='Active')
+            .select_related('hazard_type', 'barangay', 'verified_by')
+        )
+
+        barangay = request.query_params.get('barangay')
+        if barangay:
+            zones = zones.filter(barangay_id=barangay)
 
         # Viewport bounding box filter for map pan/zoom
         bbox = request.query_params.get('bbox')
@@ -59,13 +71,24 @@ class HazardZoneCreateView(APIView):
         zone = serializer.save(published_by=request.user)
 
         # Create alert record
-        HazardAlert.objects.create(
+        alert = HazardAlert.objects.create(
             hazard_zone = zone,
             issued_by   = request.user,
             hazard_type = zone.hazard_type,
             severity    = zone.severity,
             notes       = zone.description,
         )
+
+        # Notify every active user except whoever just published this alert
+        affected_users = User.objects.filter(is_active=True).exclude(id=request.user.id)
+        Notification.objects.bulk_create([
+            Notification(
+                hazard_alert=alert,
+                recipient=u,
+                content=f'{zone.hazard_type.name} alert ({zone.severity}) published for {zone.barangay.name if zone.barangay else "Talisay City"}.'
+            )
+            for u in affected_users
+        ])
 
         return Response(
             HazardZoneSerializer(zone).data,
@@ -99,9 +122,15 @@ class HazardZoneDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        old_severity = zone.severity
+
         zone.severity    = request.data.get('severity',    zone.severity)
         zone.status      = request.data.get('status',      zone.status)
         zone.description = request.data.get('description', zone.description)
+
+        if zone.severity != old_severity:
+            zone.reset_verification()
+
         zone.save()
 
         # Auto-archive to historical records when resolved
@@ -226,3 +255,43 @@ class HazardLayerListView(APIView):
             'Total_active_hazards':  HazardZone.objects.filter(status='Active').count(),
         })
 
+
+class HazardZoneVerifyView(APIView):
+    """
+    POST /api/hazards/<id>/verify/
+    Barangay personnel confirm or dispute conditions on the ground.
+    Body: { "verification_status": "Confirmed" | "Disputed",
+            "verification_note": "..." }   (note required when Disputed)
+    """
+    permission_classes = [IsAuthenticated, IsBarangayPersonnel]
+
+    def post(self, request, pk):
+        try:
+            zone = (
+                HazardZone.objects
+                .select_related('hazard_type', 'barangay')
+                .get(pk=pk, status='Active')
+            )
+        except HazardZone.DoesNotExist:
+            return Response(
+                {'error': 'This hazard zone is no longer active.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = HazardZoneVerifySerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        if serializer.validated_data['verification_status'] == 'Pending':
+            zone.reset_verification()
+        else:
+            zone.verification_status = serializer.validated_data['verification_status']
+            zone.verification_note   = serializer.validated_data['verification_note']
+            zone.verified_by         = request.user
+            zone.verified_at         = timezone.now()
+        zone.save(update_fields=[
+            'verification_status', 'verification_note',
+            'verified_by', 'verified_at',
+        ])
+
+        return Response(HazardZoneGeoSerializer(zone).data)
