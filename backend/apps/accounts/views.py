@@ -252,6 +252,47 @@ class TwoFactorDisableView(APIView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
+class ChangePasswordView(APIView):
+    """
+    POST /api/auth/change-password/
+    Body: { current_password, new_password }
+    Any logged-in user (Admin, DRRMO, Barangay) can change their own password.
+    """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CsrfExemptSessionAuthentication]
+
+    def post(self, request):
+        current_password = request.data.get('current_password', '')
+        new_password     = request.data.get('new_password', '')
+
+        if not current_password or not new_password:
+            return Response(
+                {'error': 'Both current_password and new_password are required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(new_password) < 8:
+            return Response(
+                {'error': 'New password must be at least 8 characters long.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not request.user.check_password(current_password):
+            return Response(
+                {'error': 'Current password is incorrect.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        request.user.set_password(new_password)
+        request.user.save()
+
+        # Re-login so the session stays valid after the password hash changes
+        login(request, request.user)
+
+        return Response({'message': 'Password changed successfully.'})
+
+
+@method_decorator(csrf_exempt, name='dispatch')
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CsrfExemptSessionAuthentication]
