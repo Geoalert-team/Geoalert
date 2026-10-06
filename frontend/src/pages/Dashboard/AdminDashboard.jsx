@@ -5,6 +5,13 @@ import '../css/Dashboard.css';
 
 const TABS = ['Overview', 'Users', 'Logs'];
 
+const METRIC_DISPLAY = [
+  { key: 'total_users', label: 'Total users', icon: '👥' },
+  { key: 'active_users', label: 'Active users', icon: '✅' },
+  { key: 'active_hazards', label: 'Active hazards', icon: '⚠️' },
+  { key: 'published_guidance', label: 'Published guidance', icon: '📘' },
+];
+
 export default function AdminDashboard() {
   const [tab, setTab] = useState('Overview');
   const [metrics, setMetrics] = useState(null);
@@ -84,6 +91,9 @@ export default function AdminDashboard() {
     navigator.clipboard.writeText(revealedPassword.password).then(() => setCopied(true));
   }
 
+  const recentActivity = metrics?.recent_activity || [];
+  const isOperational = (metrics?.system_status || '').toLowerCase() === 'operational';
+
   return (
     <div className="db">
       <PublicNavbar />
@@ -112,57 +122,49 @@ export default function AdminDashboard() {
             <p style={{ color: 'var(--db-soft)' }}>Loading metrics…</p>
           ) : metrics ? (
             <>
-              <div className="db-stats">
-                {Object.entries(metrics)
-                  .filter(([, value]) => value === null || typeof value !== 'object')
-                  .map(([key, value]) => (
-                    <div key={key} className="db-stat">
-                      <div className="db-stat-value">{String(value)}</div>
-                      <div className="db-stat-label">{key.replace(/_/g, ' ')}</div>
-                    </div>
-                  ))}
+              <div className="db-status-row">
+                <span className={`db-status-dot ${isOperational ? '' : 'is-down'}`} />
+                <span style={{ fontSize: '.88rem', color: 'var(--db-soft)' }}>
+                  System status: <strong style={{ color: 'var(--db-heading)' }}>{metrics.system_status}</strong>
+                </span>
               </div>
 
-              {Object.entries(metrics)
-                .filter(([, value]) => value !== null && typeof value === 'object')
-                .map(([key, value]) => (
-                  <div key={key} className="db-card">
-                    <h2>{key.replace(/_/g, ' ')}</h2>
-                    {Array.isArray(value) ? (
-                      value.length === 0 ? (
-                        <p className="db-empty">Nothing here yet.</p>
-                      ) : (
-                        <div className="db-list">
-                          {value.map((item, i) => (
-                            <div key={item.id ?? i} className="db-item">
-                              {typeof item === 'object' && item !== null ? (
-                                Object.entries(item).map(([k, v]) => (
-                                  <div key={k} className="db-item-meta">
-                                    <strong style={{ color: 'var(--db-heading)' }}>{k.replace(/_/g, ' ')}:</strong>{' '}
-                                    {typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v)}
-                                  </div>
-                                ))
-                              ) : (
-                                <span>{String(item)}</span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )
-                    ) : (
-                      <div className="db-list">
-                        {Object.entries(value).map(([k, v]) => (
-                          <div key={k} className="db-item">
-                            <div className="db-item-title">{k.replace(/_/g, ' ')}</div>
-                            <div className="db-item-meta">
-                              {typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+              <div className="db-stats">
+                {METRIC_DISPLAY.map(({ key, label, icon }) => (
+                  <div key={key} className="db-metric">
+                    <span className="db-metric-icon" aria-hidden="true">{icon}</span>
+                    <div>
+                      <div className="db-metric-value">{metrics[key] ?? '—'}</div>
+                      <div className="db-metric-label">{label}</div>
+                    </div>
                   </div>
                 ))}
+              </div>
+
+              <div className="db-card">
+                <h2>Recent activity</h2>
+                <p className="db-card-sub">The last few actions taken by any admin.</p>
+                {recentActivity.length === 0 ? (
+                  <p className="db-empty">No activity recorded yet.</p>
+                ) : (
+                  <div className="db-activity">
+                    {recentActivity.map((log) => (
+                      <div key={log.id} className="db-activity-item">
+                        <span className="db-activity-dot" />
+                        <div className="db-activity-body">
+                          <div className="db-activity-title">
+                            {(log.action || '').replace(/_/g, ' ')}
+                          </div>
+                          <div className="db-activity-meta">
+                            {log.user_name || log.user_email} · {new Date(log.created_at).toLocaleString()}
+                          </div>
+                          {log.details && <div className="db-activity-meta">{log.details}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <p style={{ color: 'var(--db-soft)' }}>Metrics unavailable right now.</p>
@@ -173,37 +175,21 @@ export default function AdminDashboard() {
           <div className="db-grid-2">
             <div>
               {revealedPassword && (
-                <div
-                  className="db-card"
-                  style={{ marginBottom: 16, border: '2px solid #2563eb', background: '#eff6ff' }}
-                >
-                  <h2 style={{ margin: 0 }}>Temporary password for {revealedPassword.email}</h2>
-                  <p className="db-card-sub" style={{ marginBottom: 12 }}>
+                <div className="db-card db-reveal" style={{ marginBottom: 16 }}>
+                  <h2>Temporary password for {revealedPassword.email}</h2>
+                  <p className="db-card-sub" style={{ marginBottom: 0 }}>
                     This is shown once. Copy it now and share it with the user securely.
                   </p>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <code
-                      style={{
-                        flex: 1,
-                        padding: '10px 12px',
-                        background: '#fff',
-                        border: '1px solid var(--db-line, #cbd5e1)',
-                        borderRadius: 8,
-                        fontFamily: 'monospace',
-                        fontSize: 15,
-                        wordBreak: 'break-all',
-                      }}
-                    >
-                      {revealedPassword.password}
-                    </code>
-                    <button type="button" className="btn" onClick={copyPassword}>
+                  <div className="db-reveal-row">
+                    <code className="db-code">{revealedPassword.password}</code>
+                    <button type="button" className="db-btn db-btn-outline" onClick={copyPassword}>
                       {copied ? 'Copied' : 'Copy'}
                     </button>
                   </div>
                   <button
                     type="button"
-                    className="btn"
-                    style={{ marginTop: 10 }}
+                    className="db-btn db-btn-outline"
+                    style={{ marginTop: 12 }}
                     onClick={() => setRevealedPassword(null)}
                   >
                     Dismiss
@@ -255,19 +241,47 @@ export default function AdminDashboard() {
                     <tr><th>Name</th><th>Email</th><th>Role</th><th /></tr>
                   </thead>
                   <tbody>
-                    {users.map((u) => (
-                      <tr key={u.id}>
-                        <td>{u.full_name}</td>
-                        <td>{u.email}</td>
-                        <td>{u.role?.name || u.role}</td>
-                        <td>
-                          <div className="db-btn-row">
-                            <button className="db-btn db-btn-outline" onClick={() => resetPassword(u.id, u.email)}>Reset password</button>
-                            <button className="db-btn db-btn-danger" onClick={() => deactivate(u.id)}>Deactivate</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {users.map((u) => {
+                      const isSelf = currentUser && String(currentUser.id) === String(u.id);
+                      const busy = statusBusyId === u.id;
+                      return (
+                        <tr key={u.id}>
+                          <td>{u.full_name}</td>
+                          <td>{u.email}</td>
+                          <td>{u.role?.name || u.role}</td>
+                          <td>
+                            <span className={`db-badge ${u.is_active ? 'db-badge-active-status' : 'db-badge-inactive-status'}`}>
+                              {u.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="db-btn-row">
+                              <button className="db-btn db-btn-outline" onClick={() => resetPassword(u.id, u.email)}>
+                                Reset password
+                              </button>
+                              {u.is_active ? (
+                                <button
+                                  className="db-btn db-btn-danger"
+                                  disabled={isSelf || busy}
+                                  title={isSelf ? "You can't deactivate your own account" : undefined}
+                                  onClick={() => deactivate(u.id)}
+                                >
+                                  {busy ? 'Working…' : 'Deactivate'}
+                                </button>
+                              ) : (
+                                <button
+                                  className="db-btn db-btn-primary"
+                                  disabled={busy}
+                                  onClick={() => activate(u.id)}
+                                >
+                                  {busy ? 'Working…' : 'Activate'}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
@@ -282,17 +296,18 @@ export default function AdminDashboard() {
             {logs.length === 0 ? (
               <p className="db-empty">No activity recorded yet.</p>
             ) : (
-              <div className="db-list">
+              <div className="db-activity">
                 {(logs.results || logs).map((log) => (
-                  <div key={log.id} className="db-item">
-                    <div className="db-item-head">
-                      <span className="db-item-title">{log.action || log.event}</span>
-                      <span className="db-item-meta">
-                        {new Date(log.created_at || log.timestamp).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="db-item-meta">
-                      {log.actor_name || log.user} {log.detail ? `— ${log.detail}` : ''}
+                  <div key={log.id} className="db-activity-item">
+                    <span className="db-activity-dot" />
+                    <div className="db-activity-body">
+                      <div className="db-activity-title">{(log.action || log.event || '').replace(/_/g, ' ')}</div>
+                      <div className="db-activity-meta">
+                        {log.actor_name || log.user_name || log.user} · {new Date(log.created_at || log.timestamp).toLocaleString()}
+                      </div>
+                      {(log.detail || log.details) && (
+                        <div className="db-activity-meta">{log.detail || log.details}</div>
+                      )}
                     </div>
                   </div>
                 ))}
