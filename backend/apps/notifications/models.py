@@ -5,16 +5,16 @@ from apps.hazards.models import HazardAlert
 
 
 class Notification(models.Model):
-    id           = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column='NOTF_ID')
-    hazard_alert = models.ForeignKey(HazardAlert, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications', db_column='NOTF_HZAL_ID')
-    recipient    = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', db_column='NOTF_RECIPIENT_ID')
-    content      = models.TextField(db_column='NOTF_CONTENT')
-    is_read      = models.BooleanField(default=False, db_column='NOTF_IS_READ')
-    sent_at      = models.DateTimeField(auto_now_add=True, db_column='NOTF_SENT_AT')
-    read_at      = models.DateTimeField(null=True, blank=True, db_column='NOTF_READ_AT')
+    id           = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column='notf_id')
+    hazard_alert = models.ForeignKey(HazardAlert, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications', db_column='notf_hzal_id')
+    recipient    = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', db_column='notf_recipient_id')
+    content      = models.TextField(db_column='notf_content')
+    is_read      = models.BooleanField(default=False, db_column='notf_is_read')
+    sent_at      = models.DateTimeField(auto_now_add=True, db_column='notf_sent_at')
+    read_at      = models.DateTimeField(null=True, blank=True, db_column='notf_read_at')
 
     class Meta:
-        db_table = 'NOTIFICATION'
+        db_table = 'notification'
         ordering = ['-sent_at']
 
     def __str__(self):

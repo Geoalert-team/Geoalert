@@ -9,8 +9,12 @@ class Role(models.Model):
         ('DRRMO_Officer',      'DRRMO Officer'),
         ('Barangay_Personnel', 'Barangay Personnel'),
     ]
-    name        = models.CharField(max_length=40, choices=ROLE_CHOICES, unique=True)
-    description = models.TextField(blank=True)
+    id          = models.BigAutoField(primary_key=True, db_column='role_id')
+    name        = models.CharField(max_length=40, choices=ROLE_CHOICES, unique=True, db_column='role_name')
+    description = models.TextField(blank=True, db_column='role_desc')
+
+    class Meta:
+        db_table = 'role'
 
     def __str__(self):
         return self.name
@@ -33,19 +37,24 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    id                  = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    role                = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
-    full_name           = models.CharField(max_length=150)
-    email               = models.EmailField(unique=True)
-    failed_login_count  = models.IntegerField(default=0)
-    locked_until        = models.DateTimeField(null=True, blank=True)
-    is_active           = models.BooleanField(default=True)
-    is_staff            = models.BooleanField(default=False)
-    created_at          = models.DateTimeField(auto_now_add=True)
+    id                  = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column='user_id')
+    role                = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True, db_column='user_role_id')
+    full_name           = models.CharField(max_length=150, db_column='user_full_name')
+    email               = models.EmailField(unique=True, db_column='user_email')
+    failed_login_count  = models.IntegerField(default=0, db_column='user_failed_login_count')
+    locked_until        = models.DateTimeField(null=True, blank=True, db_column='user_locked_until')
+    is_active           = models.BooleanField(default=True, db_column='user_is_active')
+    is_staff            = models.BooleanField(default=False, db_column='user_is_staff')
+    created_at          = models.DateTimeField(auto_now_add=True, db_column='user_created_at')
+
+    # Fields inherited from Django's base classes, redefined only to rename the columns
+    password     = models.CharField(max_length=128, db_column='user_password_hash')
+    last_login   = models.DateTimeField(null=True, blank=True, db_column='user_last_login')
+    is_superuser = models.BooleanField(default=False, db_column='user_is_superuser')
 
     # Two-factor authentication (Google Authenticator / any TOTP app)
-    two_factor_enabled  = models.BooleanField(default=False)
-    two_factor_secret   = models.CharField(max_length=32, blank=True, null=True)
+    two_factor_enabled  = models.BooleanField(default=False, db_column='user_two_factor_enabled')
+    two_factor_secret   = models.CharField(max_length=32, blank=True, null=True, db_column='user_two_factor_secret')
 
     objects = UserManager()
 
@@ -53,7 +62,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['full_name']
 
     class Meta:
-        db_table = 'user'
+        db_table = 'app_user'
 
     def __str__(self):
         return f'{self.full_name} ({self.email})'
