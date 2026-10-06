@@ -61,6 +61,9 @@ export default function BarangayDashboard() {
     }
   }
 
+  const pendingCount = reports.filter((r) => r.status === 'Pending').length;
+  const validatedCount = reports.filter((r) => r.status === 'Validated').length;
+
   return (
     <div className="db">
       <PublicNavbar />
@@ -68,6 +71,21 @@ export default function BarangayDashboard() {
         <div className="db-header">
           <h1>Barangay dashboard</h1>
           <p>Submit incident reports for DRRMO validation.</p>
+        </div>
+
+        <div className="db-stats">
+          <div className="db-stat">
+            <div className="db-stat-value">{reports.length}</div>
+            <div className="db-stat-label">Reports submitted</div>
+          </div>
+          <div className="db-stat">
+            <div className="db-stat-value">{pendingCount}</div>
+            <div className="db-stat-label">Awaiting review</div>
+          </div>
+          <div className="db-stat">
+            <div className="db-stat-value">{validatedCount}</div>
+            <div className="db-stat-label">Validated</div>
+          </div>
         </div>
 
         <div className="db-grid-2">

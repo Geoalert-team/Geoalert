@@ -129,3 +129,45 @@
 
 .db-field-row-3 { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 560px) { .db-field-row-3 { grid-template-columns: 1fr; } }
+
+/* ---- Dedicated status badges (separate from report validation colors) ---- */
+.db-badge-active-status   { background: var(--db-low-tint);  color: #16693a; }
+.db-badge-inactive-status { background: var(--db-mist);      color: var(--db-soft); }
+
+/* ---- Temporary password reveal card ---- */
+.db-reveal { border: 2px solid var(--db-navy); background: #eff6ff; }
+.db-reveal h2 { font-size: 1.05rem; }
+.db-reveal-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+.db-code {
+  flex: 1; padding: 10px 14px; border: 1px solid var(--db-line); border-radius: 10px;
+  background: var(--db-white); font-family: 'Courier New', monospace; font-size: .98rem;
+  color: var(--db-heading); word-break: break-all;
+}
+
+/* ---- Named metric cards with an icon slot (Overview tab) ---- */
+.db-metric { display: flex; align-items: center; gap: 14px; padding: 20px; border: 1px solid var(--db-line); border-radius: var(--db-radius); background: var(--db-white); }
+.db-metric-icon {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 44px; height: 44px; border-radius: 12px; background: var(--db-mist);
+  font-size: 1.3rem;
+}
+.db-metric-value { font-family: var(--db-font-head); font-size: 1.6rem; font-weight: 800; color: var(--db-heading); line-height: 1.1; }
+.db-metric-label { font-size: .84rem; color: var(--db-soft); margin-top: 2px; }
+
+/* ---- System status pill (Operational / degraded) ---- */
+.db-status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+.db-status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--db-low); }
+.db-status-dot.is-down { background: var(--db-high); }
+
+/* ---- Activity feed (audit log on Overview + Logs tab) ---- */
+.db-activity { display: flex; flex-direction: column; gap: 2px; }
+.db-activity-item { display: flex; gap: 12px; padding: 14px 4px; border-bottom: 1px solid var(--db-line); }
+.db-activity-item:last-child { border-bottom: 0; }
+.db-activity-dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--db-navy); margin-top: 7px; }
+.db-activity-body { flex: 1; min-width: 0; }
+.db-activity-title { font-weight: 700; color: var(--db-heading); font-size: .92rem; }
+.db-activity-meta { font-size: .8rem; color: var(--db-soft); margin-top: 2px; }
+
+@media (max-width: 560px) {
+  .db-reveal-row { flex-direction: column; align-items: stretch; }
+}
