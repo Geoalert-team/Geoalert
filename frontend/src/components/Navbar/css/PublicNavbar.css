@@ -309,3 +309,153 @@
     background: rgba(255, 255, 255, 0.1);
   }
 }
+
+/* Notification bell (shown to logged-in users, left of the user menu) */
+.pn-bell {
+  position: relative;
+}
+
+.pn-bell-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--pn-white);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.pn-bell-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.pn-bell-btn svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pn-bell-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 2px solid var(--pn-navy);
+  background: #e5484d;
+  color: var(--pn-white);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.pn-bell-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  border-radius: 12px;
+  background: var(--pn-white);
+  color: var(--pn-navy);
+  box-shadow: 0 12px 28px rgba(10, 20, 40, 0.25);
+  overflow: hidden;
+  z-index: 20;
+}
+
+.pn-bell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e3e9f1;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.pn-bell-markall {
+  border: 0;
+  background: transparent;
+  color: #2f5fa8;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.pn-bell-markall:hover {
+  text-decoration: underline;
+}
+
+.pn-bell-empty {
+  margin: 0;
+  padding: 24px 14px;
+  text-align: center;
+  color: #6b7a90;
+  font-size: 0.9rem;
+}
+
+.pn-bell-list {
+  max-height: 340px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.pn-bell-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 0;
+  border-bottom: 1px solid #eef2f7;
+  background: var(--pn-white);
+  color: var(--pn-navy);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.pn-bell-item:hover {
+  background: #f3f6fb;
+}
+.pn-bell-item.is-unread {
+  background: #eaf1fc;
+}
+.pn-bell-item.is-unread .pn-bell-text {
+  font-weight: 700;
+}
+.pn-bell-text {
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+.pn-bell-time {
+  color: #6b7a90;
+  font-size: 0.75rem;
+}
+
+/* Mobile: stacked menu, so the bell/dropdown go full-width like the user menu */
+@media (max-width: 860px) {
+  .pn-bell-btn {
+    width: 100%;
+    border-radius: 999px;
+  }
+  .pn-bell-dropdown {
+    position: static;
+    width: 100%;
+    max-width: none;
+    margin-top: 8px;
+    box-shadow: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+}
