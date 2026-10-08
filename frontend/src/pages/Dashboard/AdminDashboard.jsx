@@ -1,342 +1,268 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import PublicNavbar from '../../components/Navbar/PublicNavbar';
 import { useAuth } from '../../context/AuthContext';
 import { adminApi } from '../../api/adminApi';
+import UsersTab from './admin/UsersTab';
+import LogsTab, { ActionTag } from './admin/LogsTab';
+import { Icon, ROLE_META, Toast, roleName, timeAgo } from './admin/adminShared';
 import '../css/Dashboard.css';
+import '../css/AdminDashboard.css';
 
-const TABS = ['Overview', 'Users', 'Logs'];
-
-const METRIC_DISPLAY = [
-  { key: 'total_users', label: 'Total users', icon: '👥' },
-  { key: 'active_users', label: 'Active users', icon: '✅' },
-  { key: 'active_hazards', label: 'Active hazards', icon: '⚠️' },
-  { key: 'published_guidance', label: 'Published guidance', icon: '📘' },
+const TABS = [
+  { key: 'overview', label: 'Overview', icon: 'grid' },
+  { key: 'users', label: 'Users', icon: 'users' },
+  { key: 'logs', label: 'Activity log', icon: 'list' },
 ];
+
+function MetricCard({ icon, tone, value, label, note }) {
+  return (
+    <div className="adm-metric">
+      <span className={`adm-metric-icon adm-metric-${tone}`}><Icon name={icon} size={20} /></span>
+      <div className="adm-metric-text">
+        <span className="adm-metric-label">{label}</span>
+        <span className="adm-metric-value">{value ?? '—'}</span>
+        {note && <span className="adm-metric-note">{note}</span>}
+      </div>
+    </div>
+  );
+}
+
+function Overview({ metrics, users, onAddUser, onOpenTab }) {
+  const total = metrics?.total_users ?? users.length;
+  const active = metrics?.active_users ?? users.filter((u) => u.is_active).length;
+  const inactive = metrics?.inactive_users ?? total - active;
+
+  // Prefer the backend's counts; fall back to counting the loaded user list
+  const byRole = metrics?.users_by_role || users.reduce((acc, u) => {
+    const key = roleName(u.role) || 'Unassigned';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const activity = metrics?.recent_activity || [];
+
+  return (
+    <>
+      <div className="adm-metrics">
+        <MetricCard icon="users" tone="navy" label="Total accounts" value={total} note={`${Object.keys(byRole).length} roles in use`} />
+        <MetricCard
+          icon="userCheck"
+          tone="green"
+          label="Active accounts"
+          value={active}
+          note={inactive ? `${inactive} deactivated` : 'All accounts can sign in'}
+        />
+        <MetricCard icon="alert" tone="amber" label="Active hazards" value={metrics?.active_hazards} note="Currently shown on the map" />
+        <MetricCard icon="book" tone="blue" label="Published guidance" value={metrics?.published_guidance} note="Visible to residents" />
+      </div>
+
+      <div className="adm-overview-grid">
+        <section className="adm-card">
+          <div className="adm-card-head">
+            <div>
+              <h2>Recent activity</h2>
+              <p>The latest actions taken by administrators.</p>
+            </div>
+            <button type="button" className="adm-link" onClick={() => onOpenTab('logs')}>
+              View all <Icon name="arrowRight" size={14} />
+            </button>
+          </div>
+          {activity.length === 0 ? (
+            <div className="adm-empty">
+              <Icon name="clock" size={28} />
+              <p>No activity recorded yet.</p>
+            </div>
+          ) : (
+            <ul className="adm-feed">
+              {activity.map((log) => (
+                <li key={log.id} className="adm-feed-item">
+                  <div className="adm-feed-main">
+                    <ActionTag action={log.action} />
+                    <p className="adm-feed-detail">{log.details || '—'}</p>
+                  </div>
+                  <div className="adm-feed-meta">
+                    <span>{log.user_name || log.user_email || 'System'}</span>
+                    <span title={new Date(log.created_at).toLocaleString()}>{timeAgo(log.created_at)}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <div className="adm-side">
+          <section className="adm-card">
+            <div className="adm-card-head">
+              <div>
+                <h2>Accounts by role</h2>
+                <p>{total} account{total === 1 ? '' : 's'} in total</p>
+              </div>
+            </div>
+            <ul className="adm-roles">
+              {Object.entries(ROLE_META).map(([key, meta]) => {
+                const n = byRole[key] || 0;
+                const pct = total ? Math.round((n / total) * 100) : 0;
+                return (
+                  <li key={key}>
+                    <div className="adm-roles-row">
+                      <span className={`adm-roles-icon adm-tone-${meta.tone}`}><Icon name={meta.icon} size={16} /></span>
+                      <span className="adm-roles-label">{meta.label}</span>
+                      <span className="adm-roles-count">{n}</span>
+                    </div>
+                    <div className="adm-bar"><span className={`adm-tone-${meta.tone}`} style={{ width: `${pct}%` }} /></div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+
+          <section className="adm-card">
+            <div className="adm-card-head">
+              <div>
+                <h2>Quick actions</h2>
+              </div>
+            </div>
+            <div className="adm-quick">
+              <button type="button" className="adm-quick-btn" onClick={onAddUser}>
+                <span className="adm-quick-icon"><Icon name="userPlus" size={18} /></span>
+                <span><strong>Add a user</strong><small>Create a staff account</small></span>
+                <Icon name="chevronRight" size={16} />
+              </button>
+              <button type="button" className="adm-quick-btn" onClick={() => onOpenTab('users')}>
+                <span className="adm-quick-icon"><Icon name="users" size={18} /></span>
+                <span><strong>Manage accounts</strong><small>Edit, reset or deactivate</small></span>
+                <Icon name="chevronRight" size={16} />
+              </button>
+              <button type="button" className="adm-quick-btn" onClick={() => onOpenTab('logs')}>
+                <span className="adm-quick-icon"><Icon name="list" size={18} /></span>
+                <span><strong>Review activity</strong><small>Full audit trail</small></span>
+                <Icon name="chevronRight" size={16} />
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </>
+  );
+}
 
 export default function AdminDashboard() {
   const { user: currentUser } = useAuth();
-  const [tab, setTab] = useState('Overview');
+  const [tab, setTab] = useState('overview');
   const [metrics, setMetrics] = useState(null);
+  const [metricsFailed, setMetricsFailed] = useState(false);
   const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(true);
   const [roles, setRoles] = useState([]);
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [updatedAt, setUpdatedAt] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [formRequest, setFormRequest] = useState(false);
+  const [toast, setToast] = useState(null);
 
-  const [newUser, setNewUser] = useState({ full_name: '', email: '', role_id: '' });
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState('');
+  const loadMetrics = useCallback(() => (
+    adminApi.metrics()
+      .then((m) => { setMetrics(m); setMetricsFailed(false); })
+      .catch(() => setMetricsFailed(true))
+  ), []);
 
-  // Which user's status (activate/deactivate) is currently being saved,
-  // so only that row's buttons disable instead of the whole table.
-  const [statusBusyId, setStatusBusyId] = useState(null);
+  const loadUsers = useCallback(() => (
+    adminApi.users.list()
+      .then((data) => setUsers(data.results || data))
+      .catch(() => setUsers([]))
+      .finally(() => setUsersLoading(false))
+  ), []);
 
-  // Shown after creating a user or resetting a password — the backend only
-  // returns the plain temporary password this one time, so it has to be
-  // shown now or it's gone.
-  const [revealedPassword, setRevealedPassword] = useState(null); // { email, password }
-  const [copied, setCopied] = useState(false);
+  const refreshAll = useCallback(() => {
+    setRefreshing(true);
+    return Promise.all([loadMetrics(), loadUsers()]).finally(() => {
+      setRefreshing(false);
+      setUpdatedAt(new Date());
+    });
+  }, [loadMetrics, loadUsers]);
 
   useEffect(() => {
-    adminApi.metrics().then(setMetrics).catch(() => setMetrics(null)).finally(() => setLoading(false));
-  }, []);
+    refreshAll();
+    adminApi.roles().then((data) => setRoles(data.results || data)).catch(() => setRoles([]));
+  }, [refreshAll]);
 
-  useEffect(() => {
-    if (tab === 'Users') {
-      refreshUsers();
-      if (roles.length === 0) {
-        adminApi.roles().then((data) => {
-          const list = data.results || data;
-          setRoles(list);
-          if (list[0]) setNewUser((u) => (u.role_id ? u : { ...u, role_id: list[0].id }));
-        }).catch(() => setRoles([]));
-      }
-    }
-    if (tab === 'Logs') adminApi.logs().then(setLogs).catch(() => setLogs([]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab]);
+  const notify = useCallback((message, tone = 'good') => setToast({ message, tone, id: Date.now() }), []);
+  const clearToast = useCallback(() => setToast(null), []);
 
-  async function refreshUsers() {
-    try {
-      const data = await adminApi.users.list();
-      setUsers(data.results || data);
-    } catch {
-      setUsers([]);
-    }
-  }
-
-  async function createUser(e) {
-    e.preventDefault();
-    setError('');
-    setCreating(true);
-    try {
-      const result = await adminApi.users.create(newUser);
-      setRevealedPassword({ email: newUser.email, password: result.temporary_password });
-      setCopied(false);
-      setNewUser({ full_name: '', email: '', role_id: roles[0]?.id || '' });
-      refreshUsers();
-    } catch (err) {
-      setError(err.message || 'Could not create user');
-    } finally {
-      setCreating(false);
-    }
-  }
-
-  async function deactivate(id) {
-    if (!window.confirm('Deactivate this account? They will not be able to log in until reactivated.')) return;
-    setStatusBusyId(id);
-    try {
-      await adminApi.users.deactivate(id);
-      refreshUsers();
-    } finally {
-      setStatusBusyId(null);
-    }
-  }
-
-  async function activate(id) {
-    setStatusBusyId(id);
-    try {
-      await adminApi.users.update(id, { is_active: true });
-      refreshUsers();
-    } finally {
-      setStatusBusyId(null);
-    }
-  }
-
-  async function resetPassword(id, email) {
-    const result = await adminApi.users.resetPassword(id);
-    setRevealedPassword({ email, password: result.temporary_password });
-    setCopied(false);
-  }
-
-  function copyPassword() {
-    navigator.clipboard.writeText(revealedPassword.password).then(() => setCopied(true));
-  }
-
-  const recentActivity = metrics?.recent_activity || [];
-  const isOperational = (metrics?.system_status || '').toLowerCase() === 'operational';
+  const operational = !metricsFailed && (metrics?.system_status || '').toLowerCase() === 'operational';
+  const statusText = metricsFailed ? 'Status unavailable' : metrics ? metrics.system_status : 'Checking status…';
 
   return (
-    <div className="db">
+    <div className="db adm">
       <PublicNavbar />
-      <div className="db-wrap">
-        <div className="db-header">
-          <h1>Admin dashboard</h1>
-          <p>System-wide metrics, user accounts, and activity logs.</p>
-        </div>
+      <div className="adm-wrap">
+        <header className="adm-header">
+          <div>
+            <p className="adm-eyebrow">System administration</p>
+            <h1>Admin dashboard</h1>
+            <p className="adm-lede">Manage staff accounts, review activity and keep an eye on GeoAlert at a glance.</p>
+          </div>
+          <div className="adm-header-side">
+            <span className={`adm-system ${operational ? 'is-ok' : metricsFailed ? 'is-down' : ''}`}>
+              <span className="adm-system-dot" />
+              {statusText}
+            </span>
+            <button type="button" className="adm-btn adm-btn-ghost adm-btn-sm" onClick={refreshAll} disabled={refreshing} title="Refresh data">
+              <Icon name="refresh" size={15} className={refreshing ? 'adm-spin' : ''} />
+              {updatedAt ? `Updated ${updatedAt.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })}` : 'Refresh'}
+            </button>
+          </div>
+        </header>
 
-        <div className="db-tabs" role="tablist">
+        <nav className="adm-tabs" role="tablist" aria-label="Admin sections">
           {TABS.map((t) => (
             <button
-              key={t}
+              key={t.key}
               type="button"
               role="tab"
-              aria-selected={tab === t}
-              className={`db-tab ${tab === t ? 'is-active' : ''}`}
-              onClick={() => setTab(t)}>
-              {t}
+              aria-selected={tab === t.key}
+              className={`adm-tab ${tab === t.key ? 'is-active' : ''}`}
+              onClick={() => setTab(t.key)}
+            >
+              <Icon name={t.icon} size={16} />
+              {t.label}
+              {t.key === 'users' && !usersLoading && <span className="adm-tab-count">{users.length}</span>}
             </button>
           ))}
-        </div>
+        </nav>
 
-        {tab === 'Overview' && (
-          loading ? (
-            <p style={{ color: 'var(--db-soft)' }}>Loading metrics…</p>
-          ) : metrics ? (
-            <>
-              <div className="db-status-row">
-                <span className={`db-status-dot ${isOperational ? '' : 'is-down'}`} />
-                <span style={{ fontSize: '.88rem', color: 'var(--db-soft)' }}>
-                  System status: <strong style={{ color: 'var(--db-heading)' }}>{metrics.system_status}</strong>
-                </span>
-              </div>
-
-              <div className="db-stats">
-                {METRIC_DISPLAY.map(({ key, label, icon }) => (
-                  <div key={key} className="db-metric">
-                    <span className="db-metric-icon" aria-hidden="true">{icon}</span>
-                    <div>
-                      <div className="db-metric-value">{metrics[key] ?? '—'}</div>
-                      <div className="db-metric-label">{label}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="db-card">
-                <h2>Recent activity</h2>
-                <p className="db-card-sub">The last few actions taken by any admin.</p>
-                {recentActivity.length === 0 ? (
-                  <p className="db-empty">No activity recorded yet.</p>
-                ) : (
-                  <div className="db-activity">
-                    {recentActivity.map((log) => (
-                      <div key={log.id} className="db-activity-item">
-                        <span className="db-activity-dot" />
-                        <div className="db-activity-body">
-                          <div className="db-activity-title">
-                            {(log.action || '').replace(/_/g, ' ')}
-                          </div>
-                          <div className="db-activity-meta">
-                            {log.user_name || log.user_email} · {new Date(log.created_at).toLocaleString()}
-                          </div>
-                          {log.details && <div className="db-activity-meta">{log.details}</div>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
+        {tab === 'overview' && (
+          metricsFailed && !metrics ? (
+            <div className="adm-card adm-empty">
+              <Icon name="info" size={28} />
+              <p>Metrics are unavailable right now.</p>
+              <button type="button" className="adm-btn adm-btn-outline adm-btn-sm" onClick={refreshAll}>Try again</button>
+            </div>
           ) : (
-            <p style={{ color: 'var(--db-soft)' }}>Metrics unavailable right now.</p>
+            <Overview
+              metrics={metrics}
+              users={users}
+              onOpenTab={setTab}
+              onAddUser={() => { setTab('users'); setFormRequest(true); }}
+            />
           )
         )}
 
-        {tab === 'Users' && (
-          <div className="db-grid-2">
-            <div>
-              {revealedPassword && (
-                <div className="db-card db-reveal" style={{ marginBottom: 16 }}>
-                  <h2>Temporary password for {revealedPassword.email}</h2>
-                  <p className="db-card-sub" style={{ marginBottom: 0 }}>
-                    This is shown once. Copy it now and share it with the user securely.
-                  </p>
-                  <div className="db-reveal-row">
-                    <code className="db-code">{revealedPassword.password}</code>
-                    <button type="button" className="db-btn db-btn-outline" onClick={copyPassword}>
-                      {copied ? 'Copied' : 'Copy'}
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    className="db-btn db-btn-outline"
-                    style={{ marginTop: 12 }}
-                    onClick={() => setRevealedPassword(null)}
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              )}
-
-              <form onSubmit={createUser} className="db-card">
-                <h2>Add a user</h2>
-                <p className="db-card-sub">Create an account for barangay or DRRMO personnel.</p>
-                <div className="field">
-                  <label>Full name</label>
-                  <input required value={newUser.full_name}
-                    onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })} />
-                </div>
-                <div className="field">
-                  <label>Email</label>
-                  <input type="email" required value={newUser.email}
-                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
-                </div>
-                <div className="field">
-                  <label>Role</label>
-                  <select
-                    required
-                    value={newUser.role_id}
-                    onChange={(e) => setNewUser({ ...newUser, role_id: e.target.value })}
-                  >
-                    {roles.length === 0 && <option value="">Loading roles…</option>}
-                    {roles.map((r) => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
-                  </select>
-                </div>
-                {error && <p className="error-text">{error}</p>}
-                <button className="btn primary" disabled={creating || roles.length === 0}>
-                  {creating ? 'Creating…' : 'Create user'}
-                </button>
-              </form>
-            </div>
-
-            <div className="db-card">
-              <h2>All users</h2>
-              <p className="db-card-sub">{users.length} account{users.length === 1 ? '' : 's'}</p>
-              {users.length === 0 ? (
-                <p className="db-empty">No users yet.</p>
-              ) : (
-                <table className="db-table">
-                  <thead>
-                    <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th /></tr>
-                  </thead>
-                  <tbody>
-                    {users.map((u) => {
-                      const isSelf = currentUser && String(currentUser.id) === String(u.id);
-                      const busy = statusBusyId === u.id;
-                      return (
-                        <tr key={u.id}>
-                          <td>{u.full_name}</td>
-                          <td>{u.email}</td>
-                          <td>{u.role?.name || u.role}</td>
-                          <td>
-                            <span className={`db-badge ${u.is_active ? 'db-badge-active-status' : 'db-badge-inactive-status'}`}>
-                              {u.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="db-btn-row">
-                              <button className="db-btn db-btn-outline" onClick={() => resetPassword(u.id, u.email)}>
-                                Reset password
-                              </button>
-                              {u.is_active ? (
-                                <button
-                                  className="db-btn db-btn-danger"
-                                  disabled={isSelf || busy}
-                                  title={isSelf ? "You can't deactivate your own account" : undefined}
-                                  onClick={() => deactivate(u.id)}
-                                >
-                                  {busy ? 'Working…' : 'Deactivate'}
-                                </button>
-                              ) : (
-                                <button
-                                  className="db-btn db-btn-primary"
-                                  disabled={busy}
-                                  onClick={() => activate(u.id)}
-                                >
-                                  {busy ? 'Working…' : 'Activate'}
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
+        {tab === 'users' && (
+          <UsersTab
+            users={users}
+            roles={roles}
+            currentUser={currentUser}
+            loading={usersLoading}
+            onChanged={refreshAll}
+            notify={notify}
+            formRequest={formRequest}
+            clearFormRequest={() => setFormRequest(false)}
+          />
         )}
 
-        {tab === 'Logs' && (
-          <div className="db-card">
-            <h2>Audit logs</h2>
-            <p className="db-card-sub">Recent system activity.</p>
-            {logs.length === 0 ? (
-              <p className="db-empty">No activity recorded yet.</p>
-            ) : (
-              <div className="db-activity">
-                {(logs.results || logs).map((log) => (
-                  <div key={log.id} className="db-activity-item">
-                    <span className="db-activity-dot" />
-                    <div className="db-activity-body">
-                      <div className="db-activity-title">{(log.action || log.event || '').replace(/_/g, ' ')}</div>
-                      <div className="db-activity-meta">
-                        {log.actor_name || log.user_name || log.user} · {new Date(log.created_at || log.timestamp).toLocaleString()}
-                      </div>
-                      {(log.detail || log.details) && (
-                        <div className="db-activity-meta">{log.detail || log.details}</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        {tab === 'logs' && <LogsTab />}
       </div>
+
+      <Toast key={toast?.id} toast={toast} onDone={clearToast} />
     </div>
   );
 }

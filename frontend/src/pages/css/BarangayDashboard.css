@@ -1,0 +1,112 @@
+/* =========================================================
+   Barangay dashboard. Builds on AdminDashboard.css (adm-) and
+   DRRMODashboard.css (drm-). Prefix: brg-
+   ========================================================= */
+
+.brg-metric-red { background: var(--bad-tint); color: var(--bad); }
+
+.brg-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 20px; align-items: start; }
+.brg-side { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+/* ---------- Form ---------- */
+.brg-form { position: sticky; top: 16px; }
+.brg-step { padding: 16px 0; border-top: 1px solid var(--adm-line); display: flex; flex-direction: column; gap: 14px; }
+.brg-step h3 { display: flex; align-items: center; gap: 10px; font-size: .98rem; font-weight: 800; }
+
+.brg-locked {
+  display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 8px 12px;
+  border: 1px solid var(--adm-line); border-radius: 10px; background: var(--db-mist); color: var(--db-body); font-size: .9rem;
+}
+.brg-locked strong { color: var(--db-heading); }
+
+.brg-choice-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.brg-choice {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px;
+  border: 1.5px solid var(--adm-line-strong); border-radius: 12px; background: var(--adm-surface);
+  font-weight: 700; color: var(--db-heading) !important; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease;
+}
+.brg-choice:hover { border-color: #9fb0c8; }
+.brg-choice input, .brg-sev input { position: absolute; opacity: 0; pointer-events: none; }
+.brg-choice:focus-within, .brg-sev:focus-within { box-shadow: var(--adm-focus); }
+.brg-choice.is-checked { border-color: var(--db-navy); box-shadow: 0 0 0 1px var(--db-navy); }
+.drm-hazard-sm { width: 30px; height: 30px; border-radius: 9px; }
+
+.brg .adm-field textarea { width: 100%; }
+.brg-desc-foot { display: flex; justify-content: space-between; gap: 10px; }
+.brg-count { margin-top: 5px; font-size: .76rem; color: var(--db-soft); flex-shrink: 0; }
+
+.brg-severity { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.brg-sev {
+  position: relative; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px;
+  border: 1.5px solid var(--adm-line-strong); border-radius: 12px; background: var(--adm-surface); cursor: pointer;
+  color: var(--db-soft) !important; font-weight: 400 !important; transition: border-color .15s ease, background-color .15s ease;
+}
+.brg-sev strong { display: flex; align-items: center; gap: 7px; font-size: .92rem; color: var(--db-heading); }
+.brg-sev strong::before { content: ""; width: 9px; height: 9px; border-radius: 50%; }
+.brg-sev span { font-size: .76rem; line-height: 1.35; }
+.brg-sev-low strong::before { background: #1f9d55; }
+.brg-sev-moderate strong::before { background: #d99a00; }
+.brg-sev-high strong::before { background: #d64545; }
+.brg-sev.is-checked { border-color: var(--db-navy); box-shadow: 0 0 0 1px var(--db-navy); }
+.brg-sev-low.is-checked { background: #f1faf4; }
+.brg-sev-moderate.is-checked { background: #fef9ec; }
+.brg-sev-high.is-checked { background: #fdf1f1; }
+
+.brg-steppers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.brg-stepper label { display: block; margin-bottom: 6px; font-size: .84rem; font-weight: 700; color: var(--db-heading); }
+.brg-stepper-box { display: flex; border: 1px solid var(--adm-line-strong); border-radius: 10px; overflow: hidden; background: var(--adm-surface); }
+.brg-stepper-box:focus-within { border-color: var(--db-navy-hover); box-shadow: var(--adm-focus); }
+.brg-stepper-box button {
+  width: 32px; flex-shrink: 0; border: 0; background: var(--db-mist); color: var(--db-heading);
+  font-size: 1.1rem; font-weight: 700; cursor: pointer;
+}
+.brg-stepper-box button:hover:not(:disabled) { background: var(--tone-admin-tint); }
+.brg-stepper-box button:disabled { color: #b7c0cd; cursor: not-allowed; }
+.brg .brg-stepper-box input {
+  min-width: 0; width: 100%; border: 0; border-radius: 0; text-align: center; font-weight: 700; box-shadow: none;
+  appearance: textfield;
+}
+.brg-stepper-box input::-webkit-outer-spin-button,
+.brg-stepper-box input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.brg-submit { padding-top: 16px; border-top: 1px solid var(--adm-line); display: flex; justify-content: flex-end; }
+.brg-submit .adm-btn { min-width: 220px; }
+
+/* ---------- Your reports ---------- */
+.brg-report { cursor: default; }
+.brg-note {
+  display: flex; flex-direction: column; gap: 2px; margin-top: 10px; padding: 10px 12px;
+  border-left: 3px solid var(--info); border-radius: 0 8px 8px 0; background: var(--info-tint); color: var(--db-body); font-size: .86rem;
+}
+.brg-note strong { font-size: .74rem; letter-spacing: .05em; text-transform: uppercase; color: var(--info); }
+.brg-note.is-bad { border-left-color: var(--bad); background: var(--bad-tint); }
+.brg-note.is-bad strong { color: var(--bad); }
+
+/* ---------- Guidance ---------- */
+.brg-guides { display: flex; flex-direction: column; gap: 8px; }
+.brg-guide { border: 1px solid var(--adm-line); border-radius: 12px; overflow: hidden; }
+.brg-guide-head {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 0; background: var(--adm-surface);
+  text-align: left; font-family: var(--db-font-body); cursor: pointer;
+}
+.brg-guide-head:hover { background: var(--adm-row-hover); }
+.brg-guide-head:focus-visible { outline: none; box-shadow: inset 0 0 0 3px rgba(42, 66, 104, .18); }
+.brg-guide-head .drm-hazard-icon { width: 34px; height: 34px; border-radius: 10px; }
+.brg-guide-text { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.brg-guide-text strong { font-size: .92rem; color: var(--db-heading); }
+.brg-guide-text span { font-size: .8rem; color: var(--db-soft); }
+.brg-guide-chevron { color: var(--db-soft); transition: transform .15s ease; }
+.brg-guide.is-open .brg-guide-chevron { transform: rotate(90deg); }
+.brg-guide-body { padding: 0 14px 14px 58px; font-size: .9rem; color: var(--db-body); white-space: pre-wrap; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1080px) {
+  .brg-grid { grid-template-columns: 1fr; }
+  .brg-form { position: static; }
+}
+@media (max-width: 560px) {
+  .brg-severity { grid-template-columns: 1fr; }
+  .brg-steppers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .brg-submit .adm-btn { width: 100%; }
+  .brg-guide-body { padding-left: 14px; }
+}

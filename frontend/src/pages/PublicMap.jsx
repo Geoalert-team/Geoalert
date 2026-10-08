@@ -14,6 +14,17 @@ import './css/PublicMap.css';
 import './css/PublicMapGis.css';
 import './css/PublicMapLayers.css';
 
+// Leaflet bug: a zoom animation can finish after the map is removed
+// (e.g. zooming, then navigating to another page right away), which crashes
+// with "Cannot read properties of undefined (reading '_leaflet_pos')".
+// Skip the leftover animation step if the map is already gone.
+// This patches Leaflet globally, so it also covers the dashboard map.
+const originalZoomTransitionEnd = L.Map.prototype._onZoomTransitionEnd;
+L.Map.prototype._onZoomTransitionEnd = function () {
+  if (!this._mapPane) return;
+  return originalZoomTransitionEnd.call(this);
+};
+
 // Talisay City, Cebu
 const TALISAY_CENTER = [10.2446, 123.8473];
 const PANEL_WIDTH = 400; // keep in sync with .pm-panel width in PublicMap.css
