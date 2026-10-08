@@ -20,6 +20,12 @@ function countText(label, value) {
   return `${label}: ${Number(value).toLocaleString()}`;
 }
 
+// barangay_detail / hazard_type_detail are nested serializers; if either is
+// a GeoFeatureModelSerializer the name sits under .properties instead.
+function nestedName(detail) {
+  return detail?.name || detail?.properties?.name || null;
+}
+
 function BarList({ rows, labelKey, colorFor }) {
   const max = Math.max(1, ...rows.map((r) => r.count));
   return (
@@ -291,7 +297,9 @@ export default function HistoricalData() {
                     <div key={r.id} className="db-item">
                       <div className="db-item-head">
                         <span className="db-item-title">
-                          {r.hazard_type_detail?.name} - {r.barangay_detail?.name}
+                          {nestedName(r.hazard_type_detail) || 'Hazard'}
+                          {' - '}
+                          {nestedName(r.barangay_detail) || 'Unspecified barangay'}
                         </span>
                         <span
                           className="db-item-meta"

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import PublicNavbar from '../../components/Navbar/PublicNavbar';
+import ActiveZonesCard from '../../components/Resolve/ActiveZonesCard';
 import { hazardsApi } from '../../api/hazardsApi';
 import { reportsApi } from '../../api/reportApi';
 import '../css/Dashboard.css';
@@ -7,22 +8,41 @@ import '../css/Dashboard.css';
 const STATUS_BADGE = { Pending: 'db-badge-pending', Validated: 'db-badge-validated', Rejected: 'db-badge-rejected' };
 
 export default function DRRMODashboard() {
-  const [hazards, setHazards] = useState(null);
+  const [activeCount, setActiveCount] = useState(null);
+  const [resolvedCount, setResolvedCount] = useState(null);
   const [reports, setReports] = useState([]);
   const [selected, setSelected] = useState(null); // report shown in the full-report view
 
-  useEffect(() => {
-    hazardsApi.list().then(setHazards).catch(() => setHazards({ features: [] }));
-    refreshReports();
+  // /api/hazards/ only ever returns Active zones, so the resolved total has
+  // to come from /api/hazards/resolved/. Counting 'Resolved' in the active
+  // list can only ever produce 0.
+  const refreshCounts = useCallback(async () => {
+    try {
+      const geo = await hazardsApi.list();
+      setActiveCount((geo.features || []).length);
+    } catch {
+      setActiveCount(null);
+    }
+    try {
+      const res = await hazardsApi.resolved(1);
+      setResolvedCount(res.count);
+    } catch {
+      setResolvedCount(null);
+    }
   }, []);
 
-  async function refreshReports() {
+  const refreshReports = useCallback(async () => {
     try {
       setReports(await reportsApi.list('Pending'));
     } catch {
       setReports([]);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    refreshCounts();
+    refreshReports();
+  }, [refreshCounts, refreshReports]);
 
   async function review(id, status) {
     const note = status === 'Rejected' ? window.prompt('Reason for rejecting (optional):') || '' : '';
@@ -39,8 +59,7 @@ export default function DRRMODashboard() {
     return () => window.removeEventListener('keydown', onKey);
   }, [selected]);
 
-  const features = hazards?.features || [];
-  const resolvedCount = features.filter((f) => f.properties.status === 'Resolved').length;
+  const show = (v) => (v === null ? '—' : v);
 
   return (
     <div className="db">
@@ -48,23 +67,27 @@ export default function DRRMODashboard() {
       <div className="db-wrap">
         <div className="db-header">
           <h1>DRRMO dashboard</h1>
-          <p>Monitor active hazard zones and review incident reports from barangay personnel.</p>
+          <p>Monitor active hazard zones, close them out, and review incident reports from barangay personnel.</p>
         </div>
 
         <div className="db-stats">
           <div className="db-stat">
-            <div className="db-stat-value">{features.length}</div>
+            <div className="db-stat-value">{show(activeCount)}</div>
             <div className="db-stat-label">Active hazard zones</div>
           </div>
           <div className="db-stat">
-            <div className="db-stat-value">{resolvedCount}</div>
-            <div className="db-stat-label">Resolved</div>
+            <div className="db-stat-value">{show(resolvedCount)}</div>
+            <div className="db-stat-label">Resolved to date</div>
           </div>
           <div className="db-stat">
             <div className="db-stat-value">{reports.length}</div>
             <div className="db-stat-label">Reports pending review</div>
           </div>
         </div>
+
+        {/* Lists the live zones and lets DRRMO resolve any of them. Tells us
+            to refresh the tiles once a resolve goes through. */}
+        <ActiveZonesCard onResolved={refreshCounts} />
 
         <div className="db-card">
           <h2>Reports awaiting validation</h2>

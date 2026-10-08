@@ -186,6 +186,9 @@ export default function PublicMap() {
   const [barangayGeo, setBarangayGeo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  // Have real hazards ever arrived? Decides whether an empty map means
+  // "nothing active" or "backend has no data yet, show the samples".
+  const [hadLiveData, setHadLiveData] = useState(false);
 
   const [typeFilter, setTypeFilter] = useState('All');
   const [query, setQuery] = useState('');
@@ -205,6 +208,7 @@ export default function PublicMap() {
           .map(featureToItem)
           .filter(Boolean);
         setLiveHazards(items);
+        if (items.length > 0) setHadLiveData(true);
       })
       .catch(() => setLoadFailed(true))
       .finally(() => setLoading(false));
@@ -222,7 +226,10 @@ export default function PublicMap() {
   }, []);
 
   // Use real hazards when there are any; otherwise show the labelled samples
-  const usingSample = SHOW_SAMPLE_DATA && !loading && liveHazards.length === 0;
+  // Samples are a first-run placeholder only. Without the hadLiveData guard,
+  // resolving the last real hazard empties liveHazards and the sample pins
+  // pop back in — which looks like the resolve created new hazards.
+  const usingSample = SHOW_SAMPLE_DATA && !loading && !hadLiveData && liveHazards.length === 0;
   // Test pins from sampleHazards.js are added on top while SHOW_TEST_PINS is true
   const rawHazards = useMemo(() => {
     const base = usingSample ? SAMPLE_HAZARDS : liveHazards;
@@ -329,6 +336,16 @@ export default function PublicMap() {
     const updated = featureToItem(feature);
     if (!updated) return;
     setLiveHazards((prev) => prev.map((h) => (h.id === updated.id ? updated : h)));
+  }
+
+  // A resolved zone is no longer active, so drop its pin and close the panel.
+  // PATCH /api/hazards/<id>/ returns the plain serializer rather than GeoJSON,
+  // so featureToItem can't be reused here — match on the id instead.
+  function handleResolved(zone) {
+    const resolvedId = zone?.id ?? selectedHazardId;
+    setLiveHazards((prev) => prev.filter((h) => String(h.id) !== String(resolvedId)));
+    setSelection(null);
+    setPanelOpen(false);
   }
 
   // Thin dark boundaries, like sub-catchment lines on a GIS map. Transparent fill keeps them clickable.
@@ -568,6 +585,7 @@ export default function PublicMap() {
           open={panelOpen && !!selectedHazard}
           onClose={() => setPanelOpen(false)}
           onVerified={handleVerified}
+          onResolved={handleResolved}
         />
         <BarangayPanel
           barangay={selectedBarangay}

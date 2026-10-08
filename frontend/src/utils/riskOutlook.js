@@ -26,8 +26,12 @@ const ELEVATED_AT = 1.5;
 const TYPICAL_AT = 0.75;
 
 function barangayOf(record) {
+  // barangay_detail comes from BarangaySerializer. If that is a
+  // GeoFeatureModelSerializer the name lives under .properties, so check
+  // both shapes rather than silently bucketing everything as unspecified.
   return (
     record.barangay_detail?.name ||
+    record.barangay_detail?.properties?.name ||
     record.barangay_details?.name ||
     record.barangay_name ||
     'Unspecified barangay'
@@ -37,6 +41,7 @@ function barangayOf(record) {
 function hazardOf(record) {
   return (
     record.hazard_type_detail?.name ||
+    record.hazard_type_detail?.properties?.name ||
     record.hazard_type_details?.name ||
     record.hazard_type_name ||
     'Hazard'
