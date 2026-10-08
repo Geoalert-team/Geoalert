@@ -215,11 +215,43 @@
   margin: 0 0 12px; padding: 10px 14px; border-radius: 12px;
   background: var(--db-high-tint); color: #a12f2f; font-size: .86rem; font-weight: 600;
 }
+.db-success {
+  margin: 0 0 12px; padding: 10px 14px; border-radius: 12px;
+  background: var(--db-low-tint); color: #16693a; font-size: .86rem; font-weight: 600;
+}
 .db-confirm {
   padding: 12px 14px; border: 1px solid var(--db-medium); border-radius: 12px;
   background: var(--db-medium-tint);
 }
 .db-confirm p { margin-bottom: 10px; font-size: .88rem; font-weight: 700; color: #7a5700; }
+
+/* ---- One-time code entry (2FA) ---- */
+.db-otp input {
+  font-family: 'Courier New', monospace;
+  font-size: 1.3rem; font-weight: 700; letter-spacing: .4em;
+  text-align: center; padding: 10px 14px;
+}
+
+/* ---- QR code panel (2FA setup) ---- */
+.db-qr {
+  display: inline-flex; padding: 12px; margin-bottom: 14px;
+  border: 1px solid var(--db-line); border-radius: 12px; background: var(--db-white);
+}
+.db-qr img { display: block; width: 180px; height: 180px; }
+
+/* ---- Live requirement checklist (password rules) ---- */
+.db-reqs { margin: 0 0 14px; font-size: .8rem; color: var(--db-soft); }
+.db-reqs li { display: flex; align-items: center; gap: 7px; padding: 2px 0; }
+.db-reqs li::before { content: '○'; font-size: .7rem; }
+.db-reqs li.is-met { color: #16693a; }
+.db-reqs li.is-met::before { content: '●'; }
+
+/* ---- Inline text button (show/hide password) ---- */
+.db-link-btn {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: .78rem; font-weight: 700;
+  color: var(--db-navy); text-decoration: underline;
+}
 
 /* ---- Resolve & archive (map hazard panel + DRRMO dashboard) ---- */
 /* .db-embed is for a db- component living in a non-dashboard surface,
