@@ -1,0 +1,107 @@
+/* Risk outlook block — self-contained, so Dashboard.css needs no edits. */
+
+.ro-confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 12px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #f3f6fb;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #35465e;
+}
+
+.ro-confidence-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #8c98a8;
+}
+
+.ro-confidence[data-level='Reasonable'] .ro-confidence-dot { background: #1d6b38; }
+.ro-confidence[data-level='Indicative'] .ro-confidence-dot { background: #c07d12; }
+
+.ro-months {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ro-month {
+  padding: 12px;
+  border: 1px solid #dfe4ec;
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ro-month[data-level='Elevated'] { border-left-color: #c0392b; background: #fdf4f3; }
+.ro-month[data-level='Typical']  { border-left-color: #c07d12; }
+.ro-month[data-level='Lower']    { border-left-color: #1d6b38; }
+.ro-month[data-level='No history'] { border-left-color: #c6cdd8; }
+
+.ro-month-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5b6878;
+}
+
+.ro-month-level {
+  margin: 4px 0 2px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #1c2e4a;
+}
+
+.ro-month-detail {
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: #5b6878;
+}
+
+.ro-facts {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: #35465e;
+}
+
+.ro-facts li { padding: 5px 0; border-bottom: 1px dashed #e7ebf2; }
+.ro-facts li:last-child { border-bottom: none; }
+.ro-facts strong { color: #1c2e4a; }
+
+.ro-note {
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid #e7ebf2;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: #6b7686;
+}
+
+.ro-method {
+  margin-top: 8px;
+}
+
+.ro-method summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1c2e4a;
+}
+
+.ro-method p {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: #5b6878;
+}

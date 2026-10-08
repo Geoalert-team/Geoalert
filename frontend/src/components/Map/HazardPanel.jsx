@@ -1,8 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { severityInfo, hazardIconPath, hazardColor, DRRMO_HOTLINE } from './hazardInfo';
 import VerificationNotice from './VerificationNotice';
 import GuidanceSteps from './GuidanceSteps';
+import ResolveHazardForm from '../Resolve/ResolveHazardForm';
+// The resolve form is built from db- classes; .db-scope below supplies the
+// tokens so it looks right inside the map panel too.
+import '../../pages/css/Dashboard.css';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -16,17 +21,24 @@ function formatDate(iso) {
 }
 
 // Slides in from the left (desktop) or up from the bottom (mobile)
-export default function HazardPanel({ item, open, onClose, onVerified }) {
+export default function HazardPanel({ item, open, onClose, onVerified, onResolved }) {
   const [tab, setTab] = useState('overview');
+  const [resolving, setResolving] = useState(false);
   const closeRef = useRef(null);
+  const { canPublish } = useAuth();
 
   // Go back to the Overview tab and move focus into the panel whenever a new pin is chosen
   useEffect(() => {
     setTab('overview');
+    setResolving(false);
     if (open) closeRef.current?.focus({ preventScroll: true });
   }, [item?.id, open]);
 
   const sev = item ? severityInfo(item.severity) : null;
+
+  // Only DRRMO/Admin can close out a hazard, and only one that's still live.
+  const canResolve =
+    canPublish && item && !item.sample && (item.status || 'Active') === 'Active';
 
   return (
     <aside className={`pm-panel ${open ? 'is-open' : ''}`} aria-label="Hazard details">
@@ -98,6 +110,27 @@ export default function HazardPanel({ item, open, onClose, onVerified }) {
                     <dd>{formatDate(item.activatedAt)}</dd>
                   </div>
                 </dl>
+
+                {/* ---------- DRRMO: close the hazard out ---------- */}
+                {canResolve && (
+                  <div className="db-scope db-embed">
+                    {resolving ? (
+                      <ResolveHazardForm
+                        zoneId={item.id}
+                        title={`${item.type} · ${item.location}`}
+                        onCancel={() => setResolving(false)}
+                        onResolved={(zone) => {
+                          setResolving(false);
+                          onResolved?.(zone);
+                        }}
+                      />
+                    ) : (
+                      <button type="button" className="db-btn db-btn-outline" onClick={() => setResolving(true)}>
+                        Mark as resolved
+                      </button>
+                    )}
+                  </div>
+                )}
               </>
             )}
 
