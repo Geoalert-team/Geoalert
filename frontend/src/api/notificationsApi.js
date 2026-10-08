@@ -1,14 +1,22 @@
 import client from './axiosClient';
 
-// Wraps the three real endpoints in apps/notifications/urls.py.
+// Wraps the three endpoints in apps/notifications/urls.py.
 // The backend scopes everything to request.user, so no email/scope params.
 export const notificationsApi = {
-  // GET /api/notifications/            (optionally ?unread=true)
-  list: async ({ unreadOnly = false } = {}) => {
+  // GET /api/notifications/?unread=true&limit=30
+  // -> { unread_count, count, results: [{ id, hazard_alert, hazard, content,
+  //                                       is_read, sent_at, read_at }] }
+  // `hazard` carries { alert_id, zone_id, type, severity, barangay, status }
+  // or null for a notification with no alert behind it.
+  list: async ({ unreadOnly = false, limit } = {}) => {
+    const params = {};
+    if (unreadOnly) params.unread = 'true';
+    if (limit) params.limit = limit;
+
     const res = await client.get('/api/notifications/', {
-      params: unreadOnly ? { unread: 'true' } : undefined,
+      params: Object.keys(params).length ? params : undefined,
     });
-    return res.data; // array of { id, hazard_alert, content, is_read, sent_at, read_at }
+    return res.data;
   },
 
   // PATCH /api/notifications/<uuid>/read/

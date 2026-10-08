@@ -52,11 +52,9 @@ export default function ResolveHazardForm({ zoneId, title, onCancel, onResolved 
       });
       onResolved?.(zone);
     } catch (err) {
-      setError(
-        err?.response?.data?.error ||
-        err?.response?.data?.detail ||
-        'Could not resolve this hazard. Check your connection and try again.'
-      );
+      // axiosClient's response interceptor already flattens the server's
+      // error/detail into err.message — there is no err.response here.
+      setError(err?.message || 'Could not resolve this hazard. Check your connection and try again.');
       setConfirming(false);
     } finally {
       setBusy(false);
