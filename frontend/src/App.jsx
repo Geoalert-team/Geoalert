@@ -10,6 +10,7 @@ import WhatToDo from "./pages/WhatToDo";
 import Dashboard from "./pages/Dashboard";
 import HistoricalData from "./pages/HistoricalData";
 import Security from "./pages/Security";
+import Reports from "./pages/Reports";
 
 function Gate({ children, roles }) {
   const { user, loading } = useAuth();
@@ -39,6 +40,15 @@ function AppRoutes() {
         element={
           <Gate roles={["System_Admin", "DRRMO_Officer"]}>
             <HistoricalData />
+          </Gate>
+        }
+      />
+      {/* F7: DRRMO and Admin only, matching the spec's permission check */}
+      <Route
+        path="/app/reports"
+        element={
+          <Gate roles={["System_Admin", "DRRMO_Officer"]}>
+            <Reports />
           </Gate>
         }
       />

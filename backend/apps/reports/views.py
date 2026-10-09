@@ -7,6 +7,7 @@ from django.db.models import Count
 from apps.hazards.models import HazardZone, HazardAlert
 from apps.history.models import HistoricalRecord
 from utils.permissions import IsDRRMOOfficer
+from utils.audit import log_event
 
 from django.utils import timezone
 from apps.reports.models import IncidentReport
@@ -51,7 +52,16 @@ class HazardSummaryReportView(APIView):
         if hazard_type:
             records = records.filter(hazard_type_id=hazard_type)
 
+        criteria = (
+            f"date_from={date_from or '-'} date_to={date_to or '-'} "
+            f"barangay={barangay or 'all'} hazard_type={hazard_type or 'all'}"
+        )
+
         if not records.exists():
+            log_event(
+                request, 'GENERATE_REPORT', 'historical_record', '',
+                f'Hazard Summary — no data. {criteria}',
+            )
             return Response(
                 {'error': 'Insufficient data available for selected criteria. Please expand the date range or modify filters.'},
                 status=status.HTTP_200_OK
@@ -82,9 +92,15 @@ class HazardSummaryReportView(APIView):
             r.total_displaced or 0 for r in records
         )
 
+        log_event(
+            request, 'GENERATE_REPORT', 'historical_record', '',
+            f'Hazard Summary — {records.count()} record(s). {criteria}',
+        )
+
         return Response({
             'report_type':            'Hazard Summary Report',
             'generated_by':           request.user.full_name,
+            'generated_at':           timezone.now(),
             'total_occurrences':      records.count(),
             'breakdown_by_type':      breakdown_by_type,
             'severity_distribution':  severity_distribution,
@@ -124,11 +140,20 @@ class ResponseStatusReportView(APIView):
         if barangay:
             zones = zones.filter(barangay_id=barangay)
 
+        criteria = (
+            f"date_from={date_from or '-'} date_to={date_to or '-'} "
+            f"barangay={barangay or 'all'}"
+        )
+
         active_count   = zones.filter(status='Active').count()
         resolved_count = zones.filter(status='Resolved').count()
         archived_count = zones.filter(status='Archived').count()
 
         if zones.count() == 0:
+            log_event(
+                request, 'GENERATE_REPORT', 'hazard_zone', '',
+                f'Response Status — no data. {criteria}',
+            )
             return Response(
                 {'error': 'Insufficient data available for selected criteria. Please expand the date range or modify filters.'},
                 status=status.HTTP_200_OK
@@ -140,9 +165,15 @@ class ResponseStatusReportView(APIView):
             .order_by('-count')
         )
 
+        log_event(
+            request, 'GENERATE_REPORT', 'hazard_zone', '',
+            f'Response Status — {zones.count()} zone(s). {criteria}',
+        )
+
         return Response({
             'report_type':          'Response Status Report',
             'generated_by':         request.user.full_name,
+            'generated_at':         timezone.now(),
             'active_hazards':       active_count,
             'resolved_hazards':     resolved_count,
             'archived_hazards':     archived_count,
@@ -181,10 +212,7 @@ class IncidentReportListCreateView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        report = serializer.save(
-            submitted_by=request.user,
-            reporter_name=request.user.full_name,
-        )
+        report = serializer.save(submitted_by=request.user)
         return Response(
             IncidentReportSerializer(report).data,
             status=status.HTTP_201_CREATED
@@ -209,12 +237,8 @@ class IncidentReportReviewView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        extra = {}
-        if serializer.validated_data.get('status') == 'Validated':
-            extra = {'validated_by': request.user, 'validated_at': timezone.now()}
         report = serializer.save(
             reviewed_by=request.user,
-            reviewed_at=timezone.now(),
-            **extra,
+            reviewed_at=timezone.now()
         )
         return Response(IncidentReportSerializer(report).data)
