@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
+from rest_framework_gis.fields import GeometryField
+from django.contrib.gis.geos import MultiPolygon, Polygon
 from apps.hazards.models import HazardType, HazardZone, HazardAlert
 from apps.accounts.serializers import UserSerializer
 
@@ -58,12 +60,48 @@ class HazardZoneSerializer(serializers.ModelSerializer):
 
 
 class HazardZoneCreateSerializer(serializers.ModelSerializer):
+    """
+    Body for POST /api/hazards/create/ — the map's publish form.
+    Plain fields plus a GeoJSON geometry, e.g.
+
+        {"hazard_type": 1, "barangay": 7, "severity": "Orange",
+         "description": "...",
+         "geometry": {"type": "Polygon", "coordinates": [[[lng, lat], ...]]}}
+    """
+
+    # Declared explicitly on purpose. A plain ModelSerializer can only build
+    # a field for a GIS geometry column when rest_framework_gis is listed in
+    # INSTALLED_APPS, because its AppConfig.ready() is what registers the
+    # mapping. Naming the field here makes writes work either way, instead of
+    # raising while the serializer's fields are being built — which surfaces
+    # as a 500 rather than a validation error.
+    geometry = GeometryField()
+
     class Meta:
         model  = HazardZone
         fields = [
             'barangay', 'hazard_type', 'severity',
             'geometry', 'description'
         ]
+
+    def validate_geometry(self, value):
+        if value.geom_type not in ('Polygon', 'MultiPolygon'):
+            raise serializers.ValidationError(
+                f'A hazard zone must be an area, not a {value.geom_type}.'
+            )
+
+        # HazardZone.geometry is a MultiPolygonField. GeoDjango will not
+        # coerce a Polygon into one — it raises outright — so a client that
+        # sends the simpler single-polygon GeoJSON (the map's publish form,
+        # an API client, a seeder) gets wrapped here instead of failing.
+        if isinstance(value, Polygon):
+            value = MultiPolygon(value)
+
+        # GeoJSON is WGS84 by definition, but a geometry that arrives without
+        # an SRID is rejected by PostGIS when the column declares 4326.
+        if not getattr(value, 'srid', None):
+            value.srid = 4326
+        return value
 
 
 class HazardZoneVerifySerializer(serializers.Serializer):

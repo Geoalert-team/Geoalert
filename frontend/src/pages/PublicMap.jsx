@@ -1,7 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, ZoomControl, ScaleControl, Pane, ImageOverlay, useMapEvents } from 'react-leaflet';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MapContainer, TileLayer, GeoJSON, Marker, Circle, ZoomControl, ScaleControl, Pane, ImageOverlay, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
+import { useAuth } from '../context/AuthContext';
+import PublishHazardPanel from '../components/Publish/PublishHazardPanel';
 import HazardPanel from '../components/Map/HazardPanel';
 import BarangayPanel from '../components/Map/BarangayPanel';
 import { LAYER_FOR_FILTER, useSusceptibility } from '../components/Map/susceptibility';
@@ -13,6 +15,7 @@ import { SAMPLE_HAZARDS, SHOW_SAMPLE_DATA, SHOW_TEST_PINS, TEST_HAZARDS } from '
 import './css/PublicMap.css';
 import './css/PublicMapGis.css';
 import './css/PublicMapLayers.css';
+import '../components/Publish/css/PublishHazard.css';
 
 // Talisay City, Cebu
 const TALISAY_CENTER = [10.2446, 123.8473];
@@ -160,9 +163,9 @@ function pinIcon(item, selected) {
   });
 }
 
-// Clicking empty map (not a barangay or pin) closes the panel
-function MapClickCloser({ onClose }) {
-  useMapEvents({ click: onClose });
+// Clicking empty map either places a publish point or closes the panel
+function MapClickHandler({ onMapClick }) {
+  useMapEvents({ click: (e) => onMapClick(e.latlng) });
   return null;
 }
 
@@ -190,6 +193,13 @@ export default function PublicMap() {
   // "nothing active" or "backend has no data yet, show the samples".
   const [hadLiveData, setHadLiveData] = useState(false);
 
+  // Publishing: 'off' until DRRMO starts, 'placing' while waiting for a tap,
+  // then the form opens with draftPoint set.
+  const { canPublish } = useAuth();
+  const [publishMode, setPublishMode] = useState('off');
+  const [draftPoint, setDraftPoint] = useState(null);
+  const [draftRadius, setDraftRadius] = useState(250);
+
   const [typeFilter, setTypeFilter] = useState('All');
   const [query, setQuery] = useState('');
   const [selection, setSelection] = useState(null); // { kind: 'hazard' | 'barangay', id }
@@ -197,9 +207,11 @@ export default function PublicMap() {
   const [basemap, setBasemap] = useState('streets');
   const susceptibility = useSusceptibility();
 
-  // Load hazards and barangay outlines once
-  useEffect(() => {
-    hazardsApi
+  // Load hazards. Pulled out of the effect so publishing can re-run it —
+  // POST /api/hazards/create/ returns the plain serializer, not GeoJSON, so
+  // featureToItem can't build a pin from the response.
+  const loadHazards = useCallback(() => {
+    return hazardsApi
       .list()
       .then((data) => {
         const features = data?.features || data?.results?.features || [];
@@ -210,20 +222,25 @@ export default function PublicMap() {
         setLiveHazards(items);
         if (items.length > 0) setHadLiveData(true);
       })
-      .catch(() => setLoadFailed(true))
-      .finally(() => setLoading(false));
-
-    barangaysApi.list().then(setBarangayGeo).catch(() => {});
+      .catch(() => setLoadFailed(true));
   }, []);
+
+  // Load hazards and barangay outlines once
+  useEffect(() => {
+    loadHazards().finally(() => setLoading(false));
+    barangaysApi.list().then(setBarangayGeo).catch(() => {});
+  }, [loadHazards]);
 
   // Close the panel with the Escape key
   useEffect(() => {
     function onKey(e) {
-      if (e.key === 'Escape') setPanelOpen(false);
+      if (e.key !== 'Escape') return;
+      if (publishMode !== 'off') { cancelPublish(); return; }
+      setPanelOpen(false);
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [publishMode]);
 
   // Use real hazards when there are any; otherwise show the labelled samples
   // Samples are a first-run placeholder only. Without the hadLiveData guard,
@@ -348,6 +365,44 @@ export default function PublicMap() {
     setPanelOpen(false);
   }
 
+  /* ---------- Publishing ---------- */
+
+  function startPublish() {
+    setSelection(null);
+    setPanelOpen(false);
+    setDraftPoint(null);
+    setPublishMode('placing');
+  }
+
+  function cancelPublish() {
+    setPublishMode('off');
+    setDraftPoint(null);
+  }
+
+  // One handler for every map click: place a draft point while publishing,
+  // otherwise close whichever details panel is open.
+  function handleMapClick(latlng) {
+    if (publishMode === 'placing' || publishMode === 'editing') {
+      setDraftPoint([latlng.lat, latlng.lng]);
+      setPublishMode('editing');
+      return;
+    }
+    setPanelOpen(false);
+  }
+
+  async function handlePublished() {
+    cancelPublish();
+    await loadHazards();
+  }
+
+  // Which barangay the draft point falls inside, so DRRMO doesn't pick it
+  // by hand and can't file a hazard against the wrong one.
+  const draftBarangay = useMemo(() => {
+    if (!draftPoint) return null;
+    const home = barangays.find((b) => containsPoint(b.feature, draftPoint));
+    return home ? { id: home.id, name: home.name } : null;
+  }, [draftPoint, barangays]);
+
   // Thin dark boundaries, like sub-catchment lines on a GIS map. Transparent fill keeps them clickable.
   function barangayStyle(feature) {
     // Bold only while its panel is open
@@ -366,7 +421,7 @@ export default function PublicMap() {
     <div className="pm">
       <PublicNavbar />
 
-      <div className="pm-stage">
+      <div className={`pm-stage ${publishMode === 'placing' ? 'is-placing' : ''}`}>
         {/* ============ MAP ============ */}
         <MapContainer
           ref={setMap}
@@ -386,7 +441,7 @@ export default function PublicMap() {
           )}
           <ZoomControl position="bottomright" />
           <ScaleControl position="bottomright" imperial={false} />
-          <MapClickCloser onClose={() => setPanelOpen(false)} />
+          <MapClickHandler onMapClick={handleMapClick} />
 
           {/* Hazard levels from active reports, spread over susceptible ground */}
           <Pane name="hazard-levels" style={{ zIndex: 350 }}>
@@ -416,7 +471,7 @@ export default function PublicMap() {
           {/* Barangay boundaries: hover for the name, click for barangay-specific hazards */}
           {barangayGeo && (
             <GeoJSON
-              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}`}
+              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}-${publishMode}`}
               data={barangayGeo}
               style={barangayStyle}
               bubblingMouseEvents={false}
@@ -429,6 +484,13 @@ export default function PublicMap() {
               }}
               eventHandlers={{
                 click: (e) => {
+                  // Barangay polygons cover the whole city, so while a hazard
+                  // is being placed they have to pass the click through
+                  // instead of opening the barangay panel.
+                  if (publishMode !== 'off') {
+                    handleMapClick(e.latlng);
+                    return;
+                  }
                   const f = e.propagatedFrom?.feature || e.layer?.feature;
                   if (f) selectBarangay(featureToBarangay(f));
                 },
@@ -437,13 +499,27 @@ export default function PublicMap() {
           )}
 
 
+          {/* Draft circle while a hazard is being published */}
+          {draftPoint && (
+            <Circle
+              center={draftPoint}
+              radius={draftRadius}
+              pathOptions={{ color: '#1c2e4a', weight: 2, dashArray: '6 4', fillOpacity: 0.12 }}
+            />
+          )}
+
           {visibleHazards.map((h) => (
             <Marker
               key={h.id}
               position={h.position}
               icon={pinIcon(h, h.id === selectedHazardId)}
               title={`${h.location}: ${h.type}, ${severityInfo(h.severity).label}`}
-              eventHandlers={{ click: () => selectHazard(h) }}
+              eventHandlers={{
+                click: (e) => {
+                  if (publishMode !== 'off') { handleMapClick(e.latlng); return; }
+                  selectHazard(h);
+                },
+              }}
             />
           ))}
         </MapContainer>
@@ -515,6 +591,12 @@ export default function PublicMap() {
               </button>
             ))}
           </div>
+
+          {canPublish && publishMode === 'off' && (
+            <button type="button" className="pm-chip pm-chip-publish" onClick={startPublish}>
+              + Publish hazard
+            </button>
+          )}
         </div>
 
         {/* ============ STATUS MESSAGES ============ */}
@@ -587,6 +669,24 @@ export default function PublicMap() {
           onVerified={handleVerified}
           onResolved={handleResolved}
         />
+        {publishMode === 'placing' && (
+          <div className="pub-hint">
+            <span>Tap the map where the hazard is</span>
+            <button type="button" onClick={cancelPublish}>Cancel</button>
+          </div>
+        )}
+
+        {publishMode === 'editing' && draftPoint && (
+          <PublishHazardPanel
+            center={draftPoint}
+            radius={draftRadius}
+            onRadius={setDraftRadius}
+            barangay={draftBarangay}
+            onCancel={cancelPublish}
+            onPublished={handlePublished}
+          />
+        )}
+
         <BarangayPanel
           barangay={selectedBarangay}
           hazards={barangayHazards}
