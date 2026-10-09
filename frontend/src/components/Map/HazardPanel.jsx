@@ -21,7 +21,7 @@ function formatDate(iso) {
 }
 
 // Slides in from the left (desktop) or up from the bottom (mobile)
-export default function HazardPanel({ item, open, onClose, onVerified, onResolved }) {
+export default function HazardPanel({ item, open, onClose, onVerified, onResolved, overlaps = [] }) {
   const [tab, setTab] = useState('overview');
   const [resolving, setResolving] = useState(false);
   const closeRef = useRef(null);
@@ -99,6 +99,24 @@ export default function HazardPanel({ item, open, onClose, onVerified, onResolve
                 <div className="pm-callout" style={{ background: sev.tint, borderColor: sev.color, color: sev.text }}>
                   <strong>{sev.label}:</strong> {sev.advice}
                 </div>
+                {overlaps.length > 0 && (
+                  <div className="pm-overlap">
+                    <strong>This area overlaps {overlaps.length === 1 ? 'another hazard zone' : `${overlaps.length} other hazard zones`}.</strong>
+                    <ul>
+                      {overlaps.map((other) => {
+                        const osev = severityInfo(other.severity);
+                        return (
+                          <li key={other.id}>
+                            <span className="pm-overlap-dot" style={{ background: osev.color }} />
+                            {other.type} · {osev.label}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <p>Follow the most serious one.</p>
+                  </div>
+                )}
+
                 <VerificationNotice item={item} onVerified={onVerified} />
                 <dl className="pm-facts">
                   <div>
@@ -142,7 +160,14 @@ export default function HazardPanel({ item, open, onClose, onVerified, onResolve
                   <a className="pm-btn pm-btn-primary" href={DRRMO_HOTLINE.tel}>
                     Call DRRMO {DRRMO_HOTLINE.label}
                   </a>
-                  <Link className="pm-btn pm-btn-outline" to="/what-to-do">Full safety guide</Link>
+                  {/* Carries the hazard through, so the guidance library opens on this
+                      hazard instead of whatever it shows by default. */}
+                  <Link
+                    className="pm-btn pm-btn-outline"
+                    to={`/what-to-do?hazard=${encodeURIComponent(item.type)}`}
+                  >
+                    Full safety guide
+                  </Link>
                 </div>
               </>
             )}

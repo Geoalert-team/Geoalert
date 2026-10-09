@@ -288,3 +288,45 @@
 .db-method { margin-top: 10px; }
 .db-method summary { cursor: pointer; font-size: .82rem; font-weight: 700; color: var(--db-navy); }
 .db-method p { margin-top: 8px; font-size: .82rem; line-height: 1.55; color: var(--db-soft); }
+
+/* ---- Report type picker + print view (F7) ---- */
+.db-report-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.db-report-type {
+  display: block; padding: 16px 18px; text-align: left;
+  border: 2px solid var(--db-line); border-radius: 12px;
+  background: var(--db-white); cursor: pointer;
+  font-family: var(--db-font-body);
+  transition: border-color .2s ease, background-color .2s ease;
+}
+.db-report-type:hover { border-color: #b9c4d4; }
+.db-report-type.is-active { border-color: var(--db-navy); background: #f5f8fc; }
+.db-report-type strong {
+  display: block; font-family: var(--db-font-head);
+  font-size: 1.02rem; font-weight: 800; color: var(--db-heading);
+}
+.db-report-type small {
+  display: block; margin-top: 4px;
+  font-size: .84rem; line-height: 1.45; color: var(--db-soft);
+}
+
+.db-report h3 {
+  margin: 20px 0 10px;
+  font-size: 1rem; font-weight: 800; color: var(--db-heading);
+}
+.db-report .db-grid-2 { grid-template-columns: 1fr 1fr; gap: 28px; }
+@media (max-width: 900px) { .db-report .db-grid-2 { grid-template-columns: 1fr; } }
+
+/* Printing a report should give a clean sheet, not the whole app */
+@media print {
+  .db { background: #fff; }
+  .db-no-print,
+  .pn-header,
+  .db-header { display: none !important; }
+  .db-wrap { padding: 0; max-width: none; }
+  .db-card { border: 0; margin: 0; padding: 0; }
+  .db-bar-fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}
