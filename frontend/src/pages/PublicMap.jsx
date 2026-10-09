@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, TileLayer, GeoJSON, Marker, Circle, ZoomControl, ScaleControl, Pane, ImageOverlay, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PublishHazardPanel from '../components/Publish/PublishHazardPanel';
+import LayerControl from '../components/Map/LayerControl';
 import HazardPanel from '../components/Map/HazardPanel';
 import BarangayPanel from '../components/Map/BarangayPanel';
-import { LAYER_FOR_FILTER, useSusceptibility } from '../components/Map/susceptibility';
+import { useSusceptibility } from '../components/Map/susceptibility';
 import { HAZARD_LEVELS, useHazardLevelLayer } from '../components/Map/hazardLevels';
 import { HAZARD_TYPES, SEVERITY, severityInfo, hazardKey, hazardIconPath, hazardColor } from '../components/Map/hazardInfo';
 import { hazardsApi } from '../api/hazardsApi';
@@ -16,17 +18,6 @@ import './css/PublicMap.css';
 import './css/PublicMapGis.css';
 import './css/PublicMapLayers.css';
 import '../components/Publish/css/PublishHazard.css';
-
-// Leaflet bug: a zoom animation can finish after the map is removed
-// (e.g. zooming, then navigating to another page right away), which crashes
-// with "Cannot read properties of undefined (reading '_leaflet_pos')".
-// Skip the leftover animation step if the map is already gone.
-// This patches Leaflet globally, so it also covers the dashboard map.
-const originalZoomTransitionEnd = L.Map.prototype._onZoomTransitionEnd;
-L.Map.prototype._onZoomTransitionEnd = function () {
-  if (!this._mapPane) return;
-  return originalZoomTransitionEnd.call(this);
-};
 
 // Talisay City, Cebu
 const TALISAY_CENTER = [10.2446, 123.8473];
@@ -156,12 +147,12 @@ const BADGES = {
   Pending: '<span class="pm-drop-badge is-pending"></span>',
 };
 
-function pinIcon(item, selected) {
+function pinIcon(item, selected, overlapping) {
   const sev = severityInfo(item.severity);
   const badge = BADGES[item.verificationStatus] || BADGES.Pending;
   return L.divIcon({
     className: 'pm-drop-wrap',
-    html: `<span class="pm-drop${selected ? ' is-selected' : ''}">
+    html: `<span class="pm-drop${selected ? ' is-selected' : ''}${overlapping ? ' has-overlap' : ''}">
              <svg viewBox="0 0 44 56" aria-hidden="true">
                <path class="pm-drop-body" style="fill:${sev.color}" d="M22 54s-17-19.6-17-32a17 17 0 0 1 34 0c0 12.4-17 32-17 32z"/>
                <circle cx="22" cy="22" r="12.5" fill="#fff"/>
@@ -211,12 +202,19 @@ export default function PublicMap() {
   const [draftPoint, setDraftPoint] = useState(null);
   const [draftRadius, setDraftRadius] = useState(250);
 
-  const [typeFilter, setTypeFilter] = useState('All');
+  // F6: several hazard layers can be visible at once, so this is a set of
+  // type names rather than the old single-select filter.
+  const [activeTypes, setActiveTypes] = useState(() => new Set(HAZARD_TYPES));
+  const [layerTypes, setLayerTypes] = useState([]);   // from /api/hazards/layers/
+  const [layersFailed, setLayersFailed] = useState(false);
+  const [layersOpen, setLayersOpen] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(true);
   const [query, setQuery] = useState('');
   const [selection, setSelection] = useState(null); // { kind: 'hazard' | 'barangay', id }
   const [panelOpen, setPanelOpen] = useState(false);
   const [basemap, setBasemap] = useState('streets');
   const susceptibility = useSusceptibility();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Load hazards. Pulled out of the effect so publishing can re-run it —
   // POST /api/hazards/create/ returns the plain serializer, not GeoJSON, so
@@ -241,6 +239,22 @@ export default function PublicMap() {
     loadHazards().finally(() => setLoading(false));
     barangaysApi.list().then(setBarangayGeo).catch(() => {});
   }, [loadHazards]);
+
+  // Per-type counts and the severity legend for the layer panel.
+  const loadLayers = useCallback(() => {
+    hazardsApi
+      .layers()
+      .then((data) => {
+        setLayerTypes(Array.isArray(data?.Layers) ? data.Layers : []);
+        setLayersFailed(false);
+      })
+      .catch(() => {
+        setLayerTypes([]);
+        setLayersFailed(true);
+      });
+  }, []);
+
+  useEffect(() => { loadLayers(); }, [loadLayers]);
 
   // Close the panel with the Escape key
   useEffect(() => {
@@ -280,9 +294,30 @@ export default function PublicMap() {
   );
 
   const visibleHazards = useMemo(
-    () => hazards.filter((h) => typeFilter === 'All' || hazardKey(h.type) === typeFilter),
-    [hazards, typeFilter],
+    () => hazards.filter((h) => activeTypes.has(hazardKey(h.type))),
+    [hazards, activeTypes],
   );
+
+  // F6: zones of different severities can overlap. Pins whose areas touch are
+  // marked on the map and listed in each other's detail panel, so a reader
+  // isn't shown one severity while standing in two.
+  const overlaps = useMemo(() => {
+    const found = new Map();
+    const link = (a, b) => {
+      if (!found.has(a.id)) found.set(a.id, []);
+      found.get(a.id).push(b);
+    };
+    for (let i = 0; i < hazards.length; i += 1) {
+      for (let j = i + 1; j < hazards.length; j += 1) {
+        const a = hazards[i];
+        const b = hazards[j];
+        if (!a.position || !b.position) continue;
+        const gap = L.latLng(a.position).distanceTo(L.latLng(b.position));
+        if (gap < (a.radius || 0) + (b.radius || 0)) { link(a, b); link(b, a); }
+      }
+    }
+    return found;
+  }, [hazards]);
 
   const searchResults = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -319,11 +354,38 @@ export default function PublicMap() {
     map.fitBounds(bounds, { padding: [120, 120], maxZoom: 15 });
   }, [map, loading, hazards]);
 
+  // Open a hazard straight from a link, e.g. tapping a notification, which
+  // points at /map?zone=<id>. Runs once, then strips the parameter so a later
+  // refresh doesn't reopen a panel the user has closed.
+  const deepLinked = useRef(false);
+  useEffect(() => {
+    if (deepLinked.current || loading) return;
+    const zoneId = searchParams.get('zone');
+    if (!zoneId) return;
+
+    const target = hazards.find((h) => String(h.id) === String(zoneId));
+    if (!target) return;
+
+    deepLinked.current = true;
+    hasFitted.current = true;   // don't fit all pins, then fly away from them
+    selectHazard(target);
+    searchParams.delete('zone');
+    setSearchParams(searchParams, { replace: true });
+  }, [loading, hazards, searchParams, setSearchParams]);   // eslint-disable-line react-hooks/exhaustive-deps
+
   // Paddings that keep a zoomed area clear of the details panel and search bar
   function panelPadding() {
     return isDesktop()
       ? { paddingTopLeft: [PANEL_WIDTH + 32, 96], paddingBottomRight: [32, 32] }
       : { paddingTopLeft: [24, 140], paddingBottomRight: [24, map.getSize().y * 0.62] };
+  }
+
+  function toggleType(name) {
+    setActiveTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name); else next.add(name);
+      return next;
+    });
   }
 
   function selectHazard(item) {
@@ -424,9 +486,25 @@ export default function PublicMap() {
       : { className: 'pm-brgy', color: '#2b2b2b', weight: 1, opacity: 0.8, fillOpacity: 0 };
   }
 
-  const layerKey = LAYER_FOR_FILTER[typeFilter] || 'all';
-  const levelUrl = useHazardLevelLayer(susceptibility.index, hazards, layerKey);
-  const layerName = typeFilter === 'All' ? 'All hazards' : typeFilter;
+  const visibleTypeList = useMemo(() => [...activeTypes], [activeTypes]);
+  const levelUrl = useHazardLevelLayer(susceptibility.index, hazards, visibleTypeList);
+  const layerName =
+    activeTypes.size === HAZARD_TYPES.length ? 'all hazards'
+      : activeTypes.size === 0 ? 'no layers shown'
+        : visibleTypeList.join(', ');
+
+  // What the checkbox panel lists: the API's counts when available, otherwise
+  // counts worked out from the pins already on the map.
+  const layerRows = layerTypes.length
+    ? layerTypes
+    : HAZARD_TYPES.map((name) => ({
+        name,
+        active_count: hazards.filter((h) => hazardKey(h.type) === name).length,
+        severity_counts: ['Red', 'Orange', 'Green'].reduce((acc, sev) => {
+          acc[sev] = hazards.filter((h) => hazardKey(h.type) === name && h.severity === sev).length;
+          return acc;
+        }, {}),
+      }));
 
   return (
     <div className="pm">
@@ -523,7 +601,7 @@ export default function PublicMap() {
             <Marker
               key={h.id}
               position={h.position}
-              icon={pinIcon(h, h.id === selectedHazardId)}
+              icon={pinIcon(h, h.id === selectedHazardId, overlaps.has(h.id))}
               title={`${h.location}: ${h.type}, ${severityInfo(h.severity).label}`}
               eventHandlers={{
                 click: (e) => {
@@ -589,24 +667,33 @@ export default function PublicMap() {
             )}
           </div>
 
-          <div className="pm-chips" role="group" aria-label="Filter by hazard">
-            {['All', ...HAZARD_TYPES].map((type) => (
-              <button
-                key={type}
-                type="button"
-                className={`pm-chip ${typeFilter === type ? 'is-active' : ''}`}
-                aria-pressed={typeFilter === type}
-                onClick={() => setTypeFilter(type)}
-              >
-                {type === 'All' ? 'All hazards' : type}
+          <div className="pm-chips" role="group" aria-label="Map layers">
+            <button
+              type="button"
+              className={`pm-chip ${layersOpen ? 'is-active' : ''}`}
+              aria-expanded={layersOpen}
+              onClick={() => setLayersOpen((open) => !open)}
+            >
+              Layers ({activeTypes.size}/{layerRows.length})
+            </button>
+
+            {canPublish && publishMode === 'off' && (
+              <button type="button" className="pm-chip pm-chip-publish" onClick={startPublish}>
+                + Publish hazard
               </button>
-            ))}
+            )}
           </div>
 
-          {canPublish && publishMode === 'off' && (
-            <button type="button" className="pm-chip pm-chip-publish" onClick={startPublish}>
-              + Publish hazard
-            </button>
+          {layersOpen && (
+            <LayerControl
+              types={layerRows}
+              active={activeTypes}
+              onToggle={toggleType}
+              onAll={() => setActiveTypes(new Set(layerRows.map((t) => t.name)))}
+              onNone={() => setActiveTypes(new Set())}
+              failed={layersFailed}
+              onRetry={loadLayers}
+            />
           )}
         </div>
 
@@ -625,7 +712,17 @@ export default function PublicMap() {
         <NorthArrow />
 
         {/* ============ LEGEND ============ */}
-        <div className={`pm-legend ${panelOpen ? 'is-hidden-mobile' : ''}`}>
+        <div className={`pm-legend ${panelOpen ? 'is-hidden-mobile' : ''} ${legendOpen ? '' : 'is-collapsed'}`}>
+          <button
+            type="button"
+            className="pm-legend-toggle"
+            aria-expanded={legendOpen}
+            onClick={() => setLegendOpen((open) => !open)}
+          >
+            <span>Legend</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+          </button>
+
           <p className="pm-legend-title">Hazard level: {layerName.toLowerCase()}</p>
           <ul>
             {[...HAZARD_LEVELS].reverse().map((l) => (
@@ -635,26 +732,51 @@ export default function PublicMap() {
               </li>
             ))}
           </ul>
-          <p className="pm-legend-title pm-legend-title-sub">Pin color</p>
-          <ul>
-            {Object.entries(SEVERITY).map(([code, sev]) => (
-              <li key={code}>
-                <span className="pm-legend-dot" style={{ background: sev.color }} />
-                {sev.label}
-              </li>
-            ))}
-          </ul>
-          <p className="pm-legend-title pm-legend-title-sub">Barangay check</p>
-          <ul>
-            <li>
-              <span className="pm-drop-badge is-confirmed is-static">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12.5l4 4 9-9" /></svg>
-              </span>
-              Confirmed on the ground
-            </li>
-            <li><span className="pm-drop-badge is-disputed is-static" aria-hidden="true">!</span>Barangay reported changes</li>
-            <li><span className="pm-drop-badge is-pending is-static" />Not yet confirmed</li>
-          </ul>
+
+          {legendOpen && (
+            <>
+              <p className="pm-legend-title pm-legend-title-sub">Pin colour</p>
+              <ul>
+                {Object.entries(SEVERITY).map(([code, sev]) => (
+                  <li key={code} className="pm-legend-row">
+                    <span className="pm-legend-dot" style={{ background: sev.color }} />
+                    <span>
+                      <strong>{sev.label}</strong>
+                      <small>{sev.advice}</small>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <p className="pm-legend-title pm-legend-title-sub">Hazard symbols</p>
+              <ul>
+                {HAZARD_TYPES.map((type) => (
+                  <li key={type}>
+                    <span className="pm-legend-symbol" style={{ color: hazardColor(type) }} aria-hidden="true">
+                      <svg viewBox="0 0 24 24"><path d={hazardIconPath(type)} /></svg>
+                    </span>
+                    {type}
+                  </li>
+                ))}
+              </ul>
+
+              <p className="pm-legend-title pm-legend-title-sub">Barangay check</p>
+              <ul>
+                <li>
+                  <span className="pm-drop-badge is-confirmed is-static">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12.5l4 4 9-9" /></svg>
+                  </span>
+                  Confirmed on the ground
+                </li>
+                <li><span className="pm-drop-badge is-disputed is-static" aria-hidden="true">!</span>Barangay reported changes</li>
+                <li><span className="pm-drop-badge is-pending is-static" />Not yet confirmed</li>
+                <li>
+                  <span className="pm-legend-overlap" aria-hidden="true" />
+                  Overlaps another hazard zone
+                </li>
+              </ul>
+            </>
+          )}
         </div>
 
         {/* ============ BASE MAP TOGGLE ============ */}
@@ -679,6 +801,7 @@ export default function PublicMap() {
           onClose={() => setPanelOpen(false)}
           onVerified={handleVerified}
           onResolved={handleResolved}
+          overlaps={selectedHazard ? overlaps.get(selectedHazard.id) || [] : []}
         />
         {publishMode === 'placing' && (
           <div className="pub-hint">

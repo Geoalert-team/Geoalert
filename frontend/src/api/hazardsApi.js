@@ -8,6 +8,9 @@ export const hazardsApi = {
   update: (id, payload) => client.patch(`/api/hazards/${id}/`, payload).then((r) => r.data),
   verify: (id, payload) => client.post(`/api/hazards/${id}/verify/`, payload).then((r) => r.data),
 
+  // Per-type active counts and the colour legend, for the map's layer panel (F6)
+  layers: () => client.get('/api/hazards/layers/').then((r) => r.data),
+
   // Resolved/archived zones — /api/hazards/ only returns Active ones, so
   // anything that needs past zones (dashboard counters, history) uses this.
   resolved: (limit) =>

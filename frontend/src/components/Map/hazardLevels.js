@@ -191,14 +191,14 @@ function spreadPin(pin, type, cls, width, height, project, cell, keep) {
   }
 }
 
-function computeLevels({ grids, index, hazards, layerKey }) {
+function computeLevels({ grids, index, hazards, types }) {
   const { width, height } = grids.flood;
   const project = makeProjector(index.bounds, width, height);
   const cell = index.cellSizeM || 10;
   const score = new Float32Array(width * height);
   let anything = false;
 
-  (TYPES_FOR_LAYER[layerKey] || TYPES_FOR_LAYER.all).forEach((type) => {
+  (types && types.length ? types : TYPES_FOR_LAYER.all).forEach((type) => {
     const pins = hazards.filter((h) => hazardKey(h.type) === type && h.position);
     if (!pins.length) return;
     anything = true;
@@ -250,11 +250,21 @@ function computeLevels({ grids, index, hazards, layerKey }) {
   return out.toDataURL('image/png');
 }
 
+// F6 turned the single-select filter into checkboxes, so this now takes a list
+// of hazard types. The old single layer key ('all' | 'flood' | ...) still works.
+function normaliseTypes(types) {
+  if (!types) return TYPES_FOR_LAYER.all;
+  if (typeof types === 'string') return TYPES_FOR_LAYER[types] || TYPES_FOR_LAYER.all;
+  return Array.isArray(types) ? types : TYPES_FOR_LAYER.all;
+}
+
 /**
- * Image URL of the hazard-level layer for the current pins and filter, or null
- * when nothing should be colored. Needs the susceptibility index from useSusceptibility().
+ * Image URL of the hazard-level layer for the current pins and visible hazard
+ * types, or null when nothing should be colored. Pass an array of type names
+ * (['Flood', 'Fire']) or the legacy layer key. Needs the susceptibility index
+ * from useSusceptibility().
  */
-export function useHazardLevelLayer(index, hazards, layerKey) {
+export function useHazardLevelLayer(index, hazards, types) {
   const [grids, setGrids] = useState(null);
   const [url, setUrl] = useState(null);
 
@@ -273,13 +283,18 @@ export function useHazardLevelLayer(index, hazards, layerKey) {
     };
   }, [index]);
 
+  // A plain array would be a new reference on every render and re-run the
+  // model each time, so the effect keys off a stable string instead.
+  const typeKey = normaliseTypes(types).slice().sort().join(',');
+
   useEffect(() => {
     if (!grids || !index) {
       setUrl(null);
       return;
     }
-    setUrl(computeLevels({ grids, index, hazards, layerKey }));
-  }, [grids, index, hazards, layerKey]);
+    const list = typeKey ? typeKey.split(',') : [];
+    setUrl(list.length ? computeLevels({ grids, index, hazards, types: list }) : null);
+  }, [grids, index, hazards, typeKey]);
 
   return url;
 }
