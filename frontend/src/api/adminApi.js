@@ -11,8 +11,10 @@ export const adminApi = {
     list: (params) =>
       client.get('/api/admin-dashboard/users/', { params }).then((r) => r.data),
 
-    create: ({ full_name, email, role_id }) =>
-      client.post('/api/admin-dashboard/users/', { full_name, email, role_id }).then((r) => r.data),
+    // data: first_name, middle_initial, last_name, suffix, email, phone,
+    // employee_id, position, role_id, assigned_barangay_id
+    create: (data) =>
+      client.post('/api/admin-dashboard/users/', data).then((r) => r.data),
 
     update: (id, data) =>
       client.put(`/api/admin-dashboard/users/${id}/`, data).then((r) => r.data),

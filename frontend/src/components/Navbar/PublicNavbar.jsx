@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { useNotifications } from "../../hooks/useNotifications";
+import NotificationBell from "./NotificationBell";
 import logo from "../../assets/images/logo1.png";
 import "./css/PublicNavbar.css";
 
@@ -43,12 +43,6 @@ export default function PublicNavbar() {
   const navigate = useNavigate();
   const userMenuRef = useRef(null);
 
-  // Notification bell. Only polls the backend while someone is logged in.
-  const [bellOpen, setBellOpen] = useState(false);
-  const bellRef = useRef(null);
-  const { notifications, unreadCount, markRead, markAllRead } =
-    useNotifications({ enabled: !!user });
-
   // Close the mobile menu after a link is tapped
   const closeMenu = () => setMenuOpen(false);
 
@@ -63,18 +57,6 @@ export default function PublicNavbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [userMenuOpen]);
-
-  // Close the notification dropdown when clicking anywhere outside it
-  useEffect(() => {
-    if (!bellOpen) return;
-    function handleClickOutside(e) {
-      if (bellRef.current && !bellRef.current.contains(e.target)) {
-        setBellOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [bellOpen]);
 
   async function handleLogout() {
     setUserMenuOpen(false);
@@ -135,62 +117,8 @@ export default function PublicNavbar() {
             ))}
           </ul>
 
-          {user && (
-            <div className="pn-bell" ref={bellRef}>
-              <button
-                type="button"
-                className="pn-bell-btn"
-                aria-expanded={bellOpen}
-                aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`}
-                onClick={() => setBellOpen((open) => !open)}>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9z" />
-                  <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-                </svg>
-                {unreadCount > 0 && (
-                  <span className="pn-bell-badge">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {bellOpen && (
-                <div className="pn-bell-dropdown">
-                  <div className="pn-bell-header">
-                    <span>Notifications</span>
-                    {unreadCount > 0 && (
-                      <button
-                        type="button"
-                        className="pn-bell-markall"
-                        onClick={markAllRead}>
-                        Mark all read
-                      </button>
-                    )}
-                  </div>
-
-                  {notifications.length === 0 ? (
-                    <p className="pn-bell-empty">No notifications yet.</p>
-                  ) : (
-                    <ul className="pn-bell-list">
-                      {notifications.slice(0, 20).map((n) => (
-                        <li key={n.id}>
-                          <button
-                            type="button"
-                            className={`pn-bell-item ${n.is_read ? "" : "is-unread"}`}
-                            onClick={() => !n.is_read && markRead(n.id)}>
-                            <span className="pn-bell-text">{n.content}</span>
-                            <span className="pn-bell-time">
-                              {new Date(n.sent_at).toLocaleString()}
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+          {/* Notification bell. Only mounted (and polling) while someone is logged in. */}
+          {user && <NotificationBell />}
 
           {user ? (
             <div className="pn-user" ref={userMenuRef}>

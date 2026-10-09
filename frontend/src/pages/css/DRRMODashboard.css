@@ -1,0 +1,105 @@
+/* =========================================================
+   DRRMO dashboard. Uses the adm- building blocks from
+   AdminDashboard.css; only report-specific pieces live here.
+   Prefix: drm-
+   ========================================================= */
+
+.drm-map-link { text-decoration: none; }
+
+/* ---------- Report section ---------- */
+.drm-section-head { padding: 20px 20px 0; }
+.drm-section-head h2 { font-size: 1.15rem; font-weight: 800; }
+.drm-section-head p { margin-top: 2px; font-size: .88rem; color: var(--db-soft); }
+
+.drm-status-tabs { margin: 8px 0 0; padding: 0 12px; border-bottom: 1px solid var(--adm-line); }
+.drm-count-warn { background: var(--warn-tint) !important; color: var(--warn) !important; }
+.drm-search { max-width: none; flex: 1 1 320px; }
+
+/* ---------- Report rows ---------- */
+.drm-list { display: flex; flex-direction: column; }
+.drm-report {
+  display: flex; align-items: flex-start; gap: 16px; padding: 18px 20px;
+  border-bottom: 1px solid var(--adm-line); transition: background-color .15s ease;
+}
+.drm-report:last-child { border-bottom: 0; }
+.drm-report:hover { background: var(--adm-row-hover); }
+.drm-report-skeleton { flex-direction: column; gap: 10px; }
+
+.drm-report-main {
+  flex: 1; min-width: 0; display: flex; gap: 14px; padding: 0; border: 0; background: none;
+  text-align: left; font-family: var(--db-font-body); color: inherit; cursor: pointer;
+}
+.drm-report-main:focus-visible { outline: none; box-shadow: var(--adm-focus); border-radius: 10px; }
+.drm-report-body { flex: 1; min-width: 0; }
+.drm-report-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.drm-report-title { font-weight: 800; font-size: 1rem; color: var(--db-heading); }
+.drm-report-place { font-weight: 700; color: var(--db-body); }
+.drm-report-main:hover .drm-report-title { text-decoration: underline; text-underline-offset: 3px; }
+.drm-report-desc {
+  margin-top: 4px !important; font-size: .92rem; color: var(--db-body);
+  display: -webkit-box; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.drm-report-meta { display: flex; flex-wrap: wrap; gap: 4px 0; margin-top: 8px !important; font-size: .8rem; color: var(--db-soft); }
+.drm-report-meta span + span::before { content: "·"; margin: 0 8px; color: #b7c0cd; }
+.drm-report-meta span:first-child { font-weight: 700; color: var(--db-body); }
+.drm-report-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+.drm-btn-reject { color: var(--bad) !important; }
+.drm-btn-reject:hover:not(:disabled) { background: var(--bad-tint) !important; border-color: #f6c9c4 !important; }
+
+/* Hazard icon tile */
+.drm-hazard-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 12px; }
+.drm-hazard-icon svg { width: 55%; height: 55%; }
+.drm-hazard-md { width: 42px; height: 42px; }
+.drm-hazard-lg { width: 52px; height: 52px; border-radius: 14px; }
+
+/* Impact chips */
+.drm-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.drm-chip { padding: 2px 9px; border-radius: 7px; background: var(--db-mist); color: var(--db-soft); font-size: .78rem; }
+.drm-chip strong { font-weight: 800; }
+.drm-chip.is-bad  { background: var(--bad-tint);  color: var(--bad); }
+.drm-chip.is-warn { background: var(--warn-tint); color: var(--warn); }
+.drm-chip.is-info { background: var(--info-tint); color: var(--info); }
+
+/* ---------- Detail modal ---------- */
+.drm-detail { padding-top: 14px; }
+.drm-detail-top { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+.drm-detail-when { margin-top: 6px !important; font-size: .84rem; color: var(--db-soft); }
+.drm-detail-section { padding: 16px 0; border-top: 1px solid var(--adm-line); }
+.drm-detail-section:first-of-type { border-top: 0; }
+.drm-detail-section h3 { margin-bottom: 10px; font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--db-soft); font-family: var(--db-font-body); }
+.drm-detail-desc { white-space: pre-wrap; color: var(--db-heading); }
+
+.drm-impact-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.drm-impact-box { display: flex; flex-direction: column; padding: 12px 14px; border-radius: 12px; background: var(--db-mist); color: var(--db-soft); }
+.drm-impact-value { font-family: var(--db-font-head); font-size: 1.5rem; font-weight: 800; line-height: 1.1; color: var(--db-heading); }
+.drm-impact-label { font-size: .8rem; font-weight: 700; }
+.drm-impact-box.is-bad  { background: var(--bad-tint); }
+.drm-impact-box.is-bad .drm-impact-value  { color: var(--bad); }
+.drm-impact-box.is-warn { background: var(--warn-tint); }
+.drm-impact-box.is-warn .drm-impact-value { color: var(--warn); }
+.drm-impact-box.is-info { background: var(--info-tint); }
+.drm-impact-box.is-info .drm-impact-value { color: var(--info); }
+
+.drm-dl { display: grid; grid-template-columns: 150px 1fr; gap: 8px 16px; margin: 0; font-size: .9rem; }
+.drm-dl dt { color: var(--db-soft); }
+.drm-dl dd { margin: 0; color: var(--db-heading); overflow-wrap: anywhere; }
+
+/* ---------- Review dialog ---------- */
+.drm-review { padding-top: 14px; display: flex; flex-direction: column; gap: 14px; }
+.drm-review-text { color: var(--db-body); }
+.drm textarea {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--adm-line-strong); border-radius: 10px;
+  background: var(--adm-surface); color: var(--db-heading); font-family: var(--db-font-body); font-size: .92rem; resize: vertical;
+}
+.drm textarea:focus { outline: none; border-color: var(--db-navy-hover); box-shadow: var(--adm-focus); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 760px) {
+  .drm-report { flex-direction: column; gap: 12px; }
+  .drm-report-actions { width: 100%; }
+  .drm-report-actions .adm-btn { flex: 1; }
+  .drm-impact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .drm-dl { grid-template-columns: 1fr; gap: 2px; }
+  .drm-dl dd { margin-bottom: 8px; }
+}

@@ -10,11 +10,16 @@ export const reportsApi = {
 
 
   // Barangay Personnel: submit a new incident report
-  submit: ({ barangay, hazard_type, description, casualties_dead = 0, casualties_injured = 0, casualties_missing = 0 }) =>
+  submit: ({
+    barangay, hazard_type, description,
+    casualties_dead = 0, casualties_injured = 0, casualties_missing = 0, displaced = 0,
+    agency = '', position = '', severity_estimate = '',
+  }) =>
     client
       .post('/api/reports/incidents/', {
         barangay, hazard_type, description,
-        casualties_dead, casualties_injured, casualties_missing,
+        casualties_dead, casualties_injured, casualties_missing, displaced,
+        agency, position, severity_estimate,
       })
       .then((r) => r.data),
 

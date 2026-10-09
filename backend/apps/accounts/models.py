@@ -41,6 +41,23 @@ class User(AbstractBaseUser, PermissionsMixin):
     role                = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True, db_column='user_role_id')
     full_name           = models.CharField(max_length=150, db_column='user_full_name')
     email               = models.EmailField(unique=True, db_column='user_email')
+
+    # Personnel profile. full_name above stays the display name used across
+    # the app (reports, logs, navbar) and is rebuilt from these parts
+    # whenever they're set. All nullable so accounts created before these
+    # fields existed (and teammates' branches without them) keep working.
+    first_name          = models.CharField(max_length=60, null=True, blank=True, db_column='user_first_name')
+    middle_initial      = models.CharField(max_length=3, null=True, blank=True, db_column='user_middle_initial')
+    last_name           = models.CharField(max_length=60, null=True, blank=True, db_column='user_last_name')
+    suffix              = models.CharField(max_length=10, null=True, blank=True, db_column='user_suffix')
+    phone               = models.CharField(max_length=20, null=True, blank=True, db_column='user_phone')
+    employee_id         = models.CharField(max_length=30, null=True, blank=True, db_column='user_employee_id')
+    position            = models.CharField(max_length=100, null=True, blank=True, db_column='user_position')
+    assigned_barangay   = models.ForeignKey(
+        'barangays.Barangay', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='personnel', db_column='user_brgy_id',
+    )
+
     failed_login_count  = models.IntegerField(default=0, db_column='user_failed_login_count')
     locked_until        = models.DateTimeField(null=True, blank=True, db_column='user_locked_until')
     is_active           = models.BooleanField(default=True, db_column='user_is_active')
@@ -66,6 +83,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f'{self.full_name} ({self.email})'
+
+    def compose_full_name(self):
+        """'Juan D. Dela Cruz Jr.' from the name parts, or '' if there are none."""
+        middle = f'{self.middle_initial}.' if self.middle_initial else ''
+        parts = [self.first_name, middle, self.last_name, self.suffix]
+        return ' '.join(p.strip() for p in parts if p and p.strip())
 
     def is_locked(self):
         from django.utils import timezone
