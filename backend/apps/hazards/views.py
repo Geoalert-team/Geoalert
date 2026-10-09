@@ -3,11 +3,13 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.gis.geos import Polygon
-from django.db.models import Count
+from django.db import transaction
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from apps.notifications.models import Notification
 from apps.accounts.models import User
+from apps.barangays.models import Barangay
 from apps.history.models import HistoricalRecord
 
 from apps.hazards.models import HazardType, HazardZone, HazardAlert
@@ -19,6 +21,57 @@ from apps.hazards.serializers import (
     HazardTypeSerializer,
 )
 from utils.permissions import IsDRRMOOfficer, IsBarangayPersonnel
+from utils.audit import log_event
+
+
+def affected_barangays(zone, manual_ids=None):
+    """
+    Which barangays a hazard zone actually touches.
+
+    F2 calls for the affected barangays to be identified from the zone's
+    geometry rather than from the single barangay the officer happened to
+    tap: a 1 km zone can cross three of them, and only notifying one leaves
+    the rest uninformed.
+
+    manual_ids is the fallback the spec asks for when the GIS data can't
+    answer - the officer names the barangays and we use those instead.
+    """
+    if manual_ids:
+        return list(Barangay.objects.filter(id__in=manual_ids))
+
+    try:
+        found = list(Barangay.objects.filter(boundary__intersects=zone.geometry))
+    except Exception:
+        # A malformed boundary shouldn't stop an alert going out
+        found = []
+
+    if found:
+        return found
+    # No boundary data, or the zone sits outside every mapped boundary:
+    # fall back to whatever barangay the zone itself records.
+    return [zone.barangay] if zone.barangay else []
+
+
+def alert_recipients(publisher, barangays):
+    """
+    Who gets told. Barangay personnel assigned to an affected barangay, plus
+    DRRMO and admins who need city-wide visibility.
+
+    Anyone with no assigned barangay is included too: until every account has
+    one set, excluding them would silently stop their alerts, which is a worse
+    failure than one extra notification.
+    """
+    return (
+        User.objects
+        .filter(is_active=True)
+        .exclude(id=publisher.id)
+        .filter(
+            Q(assigned_barangay__in=barangays)
+            | Q(assigned_barangay__isnull=True)
+            | Q(role__name__in=['DRRMO_Officer', 'System_Admin'])
+        )
+        .distinct()
+    )
 
 
 def _as_count(value):
@@ -91,32 +144,67 @@ class HazardZoneCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        zone = serializer.save(published_by=request.user)
+        # Optional override for when the GIS data can't name the affected
+        # barangays and the officer picks them by hand.
+        manual_ids = request.data.get('affected_barangays') or None
 
-        # Create alert record
-        alert = HazardAlert.objects.create(
-            hazard_zone = zone,
-            issued_by   = request.user,
-            hazard_type = zone.hazard_type,
-            severity    = zone.severity,
-            notes       = zone.description,
-        )
+        # One transaction: a hazard that is half-published - saved but with
+        # nobody notified - is worse than one that failed outright.
+        with transaction.atomic():
+            zone = serializer.save(published_by=request.user)
 
-        # Notify every active user except whoever just published this alert
-        affected_users = User.objects.filter(is_active=True).exclude(id=request.user.id)
-        Notification.objects.bulk_create([
-            Notification(
-                hazard_alert=alert,
-                recipient=u,
-                content=f'{zone.hazard_type.name} alert ({zone.severity}) published for {zone.barangay.name if zone.barangay else "Talisay City"}.'
+            barangays = affected_barangays(zone, manual_ids)
+            names = [b.name for b in barangays] or ['Talisay City']
+            where = ', '.join(names)
+
+            alert = HazardAlert.objects.create(
+                hazard_zone = zone,
+                issued_by   = request.user,
+                hazard_type = zone.hazard_type,
+                severity    = zone.severity,
+                notes       = zone.description,
             )
-            for u in affected_users
-        ])
 
-        return Response(
-            HazardZoneSerializer(zone).data,
-            status=status.HTTP_201_CREATED
+            recipients = list(alert_recipients(request.user, barangays))
+            type_name = zone.hazard_type.name if zone.hazard_type else 'Hazard'
+
+            Notification.objects.bulk_create([
+                Notification(
+                    hazard_alert=alert,
+                    recipient=u,
+                    # Carries the hazard type, severity and every affected
+                    # barangay. The serializer adds the link through to the
+                    # zone and its safety guidance.
+                    content=f'{type_name} alert ({zone.severity}) for {where}. '
+                            f'Tap to see the hazard zone and what to do.',
+                )
+                for u in recipients
+            ])
+
+        log_event(
+            request,
+            action='PUBLISH_HAZARD_ALERT',
+            table='hazard_alert',
+            target_id=alert.id,
+            details=(
+                f'{type_name} / {zone.severity} published for {where}. '
+                f'{len(recipients)} recipient(s) notified. '
+                f'Zone {zone.id}. '
+                f'Barangays identified {"manually" if manual_ids else "from zone geometry"}.'
+            ),
         )
+
+        payload = HazardZoneSerializer(zone).data
+        # Feedback for the officer, and what F8's alert monitoring reads back
+        payload['alert'] = {
+            'id': str(alert.id),
+            'affected_barangays': names,
+            'recipients_notified': len(recipients),
+            # True when no mapped boundary matched, so the UI can offer manual selection
+            'barangays_uncertain': not barangays,
+        }
+
+        return Response(payload, status=status.HTTP_201_CREATED)
 
 
 class HazardZoneDetailView(APIView):
