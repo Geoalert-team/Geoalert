@@ -54,3 +54,7 @@ node_modules/
 supabase_backup.*
 02_copy_data.sql
 login.json
+
+cookies.txt
+*.cookies
+login.json
