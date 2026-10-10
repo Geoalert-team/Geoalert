@@ -23,12 +23,14 @@ const TYPICAL_SIZE = {
  *   center        [lat, lng] of the tapped point
  *   radius        metres, controlled by the parent so the map can draw it
  *   onRadius(n)   radius changed
- *   barangay      { id, name } detected from the point, or null
+ *   barangay          { id, name } detected from the point, or null
+ *   boundariesReady   false when the barangay outlines failed to load, in
+ *                     which case "outside" can't be told from "unknown"
  *   onCancel()
  *   onPublished(zone)
  */
 export default function PublishHazardPanel({
-  center, radius, onRadius, barangay, onCancel, onPublished,
+  center, radius, onRadius, barangay, boundariesReady = true, onCancel, onPublished,
 }) {
   const [types, setTypes] = useState([]);
   const [hazardTypeId, setHazardTypeId] = useState('');
@@ -59,6 +61,12 @@ export default function PublishHazardPanel({
       setError('Pick a hazard type first.');
       return;
     }
+    // The button is disabled in this case, but pressing Enter in a field can
+    // still reach here on some browsers.
+    if (boundariesReady && !barangay) {
+      setError('Pick a point inside a barangay before publishing.');
+      return;
+    }
 
     setBusy(true);
     setError('');
@@ -80,6 +88,17 @@ export default function PublishHazardPanel({
 
   const sev = SEVERITY[severity];
 
+  // A hazard has to belong to a barangay: the alert goes to that barangay's
+  // personnel, and the reports count by barangay. A point outside every
+  // boundary would publish a zone nobody is responsible for, so the button
+  // stays off until the officer taps inside the city.
+  //
+  // Only when the outlines actually loaded, though. If they failed, every
+  // point looks "outside", and blocking on that would disable publishing
+  // altogether — worse than letting it through during an emergency.
+  const outside = boundariesReady && !barangay;
+  const blocked = busy || !hazardTypeId || outside;
+
   return (
     <div className="pub db-scope" role="dialog" aria-label="Publish a hazard zone">
       <form onSubmit={submit}>
@@ -91,9 +110,17 @@ export default function PublishHazardPanel({
         </div>
 
         <p className="pub-where">
-          {barangay
-            ? <>Inside <strong>{barangay.name}</strong></>
-            : <span className="pub-warn">The point isn't inside any barangay boundary</span>}
+          {barangay && <>Inside <strong>{barangay.name}</strong></>}
+          {outside && (
+            <span className="pub-warn">
+              That point is outside Talisay City. Tap again inside a barangay to publish.
+            </span>
+          )}
+          {!barangay && !outside && (
+            <span className="pub-warn">
+              Barangay outlines didn't load, so the barangay can't be checked.
+            </span>
+          )}
         </p>
 
         <label className="db-field" htmlFor="pub-type">
@@ -165,8 +192,9 @@ export default function PublishHazardPanel({
         <div className="db-btn-row">
           <button
             className="db-btn db-btn-primary"
-            disabled={busy || !hazardTypeId}
-            style={!busy && hazardTypeId ? { background: sev.color, borderColor: sev.color } : undefined}
+            disabled={blocked}
+            title={outside ? 'Move the point inside a barangay first' : undefined}
+            style={blocked ? undefined : { background: sev.color, borderColor: sev.color }}
           >
             {busy ? 'Publishing…' : `Publish ${sev.label.toLowerCase()}`}
           </button>

@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PublishHazardPanel from '../components/Publish/PublishHazardPanel';
 import LayerControl from '../components/Map/LayerControl';
-import HazardPanel from '../components/Map/HazardPanel';
+import HazardPanel, { clearHistoryCache } from '../components/Map/HazardPanel';
 import BarangayPanel from '../components/Map/BarangayPanel';
 import { useSusceptibility } from '../components/Map/susceptibility';
 import { HAZARD_LEVELS, useHazardLevelLayer } from '../components/Map/hazardLevels';
@@ -235,12 +235,21 @@ export default function PublicMap() {
       .catch(() => setLoadFailed(true));
   }, []);
 
+  // Where past hazards happened, for the history shading. Reloaded after a
+  // resolve, since that writes a new historical record.
+  const loadHeat = useCallback(() => {
+    return historyApi
+      .heat()
+      .then((data) => setHistorySpots(data?.spots || []))
+      .catch(() => setHistorySpots([]));
+  }, []);
+
   // Load hazards and barangay outlines once
   useEffect(() => {
     loadHazards().finally(() => setLoading(false));
     barangaysApi.list().then(setBarangayGeo).catch(() => {});
-    historyApi.heat().then((data) => setHistorySpots(data?.spots || [])).catch(() => setHistorySpots([]));
-  }, [loadHazards]);
+    loadHeat();
+  }, [loadHazards, loadHeat]);
 
   // Per-type counts and the severity legend for the layer panel.
   const loadLayers = useCallback(() => {
@@ -257,6 +266,16 @@ export default function PublicMap() {
   }, []);
 
   useEffect(() => { loadLayers(); }, [loadLayers]);
+
+  // Publishing and resolving each change more of the map than the thing the
+  // user was looking at: the pins, the per-type counts in the Layers panel,
+  // the history shading and the past-incident lists. Rather than have every
+  // action remember which of those to refresh, they both come back here.
+  const refreshMap = useCallback(() => {
+    clearHistoryCache();
+    loadLayers();
+    return Promise.all([loadHazards(), loadHeat()]);
+  }, [loadHazards, loadHeat, loadLayers]);
 
   // Close the panel with the Escape key
   useEffect(() => {
@@ -438,7 +457,14 @@ export default function PublicMap() {
   // so featureToItem can't be reused here — match on the id instead.
   function handleResolved(zone) {
     const resolvedId = zone?.id ?? selectedHazardId;
+    // Drop the pin straight away rather than waiting on the round trip, so
+    // the map doesn't keep showing a hazard the officer has just closed.
     setLiveHazards((prev) => prev.filter((h) => String(h.id) !== String(resolvedId)));
+
+    // The zone is now a historical record: the shading, the counts and the
+    // past-incident lists all have to catch up.
+    refreshMap();
+
     // Move on to the next hazard at the same spot, if there is one
     const next = stack.find((h) => String(h.id) !== String(resolvedId));
     if (next) {
@@ -477,7 +503,9 @@ export default function PublicMap() {
 
   async function handlePublished() {
     cancelPublish();
-    await loadHazards();
+    // A new zone changes the pins and the Layers counts, and it may raise the
+    // shading a level where it overlaps past events.
+    await refreshMap();
   }
 
   // Which barangay the draft point falls inside, so DRRMO doesn't pick it
@@ -842,6 +870,7 @@ export default function PublicMap() {
             radius={draftRadius}
             onRadius={setDraftRadius}
             barangay={draftBarangay}
+            boundariesReady={barangays.length > 0}
             onCancel={cancelPublish}
             onPublished={handlePublished}
           />

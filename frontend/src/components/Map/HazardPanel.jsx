@@ -243,8 +243,10 @@ export default function HazardPanel({ item, open, onClose, onResolved, stack = [
   const worst = stack[0]; // the stack is sorted most serious first
 
   // Only DRRMO/Admin can close out a hazard, and only one that's still live.
-  const canResolve =
-    canPublish && item && !item.sample && (item.status || 'Active') === 'Active';
+  // Sample hazards are resolvable on purpose: they are real rows in the
+  // database, and walking a seeded hazard through to a historical record is
+  // how the resolve flow gets demonstrated without waiting for a real one.
+  const canResolve = canPublish && item && (item.status || 'Active') === 'Active';
 
   return (
     <aside className={`pm-panel ${open ? 'is-open' : ''}`} aria-label="Hazard details">
