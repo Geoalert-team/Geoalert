@@ -17,10 +17,9 @@ from apps.hazards.serializers import (
     HazardZoneGeoSerializer,
     HazardZoneSerializer,
     HazardZoneCreateSerializer,
-    HazardZoneVerifySerializer,
     HazardTypeSerializer,
 )
-from utils.permissions import IsDRRMOOfficer, IsBarangayPersonnel
+from utils.permissions import IsDRRMOOfficer
 from utils.audit import log_event
 
 
@@ -107,7 +106,7 @@ class HazardZoneListView(APIView):
         zones = (
             HazardZone.objects
             .filter(status='Active')
-            .select_related('hazard_type', 'barangay', 'verified_by')
+            .select_related('hazard_type', 'barangay')
         )
 
         barangay = request.query_params.get('barangay')
@@ -298,6 +297,7 @@ class HazardZoneDetailView(APIView):
                 occurred_at      = zone.activated_at or zone.resolved_at or timezone.now(),
                 total_casualties = _as_count(request.data.get('total_casualties')),
                 total_displaced  = _as_count(request.data.get('total_displaced')),
+                is_sample        = zone.is_sample,
             )
 
         return Response(HazardZoneSerializer(zone).data)
@@ -437,44 +437,3 @@ class HazardLayerListView(APIView):
             'Layers': layers,
             'Total_active_hazards': HazardZone.objects.filter(status='Active').count(),
         })
-
-
-class HazardZoneVerifyView(APIView):
-    """
-    POST /api/hazards/<id>/verify/
-    Barangay personnel confirm or dispute conditions on the ground.
-    Body: { "verification_status": "Confirmed" | "Disputed",
-            "verification_note": "..." }   (note required when Disputed)
-    """
-    permission_classes = [IsAuthenticated, IsBarangayPersonnel]
-
-    def post(self, request, pk):
-        try:
-            zone = (
-                HazardZone.objects
-                .select_related('hazard_type', 'barangay')
-                .get(pk=pk, status='Active')
-            )
-        except HazardZone.DoesNotExist:
-            return Response(
-                {'error': 'This hazard zone is no longer active.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        serializer = HazardZoneVerifySerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        if serializer.validated_data['verification_status'] == 'Pending':
-            zone.reset_verification()
-        else:
-            zone.verification_status = serializer.validated_data['verification_status']
-            zone.verification_note   = serializer.validated_data['verification_note']
-            zone.verified_by         = request.user
-            zone.verified_at         = timezone.now()
-        zone.save(update_fields=[
-            'verification_status', 'verification_note',
-            'verified_by', 'verified_at',
-        ])
-
-        return Response(HazardZoneGeoSerializer(zone).data)

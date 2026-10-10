@@ -22,6 +22,7 @@ class HistoricalRecord(models.Model):
     total_casualties  = models.IntegerField(null=True, blank=True, db_column='hstr_total_casualties')
     total_displaced   = models.IntegerField(null=True, blank=True, db_column='hstr_total_displaced')
     archived_at       = models.DateTimeField(auto_now_add=True, db_column='hstr_archived_at')
+    is_sample         = models.BooleanField(default=False, db_column='hstr_is_sample')
 
     class Meta:
         db_table = 'historical_record'

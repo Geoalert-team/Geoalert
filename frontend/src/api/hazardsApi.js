@@ -6,7 +6,6 @@ export const hazardsApi = {
   detail: (id) => client.get(`/api/hazards/${id}/`).then((r) => r.data),
   create: (payload) => client.post('/api/hazards/create/', payload).then((r) => r.data),
   update: (id, payload) => client.patch(`/api/hazards/${id}/`, payload).then((r) => r.data),
-  verify: (id, payload) => client.post(`/api/hazards/${id}/verify/`, payload).then((r) => r.data),
 
   // Per-type active counts and the colour legend, for the map's layer panel (F6)
   layers: () => client.get('/api/hazards/layers/').then((r) => r.data),

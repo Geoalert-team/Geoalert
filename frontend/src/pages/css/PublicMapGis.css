@@ -16,42 +16,8 @@
 .pm-drop.is-selected,
 .pm-drop-wrap:hover .pm-drop.is-selected { transform: scale(1.2); }
 
-/* Barangay-check badge (on pins and in the legend) */
-.pm-drop-badge {
-  position: absolute;
-  top: 1px;
-  right: 1px;
-  display: grid;
-  place-items: center;
-  box-sizing: border-box;
-  width: 18px;
-  height: 18px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  color: #fff;
-  font-weight: 800;
-  font-size: 11px;
-  line-height: 1;
-}
-.pm-drop-badge svg {
-  width: 11px;
-  height: 11px;
-  fill: none;
-  stroke: #fff;
-  stroke-width: 3.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.pm-drop-badge.is-confirmed { background: #1f9d55; }
-.pm-drop-badge.is-disputed { background: #b86b00; }
-.pm-drop-badge.is-pending { background: #8a96a8; }
-
-.pm-drop-badge.is-static {
-  position: static;
-  flex-shrink: 0;
-  box-shadow: 0 0 0 1px var(--pm-line);
-}
 .pm-legend-title-sub { margin-top: 12px; }
+.pm-legend-note { margin: 6px 0 0; max-width: 220px; color: var(--pm-soft); font-size: .78rem; line-height: 1.35; }
 
 /* ---------- Base map toggle (Satellite / Map) ---------- */
 .pm-basemap {
@@ -151,58 +117,6 @@
   border-radius: 50%;
 }
 .pm-brgy-icon svg { width: 18px; height: 18px; fill: currentColor; }
-
-/* ---------- Barangay confirmation box (inside the hazard panel) ---------- */
-.pm-verify {
-  margin-top: 16px;
-  padding: 14px;
-  border: 1px solid;
-  border-radius: 14px;
-}
-.pm-verify-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 800;
-}
-.pm-verify-meta { margin-top: 4px; color: var(--pm-soft); font-size: .88rem; }
-.pm-verify-note {
-  margin: 10px 0 0;
-  padding-left: 12px;
-  border-left: 3px solid currentColor;
-  color: var(--pm-heading);
-  font-size: .95rem;
-}
-.pm-verify-disclaimer { margin-top: 10px; color: var(--pm-body); font-size: .9rem; }
-
-.pm-verify-actions { display: grid; gap: 8px; margin-top: 12px; }
-.pm-verify-prompt { margin: 0; color: var(--pm-body); font-size: .88rem; }
-.pm-verify .pm-btn { font-family: inherit; cursor: pointer; }
-.pm-verify .pm-btn-outline { background: transparent; }
-.pm-verify .pm-btn-outline:hover { background: var(--pm-navy); }
-.pm-verify .pm-btn:disabled { opacity: .55; cursor: not-allowed; }
-
-.pm-verify-form { margin-top: 12px; }
-.pm-verify-form label {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--pm-heading);
-  font-weight: 700;
-  font-size: .92rem;
-}
-.pm-verify-form textarea {
-  width: 100%;
-  min-height: 88px;
-  padding: 10px 12px;
-  border: 1px solid var(--pm-line);
-  border-radius: 12px;
-  background: var(--pm-white);
-  color: var(--pm-heading);
-  font: inherit;
-  resize: vertical;
-}
-.pm-verify-form textarea:focus-visible { outline: 3px solid var(--pm-navy); outline-offset: 1px; }
-.pm-verify-error { margin-top: 8px; color: #a12f2f; font-weight: 700; font-size: .9rem; }
 
 @media (prefers-reduced-motion: reduce) {
   .pm-drop, .pm-basemap button { transition: none; }

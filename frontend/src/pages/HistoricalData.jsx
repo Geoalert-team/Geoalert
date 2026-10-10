@@ -96,6 +96,7 @@ export default function HistoricalData() {
   }, [hazardId, barangayId, dateFrom, dateTo]);
 
   const outlook = useMemo(() => buildRiskOutlook(records), [records]);
+  const sampleCount = records.filter((r) => r.is_sample).length;
 
   const hazardTabs = [{ id: '', name: 'All types' }, ...hazardTypes.map((t) => ({ id: t.id, name: t.name }))];
 
@@ -149,6 +150,13 @@ export default function HistoricalData() {
         </div>
 
         {error && <p className="db-empty">{error}</p>}
+
+        {!error && sampleCount > 0 && (
+          <p className="db-note">
+            {sampleCount === records.length ? 'All' : `${sampleCount} of ${records.length}`} records shown are
+            sample data generated for testing, not real events. Trends and the outlook below include them.
+          </p>
+        )}
 
         {!error && (
           <>
@@ -300,6 +308,7 @@ export default function HistoricalData() {
                           {nestedName(r.hazard_type_detail) || 'Hazard'}
                           {' - '}
                           {nestedName(r.barangay_detail) || 'Unspecified barangay'}
+                          {r.is_sample && <span className="db-badge" style={{ marginLeft: 8 }}>Sample</span>}
                         </span>
                         <span
                           className="db-item-meta"

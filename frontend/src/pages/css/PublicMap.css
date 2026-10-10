@@ -171,6 +171,32 @@
 .pm-chip:hover { background: var(--pm-mist); }
 .pm-chip.is-active { background: var(--pm-navy); border-color: var(--pm-navy); color: var(--pm-white); }
 
+/* History / Active hazards switch for the shading */
+.pm-mode {
+  display: flex;
+  flex-shrink: 0;
+  padding: 3px;
+  border: 1px solid var(--pm-line);
+  border-radius: 999px;
+  background: var(--pm-white);
+  box-shadow: 0 2px 6px rgba(28, 46, 74, .1);
+}
+.pm-mode button {
+  min-height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pm-heading);
+  font: inherit;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pm-mode button:hover { background: var(--pm-mist); }
+.pm-mode button.is-active { background: var(--pm-navy); color: var(--pm-white); }
+.pm-mode button:focus-visible { outline: 3px solid #7aa7ff; outline-offset: 2px; }
+
 /* ---------- Status pills (loading, sample data, errors) ---------- */
 .pm-status {
   position: absolute;
@@ -443,6 +469,56 @@
 .pm-timeline strong { display: block; color: var(--pm-heading); }
 .pm-timeline span { color: var(--pm-soft); font-size: .9rem; }
 .pm-muted { margin-top: 16px; color: var(--pm-soft); font-size: .92rem; }
+
+/* Past incidents in the hazard panel's History tab */
+.pm-history-heading { margin-top: 22px; }
+.pm-history-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pm-history-chip {
+  padding: 5px 12px;
+  border: 1px solid var(--pm-line);
+  border-radius: 999px;
+  background: var(--pm-white);
+  color: var(--pm-body);
+  font: inherit;
+  font-size: .84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pm-history-chip span { margin-left: 2px; color: var(--pm-soft); font-weight: 600; }
+.pm-history-chip:hover { background: var(--pm-mist); }
+.pm-history-chip.is-active { border-color: var(--pm-navy); background: var(--pm-navy); color: #fff; }
+.pm-history-chip.is-active span { color: rgba(255, 255, 255, .75); }
+.pm-history-chip:focus-visible, .pm-history-more:focus-visible { outline: 3px solid #7aa7ff; outline-offset: 2px; }
+.pm-history-more {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--pm-line);
+  border-radius: 12px;
+  background: var(--pm-mist);
+  color: var(--pm-heading);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pm-history-more:hover { background: #e8edf5; }
+.pm-history-more:disabled { opacity: .6; cursor: wait; }
+.pm-history-summary { margin: 6px 0 0; color: var(--pm-body); font-size: .92rem; }
+.pm-history-list { margin-top: 12px; }
+.pm-history-list li + li { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--pm-line); }
+.pm-history-desc { margin: 4px 0; color: var(--pm-body); font-size: .9rem; line-height: 1.45; }
+.pm-history-counts { display: block; color: var(--pm-soft); font-size: .84rem; }
+.pm-history-sample {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--pm-mist);
+  color: var(--pm-soft);
+  font-style: normal;
+  font-size: .72rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
 
 /* =========================================================
    Mobile: search on top, panel becomes a bottom sheet

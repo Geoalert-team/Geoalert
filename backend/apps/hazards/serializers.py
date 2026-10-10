@@ -23,9 +23,6 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
     barangay_name = serializers.CharField(
         source='barangay.name', read_only=True, default=None
     )
-    verified_by_name = serializers.CharField(
-        source='verified_by.full_name', read_only=True, default=None
-    )
 
     class Meta:
         model       = HazardZone
@@ -34,8 +31,7 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
             'id', 'barangay', 'barangay_name', 'hazard_type_name',
             'severity', 'status', 'description',
             'activated_at', 'resolved_at',
-            'verification_status', 'verified_by_name',
-            'verified_at', 'verification_note',
+            'is_sample',
         ]
 
 
@@ -44,9 +40,6 @@ class HazardZoneSerializer(serializers.ModelSerializer):
     barangay_name = serializers.CharField(
         source='barangay.name', read_only=True, default=None
     )
-    verified_by_name = serializers.CharField(
-        source='verified_by.full_name', read_only=True, default=None
-    )
 
     class Meta:
         model  = HazardZone
@@ -54,8 +47,7 @@ class HazardZoneSerializer(serializers.ModelSerializer):
             'id', 'barangay', 'barangay_name', 'published_by', 'hazard_type',
             'severity', 'status', 'description',
             'activated_at', 'resolved_at',
-            'verification_status', 'verified_by_name',
-            'verified_at', 'verification_note',
+            'is_sample',
         ]
 
 
@@ -102,26 +94,6 @@ class HazardZoneCreateSerializer(serializers.ModelSerializer):
         if not getattr(value, 'srid', None):
             value.srid = 4326
         return value
-
-
-class HazardZoneVerifySerializer(serializers.Serializer):
-    """
-    Body for POST /api/hazards/<id>/verify/
-    Barangay personnel report what they see on the ground.
-    """
-    verification_status = serializers.ChoiceField(choices=['Pending', 'Confirmed', 'Disputed'])
-    verification_note   = serializers.CharField(
-        required=False, allow_blank=True, max_length=1000
-    )
-
-    def validate(self, data):
-        note = (data.get('verification_note') or '').strip()
-        if data['verification_status'] == 'Disputed' and not note:
-            raise serializers.ValidationError({
-                'verification_note': 'Describe the conditions you saw so the DRRMO can update the map.'
-            })
-        data['verification_note'] = note
-        return data
 
 
 class HazardAlertSerializer(serializers.ModelSerializer):

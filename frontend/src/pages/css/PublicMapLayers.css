@@ -190,10 +190,69 @@
   line-height: 1.5;
 }
 .pm-overlap strong { display: block; color: #1c2e4a; }
-.pm-overlap ul { margin: 8px 0; padding: 0; list-style: none; display: grid; gap: 4px; }
-.pm-overlap li { display: flex; align-items: center; gap: 8px; }
 .pm-overlap-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-.pm-overlap p { margin: 0; color: #5b6878; }
+.pm-overlap p { margin: 4px 0 0; color: #5b6878; }
+
+/* ---------- Hazards at one spot: step through overlapping zones ---------- */
+.pm-stack {
+  margin-top: 16px;
+  padding: 10px;
+  border: 1px solid var(--pm-line, #dde3ec);
+  border-radius: 14px;
+  background: var(--pm-mist, #f2f5f9);
+}
+.pm-stack-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 0 2px 8px;
+  font-size: .84rem;
+  color: var(--pm-heading, #1c2e4a);
+}
+.pm-stack-step { display: flex; align-items: center; gap: 4px; font-size: .8rem; color: var(--pm-soft, #6a778d); }
+.pm-stack-step span { min-width: 3.4em; text-align: center; font-variant-numeric: tabular-nums; }
+.pm-stack-step button {
+  display: grid; place-items: center;
+  width: 30px; height: 30px;
+  border: 1px solid var(--pm-line, #dde3ec);
+  border-radius: 50%;
+  background: var(--pm-white, #fff);
+  color: var(--pm-heading, #1c2e4a);
+  cursor: pointer;
+}
+.pm-stack-step button:hover { background: #e8edf5; }
+.pm-stack-step svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.pm-stack-list {
+  display: flex; gap: 6px;
+  margin: 0; padding: 0; list-style: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.pm-stack-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--pm-white, #fff);
+  color: var(--pm-body, #43516a);
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(28, 46, 74, .08);
+}
+.pm-stack-item:hover { background: #f8fafd; }
+.pm-stack-item.is-active { color: var(--pm-heading, #1c2e4a); }
+.pm-stack-item:focus-visible, .pm-stack-step button:focus-visible { outline: 3px solid #7aa7ff; outline-offset: 2px; }
+.pm-stack-icon {
+  display: grid; place-items: center;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--pm-mist, #f2f5f9);
+}
+.pm-stack-icon svg { width: 17px; height: 17px; fill: currentColor; }
+.pm-stack-text { display: grid; line-height: 1.15; }
+.pm-stack-text strong { font-size: .84rem; }
+.pm-stack-text small { display: flex; align-items: center; gap: 5px; font-size: .74rem; color: var(--pm-soft, #6a778d); }
+.pm-stack-text .pm-overlap-dot { width: 7px; height: 7px; }
 
 /* ---------- Expandable legend ---------- */
 .pm-legend-toggle {

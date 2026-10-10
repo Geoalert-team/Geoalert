@@ -15,7 +15,7 @@ class HistoricalRecordSerializer(serializers.ModelSerializer):
             'hazard_type', 'hazard_type_detail',
             'hazard_zone', 'severity_level', 'description',
             'occurred_at', 'total_casualties', 'total_displaced',
-            'archived_at'
+            'archived_at', 'is_sample'
         ]
 
 

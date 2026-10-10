@@ -4,7 +4,6 @@ from apps.hazards.views import (
     HazardZoneCreateView,
     HazardZoneDetailView,
     HazardZoneResolvedListView,
-    HazardZoneVerifyView,
     HazardTypeListView,
     HazardUnifiedView,
     HazardLayerListView,
@@ -18,5 +17,4 @@ urlpatterns = [
     path('layers/',           HazardLayerListView.as_view(),        name='hazard-layers'),
     path('resolved/',         HazardZoneResolvedListView.as_view(), name='hazard-resolved'),
     path('<uuid:pk>/',        HazardZoneDetailView.as_view(),       name='hazard-detail'),
-    path('<uuid:pk>/verify/', HazardZoneVerifyView.as_view(),       name='hazard-verify'),
 ]

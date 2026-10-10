@@ -6,6 +6,14 @@ import './css/PublishHazard.css';
 
 const SEVERITY_ORDER = ['Green', 'Orange', 'Red'];
 
+// Starting radius when a hazard type is picked, and what sizes are usual for it.
+// A burned block is small (40 razed houses cover ~0.25 ha); floods spread wide.
+const TYPICAL_SIZE = {
+  Flood:     { radius: 200, hint: 'Street ponding 50-120 m, river overflow 250-700 m' },
+  Landslide: { radius: 50,  hint: 'Rockfall 10-25 m, slope failure with houses below 60-150 m' },
+  Fire:      { radius: 40,  hint: 'House fire 15-40 m, block of 50+ houses 40-100 m' },
+};
+
 /**
  * The form DRRMO fills in after tapping a point on the map. Sits in a
  * floating card so the draft circle stays visible while the radius is
@@ -37,6 +45,13 @@ export default function PublishHazardPanel({
       })
       .catch(() => setError('Could not load hazard types. Check the backend is running.'));
   }, []);
+
+  // Reset the radius to the usual size whenever the hazard type changes
+  const typeName = types.find((t) => String(t.id) === String(hazardTypeId))?.name;
+  const typical = TYPICAL_SIZE[typeName];
+  useEffect(() => {
+    if (typical) onRadius(typical.radius);
+  }, [typeName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function submit(e) {
     e.preventDefault();
@@ -120,12 +135,13 @@ export default function PublishHazardPanel({
           <input
             id="pub-radius"
             type="range"
-            min="50"
+            min="10"
             max="1000"
-            step="25"
+            step="5"
             value={radius}
             onChange={(e) => onRadius(Number(e.target.value))}
           />
+          {typical && <small className="pub-size-hint">{typical.hint}</small>}
         </label>
 
         <label className="db-field" htmlFor="pub-desc">

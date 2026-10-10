@@ -43,6 +43,7 @@
 .pub-warn { color: #a12f2f; font-weight: 600; }
 
 .pub .db-field { margin-bottom: 12px; }
+.pub-size-hint { display: block; margin-top: 4px; font-size: .78rem; font-weight: 400; color: var(--db-soft); }
 
 /* Severity picker */
 .pub-sev { margin: 0 0 12px; padding: 0; border: 0; }
