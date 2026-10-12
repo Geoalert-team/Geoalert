@@ -56,6 +56,9 @@ export default function Reports() {
   const [dateTo, setDateTo] = useState('');
   const [barangay, setBarangay] = useState('');
   const [hazardType, setHazardType] = useState('');
+  // Seeded events are left out by default. A report gets printed and handed
+  // over as an official figure, and Faker incidents are not one.
+  const [includeSamples, setIncludeSamples] = useState(false);
 
   const [report, setReport] = useState(null);
   const [notEnough, setNotEnough] = useState('');
@@ -82,6 +85,7 @@ export default function Reports() {
 
   function clearFilters() {
     setDateFrom(''); setDateTo(''); setBarangay(''); setHazardType('');
+    setIncludeSamples(false);
   }
 
   async function generate(e) {
@@ -100,6 +104,7 @@ export default function Reports() {
     if (dateTo) params.date_to = `${dateTo}T23:59:59`;
     if (barangay) params.barangay = barangay;
     if (hazardType && current.usesHazardType) params.hazard_type = hazardType;
+    if (includeSamples) params.include_samples = 'true';
 
     try {
       const data = type === 'hazard-summary'
@@ -123,7 +128,7 @@ export default function Reports() {
     }
   }
 
-  const filtersOn = dateFrom || dateTo || barangay || hazardType;
+  const filtersOn = dateFrom || dateTo || barangay || hazardType || includeSamples;
 
   return (
     <div className="db">
@@ -176,6 +181,17 @@ export default function Reports() {
                   </select>
                 </label>
               )}
+              <label className="db-field" style={{ justifyContent: 'flex-end' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 400 }}>
+                  <input
+                    type="checkbox"
+                    checked={includeSamples}
+                    onChange={(e) => setIncludeSamples(e.target.checked)}
+                    style={{ width: 'auto', margin: 0 }}
+                  />
+                  Include sample data
+                </span>
+              </label>
             </div>
 
             {dateFrom && dateTo && dateFrom > dateTo && (
@@ -210,6 +226,13 @@ export default function Reports() {
         {notEnough && (
           <div className="db-card">
             <p className="db-empty">{notEnough}</p>
+            {!includeSamples && (
+              <p className="db-note">
+                Sample data is excluded from reports. If the archive is mostly
+                seeded test events, tick <strong>Include sample data</strong> to
+                see them — the report will be labelled as not official.
+              </p>
+            )}
           </div>
         )}
 
@@ -231,6 +254,14 @@ export default function Reports() {
                 Print
               </button>
             </div>
+
+            {report.includes_samples && (
+              <p className="db-error" role="status" style={{ marginTop: 14 }}>
+                <strong>This report includes sample data.</strong> Figures below count
+                events generated for testing alongside real ones, so it is not
+                suitable as an official record.
+              </p>
+            )}
 
             {type === 'hazard-summary' ? (
               <>
