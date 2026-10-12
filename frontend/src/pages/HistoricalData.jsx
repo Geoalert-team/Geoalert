@@ -4,6 +4,13 @@ import { historyApi } from '../api/historyApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { hazardsApi } from '../api/hazardsApi';
 import { buildRiskOutlook } from '../utils/riskOutlook';
+import TrendLine from '../components/Charts/TrendLine';
+import CategoryBars from '../components/Charts/CategoryBars';
+import {
+  SEVERITY_LABEL,
+  hazardSeriesColor,
+  severitySeriesColor,
+} from '../components/Charts/chartTheme';
 import './css/Dashboard.css';
 
 const SEVERITY = {
@@ -26,24 +33,14 @@ function nestedName(detail) {
   return detail?.name || detail?.properties?.name || null;
 }
 
-function BarList({ rows, labelKey, colorFor }) {
-  const max = Math.max(1, ...rows.map((r) => r.count));
-  return (
-    <div className="db-bars">
-      {rows.map((r) => (
-        <div key={r[labelKey]} className="db-bar-row">
-          <span>{r.display || r[labelKey]}</span>
-          <div className="db-bar-track">
-            <div
-              className="db-bar-fill"
-              style={{ width: `${(r.count / max) * 100}%`, background: colorFor ? colorFor(r) : undefined }}
-            />
-          </div>
-          <span className="db-bar-count">{r.count}</span>
-        </div>
-      ))}
-    </div>
-  );
+// Trend rows arrive from the API keyed by whatever the GROUP BY produced;
+// the charts want a plain { label, value, color }.
+function toRows(rows = [], labelKey, colorFor) {
+  return rows.map((r) => ({
+    label: r.display || r[labelKey] || 'Unspecified',
+    value: r.count,
+    color: colorFor ? colorFor(r) : undefined,
+  }));
 }
 
 export default function HistoricalData() {
@@ -100,14 +97,25 @@ export default function HistoricalData() {
 
   const hazardTabs = [{ id: '', name: 'All types' }, ...hazardTypes.map((t) => ({ id: t.id, name: t.name }))];
 
-  const monthRows = (trends?.by_month || []).map((m) => ({
-    month: m.month,
-    display: new Date(m.month).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }),
-    count: m.count,
+  const monthPoints = (trends?.by_month || []).map((m) => ({
+    label: new Date(m.month).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }),
+    value: m.count,
   }));
-  const severityRows = (trends?.by_severity || []).map((s) => ({
-    ...s, display: `${SEVERITY[s.severity_level]?.label || s.severity_level}`,
-  }));
+
+  const typeRows = toRows(
+    trends?.by_hazard_type, 'hazard_type__name',
+    (r) => hazardSeriesColor(r.hazard_type__name),
+  );
+
+  const severityRows = toRows(
+    (trends?.by_severity || []).map((s) => ({
+      ...s, display: SEVERITY_LABEL[s.severity_level] || s.severity_level,
+    })),
+    'severity_level',
+    (r) => severitySeriesColor(r.severity_level),
+  );
+
+  const barangayRows = toRows(trends?.by_barangay, 'barangay__name');
 
   const scopeLabel = hazardId
     ? (hazardTypes.find((t) => String(t.id) === String(hazardId))?.name || 'this hazard type')
@@ -267,27 +275,32 @@ export default function HistoricalData() {
               )}
             </div>
 
+            {/* ---------- Trend over time ---------- */}
+            <div className="db-card">
+              <h2>Events over time</h2>
+              <p className="db-card-sub">
+                Recorded hazard events by month, for {scopeLabel}
+              </p>
+              <TrendLine points={monthPoints} />
+            </div>
+
             <div className="db-grid-2">
               <div className="db-card">
-                <h2>Events by month</h2>
-                <p className="db-card-sub">How often hazards were recorded over time</p>
-                {monthRows.length ? <BarList rows={monthRows} labelKey="month" /> : <p className="db-empty">No data for this filter.</p>}
+                <h2>By hazard type</h2>
+                <p className="db-card-sub">Which hazards Talisay City records most</p>
+                <CategoryBars rows={typeRows} />
               </div>
               <div className="db-card">
                 <h2>Most affected barangays</h2>
                 <p className="db-card-sub">Top barangays by recorded events</p>
-                {trends?.by_barangay?.length
-                  ? <BarList rows={trends.by_barangay} labelKey="barangay__name" />
-                  : <p className="db-empty">No data for this filter.</p>}
+                <CategoryBars rows={barangayRows} />
               </div>
             </div>
 
             <div className="db-card">
               <h2>Severity distribution</h2>
               <p className="db-card-sub">Share of events by severity level</p>
-              {severityRows.length
-                ? <BarList rows={severityRows} labelKey="severity_level" colorFor={(r) => SEVERITY[r.severity_level]?.color} />
-                : <p className="db-empty">No data for this filter.</p>}
+              <CategoryBars rows={severityRows} />
             </div>
 
             <div className="db-card">

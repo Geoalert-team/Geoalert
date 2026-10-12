@@ -3,6 +3,8 @@ import PublicNavbar from '../components/Navbar/PublicNavbar';
 import { reportsApi } from '../api/reportApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { hazardsApi } from '../api/hazardsApi';
+import CategoryBars from '../components/Charts/CategoryBars';
+import { hazardSeriesColor, severitySeriesColor } from '../components/Charts/chartTheme';
 import './css/Dashboard.css';
 
 const TYPES = [
@@ -21,31 +23,19 @@ const TYPES = [
 ];
 
 const SEVERITY_LABEL = { Red: 'Extreme', Orange: 'Moderate', Green: 'Low' };
-const SEVERITY_VAR = { Red: 'var(--db-high)', Orange: 'var(--db-medium)', Green: 'var(--db-low)' };
 
 // Anything slower than this and we tell the user rather than leaving them
 // watching a spinner, as the spec asks.
 const SLOW_MS = 8000;
 
-function BarList({ rows, labelKey, colorFor }) {
-  if (!rows?.length) return <p className="db-empty">Nothing to show.</p>;
-  const max = Math.max(1, ...rows.map((r) => r.count));
-  return (
-    <div className="db-bars">
-      {rows.map((r) => (
-        <div key={r[labelKey] ?? 'unspecified'} className="db-bar-row">
-          <span>{r.display || r[labelKey] || 'Unspecified'}</span>
-          <div className="db-bar-track">
-            <div
-              className="db-bar-fill"
-              style={{ width: `${(r.count / max) * 100}%`, background: colorFor ? colorFor(r) : undefined }}
-            />
-          </div>
-          <span className="db-bar-count">{r.count}</span>
-        </div>
-      ))}
-    </div>
-  );
+// The report endpoints key their rows by whatever the GROUP BY produced;
+// the charts want a plain { label, value, color }.
+function toRows(rows = [], labelKey, colorFor) {
+  return (rows || []).map((r) => ({
+    label: r.display || r[labelKey] || 'Unspecified',
+    value: r.count,
+    color: colorFor ? colorFor(r) : undefined,
+  }));
 }
 
 function Stat({ value, label }) {
@@ -253,23 +243,35 @@ export default function Reports() {
                 <div className="db-grid-2">
                   <section>
                     <h3>By hazard type</h3>
-                    <BarList rows={report.breakdown_by_type} labelKey="hazard_type__name" />
+                    <CategoryBars
+                      rows={toRows(
+                        report.breakdown_by_type, 'hazard_type__name',
+                        (r) => hazardSeriesColor(r.hazard_type__name),
+                      )}
+                      empty="Nothing to show."
+                    />
                   </section>
                   <section>
                     <h3>By severity</h3>
-                    <BarList
-                      rows={(report.severity_distribution || []).map((r) => ({
-                        ...r, display: SEVERITY_LABEL[r.severity_level] || r.severity_level,
-                      }))}
-                      labelKey="severity_level"
-                      colorFor={(r) => SEVERITY_VAR[r.severity_level]}
+                    <CategoryBars
+                      rows={toRows(
+                        (report.severity_distribution || []).map((r) => ({
+                          ...r, display: SEVERITY_LABEL[r.severity_level] || r.severity_level,
+                        })),
+                        'severity_level',
+                        (r) => severitySeriesColor(r.severity_level),
+                      )}
+                      empty="Nothing to show."
                     />
                   </section>
                 </div>
 
                 <section style={{ marginTop: 20 }}>
                   <h3>Affected barangays</h3>
-                  <BarList rows={report.affected_barangays} labelKey="barangay__name" />
+                  <CategoryBars
+                    rows={toRows(report.affected_barangays, 'barangay__name')}
+                    empty="Nothing to show."
+                  />
                 </section>
               </>
             ) : (
@@ -284,12 +286,16 @@ export default function Reports() {
 
                 <section style={{ marginTop: 8 }}>
                   <h3>Alerts by severity</h3>
-                  <BarList
-                    rows={(report.alerts_by_severity || []).map((r) => ({
-                      ...r, display: SEVERITY_LABEL[r.severity] || r.severity,
-                    }))}
-                    labelKey="severity"
-                    colorFor={(r) => SEVERITY_VAR[r.severity]}
+                  <CategoryBars
+                    rows={toRows(
+                      (report.alerts_by_severity || []).map((r) => ({
+                        ...r, display: SEVERITY_LABEL[r.severity] || r.severity,
+                      })),
+                      'severity',
+                      (r) => severitySeriesColor(r.severity),
+                    )}
+                    valueHead="Alerts"
+                    empty="Nothing to show."
                   />
                 </section>
               </>
