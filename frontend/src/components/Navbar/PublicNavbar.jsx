@@ -5,7 +5,7 @@ import NotificationBell from "./NotificationBell";
 import logo from "../../assets/images/logo1.png";
 import "./css/PublicNavbar.css";
 
-// Shown to everyone who is NOT logged in (residents) — unchanged from before.
+// Shown to everyone who is NOT logged in (residents) â€” unchanged from before.
 const PUBLIC_LINKS = [
   { to: "/", label: "Home" },
   { to: "/map", label: "Map" },
@@ -21,12 +21,14 @@ const ROLE_LINKS = {
     { to: "/app/dashboard", label: "Dashboard" },
     { to: "/map", label: "Map" },
     { to: "/app/history", label: "History" },
+    { to: "/app/reports", label: "Reports" },
     { to: "/app/security", label: "Security" },
   ],
   DRRMO_Officer: [
     { to: "/app/dashboard", label: "Dashboard" },
     { to: "/map", label: "Map" },
     { to: "/app/history", label: "History" },
+    { to: "/app/reports", label: "Reports" },
     { to: "/app/security", label: "Security" },
   ],
   Barangay_Personnel: [
@@ -68,7 +70,7 @@ export default function PublicNavbar() {
   const roleName = user?.role?.name || user?.role;
 
   // Residents (no user) keep the exact links as before.
-  // Logged-in staff see ONLY their role's links — public links are hidden.
+  // Logged-in staff see ONLY their role's links â€” public links are hidden.
   const links = user ? (ROLE_LINKS[roleName] || []) : PUBLIC_LINKS;
   const brandTo = user ? "/app/dashboard" : "/";
 

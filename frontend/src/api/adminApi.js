@@ -28,4 +28,9 @@ export const adminApi = {
 
   logs: (params) =>
     client.get('/api/admin-dashboard/logs/', { params }).then((r) => r.data),
+
+  // Notification and alert monitoring (WBS 3.8.5).
+  // params: days (1-90), severity, page
+  alerts: (params) =>
+    client.get('/api/admin-dashboard/alerts/', { params }).then((r) => r.data),
 };

@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { adminApi } from '../../api/adminApi';
 import UsersTab from './admin/UsersTab';
 import LogsTab, { ActionTag } from './admin/LogsTab';
+import AlertsTab from './admin/AlertsTab';
 import { Icon, ROLE_META, Toast, roleName, timeAgo } from './admin/adminShared';
 import '../css/Dashboard.css';
 import '../css/AdminDashboard.css';
@@ -11,6 +12,7 @@ import '../css/AdminDashboard.css';
 const TABS = [
   { key: 'overview', label: 'Overview', icon: 'grid' },
   { key: 'users', label: 'Users', icon: 'users' },
+  { key: 'alerts', label: 'Alerts', icon: 'alert' },
   { key: 'logs', label: 'Activity log', icon: 'list' },
 ];
 
@@ -20,7 +22,7 @@ function MetricCard({ icon, tone, value, label, note }) {
       <span className={`adm-metric-icon adm-metric-${tone}`}><Icon name={icon} size={20} /></span>
       <div className="adm-metric-text">
         <span className="adm-metric-label">{label}</span>
-        <span className="adm-metric-value">{value ?? '—'}</span>
+        <span className="adm-metric-value">{value ?? 'â€”'}</span>
         {note && <span className="adm-metric-note">{note}</span>}
       </div>
     </div>
@@ -77,7 +79,7 @@ function Overview({ metrics, users, onAddUser, onOpenTab }) {
                 <li key={log.id} className="adm-feed-item">
                   <div className="adm-feed-main">
                     <ActionTag action={log.action} />
-                    <p className="adm-feed-detail">{log.details || '—'}</p>
+                    <p className="adm-feed-detail">{log.details || 'â€”'}</p>
                   </div>
                   <div className="adm-feed-meta">
                     <span>{log.user_name || log.user_email || 'System'}</span>
@@ -188,7 +190,7 @@ export default function AdminDashboard() {
   const clearToast = useCallback(() => setToast(null), []);
 
   const operational = !metricsFailed && (metrics?.system_status || '').toLowerCase() === 'operational';
-  const statusText = metricsFailed ? 'Status unavailable' : metrics ? metrics.system_status : 'Checking status…';
+  const statusText = metricsFailed ? 'Status unavailable' : metrics ? metrics.system_status : 'Checking statusâ€¦';
 
   return (
     <div className="db adm">
@@ -258,6 +260,8 @@ export default function AdminDashboard() {
             clearFormRequest={() => setFormRequest(false)}
           />
         )}
+
+        {tab === 'alerts' && <AlertsTab />}
 
         {tab === 'logs' && <LogsTab />}
       </div>

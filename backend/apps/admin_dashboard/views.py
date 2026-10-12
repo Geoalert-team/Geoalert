@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -7,7 +9,8 @@ from django.db.models import Count, Q
 from django.utils import timezone
 
 from apps.accounts.models import User
-from apps.hazards.models import HazardZone
+from apps.hazards.models import HazardZone, HazardAlert
+from apps.notifications.models import Notification
 from apps.guidance.models import GuidanceContent
 from apps.admin_dashboard.models import AuditLog
 from apps.accounts.models import User, Role
@@ -19,7 +22,7 @@ from apps.admin_dashboard.serializers import (
     RolesSerializer,
     generate_temp_password,
 )
-from utils.permissions import IsSystemAdmin
+from utils.permissions import IsSystemAdmin, IsDRRMOOfficer
 
 
 def log_action(user, action, target_table='', target_id='', details='', request=None):
@@ -77,8 +80,8 @@ class DashboardMetricsView(APIView):
 
 class UserListCreateView(APIView):
     """
-    GET  /api/admin-dashboard/users/ → List all users
-    POST /api/admin-dashboard/users/ → Create new user
+    GET  /api/admin-dashboard/users/ â†’ List all users
+    POST /api/admin-dashboard/users/ â†’ Create new user
     System Admin only.
     """
     permission_classes = [IsAuthenticated, IsSystemAdmin]
@@ -122,8 +125,8 @@ class UserListCreateView(APIView):
 
 class UserDetailView(APIView):
     """
-    PUT    /api/admin-dashboard/users/<id>/ → Edit user
-    DELETE /api/admin-dashboard/users/<id>/ → Deactivate user
+    PUT    /api/admin-dashboard/users/<id>/ â†’ Edit user
+    DELETE /api/admin-dashboard/users/<id>/ â†’ Deactivate user
     System Admin only.
     """
     permission_classes = [IsAuthenticated, IsSystemAdmin]
@@ -250,6 +253,124 @@ class AuditLogListView(APIView):
         serializer = AuditLogSerializer(page, many=True)
 
         return Response(serializer.data)
+
+
+class AlertMonitorView(APIView):
+    """
+    GET /api/admin-dashboard/alerts/
+    Notification and alert monitoring (WBS 3.8.5).
+
+    Publishing a hazard fans an alert out to every account in the affected
+    barangays. Nothing until now showed whether that actually landed, so a
+    hazard alert that reached nobody looked exactly like one that reached
+    everybody. This reports, per alert, how many accounts it was sent to and
+    how many of those have opened it.
+
+    Open to DRRMO Officers as well as System Admins: the officer who issued
+    an alert is the one who needs to know it went nowhere.
+
+    Filters:
+      ?days=7        window in days, 1-90, default 7
+      ?severity=Red  Red | Orange | Green
+      ?page=1        20 alerts per page
+
+    The summary describes the whole window, not the page being shown.
+    """
+    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+    PAGE_SIZE = 20
+
+    def get(self, request):
+        try:
+            days = min(max(int(request.query_params.get('days', 7)), 1), 90)
+        except (TypeError, ValueError):
+            days = 7
+        since = timezone.now() - timedelta(days=days)
+
+        severity = request.query_params.get('severity')
+
+        base = HazardAlert.objects.filter(created_at__gte=since)
+        if severity:
+            base = base.filter(severity__iexact=severity)
+
+        # --- Summary across the window -------------------------------------
+        notifications = Notification.objects.filter(hazard_alert__created_at__gte=since)
+        if severity:
+            notifications = notifications.filter(hazard_alert__severity__iexact=severity)
+
+        sent = notifications.count()
+        read = notifications.filter(is_read=True).count()
+        reached = notifications.values('recipient_id').distinct().count()
+
+        # The number worth watching: alerts that went out to nobody at all,
+        # which usually means no account is assigned to that barangay.
+        silent = base.annotate(n=Count('notifications')).filter(n=0).count()
+
+        by_severity = list(
+            base.values('severity').annotate(count=Count('id')).order_by('-count')
+        )
+
+        # --- One page of alerts --------------------------------------------
+        alerts = (
+            base
+            .select_related('hazard_type', 'issued_by', 'hazard_zone', 'hazard_zone__barangay')
+            .annotate(
+                recipient_count=Count('notifications', distinct=True),
+                read_count=Count(
+                    'notifications',
+                    filter=Q(notifications__is_read=True),
+                    distinct=True,
+                ),
+            )
+            .order_by('-created_at')
+        )
+
+        total = base.count()
+        try:
+            page = max(int(request.query_params.get('page', 1)), 1)
+        except (TypeError, ValueError):
+            page = 1
+        start = (page - 1) * self.PAGE_SIZE
+
+        results = []
+        for alert in alerts[start:start + self.PAGE_SIZE]:
+            zone = alert.hazard_zone
+            recipients = alert.recipient_count
+            results.append({
+                'id':           str(alert.id),
+                'hazard_type':  alert.hazard_type.name if alert.hazard_type else None,
+                'severity':     alert.severity,
+                'barangay':     zone.barangay.name if zone and zone.barangay else None,
+                'issued_by':    alert.issued_by.full_name if alert.issued_by else None,
+                'created_at':   alert.created_at,
+                'notes':        alert.notes,
+                'zone_id':      str(zone.id) if zone else None,
+                'zone_status':  zone.status if zone else None,
+                'is_sample':    bool(zone.is_sample) if zone else False,
+                'recipients':   recipients,
+                'read':         alert.read_count,
+                'unread':       recipients - alert.read_count,
+                # None rather than 0 when nobody was notified: "no one has
+                # read it" and "it was never sent" are different failures.
+                'read_rate':    round(alert.read_count / recipients * 100, 1) if recipients else None,
+            })
+
+        return Response({
+            'window_days': days,
+            'summary': {
+                'alerts_issued':        total,
+                'notifications_sent':   sent,
+                'notifications_read':   read,
+                'notifications_unread': sent - read,
+                'read_rate':            round(read / sent * 100, 1) if sent else None,
+                'accounts_reached':     reached,
+                'alerts_with_no_recipients': silent,
+            },
+            'by_severity': by_severity,
+            'count':       total,
+            'page':        page,
+            'page_size':   self.PAGE_SIZE,
+            'results':     results,
+        })
 
 
 class RolesListView(APIView):
