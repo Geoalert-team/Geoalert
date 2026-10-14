@@ -52,23 +52,6 @@
 .brg-sev-moderate.is-checked { background: #fef9ec; }
 .brg-sev-high.is-checked { background: #fdf1f1; }
 
-.brg-steppers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.brg-stepper label { display: block; margin-bottom: 6px; font-size: .84rem; font-weight: 700; color: var(--db-heading); }
-.brg-stepper-box { display: flex; border: 1px solid var(--adm-line-strong); border-radius: 10px; overflow: hidden; background: var(--adm-surface); }
-.brg-stepper-box:focus-within { border-color: var(--db-navy-hover); box-shadow: var(--adm-focus); }
-.brg-stepper-box button {
-  width: 32px; flex-shrink: 0; border: 0; background: var(--db-mist); color: var(--db-heading);
-  font-size: 1.1rem; font-weight: 700; cursor: pointer;
-}
-.brg-stepper-box button:hover:not(:disabled) { background: var(--tone-admin-tint); }
-.brg-stepper-box button:disabled { color: #b7c0cd; cursor: not-allowed; }
-.brg .brg-stepper-box input {
-  min-width: 0; width: 100%; border: 0; border-radius: 0; text-align: center; font-weight: 700; box-shadow: none;
-  appearance: textfield;
-}
-.brg-stepper-box input::-webkit-outer-spin-button,
-.brg-stepper-box input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-
 .brg-submit { padding-top: 16px; border-top: 1px solid var(--adm-line); display: flex; justify-content: flex-end; }
 .brg-submit .adm-btn { min-width: 220px; }
 

@@ -20,12 +20,30 @@ const SEVERITIES = [
   { value: 'High', hint: 'People at risk, needs action now' },
 ];
 
-const COUNTS = [
-  { key: 'casualties_dead', label: 'Dead' },
-  { key: 'casualties_injured', label: 'Injured' },
-  { key: 'casualties_missing', label: 'Missing' },
-  { key: 'displaced', label: 'Displaced' },
+const POSITIONS = [
+  'Punong Barangay',
+  'Barangay Kagawad',
+  'Barangay Secretary',
+  'Barangay Treasurer',
+  'SK Chairperson',
+  'BDRRM Officer',
+  'Barangay Tanod',
+  'Barangay Health Worker',
 ];
+
+const OFFICES = [
+  'Office of the Punong Barangay',
+  'Barangay Council',
+  'BDRRM Committee',
+  'Barangay Peacekeeping Action Team',
+  'Barangay Health Center',
+  'Sangguniang Kabataan',
+];
+
+// A saved value outside the list (e.g. an older free-text entry) stays selectable
+function withCurrent(options, current) {
+  return current && !options.includes(current) ? [current, ...options] : options;
+}
 
 const REPORT_TABS = ['All', 'Pending', 'Validated', 'Rejected'];
 const TAB_LABEL = { All: 'All', Pending: 'Awaiting review', Validated: 'Validated', Rejected: 'Rejected' };
@@ -36,35 +54,9 @@ function emptyForm(user) {
     hazard_type: '',
     description: '',
     severity_estimate: '',
-    casualties_dead: 0,
-    casualties_injured: 0,
-    casualties_missing: 0,
-    displaced: 0,
     position: user?.position || '',
-    agency: user?.assigned_barangay?.name ? `Barangay ${user.assigned_barangay.name}` : '',
+    agency: '',
   };
-}
-
-function Stepper({ id, label, value, onChange }) {
-  const n = Number(value) || 0;
-  return (
-    <div className="brg-stepper">
-      <label htmlFor={id}>{label}</label>
-      <div className="brg-stepper-box">
-        <button type="button" onClick={() => onChange(Math.max(0, n - 1))} aria-label={`Fewer ${label.toLowerCase()}`} disabled={n <= 0}>−</button>
-        <input
-          id={id}
-          type="number"
-          min="0"
-          inputMode="numeric"
-          value={value}
-          onChange={(e) => onChange(e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value, 10) || 0))}
-          onBlur={() => { if (value === '') onChange(0); }}
-        />
-        <button type="button" onClick={() => onChange(n + 1)} aria-label={`More ${label.toLowerCase()}`}>+</button>
-      </div>
-    </div>
-  );
 }
 
 function GuidanceItem({ item }) {
@@ -133,7 +125,6 @@ export default function BarangayDashboard() {
       ...f,
       barangay: f.barangay || (user.assigned_barangay?.id ? String(user.assigned_barangay.id) : ''),
       position: f.position || user.position || '',
-      agency: f.agency || (user.assigned_barangay?.name ? `Barangay ${user.assigned_barangay.name}` : ''),
     }));
   }, [user]);
 
@@ -166,12 +157,8 @@ export default function BarangayDashboard() {
         hazard_type: Number(form.hazard_type),
         description: form.description.trim(),
         severity_estimate: form.severity_estimate,
-        casualties_dead: Number(form.casualties_dead) || 0,
-        casualties_injured: Number(form.casualties_injured) || 0,
-        casualties_missing: Number(form.casualties_missing) || 0,
-        displaced: Number(form.displaced) || 0,
-        position: form.position.trim(),
-        agency: form.agency.trim(),
+        position: form.position,
+        agency: form.agency,
       });
       setForm({ ...emptyForm(user), position: form.position, agency: form.agency });
       setErrors({});
@@ -346,25 +333,21 @@ export default function BarangayDashboard() {
             </div>
 
             <div className="brg-step">
-              <h3><span className="adm-step">3</span>People affected</h3>
-              <div className="brg-steppers">
-                {COUNTS.map((c) => (
-                  <Stepper key={c.key} id={`brg-${c.key}`} label={c.label} value={form[c.key]} onChange={(v) => set(c.key, v)} />
-                ))}
-              </div>
-              <p className="adm-field-hint">Leave at 0 if no one was affected. Displaced means people who had to leave their homes.</p>
-            </div>
-
-            <div className="brg-step">
-              <h3><span className="adm-step">4</span>Your details</h3>
+              <h3><span className="adm-step">3</span>Your details</h3>
               <div className="adm-form-grid adm-grid-2">
                 <div className="adm-field">
                   <label htmlFor="brg-position">Position</label>
-                  <input id="brg-position" value={form.position} onChange={(e) => set('position', e.target.value)} placeholder="e.g. Barangay Secretary" />
+                  <select id="brg-position" value={form.position} onChange={(e) => set('position', e.target.value)}>
+                    <option value="">Select a position</option>
+                    {withCurrent(POSITIONS, form.position).map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
                 </div>
                 <div className="adm-field">
                   <label htmlFor="brg-agency">Office or agency</label>
-                  <input id="brg-agency" value={form.agency} onChange={(e) => set('agency', e.target.value)} placeholder="e.g. Barangay Lagtang" />
+                  <select id="brg-agency" value={form.agency} onChange={(e) => set('agency', e.target.value)}>
+                    <option value="">Select an office</option>
+                    {withCurrent(OFFICES, form.agency).map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
                 </div>
               </div>
               <p className="adm-field-hint">Sent as {user?.full_name || 'you'}{barangayName ? ` for Barangay ${barangayName}` : ''}.</p>

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { hazardsApi } from '../../api/hazardsApi';
 import ResolveHazardForm from './ResolveHazardForm';
 
@@ -84,13 +85,18 @@ export default function ActiveZonesCard({ onResolved }) {
             <div key={z.id} className="db-item">
               <div className="db-item-head">
                 <span className="db-item-title">{zoneLabel(z)}</span>
-                <button
-                  type="button"
-                  className="db-btn db-btn-outline db-btn-sm"
-                  onClick={() => setTarget({ id: z.id, title: zoneLabel(z) })}
-                >
-                  Resolve
-                </button>
+                <div className="db-btn-row">
+                  <Link className="db-btn db-btn-outline db-btn-sm" to={`/map?zone=${z.id}`}>
+                    View Map
+                  </Link>
+                  <button
+                    type="button"
+                    className="db-btn db-btn-outline db-btn-sm"
+                    onClick={() => setTarget({ id: z.id, title: zoneLabel(z) })}
+                  >
+                    Resolve
+                  </button>
+                </div>
               </div>
               <div className="db-item-meta">
                 <span className={`db-chip ${CHIP[z.severity] || ''}`}>{z.severity}</span>

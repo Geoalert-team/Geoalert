@@ -47,25 +47,13 @@ function StatusTag({ status }) {
   return <span className={`adm-action adm-action-${tone}`}>{status}</span>;
 }
 
-function ImpactChips({ report, large }) {
+function ImpactChips({ report }) {
   const items = [
     { label: 'Dead', value: report.casualties_dead, tone: 'bad' },
     { label: 'Injured', value: report.casualties_injured, tone: 'warn' },
     { label: 'Missing', value: report.casualties_missing, tone: 'warn' },
     { label: 'Displaced', value: report.displaced, tone: 'info' },
   ];
-  if (large) {
-    return (
-      <div className="drm-impact-grid">
-        {items.map((i) => (
-          <div key={i.label} className={`drm-impact-box ${i.value > 0 ? `is-${i.tone}` : ''}`}>
-            <span className="drm-impact-value">{i.value ?? 0}</span>
-            <span className="drm-impact-label">{i.label}</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
   return (
     <div className="drm-chips">
       {items.map((i) => (
@@ -184,11 +172,6 @@ function ReportDetail({ report, onClose, onReview }) {
         <section className="drm-detail-section">
           <h3>What was reported</h3>
           <p className="drm-detail-desc">{report.description || 'No description given.'}</p>
-        </section>
-
-        <section className="drm-detail-section">
-          <h3>People affected</h3>
-          <ImpactChips report={report} large />
         </section>
 
         <section className="drm-detail-section">

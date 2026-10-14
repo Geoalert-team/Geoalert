@@ -101,7 +101,7 @@
   display: inline-flex; align-items: center; justify-content: center;
   min-height: 42px; padding: 0 20px; border: 2px solid transparent;
   border-radius: var(--db-pill); font-family: var(--db-font-body);
-  font-size: .92rem; font-weight: 700; cursor: pointer;
+  font-size: .92rem; font-weight: 700; cursor: pointer; text-decoration: none;
   transition: background-color .2s ease, color .2s ease, border-color .2s ease;
 }
 .db-btn-primary { background: var(--db-navy); color: var(--db-white); }

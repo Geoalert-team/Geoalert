@@ -70,17 +70,6 @@
 .drm-detail-section h3 { margin-bottom: 10px; font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--db-soft); font-family: var(--db-font-body); }
 .drm-detail-desc { white-space: pre-wrap; color: var(--db-heading); }
 
-.drm-impact-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.drm-impact-box { display: flex; flex-direction: column; padding: 12px 14px; border-radius: 12px; background: var(--db-mist); color: var(--db-soft); }
-.drm-impact-value { font-family: var(--db-font-head); font-size: 1.5rem; font-weight: 800; line-height: 1.1; color: var(--db-heading); }
-.drm-impact-label { font-size: .8rem; font-weight: 700; }
-.drm-impact-box.is-bad  { background: var(--bad-tint); }
-.drm-impact-box.is-bad .drm-impact-value  { color: var(--bad); }
-.drm-impact-box.is-warn { background: var(--warn-tint); }
-.drm-impact-box.is-warn .drm-impact-value { color: var(--warn); }
-.drm-impact-box.is-info { background: var(--info-tint); }
-.drm-impact-box.is-info .drm-impact-value { color: var(--info); }
-
 .drm-dl { display: grid; grid-template-columns: 150px 1fr; gap: 8px 16px; margin: 0; font-size: .9rem; }
 .drm-dl dt { color: var(--db-soft); }
 .drm-dl dd { margin: 0; color: var(--db-heading); overflow-wrap: anywhere; }
@@ -99,7 +88,6 @@
   .drm-report { flex-direction: column; gap: 12px; }
   .drm-report-actions { width: 100%; }
   .drm-report-actions .adm-btn { flex: 1; }
-  .drm-impact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .drm-dl { grid-template-columns: 1fr; gap: 2px; }
   .drm-dl dd { margin-bottom: 8px; }
 }
