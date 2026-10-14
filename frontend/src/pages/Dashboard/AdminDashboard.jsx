@@ -22,7 +22,7 @@ function MetricCard({ icon, tone, value, label, note }) {
       <span className={`adm-metric-icon adm-metric-${tone}`}><Icon name={icon} size={20} /></span>
       <div className="adm-metric-text">
         <span className="adm-metric-label">{label}</span>
-        <span className="adm-metric-value">{value ?? 'â€”'}</span>
+        <span className="adm-metric-value">{value ?? '—'}</span>
         {note && <span className="adm-metric-note">{note}</span>}
       </div>
     </div>
@@ -79,7 +79,7 @@ function Overview({ metrics, users, onAddUser, onOpenTab }) {
                 <li key={log.id} className="adm-feed-item">
                   <div className="adm-feed-main">
                     <ActionTag action={log.action} />
-                    <p className="adm-feed-detail">{log.details || 'â€”'}</p>
+                    <p className="adm-feed-detail">{log.details || '—'}</p>
                   </div>
                   <div className="adm-feed-meta">
                     <span>{log.user_name || log.user_email || 'System'}</span>
@@ -190,7 +190,7 @@ export default function AdminDashboard() {
   const clearToast = useCallback(() => setToast(null), []);
 
   const operational = !metricsFailed && (metrics?.system_status || '').toLowerCase() === 'operational';
-  const statusText = metricsFailed ? 'Status unavailable' : metrics ? metrics.system_status : 'Checking statusâ€¦';
+  const statusText = metricsFailed ? 'Status unavailable' : metrics ? metrics.system_status : 'Checking status…';
 
   return (
     <div className="db adm">

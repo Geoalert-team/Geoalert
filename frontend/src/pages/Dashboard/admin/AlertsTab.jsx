@@ -6,7 +6,7 @@ import { Icon, formatDateTime } from './adminShared';
  * Notification and alert monitoring (WBS 3.8.5).
  *
  * Publishing a hazard fans an alert out to every account in the affected
- * barangays. Until now nothing showed whether it landed â€” an alert that
+ * barangays. Until now nothing showed whether it landed — an alert that
  * reached nobody looked the same as one that reached everybody. This lists
  * each alert with how many accounts it went to and how many have opened it.
  *
@@ -40,7 +40,7 @@ function Stat({ value, label, note, tone = 'navy', icon }) {
       <span className={`adm-metric-icon adm-metric-${tone}`}><Icon name={icon} size={20} /></span>
       <div className="adm-metric-text">
         <span className="adm-metric-label">{label}</span>
-        <span className="adm-metric-value">{value ?? 'â€”'}</span>
+        <span className="adm-metric-value">{value ?? '—'}</span>
         {note && <span className="adm-metric-note">{note}</span>}
       </div>
     </div>
@@ -129,8 +129,8 @@ export default function AlertsTab() {
           icon="userCheck"
           tone="green"
           label="Read"
-          value={summary?.read_rate != null ? `${summary.read_rate}%` : 'â€”'}
-          note={summary ? `${summary.notifications_read} read Â· ${summary.notifications_unread} unread` : null}
+          value={summary?.read_rate != null ? `${summary.read_rate}%` : '—'}
+          note={summary ? `${summary.notifications_read} read · ${summary.notifications_unread} unread` : null}
         />
         <Stat
           icon="userX"
@@ -219,11 +219,11 @@ export default function AlertsTab() {
                       <div className="adm-person-text">
                         <span className="adm-person-name">
                           {a.hazard_type || 'Hazard'}
-                          {a.barangay ? ` Â· ${a.barangay}` : ''}
+                          {a.barangay ? ` · ${a.barangay}` : ''}
                         </span>
                         <span className="adm-person-sub">
                           {a.issued_by ? `by ${a.issued_by}` : 'issuer not recorded'}
-                          {a.is_sample && ' Â· sample'}
+                          {a.is_sample && ' · sample'}
                         </span>
                       </div>
                     </td>
@@ -236,15 +236,15 @@ export default function AlertsTab() {
                     </td>
                     <td>
                       {a.read_rate == null
-                        ? <span className="adm-muted">â€”</span>
+                        ? <span className="adm-muted">—</span>
                         : (
                           <>
                             <strong>{a.read_rate}%</strong>
-                            <span className="adm-muted"> Â· {a.unread} unread</span>
+                            <span className="adm-muted"> · {a.unread} unread</span>
                           </>
                         )}
                     </td>
-                    <td className="adm-nowrap">{a.zone_status || 'â€”'}</td>
+                    <td className="adm-nowrap">{a.zone_status || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -254,7 +254,7 @@ export default function AlertsTab() {
 
         {count > 0 && (
           <div className="adm-pager">
-            <span className="adm-table-meta">Showing {from}â€“{to} of {count}</span>
+            <span className="adm-table-meta">Showing {from}–{to} of {count}</span>
             <div className="adm-row-actions">
               <button
                 type="button"

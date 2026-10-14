@@ -5,7 +5,7 @@ import NotificationBell from "./NotificationBell";
 import logo from "../../assets/images/logo1.png";
 import "./css/PublicNavbar.css";
 
-// Shown to everyone who is NOT logged in (residents) â€” unchanged from before.
+// Shown to everyone who is NOT logged in (residents) — unchanged from before.
 const PUBLIC_LINKS = [
   { to: "/", label: "Home" },
   { to: "/map", label: "Map" },
@@ -70,7 +70,7 @@ export default function PublicNavbar() {
   const roleName = user?.role?.name || user?.role;
 
   // Residents (no user) keep the exact links as before.
-  // Logged-in staff see ONLY their role's links â€” public links are hidden.
+  // Logged-in staff see ONLY their role's links — public links are hidden.
   const links = user ? (ROLE_LINKS[roleName] || []) : PUBLIC_LINKS;
   const brandTo = user ? "/app/dashboard" : "/";
 
