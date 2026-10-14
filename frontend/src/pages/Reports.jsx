@@ -5,6 +5,7 @@ import { barangaysApi } from '../api/barangaysApi';
 import { hazardsApi } from '../api/hazardsApi';
 import CategoryBars from '../components/Charts/CategoryBars';
 import { hazardSeriesColor, severitySeriesColor } from '../components/Charts/chartTheme';
+import { Icon } from './Dashboard/admin/adminShared';
 import './css/Dashboard.css';
 
 const TYPES = [
@@ -13,12 +14,14 @@ const TYPES = [
     label: 'Hazard Summary',
     blurb: 'Total occurrences, breakdown by hazard type, severity distribution and affected barangays.',
     usesHazardType: true,
+    icon: 'alert',
   },
   {
     key: 'response-status',
     label: 'Response Status',
     blurb: 'Active, resolved and archived hazards, with alerts issued and their severities.',
     usesHazardType: false,
+    icon: 'clock',
   },
 ];
 
@@ -153,14 +156,19 @@ export default function Reports() {
                 aria-pressed={type === t.key}
                 onClick={() => { setType(t.key); setReport(null); setNotEnough(''); setError(''); }}
               >
-                <strong>{t.label}</strong>
-                <small>{t.blurb}</small>
+                <span className="db-report-type-icon"><Icon name={t.icon} size={20} /></span>
+                <span>
+                  <strong>{t.label}</strong>
+                  <small>{t.blurb}</small>
+                </span>
+                <span className="db-report-type-check"><Icon name="check" size={14} strokeWidth={3} /></span>
               </button>
             ))}
           </div>
 
           <form onSubmit={generate}>
-            <div className="db-filters" style={{ marginTop: 18 }}>
+            <h3 className="db-report-label">Filters</h3>
+            <div className="db-report-filters">
               <label className="db-field">From
                 <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
               </label>
@@ -181,35 +189,30 @@ export default function Reports() {
                   </select>
                 </label>
               )}
-              <label className="db-field" style={{ justifyContent: 'flex-end' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 400 }}>
-                  <input
-                    type="checkbox"
-                    checked={includeSamples}
-                    onChange={(e) => setIncludeSamples(e.target.checked)}
-                    style={{ width: 'auto', margin: 0 }}
-                  />
-                  Include sample data
-                </span>
-              </label>
             </div>
 
             {dateFrom && dateTo && dateFrom > dateTo && (
               <p className="db-error" role="alert">The start date is after the end date.</p>
             )}
 
-            <div className="db-btn-row">
-              <button
-                className="db-btn db-btn-primary"
-                disabled={busy || (dateFrom && dateTo && dateFrom > dateTo)}
-              >
-                {busy ? 'Generating…' : 'Generate report'}
-              </button>
-              {filtersOn && (
-                <button type="button" className="db-btn db-btn-outline" onClick={clearFilters} disabled={busy}>
-                  Clear filters
+            <div className="db-report-actions">
+              <label className="db-report-check">
+                <input type="checkbox" checked={includeSamples} onChange={(e) => setIncludeSamples(e.target.checked)} />
+                Include sample data
+              </label>
+              <div className="db-btn-row">
+                {filtersOn && (
+                  <button type="button" className="db-btn db-btn-outline" onClick={clearFilters} disabled={busy}>
+                    Clear filters
+                  </button>
+                )}
+                <button
+                  className="db-btn db-btn-primary"
+                  disabled={busy || (dateFrom && dateTo && dateFrom > dateTo)}
+                >
+                  {busy ? 'Generating…' : 'Generate report'}
                 </button>
-              )}
+              </div>
             </div>
           </form>
 
@@ -221,7 +224,15 @@ export default function Reports() {
         </div>
 
         {/* ---------- Results ---------- */}
-        {error && <div className="db-card"><p className="db-error" role="alert">{error}</p></div>}
+        {!report && !error && !notEnough && (
+          <div className="db-card db-report-placeholder db-no-print">
+            <span className="db-report-type-icon"><Icon name={current.icon} size={22} /></span>
+            <strong>{busy ? 'Generating your report…' : 'No report yet'}</strong>
+            <p>{busy ? 'This usually takes a few seconds.' : `Set your filters and press Generate report to see the ${current.label}.`}</p>
+          </div>
+        )}
+
+        {error &&<div className="db-card"><p className="db-error" role="alert">{error}</p></div>}
 
         {notEnough && (
           <div className="db-card">
