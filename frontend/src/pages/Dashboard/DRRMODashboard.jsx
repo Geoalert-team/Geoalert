@@ -17,6 +17,8 @@ const STATUS_TABS = [
   { key: 'All', label: 'All reports' },
 ];
 
+const PAGE_SIZE = 5;
+
 const SORTS = {
   newest: { label: 'Newest first', fn: (a, b) => new Date(b.created_at) - new Date(a.created_at) },
   oldest: { label: 'Oldest first', fn: (a, b) => new Date(a.created_at) - new Date(b.created_at) },
@@ -251,6 +253,7 @@ export default function DRRMODashboard() {
   const [typeFilter, setTypeFilter] = useState('');
   const [barangayFilter, setBarangayFilter] = useState('');
   const [sort, setSort] = useState('newest');
+  const [page, setPage] = useState(1);
 
   const [selected, setSelected] = useState(null); // report in the full view
   const [reviewing, setReviewing] = useState(null); // { report, decision }
@@ -305,6 +308,13 @@ export default function DRRMODashboard() {
       })
       .sort(SORTS[sort].fn);
   }, [reports, tab, typeFilter, barangayFilter, search, sort]);
+
+  useEffect(() => { setPage(1); }, [tab, typeFilter, barangayFilter, search, sort]);
+
+  // Validating the last report on a page shrinks the list, so clamp
+  const pages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pages);
+  const pageReports = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const filtersOn = search || typeFilter || barangayFilter;
 
@@ -470,11 +480,24 @@ export default function DRRMODashboard() {
               {failed && <button type="button" className="adm-btn adm-btn-outline adm-btn-sm" onClick={load}>Try again</button>}
             </div>
           ) : (
-            <ul className="drm-list">
-              {visible.map((r) => (
-                <ReportRow key={r.id} report={r} onOpen={setSelected} onReview={openReview} />
-              ))}
-            </ul>
+            <>
+              <ul className="drm-list">
+                {pageReports.map((r) => (
+                  <ReportRow key={r.id} report={r} onOpen={setSelected} onReview={openReview} />
+                ))}
+              </ul>
+              {pages > 1 && (
+                <div className="adm-pager">
+                  <button type="button" className="adm-btn adm-btn-ghost adm-btn-sm" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>
+                    <Icon name="chevronLeft" size={16} /> Previous
+                  </button>
+                  <span>Page {currentPage} of {pages}</span>
+                  <button type="button" className="adm-btn adm-btn-ghost adm-btn-sm" disabled={currentPage >= pages} onClick={() => setPage(currentPage + 1)}>
+                    Next <Icon name="chevronRight" size={16} />
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>

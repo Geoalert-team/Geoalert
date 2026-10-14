@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { hazardsApi } from '../../api/hazardsApi';
 import ResolveHazardForm from './ResolveHazardForm';
 
+const PAGE_SIZE = 5;
+
 const CHIP = { Red: 'db-chip-danger', Orange: 'db-chip-warn', Green: 'db-chip-ok' };
 
 function zoneLabel(props) {
@@ -25,6 +27,7 @@ export default function ActiveZonesCard({ onResolved }) {
   const [resolvedTotal, setResolvedTotal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState(null); // { id, title } of the zone being resolved
+  const [page, setPage] = useState(1);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -68,6 +71,11 @@ export default function ActiveZonesCard({ onResolved }) {
     onResolved?.();
   }
 
+  // Resolving the last zone on a page shrinks the list, so clamp
+  const pages = Math.max(1, Math.ceil(zones.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pages);
+  const pageZones = zones.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   return (
     <div className="db-card">
       <h2>Active hazard zones</h2>
@@ -81,7 +89,7 @@ export default function ActiveZonesCard({ onResolved }) {
         <p className="db-empty">No hazard zones are active right now.</p>
       ) : (
         <div className="db-list">
-          {zones.map((z) => (
+          {pageZones.map((z) => (
             <div key={z.id} className="db-item">
               <div className="db-item-head">
                 <span className="db-item-title">{zoneLabel(z)}</span>
@@ -104,6 +112,18 @@ export default function ActiveZonesCard({ onResolved }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {pages > 1 && (
+        <div className="db-pager">
+          <button type="button" className="db-btn db-btn-outline db-btn-sm" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>
+            Previous
+          </button>
+          <span>Page {currentPage} of {pages}</span>
+          <button type="button" className="db-btn db-btn-outline db-btn-sm" disabled={currentPage >= pages} onClick={() => setPage(currentPage + 1)}>
+            Next
+          </button>
         </div>
       )}
 
