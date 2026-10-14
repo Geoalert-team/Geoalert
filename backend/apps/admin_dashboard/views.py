@@ -218,7 +218,7 @@ class ResetPasswordView(APIView):
 
 
 class AuditLogPagination(PageNumberPagination):
-    page_size = 25
+    page_size = 10
 
 
 class AuditLogListView(APIView):
@@ -252,7 +252,7 @@ class AuditLogListView(APIView):
         page = paginator.paginate_queryset(logs, request)
         serializer = AuditLogSerializer(page, many=True)
 
-        return Response(serializer.data)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class AlertMonitorView(APIView):

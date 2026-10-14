@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { adminApi } from '../../../api/adminApi';
 import UserFormModal from './UserFormModal';
 import {
   Avatar, ConfirmDialog, Icon, Modal, ROLE_META, RoleBadge, StatusBadge,
   fieldErrors, formatPhone, roleName, timeAgo,
 } from './adminShared';
+
+const PAGE_SIZE = 10;
 
 function CredentialsDialog({ info, onClose }) {
   const [copied, setCopied] = useState('');
@@ -55,6 +57,7 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage] = useState(1);
 
   const [editing, setEditing] = useState(null); // null = closed, {} = new, user = edit
   const [confirm, setConfirm] = useState(null); // { kind, user }
@@ -81,6 +84,11 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
         .some((v) => (v || '').toLowerCase().includes(q));
     });
   }, [users, search, roleFilter, statusFilter]);
+
+  useEffect(() => { setPage(1); }, [search, roleFilter, statusFilter]);
+
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageUsers = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   async function save(payload) {
     if (formUser) {
@@ -199,7 +207,7 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
                   </td>
                 </tr>
               )}
-              {filtered.map((u) => {
+              {pageUsers.map((u) => {
                 const isSelf = currentUser && String(currentUser.id) === String(u.id);
                 return (
                   <tr key={u.id} className={u.is_active ? '' : 'is-inactive'}>
@@ -268,6 +276,18 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
             </tbody>
           </table>
         </div>
+
+        {pages > 1 && (
+          <div className="adm-pager">
+            <button type="button" className="adm-btn adm-btn-ghost adm-btn-sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+              <Icon name="chevronLeft" size={16} /> Previous
+            </button>
+            <span>Page {page} of {pages}</span>
+            <button type="button" className="adm-btn adm-btn-ghost adm-btn-sm" disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
+              Next <Icon name="chevronRight" size={16} />
+            </button>
+          </div>
+        )}
       </div>
 
       {formOpen && (

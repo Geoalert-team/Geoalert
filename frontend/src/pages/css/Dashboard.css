@@ -68,6 +68,7 @@
 .db-item-title { font-weight: 800; color: var(--db-heading); }
 .db-item-meta { font-size: .82rem; color: var(--db-soft); margin-top: 4px; }
 .db-empty { padding: 24px; text-align: center; color: var(--db-soft); }
+.db-pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--db-line); font-size: .88rem; color: var(--db-soft); }
 
 .db-filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
 .db-field { display: flex; flex-direction: column; gap: 4px; font-size: .82rem; color: var(--db-soft); }

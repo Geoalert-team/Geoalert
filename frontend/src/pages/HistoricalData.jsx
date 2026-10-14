@@ -43,6 +43,8 @@ function toRows(rows = [], labelKey, colorFor) {
   }));
 }
 
+const PAGE_SIZE = 10;
+
 export default function HistoricalData() {
   const [records, setRecords] = useState([]);
   const [trends, setTrends] = useState(null);
@@ -55,6 +57,7 @@ export default function HistoricalData() {
   const [barangayId, setBarangayId] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     barangaysApi.list()
@@ -80,6 +83,7 @@ export default function HistoricalData() {
 
     setLoading(true);
     setError('');
+    setPage(1);
     Promise.all([historyApi.list(params), historyApi.trends(params)])
       .then(([list, t]) => {
         if (cancelled) return;
@@ -94,6 +98,8 @@ export default function HistoricalData() {
 
   const outlook = useMemo(() => buildRiskOutlook(records), [records]);
   const sampleCount = records.filter((r) => r.is_sample).length;
+  const pageCount = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
+  const pageRecords = records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const hazardTabs = [{ id: '', name: 'All types' }, ...hazardTypes.map((t) => ({ id: t.id, name: t.name }))];
 
@@ -313,8 +319,9 @@ export default function HistoricalData() {
               ) : records.length === 0 ? (
                 <p className="db-empty">No records match these filters.</p>
               ) : (
+                <>
                 <div className="db-list">
-                  {records.map((r) => (
+                  {pageRecords.map((r) => (
                     <div key={r.id} className="db-item">
                       <div className="db-item-head">
                         <span className="db-item-title">
@@ -339,6 +346,22 @@ export default function HistoricalData() {
                     </div>
                   ))}
                 </div>
+
+                {pageCount > 1 && (
+                  <div className="db-pager">
+                    <button type="button" className="db-btn db-btn-outline db-btn-sm" onClick={() => setPage(page - 1)} disabled={page === 1}>
+                      Previous
+                    </button>
+                    <span>
+                      Page {page} of {pageCount}
+                      {' · '}{(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, records.length)} of {records.length}
+                    </span>
+                    <button type="button" className="db-btn db-btn-outline db-btn-sm" onClick={() => setPage(page + 1)} disabled={page === pageCount}>
+                      Next
+                    </button>
+                  </div>
+                )}
+                </>
               )}
             </div>
           </>

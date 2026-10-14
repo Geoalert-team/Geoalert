@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { adminApi } from '../../../api/adminApi';
 import { ACTION_META, Icon, actionMeta, formatDateTime } from './adminShared';
 
-const PAGE_SIZE = 25; // matches AuditLogPagination on the backend
+const PAGE_SIZE = 10; // matches AuditLogPagination on the backend
 
 export function ActionTag({ action }) {
   const meta = actionMeta(action);
