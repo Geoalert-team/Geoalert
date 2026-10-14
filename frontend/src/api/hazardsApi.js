@@ -7,6 +7,16 @@ export const hazardsApi = {
   create: (payload) => client.post('/api/hazards/create/', payload).then((r) => r.data),
   update: (id, payload) => client.patch(`/api/hazards/${id}/`, payload).then((r) => r.data),
 
+  // Ground confirmation from the barangay: status is 'Confirmed' or 'Disputed'.
+  // Only Barangay Personnel may call this, and only for their own barangay.
+  verify: (id, { status, note }) =>
+    client.post(`/api/hazards/${id}/verify/`, { status, note }).then((r) => r.data),
+
+  // Active zones touching the signed-in user's barangay, for the barangay
+  // dashboard. ?pending=true narrows to the ones nobody has answered yet.
+  forBarangay: (params) =>
+    client.get('/api/hazards/for-barangay/', { params }).then((r) => r.data),
+
   // Per-type active counts and the colour legend, for the map's layer panel (F6)
   layers: () => client.get('/api/hazards/layers/').then((r) => r.data),
 

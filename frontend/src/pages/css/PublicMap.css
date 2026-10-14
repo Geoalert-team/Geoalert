@@ -551,3 +551,13 @@
 @media (prefers-reduced-motion: reduce) {
   .pm *, .pm *::before, .pm *::after { transition: none !important; animation: none !important; }
 }
+/* Ground confirmation from the barangay, shown only once answered */
+.pm-verified, .pm-disputed {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: .86rem;
+  line-height: 1.45;
+}
+.pm-verified { background: #e8f6ee; color: #16693a; border-left: 3px solid #1f9d55; }
+.pm-disputed { background: #fcebeb; color: #a12f2f; border-left: 3px solid #d64545; }

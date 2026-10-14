@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { severityInfo, hazardIconPath, hazardColor, DRRMO_HOTLINE } from './hazardInfo';
 import GuidanceSteps from './GuidanceSteps';
 import ResolveHazardForm from '../Resolve/ResolveHazardForm';
+import { hazardsApi } from '../../api/hazardsApi';
 import { historyApi } from '../../api/historyApi';
 // The resolve form is built from db- classes; .db-scope below supplies the
 // tokens so it looks right inside the map panel too.
@@ -225,16 +226,24 @@ function HazardStack({ stack, current, onPick }) {
 
 // Slides in from the left (desktop) or up from the bottom (mobile).
 // stack: the hazards at the clicked spot (including item); onPick switches between them.
-export default function HazardPanel({ item, open, onClose, onResolved, stack = [], onPick }) {
+export default function HazardPanel({ item, open, onClose, onResolved, onVerified, stack = [], onPick }) {
   const [tab, setTab] = useState('overview');
   const [resolving, setResolving] = useState(false);
+  // Ground confirmation, for barangay personnel standing in the hazard
+  const [answering, setAnswering] = useState(null); // 'Confirmed' | 'Disputed'
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
   const closeRef = useRef(null);
-  const { canPublish } = useAuth();
+  const { canPublish, user } = useAuth();
 
   // Go back to the Overview tab and move focus into the panel whenever a new pin is chosen
   useEffect(() => {
     setTab('overview');
     setResolving(false);
+    setAnswering(null);
+    setNote('');
+    setVerifyError('');
     if (open) closeRef.current?.focus({ preventScroll: true });
   }, [item?.id, open]);
 
@@ -247,6 +256,31 @@ export default function HazardPanel({ item, open, onClose, onResolved, stack = [
   // database, and walking a seeded hazard through to a historical record is
   // how the resolve flow gets demonstrated without waiting for a real one.
   const canResolve = canPublish && item && (item.status || 'Active') === 'Active';
+
+  // Only barangay personnel confirm, and only while the hazard is live. The
+  // backend also checks the zone actually touches their barangay — the panel
+  // can't know that reliably, so it offers the buttons and shows the server's
+  // refusal if they are not the right barangay.
+  const role = user?.role?.name || user?.role;
+  const canConfirm =
+    role === 'Barangay_Personnel' && item && (item.status || 'Active') === 'Active';
+
+  async function submitVerification() {
+    if (!answering || !item) return;
+    setSaving(true);
+    setVerifyError('');
+    try {
+      const zone = await hazardsApi.verify(item.id, { status: answering, note: note.trim() });
+      setAnswering(null);
+      setNote('');
+      onVerified?.(zone);
+    } catch (err) {
+      // axiosClient flattens the server error into err.message
+      setVerifyError(err?.message || 'Could not save that. Check your connection and try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <aside className={`pm-panel ${open ? 'is-open' : ''}`} aria-label="Hazard details">
@@ -319,6 +353,97 @@ export default function HazardPanel({ item, open, onClose, onResolved, stack = [
                         ? <>Follow the most serious one: {worst.type.toLowerCase()}, {severityInfo(worst.severity).label.toLowerCase()}.</>
                         : <>This is the most serious one here, so follow its advice.</>}
                     </p>
+                  </div>
+                )}
+
+                {/* Ground confirmation. Deliberately silent while pending:
+                    "nobody has been out to look yet" is not news to a reader
+                    standing in the hazard, and it crowded the panel. */}
+                {item.verificationStatus === 'Confirmed' && (
+                  <p className="pm-verified">
+                    <strong>Confirmed on the ground</strong>
+                    {item.verifiedByName ? ` by ${item.verifiedByName}` : ''}
+                    {item.verificationNote ? ` — "${item.verificationNote}"` : '.'}
+                  </p>
+                )}
+                {item.verificationStatus === 'Disputed' && (
+                  <p className="pm-disputed">
+                    <strong>Disputed by the barangay</strong>
+                    {item.verificationNote ? ` — "${item.verificationNote}"` : '.'}
+                    {' '}Treat this advisory with caution until DRRMO reviews it.
+                  </p>
+                )}
+
+                {/* ---------- Barangay: answer for the ground ---------- */}
+                {canConfirm && (
+                  <div className="db-scope db-embed">
+                    {answering ? (
+                      <div className="db-confirm">
+                        <p>
+                          {answering === 'Confirmed'
+                            ? 'Confirm that this hazard is on the ground as described?'
+                            : 'Report that this hazard is not there as described?'}
+                        </p>
+                        <label className="db-field" htmlFor="pm-verify-note">
+                          What did you see? (optional)
+                          <textarea
+                            id="pm-verify-note"
+                            rows={2}
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            placeholder={answering === 'Confirmed'
+                              ? 'Water about knee deep along the national road'
+                              : 'Road is clear, no landslide seen as of this morning'}
+                          />
+                        </label>
+                        {verifyError && <p className="db-error" role="alert">{verifyError}</p>}
+                        <div className="db-btn-row">
+                          <button
+                            type="button"
+                            className="db-btn db-btn-primary db-btn-sm"
+                            onClick={submitVerification}
+                            disabled={saving}
+                          >
+                            {saving
+                              ? 'Saving…'
+                              : answering === 'Confirmed' ? 'Yes, confirm' : 'Yes, dispute'}
+                          </button>
+                          <button
+                            type="button"
+                            className="db-btn db-btn-outline db-btn-sm"
+                            onClick={() => { setAnswering(null); setVerifyError(''); }}
+                            disabled={saving}
+                          >
+                            Go back
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="db-hint" style={{ marginBottom: 8 }}>
+                          You are barangay personnel. Is this hazard there as described?
+                        </p>
+                        {verifyError && <p className="db-error" role="alert">{verifyError}</p>}
+                        <div className="db-btn-row">
+                          <button
+                            type="button"
+                            className="db-btn db-btn-outline db-btn-sm"
+                            onClick={() => setAnswering('Confirmed')}
+                          >
+                            {item.verificationStatus === 'Confirmed'
+                              ? 'Change to confirmed'
+                              : 'Confirm it is there'}
+                          </button>
+                          <button
+                            type="button"
+                            className="db-btn db-btn-outline db-btn-sm"
+                            onClick={() => setAnswering('Disputed')}
+                          >
+                            {item.verificationStatus === 'Disputed' ? 'Change to disputed' : 'Dispute'}
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 

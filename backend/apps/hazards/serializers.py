@@ -23,6 +23,9 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
     barangay_name = serializers.CharField(
         source='barangay.name', read_only=True, default=None
     )
+    verified_by_name = serializers.CharField(
+        source='verified_by.full_name', read_only=True, default=None
+    )
 
     class Meta:
         model       = HazardZone
@@ -32,6 +35,10 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
             'severity', 'status', 'description',
             'activated_at', 'resolved_at',
             'is_sample',
+            # Ground confirmation, so the map can show whether anyone in the
+            # barangay has actually been out to look.
+            'verification_status', 'verification_note',
+            'verified_at', 'verified_by_name',
         ]
 
 
@@ -39,6 +46,9 @@ class HazardZoneSerializer(serializers.ModelSerializer):
     hazard_type = HazardTypeSerializer(read_only=True)
     barangay_name = serializers.CharField(
         source='barangay.name', read_only=True, default=None
+    )
+    verified_by_name = serializers.CharField(
+        source='verified_by.full_name', read_only=True, default=None
     )
 
     class Meta:
@@ -48,6 +58,8 @@ class HazardZoneSerializer(serializers.ModelSerializer):
             'severity', 'status', 'description',
             'activated_at', 'resolved_at',
             'is_sample',
+            'verification_status', 'verification_note',
+            'verified_at', 'verified_by_name',
         ]
 
 

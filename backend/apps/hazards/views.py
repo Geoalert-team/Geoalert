@@ -19,7 +19,7 @@ from apps.hazards.serializers import (
     HazardZoneCreateSerializer,
     HazardTypeSerializer,
 )
-from utils.permissions import IsDRRMOOfficer
+from utils.permissions import IsDRRMOOfficer, IsBarangayPersonnel
 from utils.audit import log_event
 
 
@@ -301,6 +301,153 @@ class HazardZoneDetailView(APIView):
             )
 
         return Response(HazardZoneSerializer(zone).data)
+
+
+class HazardZoneVerifyView(APIView):
+    """
+    POST /api/hazards/<id>/verify/
+    Ground confirmation.
+
+        {"status": "Confirmed" | "Disputed", "note": "optional, what they saw"}
+
+    A hazard zone is published from the DRRMO office, often off a forecast or
+    a phoned-in report. This is the people standing in it saying whether it
+    matches what they can see — which is why only Barangay Personnel may
+    answer, and only for a zone that touches their own barangay. An officer
+    confirming the zone they published themselves would mean nothing, so
+    DRRMO and admins can read the answer but not give one.
+
+    A zone that is no longer Active cannot be confirmed: there is nothing
+    left on the ground to look at.
+    """
+    permission_classes = [IsAuthenticated, IsBarangayPersonnel]
+
+    ALLOWED = ('Confirmed', 'Disputed')
+
+    def post(self, request, pk):
+        try:
+            zone = (
+                HazardZone.objects
+                .select_related('hazard_type', 'barangay', 'verified_by')
+                .get(pk=pk)
+            )
+        except HazardZone.DoesNotExist:
+            return Response(
+                {'error': 'Hazard zone not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        new_status = request.data.get('status')
+        if new_status not in self.ALLOWED:
+            return Response(
+                {'error': f'status must be one of {list(self.ALLOWED)}.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if zone.status != 'Active':
+            return Response(
+                {'error': 'This hazard is already closed, so it can no longer be confirmed.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        role = getattr(getattr(request.user, 'role', None), 'name', '')
+        if role != 'Barangay_Personnel':
+            return Response(
+                {'error': 'Only barangay personnel can confirm a hazard on the ground.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        assigned = getattr(request.user, 'assigned_barangay_id', None)
+        if assigned is None:
+            return Response(
+                {'error': 'Your account has no barangay assigned, so there is nothing for you to confirm.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        if assigned not in {b.id for b in affected_barangays(zone)}:
+            return Response(
+                {'error': 'You can only confirm hazards in your own barangay.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        zone.verification_status = new_status
+        zone.verified_by         = request.user
+        zone.verified_at         = timezone.now()
+        zone.verification_note   = (request.data.get('note') or '').strip()
+        zone.save(update_fields=[
+            'verification_status', 'verified_by', 'verified_at', 'verification_note',
+        ])
+
+        log_event(
+            request, 'VERIFY_HAZARD', 'hazard_zone', zone.id,
+            f'{new_status} by {request.user.email}',
+        )
+
+        return Response(HazardZoneSerializer(zone).data)
+
+
+class HazardZoneForBarangayView(APIView):
+    """
+    GET /api/hazards/for-barangay/
+    Active hazard zones touching the signed-in user's barangay, newest first,
+    so the barangay dashboard can push what needs an answer rather than
+    making personnel hunt for it on the map.
+
+    ?pending=true returns only the ones nobody has answered yet.
+
+    Barangay Personnel see their own barangay. DRRMO and admins have no
+    single barangay of their own, so they get an empty list here and use the
+    map instead.
+    """
+    permission_classes = [IsAuthenticated, IsBarangayPersonnel]
+
+    def get(self, request):
+        assigned = getattr(request.user, 'assigned_barangay_id', None)
+        if assigned is None:
+            return Response({'barangay': None, 'count': 0, 'results': []})
+
+        zones = (
+            HazardZone.objects
+            .filter(status='Active')
+            .select_related('hazard_type', 'barangay', 'verified_by')
+            .order_by('-activated_at')
+        )
+
+        # The barangay recorded on a zone is only where the officer tapped;
+        # a 1 km zone can cross three of them. Match on the geometry, the same
+        # way the alert decides who to notify, so what the dashboard shows and
+        # what the alert went out to agree.
+        boundary = (
+            Barangay.objects
+            .filter(id=assigned)
+            .values_list('boundary', flat=True)
+            .first()
+        )
+        if boundary is None:
+            zones = zones.filter(barangay_id=assigned)
+        else:
+            try:
+                zones = zones.filter(
+                    Q(geometry__intersects=boundary) | Q(barangay_id=assigned)
+                )
+                zones.exists()  # force the query now, so a bad boundary is caught here
+            except Exception:
+                # Malformed boundary: fall back to the barangay recorded on the
+                # zone rather than showing nothing at all.
+                zones = (
+                    HazardZone.objects
+                    .filter(status='Active', barangay_id=assigned)
+                    .select_related('hazard_type', 'barangay', 'verified_by')
+                    .order_by('-activated_at')
+                )
+
+        if (request.query_params.get('pending') or '').strip().lower() in ('1', 'true', 'yes'):
+            zones = zones.filter(verification_status='Pending')
+
+        return Response({
+            'barangay': assigned,
+            'count': zones.count(),
+            'results': HazardZoneSerializer(zones, many=True).data,
+        })
 
 
 class HazardZoneResolvedListView(APIView):

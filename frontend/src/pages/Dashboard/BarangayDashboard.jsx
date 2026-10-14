@@ -8,6 +8,7 @@ import { guidanceApi } from '../../api/guidanceApi';
 import { hazardsApi } from '../../api/hazardsApi';
 import { Icon, Toast, fieldErrors, formatDateTime, timeAgo } from './admin/adminShared';
 import { HazardIcon, ImpactChips, StatusTag } from './reportShared';
+import ConfirmHazardCard from '../../components/Verify/ConfirmHazardCard';
 import '../css/Dashboard.css';
 import '../css/AdminDashboard.css';
 import '../css/DRRMODashboard.css';
@@ -252,6 +253,12 @@ export default function BarangayDashboard() {
             </div>
           </div>
         </div>
+
+        {/* ---------- Ground confirmation ----------
+            Above the report form on purpose: answering a hazard that is
+            already live matters more than filing a new report. The card
+            brings its own db- styling; this page's root carries .db. */}
+        <ConfirmHazardCard />
 
         <div className="brg-grid">
           {/* ---------- Submit form ---------- */}
