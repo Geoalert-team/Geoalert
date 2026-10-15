@@ -29,6 +29,87 @@ function MetricCard({ icon, tone, value, label, note }) {
   );
 }
 
+const CHECK_TONE = { ok: 'good', warn: 'warn', fail: 'bad', unknown: 'neutral' };
+const CHECK_MARK = { ok: 'check', warn: 'info', fail: 'userX', unknown: 'dot' };
+
+/**
+ * The status indicator, and what it is reading.
+ *
+ * It used to be a green dot wired to a hardcoded string, so the only thing
+ * that could change it was the request failing. Now it folds five real
+ * checks, and clicking it says which one is unhappy — a status nobody can
+ * interrogate is decoration.
+ *
+ * health === null means the request itself failed, which is not "unknown":
+ * the dashboard could not reach the API, so the system is Down from the
+ * point of view of anyone using it.
+ */
+function SystemStatus({ health, failed, loading }) {
+  const [open, setOpen] = useState(false);
+
+  const status = failed ? 'Down' : health?.status;
+  const tone = status === 'Operational' ? 'is-ok'
+    : status === 'Degraded' ? 'is-warn'
+      : status === 'Down' ? 'is-down' : '';
+
+  const label = loading && !health && !failed ? 'Checking status…' : (status || 'Unknown');
+  const checks = failed
+    ? [{
+      key: 'reach',
+      label: 'Server',
+      state: 'fail',
+      detail: 'The dashboard could not reach the API. The server may be stopped, '
+            + 'or the database may be unreachable — authenticating this request needs it.',
+    }]
+    : health?.checks || [];
+
+  const summary = failed
+    ? 'Cannot reach the server'
+    : health?.failing?.length
+      ? health.failing.join(', ')
+      : null;
+
+  return (
+    <div className="adm-status">
+      <button
+        type="button"
+        className={`adm-system ${tone}`}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        title="What this is checking"
+      >
+        <span className="adm-system-dot" />
+        {label}
+        {summary && <span className="adm-system-why">· {summary}</span>}
+        <Icon name={open ? 'chevronUp' : 'chevronDown'} size={14} />
+      </button>
+
+      {open && (
+        <div className="adm-status-panel">
+          <p className="adm-status-head">System checks</p>
+          <ul className="adm-status-list">
+            {checks.length === 0 && <li className="adm-muted">No checks reported.</li>}
+            {checks.map((c) => (
+              <li key={c.key}>
+                <span className={`adm-action adm-action-${CHECK_TONE[c.state] || 'neutral'}`}>
+                  <Icon name={CHECK_MARK[c.state] || 'dot'} size={13} strokeWidth={2.4} />
+                  {c.label}
+                </span>
+                <span className="adm-status-detail">{c.detail}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="adm-status-note">
+            Checked from inside the server. It cannot tell whether residents can
+            reach the site, and it cannot see schema changes made directly in the
+            database rather than through a migration.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Overview({ metrics, users, onAddUser, onOpenTab }) {
   const total = metrics?.total_users ?? users.length;
   const active = metrics?.active_users ?? users.filter((u) => u.is_active).length;
@@ -152,6 +233,8 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState('overview');
   const [metrics, setMetrics] = useState(null);
   const [metricsFailed, setMetricsFailed] = useState(false);
+  const [health, setHealth] = useState(null);
+  const [healthFailed, setHealthFailed] = useState(false);
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [roles, setRoles] = useState([]);
@@ -166,6 +249,14 @@ export default function AdminDashboard() {
       .catch(() => setMetricsFailed(true))
   ), []);
 
+  // Its own request, not a field on metrics: the indicator has to keep
+  // working when the metrics queries are what failed.
+  const loadHealth = useCallback(() => (
+    adminApi.health()
+      .then((h) => { setHealth(h); setHealthFailed(false); })
+      .catch(() => { setHealth(null); setHealthFailed(true); })
+  ), []);
+
   const loadUsers = useCallback(() => (
     adminApi.users.list()
       .then((data) => setUsers(data.results || data))
@@ -175,11 +266,11 @@ export default function AdminDashboard() {
 
   const refreshAll = useCallback(() => {
     setRefreshing(true);
-    return Promise.all([loadMetrics(), loadUsers()]).finally(() => {
+    return Promise.all([loadMetrics(), loadUsers(), loadHealth()]).finally(() => {
       setRefreshing(false);
       setUpdatedAt(new Date());
     });
-  }, [loadMetrics, loadUsers]);
+  }, [loadMetrics, loadUsers, loadHealth]);
 
   useEffect(() => {
     refreshAll();
@@ -188,9 +279,6 @@ export default function AdminDashboard() {
 
   const notify = useCallback((message, tone = 'good') => setToast({ message, tone, id: Date.now() }), []);
   const clearToast = useCallback(() => setToast(null), []);
-
-  const operational = !metricsFailed && (metrics?.system_status || '').toLowerCase() === 'operational';
-  const statusText = metricsFailed ? 'Status unavailable' : metrics ? metrics.system_status : 'Checking status…';
 
   return (
     <div className="db adm">
@@ -203,10 +291,7 @@ export default function AdminDashboard() {
             <p className="adm-lede">Manage staff accounts, review activity and keep an eye on GeoAlert at a glance.</p>
           </div>
           <div className="adm-header-side">
-            <span className={`adm-system ${operational ? 'is-ok' : metricsFailed ? 'is-down' : ''}`}>
-              <span className="adm-system-dot" />
-              {statusText}
-            </span>
+            <SystemStatus health={health} failed={healthFailed} loading={refreshing} />
             <button type="button" className="adm-btn adm-btn-ghost adm-btn-sm" onClick={refreshAll} disabled={refreshing} title="Refresh data">
               <Icon name="refresh" size={15} className={refreshing ? 'adm-spin' : ''} />
               {updatedAt ? `Updated ${updatedAt.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })}` : 'Refresh'}

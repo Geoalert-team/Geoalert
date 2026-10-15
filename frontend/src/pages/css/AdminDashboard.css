@@ -45,9 +45,39 @@
   border: 1px solid var(--adm-line); border-radius: var(--db-pill); background: var(--adm-surface);
   font-size: .85rem; font-weight: 700; color: var(--db-heading);
 }
-.adm-system-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--db-soft); }
+.adm-system-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--db-soft); flex: none; }
 .adm-system.is-ok .adm-system-dot { background: #1f9d55; box-shadow: 0 0 0 3px rgba(31, 157, 85, .18); }
+.adm-system.is-warn .adm-system-dot { background: var(--warn); box-shadow: 0 0 0 3px rgba(180, 120, 15, .18); }
 .adm-system.is-down .adm-system-dot { background: var(--bad); box-shadow: 0 0 0 3px rgba(180, 35, 24, .15); }
+
+/* The status indicator is a button now: it opens the checks behind it,
+   because a status nobody can interrogate is decoration. */
+.adm-status { position: relative; }
+button.adm-system { font-family: inherit; cursor: pointer; max-width: 420px; }
+button.adm-system:hover { border-color: var(--adm-line-strong); }
+.adm-system-why {
+  color: var(--db-soft); font-weight: 600; max-width: 190px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.adm-status-panel {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; width: min(440px, 88vw);
+  padding: 16px; border: 1px solid var(--adm-line); border-radius: var(--db-radius);
+  background: var(--adm-surface); box-shadow: 0 16px 40px rgba(16, 32, 56, .16);
+  text-align: left;
+}
+.adm-status-head { font-size: .8rem; font-weight: 800; color: var(--db-heading); margin: 0 0 10px; }
+.adm-status-list { list-style: none; display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 0; }
+.adm-status-list li { display: flex; flex-direction: column; gap: 4px; }
+.adm-status-list .adm-action { align-self: flex-start; }
+.adm-status-detail { font-size: .82rem; color: var(--db-soft); line-height: 1.45; }
+.adm-status-note {
+  margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--adm-line);
+  font-size: .76rem; color: var(--db-soft); line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .adm-status-panel { right: auto; left: 0; }
+}
 
 /* ---------- Tabs ---------- */
 .adm-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--adm-line-strong); margin-bottom: 24px; overflow-x: auto; }

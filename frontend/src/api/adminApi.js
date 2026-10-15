@@ -4,6 +4,12 @@ export const adminApi = {
   metrics: () =>
     client.get('/api/admin-dashboard/metrics/').then((r) => r.data),
 
+  // What the dashboard's status indicator reads. Answers 200 even when
+  // checks fail — the body says which. A rejected promise means the server
+  // or the database could not be reached at all, which is itself Down.
+  health: () =>
+    client.get('/api/admin-dashboard/health/').then((r) => r.data),
+
   roles: () =>
     client.get('/api/admin-dashboard/roles/').then((r) => r.data),
 

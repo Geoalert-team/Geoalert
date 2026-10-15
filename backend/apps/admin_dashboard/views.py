@@ -23,6 +23,7 @@ from apps.admin_dashboard.serializers import (
     generate_temp_password,
 )
 from utils.permissions import IsSystemAdmin, IsDRRMOOfficer
+from utils.health import system_health
 
 
 def log_action(user, action, target_table='', target_id='', details='', request=None):
@@ -56,6 +57,8 @@ class DashboardMetricsView(APIView):
     permission_classes = [IsAuthenticated, IsSystemAdmin]
 
     def get(self, request):
+        health = system_health()
+
         total_users     = User.objects.count()
         active_users    = User.objects.filter(is_active=True).count()
         active_hazards  = HazardZone.objects.filter(status='Active').count()
@@ -74,7 +77,10 @@ class DashboardMetricsView(APIView):
             'active_hazards':       active_hazards,
             'published_guidance':   published_guidance,
             'recent_activity':      AuditLogSerializer(recent_logs, many=True).data,
-            'system_status':        'Operational',
+            # Was the literal string 'Operational', which nothing could ever
+            # change. Now the result of real checks — see utils/health.py.
+            'system_status':        health['status'],
+            'system_health':        health,
         })
 
 
@@ -371,6 +377,31 @@ class AlertMonitorView(APIView):
             'page_size':   self.PAGE_SIZE,
             'results':     results,
         })
+
+
+class SystemHealthView(APIView):
+    """
+    GET /api/admin-dashboard/health/
+
+    What the dashboard's status indicator is actually reading. Returns
+
+        {"status": "Operational" | "Degraded" | "Down",
+         "failing": ["Alert routing"],
+         "checks": [{"key", "label", "state", "detail"}, ...]}
+
+    Separate from the metrics endpoint so the indicator keeps working when
+    the metrics queries fail, and so the checks can be read on their own.
+
+    Answers 200 even when checks fail — the body carries the bad news.
+    A non-200 from this endpoint means something below the checks is wrong
+    (the server is not running, or the database is so unavailable that the
+    request could not even be authenticated), and the dashboard shows that
+    as Down rather than hiding it.
+    """
+    permission_classes = [IsAuthenticated, IsSystemAdmin]
+
+    def get(self, request):
+        return Response(system_health())
 
 
 class RolesListView(APIView):

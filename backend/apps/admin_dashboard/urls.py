@@ -6,11 +6,13 @@ from apps.admin_dashboard.views import (
     ResetPasswordView,
     AuditLogListView,
     AlertMonitorView,
+    SystemHealthView,
     RolesListView,
 )
 
 urlpatterns = [
     path('metrics/',                        DashboardMetricsView.as_view(),  name='admin-metrics'),
+    path('health/',                         SystemHealthView.as_view(),      name='admin-health'),
     path('roles/',                          RolesListView.as_view(),         name='admin-roles'),
     path('users/',                          UserListCreateView.as_view(),    name='admin-users'),
     path('users/<uuid:pk>/',                UserDetailView.as_view(),        name='admin-user-detail'),
