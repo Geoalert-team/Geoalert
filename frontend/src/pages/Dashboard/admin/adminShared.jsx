@@ -103,6 +103,10 @@ export const ACTION_META = {
   ACTIVATE_USER: { label: 'Activated account', tone: 'good', icon: 'check' },
   DEACTIVATE_USER: { label: 'Deactivated account', tone: 'bad', icon: 'userX' },
   RESET_PASSWORD: { label: 'Reset password', tone: 'warn', icon: 'key' },
+  PUBLISH_HAZARD_ALERT: { label: 'Published hazard alert', tone: 'warn', icon: 'alert' },
+  RETRACT_HAZARD: { label: 'Withdrew hazard alert', tone: 'bad', icon: 'userX' },
+  VERIFY_HAZARD: { label: 'Ground confirmation', tone: 'info', icon: 'check' },
+  GENERATE_REPORT: { label: 'Generated report', tone: 'neutral', icon: 'list' },
 };
 
 export function actionMeta(action) {

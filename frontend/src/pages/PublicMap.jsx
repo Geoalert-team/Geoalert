@@ -458,29 +458,34 @@ export default function PublicMap() {
     if (e.key === 'Enter' && searchResults.length > 0) selectResult(searchResults[0]);
   }
 
-  // A resolved zone is no longer active, so drop its pin and close the panel.
-  // PATCH /api/hazards/<id>/ returns the plain serializer rather than GeoJSON,
-  // so featureToItem can't be reused here — match on the id instead.
-  function handleResolved(zone) {
-    const resolvedId = zone?.id ?? selectedHazardId;
+  // A zone that is no longer Active — resolved, or withdrawn as published in
+  // error — comes off the map. Both endpoints answer with the plain
+  // serializer rather than GeoJSON, so featureToItem can't be reused here;
+  // match on the id instead.
+  function dropHazard(zone) {
+    const goneId = zone?.id ?? selectedHazardId;
     // Drop the pin straight away rather than waiting on the round trip, so
     // the map doesn't keep showing a hazard the officer has just closed.
-    setLiveHazards((prev) => prev.filter((h) => String(h.id) !== String(resolvedId)));
+    setLiveHazards((prev) => prev.filter((h) => String(h.id) !== String(goneId)));
 
-    // The zone is now a historical record: the shading, the counts and the
-    // past-incident lists all have to catch up.
+    // The shading, the per-type counts and the past-incident lists all have
+    // to catch up: resolving adds a historical record, withdrawing changes
+    // the active counts.
     refreshMap();
 
     // Move on to the next hazard at the same spot, if there is one
-    const next = stack.find((h) => String(h.id) !== String(resolvedId));
+    const next = stack.find((h) => String(h.id) !== String(goneId));
     if (next) {
-      setStackIds((ids) => ids.filter((id) => String(id) !== String(resolvedId)));
+      setStackIds((ids) => ids.filter((id) => String(id) !== String(goneId)));
       setSelection({ kind: 'hazard', id: next.id });
       return;
     }
     setSelection(null);
     setPanelOpen(false);
   }
+
+  const handleResolved = dropHazard;
+  const handleRetracted = dropHazard;
 
   // Ground confirmation doesn't move a hazard anywhere, so the pin stays and
   // only its own state changes. Patched in place rather than reloading, so the
@@ -880,6 +885,7 @@ export default function PublicMap() {
           open={panelOpen && !!selectedHazard}
           onClose={() => setPanelOpen(false)}
           onResolved={handleResolved}
+          onRetracted={handleRetracted}
           onVerified={handleVerified}
           stack={stack}
           onPick={showStacked}

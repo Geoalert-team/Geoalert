@@ -245,6 +245,16 @@ class HazardZoneDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        # A withdrawn alert is final. Re-opening or resolving one would turn
+        # a mistake that was publicly corrected back into a live hazard, or
+        # file it as an incident that never happened.
+        if zone.status == 'Retracted':
+            return Response(
+                {'error': 'This hazard was withdrawn and can no longer be changed. '
+                          'Publish a new zone if the hazard is real.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Remember where the zone stood BEFORE this request touched it, so a
         # repeated PATCH on an already-resolved zone can't archive it twice.
         was_already_resolved = zone.status in ('Resolved', 'Archived')
@@ -260,7 +270,19 @@ class HazardZoneDetailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        valid_statuses = [c[0] for c in HazardZone.STATUS_CHOICES]
+        # Retracting is not a status edit: it needs a written reason and it
+        # notifies everyone who got the original alert. Sending it through
+        # here would skip both, so it has an endpoint of its own.
+        if new_status == 'Retracted':
+            return Response(
+                {'error': 'Use POST /api/hazards/<id>/retract/ to withdraw a hazard '
+                          'published in error. A reason is required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        valid_statuses = [
+            c[0] for c in HazardZone.STATUS_CHOICES if c[0] != 'Retracted'
+        ]
         if new_status not in valid_statuses:
             return Response(
                 {'error': f'status must be one of {valid_statuses}.'},
@@ -301,6 +323,160 @@ class HazardZoneDetailView(APIView):
             )
 
         return Response(HazardZoneSerializer(zone).data)
+
+
+class HazardZoneRetractView(APIView):
+    """
+    POST /api/hazards/<id>/retract/
+
+        {"reason": "why it was withdrawn"}
+
+    Withdraws a hazard zone that was published in error. DRRMO Officer only,
+    and only while the zone is still Active.
+
+    Three things a mis-publish is NOT:
+
+      * It is not a resolution. Resolving writes a HistoricalRecord, which
+        then counts in the hazard summary report and the trend analysis.
+        Filing a zone nobody meant to publish would invent an incident that
+        never happened in Talisay City.
+
+      * It is not a delete. HazardAlert cascades from the zone and
+        Notification cascades from the alert, so deleting the row would wipe
+        out the record that an alert went to residents' accounts. The alert
+        happened; that cannot be unsaid, only corrected.
+
+      * It is not silent. Residents and barangay personnel acted on the
+        alert. Everyone the original alert reached is told it was withdrawn,
+        so nobody keeps responding to a hazard the map no longer shows.
+
+    What it does: takes the zone off the public map (every map endpoint
+    filters to status='Active'), records who withdrew it, when and why,
+    notifies the original recipients, and writes an audit entry. There is no
+    time limit — a wrong alert should be withdrawable the moment it is
+    noticed — but every withdrawal is permanent and on the record.
+    """
+    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+
+    # Enough to rule out "." or "x" without pretending a longer string is a
+    # better reason. The audit entry is the real control.
+    MIN_REASON = 5
+
+    def post(self, request, pk):
+        try:
+            zone = (
+                HazardZone.objects
+                .select_related('hazard_type', 'barangay')
+                .get(pk=pk)
+            )
+        except HazardZone.DoesNotExist:
+            return Response(
+                {'error': 'Hazard zone not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if zone.status == 'Retracted':
+            return Response(
+                {'error': 'This hazard has already been withdrawn.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if zone.status != 'Active':
+            return Response(
+                {'error': 'This hazard has already been resolved and archived as a '
+                          'historical record, so it can no longer be withdrawn.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        reason = (request.data.get('reason') or '').strip()
+        if len(reason) < self.MIN_REASON:
+            return Response(
+                {'error': 'Please say why this hazard is being withdrawn. '
+                          'The reason is kept on the record and sent to everyone '
+                          'who received the original alert.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        type_name = zone.hazard_type.name if zone.hazard_type else 'Hazard'
+        where = ', '.join(b.name for b in affected_barangays(zone)) or 'Talisay City'
+
+        # Exactly the accounts the original alert reached — not everyone who
+        # could be notified today, which may be a different set by now.
+        recipients = list(
+            User.objects
+            .filter(notifications__hazard_alert__hazard_zone=zone)
+            .distinct()
+        )
+
+        with transaction.atomic():
+            zone.status            = 'Retracted'
+            zone.retracted_by      = request.user
+            zone.retracted_at      = timezone.now()
+            zone.retraction_reason = reason
+            zone.save(update_fields=[
+                'status', 'retracted_by', 'retracted_at', 'retraction_reason',
+            ])
+
+            # hazard_alert is left null on purpose. These rows belong to the
+            # withdrawal, not to the alert, and attaching them to the alert
+            # would inflate its "sent to N accounts" figure in F8's alert
+            # monitoring — making a corrected mistake look like wider reach.
+            Notification.objects.bulk_create([
+                Notification(
+                    hazard_alert=None,
+                    recipient=u,
+                    content=f'WITHDRAWN: the {type_name} alert for {where} was '
+                            f'published in error and has been withdrawn by DRRMO. '
+                            f'Reason: {reason}',
+                )
+                for u in recipients
+            ])
+
+        log_event(
+            request, 'RETRACT_HAZARD', 'hazard_zone', zone.id,
+            f'{type_name} / {zone.severity} for {where} withdrawn as published in error. '
+            f'{len(recipients)} recipient(s) told. Reason: {reason}',
+        )
+
+        payload = HazardZoneSerializer(zone).data
+        payload['retraction'] = {
+            'reason': reason,
+            'recipients_notified': len(recipients),
+            'affected_barangays': where,
+        }
+        return Response(payload)
+
+
+class HazardZoneRetractedListView(APIView):
+    """
+    GET /api/hazards/retracted/
+    Hazard zones withdrawn as published in error, newest first.
+    DRRMO Officer / System Admin only.
+
+    Withdrawn zones are gone from the public map and out of the reports, so
+    without this list they would be invisible — and a system where any
+    inconvenient hazard can be made to have never existed is not auditable.
+    Supports ?limit=<n> (default 20, max 100).
+    """
+    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+
+    def get(self, request):
+        zones = (
+            HazardZone.objects
+            .filter(status='Retracted')
+            .select_related('hazard_type', 'barangay', 'retracted_by')
+            .order_by('-retracted_at')
+        )
+        total = zones.count()
+
+        try:
+            limit = min(max(int(request.query_params.get('limit', 20)), 1), 100)
+        except (TypeError, ValueError):
+            limit = 20
+
+        return Response({
+            'count':   total,
+            'results': HazardZoneSerializer(zones[:limit], many=True).data,
+        })
 
 
 class HazardZoneVerifyView(APIView):

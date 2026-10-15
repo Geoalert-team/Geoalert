@@ -43,6 +43,11 @@ class NotificationSerializer(serializers.ModelSerializer):
             return 'hazard'
 
         content = (obj.content or '').lower()
+        # A withdrawal notice carries no hazard_alert on purpose (it would
+        # inflate that alert's reach figures), but it is still about a hazard
+        # and belongs with the hazard alerts in the bell.
+        if 'withdrawn' in content:
+            return 'hazard'
         if 'report' in content:
             return 'report'
         if any(word in content for word in ('password', 'two-factor', 'sign in', 'login', 'locked')):

@@ -24,4 +24,16 @@ export const hazardsApi = {
   // anything that needs past zones (dashboard counters, history) uses this.
   resolved: (limit) =>
     client.get('/api/hazards/resolved/', { params: limit ? { limit } : {} }).then((r) => r.data),
+
+  // Withdraw a zone published in error. Not the same call as resolving:
+  // resolving files a historical record, which would invent an incident that
+  // never happened. A reason is required and goes out to everyone who
+  // received the original alert. DRRMO only.
+  retract: (id, reason) =>
+    client.post(`/api/hazards/${id}/retract/`, { reason }).then((r) => r.data),
+
+  // Withdrawn zones, for the DRRMO accountability list. They are off the
+  // public map and out of the reports, so this is the only place they show.
+  retracted: (limit) =>
+    client.get('/api/hazards/retracted/', { params: limit ? { limit } : {} }).then((r) => r.data),
 };

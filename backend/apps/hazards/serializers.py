@@ -50,6 +50,9 @@ class HazardZoneSerializer(serializers.ModelSerializer):
     verified_by_name = serializers.CharField(
         source='verified_by.full_name', read_only=True, default=None
     )
+    retracted_by_name = serializers.CharField(
+        source='retracted_by.full_name', read_only=True, default=None
+    )
 
     class Meta:
         model  = HazardZone
@@ -60,6 +63,8 @@ class HazardZoneSerializer(serializers.ModelSerializer):
             'is_sample',
             'verification_status', 'verification_note',
             'verified_at', 'verified_by_name',
+            # Withdrawal, so the DRRMO list can say who withdrew it and why
+            'retracted_at', 'retracted_by_name', 'retraction_reason',
         ]
 
 

@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { severityInfo, hazardIconPath, hazardColor, DRRMO_HOTLINE } from './hazardInfo';
 import GuidanceSteps from './GuidanceSteps';
 import ResolveHazardForm from '../Resolve/ResolveHazardForm';
+import RetractHazardForm from '../Resolve/RetractHazardForm';
 import { hazardsApi } from '../../api/hazardsApi';
 import { historyApi } from '../../api/historyApi';
 // The resolve form is built from db- classes; .db-scope below supplies the
@@ -226,9 +227,11 @@ function HazardStack({ stack, current, onPick }) {
 
 // Slides in from the left (desktop) or up from the bottom (mobile).
 // stack: the hazards at the clicked spot (including item); onPick switches between them.
-export default function HazardPanel({ item, open, onClose, onResolved, onVerified, stack = [], onPick }) {
+export default function HazardPanel({ item, open, onClose, onResolved, onRetracted, onVerified, stack = [], onPick }) {
   const [tab, setTab] = useState('overview');
-  const [resolving, setResolving] = useState(false);
+  // 'resolve' when the hazard is over, 'retract' when it should never have
+  // been published. Only one form is ever open.
+  const [closing, setClosing] = useState(null);
   // Ground confirmation, for barangay personnel standing in the hazard
   const [answering, setAnswering] = useState(null); // 'Confirmed' | 'Disputed'
   const [note, setNote] = useState('');
@@ -240,7 +243,7 @@ export default function HazardPanel({ item, open, onClose, onResolved, onVerifie
   // Go back to the Overview tab and move focus into the panel whenever a new pin is chosen
   useEffect(() => {
     setTab('overview');
-    setResolving(false);
+    setClosing(null);
     setAnswering(null);
     setNote('');
     setVerifyError('');
@@ -461,21 +464,49 @@ export default function HazardPanel({ item, open, onClose, onResolved, onVerifie
                 {/* ---------- DRRMO: close the hazard out ---------- */}
                 {canResolve && (
                   <div className="db-scope db-embed">
-                    {resolving ? (
+                    {closing === 'resolve' && (
                       <ResolveHazardForm
                         zoneId={item.id}
                         title={`${item.type} · ${item.location}`}
-                        onCancel={() => setResolving(false)}
+                        onCancel={() => setClosing(null)}
                         onResolved={(zone) => {
-                          setResolving(false);
+                          setClosing(null);
                           clearHistoryCache(); // the resolved zone is now a past record
                           onResolved?.(zone);
                         }}
                       />
-                    ) : (
-                      <button type="button" className="db-btn db-btn-outline" onClick={() => setResolving(true)}>
-                        Mark as resolved
-                      </button>
+                    )}
+
+                    {closing === 'retract' && (
+                      <RetractHazardForm
+                        zoneId={item.id}
+                        title={`${item.type} · ${item.location}`}
+                        onCancel={() => setClosing(null)}
+                        onRetracted={(zone) => {
+                          setClosing(null);
+                          // No history cache to clear: a withdrawal files no
+                          // historical record, which is the whole point.
+                          onRetracted?.(zone);
+                        }}
+                      />
+                    )}
+
+                    {!closing && (
+                      <>
+                        <div className="db-btn-row">
+                          <button type="button" className="db-btn db-btn-outline" onClick={() => setClosing('resolve')}>
+                            Mark as resolved
+                          </button>
+                          <button type="button" className="db-btn db-btn-outline" onClick={() => setClosing('retract')}>
+                            Published in error
+                          </button>
+                        </div>
+                        <p className="db-hint" style={{ marginTop: 8 }}>
+                          Resolve a hazard that happened and is over — it becomes a
+                          historical record. Withdraw one that should never have gone
+                          out; nothing is filed as an incident.
+                        </p>
+                      </>
                     )}
                   </div>
                 )}

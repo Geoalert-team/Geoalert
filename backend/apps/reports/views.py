@@ -153,9 +153,16 @@ class ResponseStatusReportView(APIView):
             f"barangay={barangay or 'all'}"
         )
 
-        active_count   = zones.filter(status='Active').count()
-        resolved_count = zones.filter(status='Resolved').count()
-        archived_count = zones.filter(status='Archived').count()
+        active_count    = zones.filter(status='Active').count()
+        resolved_count  = zones.filter(status='Resolved').count()
+        archived_count  = zones.filter(status='Archived').count()
+        retracted_count = zones.filter(status='Retracted').count()
+
+        # Zones withdrawn as published in error are not hazard events — they
+        # never happened — so they are reported as their own figure rather
+        # than counted in the total. The alert total below still counts the
+        # alerts they issued, because those alerts really did go out.
+        events = zones.exclude(status='Retracted')
 
         if zones.count() == 0:
             log_event(
@@ -186,7 +193,8 @@ class ResponseStatusReportView(APIView):
             'active_hazards':       active_count,
             'resolved_hazards':     resolved_count,
             'archived_hazards':     archived_count,
-            'total_hazard_events':  zones.count(),
+            'retracted_hazards':    retracted_count,
+            'total_hazard_events':  events.count(),
             'total_alerts_issued':  alerts.count(),
             'alerts_by_severity':   alerts_by_severity,
             

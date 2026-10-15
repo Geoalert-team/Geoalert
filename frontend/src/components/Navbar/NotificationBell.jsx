@@ -49,6 +49,9 @@ function StrokeIcon({ name, size = 18 }) {
 }
 
 function title(n) {
+  // A withdrawal notice is filed under hazards but carries no hazard_alert
+  // of its own, so it has no severity or type to build a title from.
+  if (/withdrawn/i.test(n.content || "")) return "Alert withdrawn";
   if (n.category === "hazard" && n.hazard) {
     const sev = severityInfo(n.hazard.severity);
     return `${n.hazard.type || "Hazard"} alert · ${sev.label}`;

@@ -67,7 +67,12 @@
 .db-item-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
 .db-item-title { font-weight: 800; color: var(--db-heading); }
 .db-item-meta { font-size: .82rem; color: var(--db-soft); margin-top: 4px; }
+/* A quoted note inside an item — a withdrawal reason, a review comment */
+.db-item-note { font-size: .86rem; color: var(--db-body); margin: 8px 0 0; font-style: italic; }
 .db-empty { padding: 24px; text-align: center; color: var(--db-soft); }
+
+/* Withdrawn hazard zones: on the record, but folded away from the live list */
+.db-withdrawn { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--db-line); }
 .db-pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--db-line); font-size: .88rem; color: var(--db-soft); }
 
 .db-filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }

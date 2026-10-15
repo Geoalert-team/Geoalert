@@ -326,6 +326,18 @@ export default function Reports() {
                   <Stat value={report.total_alerts_issued} label="Alerts issued" />
                 </div>
 
+                {report.retracted_hazards > 0 && (
+                  <p className="db-note">
+                    <strong>
+                      {report.retracted_hazards} zone{report.retracted_hazards === 1 ? '' : 's'} withdrawn
+                      as published in error.
+                    </strong>{' '}
+                    Withdrawn zones are not counted in total hazard events — they
+                    never happened — but the alerts they issued are still counted
+                    above, because those alerts did go out to recipients.
+                  </p>
+                )}
+
                 <section style={{ marginTop: 8 }}>
                   <h3>Alerts by severity</h3>
                   <CategoryBars
