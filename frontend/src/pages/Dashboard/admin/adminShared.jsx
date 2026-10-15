@@ -29,6 +29,59 @@ export const ROLE_META = {
   },
 };
 
+/**
+ * Designations offered per role, so Position is a choice rather than free
+ * typing. Twelve admins typing the same job twelve ways makes the user list
+ * unsearchable, and nothing downstream can group by it.
+ *
+ * DRRMO titles follow the DBM-DILG-CSC Joint Memorandum Circular on local
+ * DRRM offices under RA 10121: a Local DRRM Officer series I-V plus an
+ * assistant, working across administration and training, research and
+ * planning, and operations and warning. Barangay titles follow the Local
+ * Government Code.
+ *
+ * OTHER_POSITION stays available everywhere. A real LGU will have a title
+ * nobody predicted, and an account that cannot be created because the list
+ * is short is worse than one with a typed designation.
+ */
+export const OTHER_POSITION = '__other__';
+
+export const ROLE_POSITIONS = {
+  System_Admin: [
+    'System Administrator',
+    'Information Technology Officer I',
+    'Information Technology Officer II',
+    'Information Systems Analyst',
+    'Computer Programmer',
+    'MIS Head',
+  ],
+  DRRMO_Officer: [
+    'Local DRRM Officer V',
+    'Local DRRM Officer IV',
+    'Local DRRM Officer III',
+    'Local DRRM Officer II',
+    'Local DRRM Officer I',
+    'Local DRRM Assistant',
+    'Operations and Warning Officer',
+    'Research and Planning Officer',
+    'Administration and Training Officer',
+  ],
+  Barangay_Personnel: [
+    'Punong Barangay',
+    'Barangay Kagawad',
+    'Barangay Secretary',
+    'Barangay Treasurer',
+    'BDRRMC Chairperson',
+    'Barangay Tanod',
+    'Barangay Health Worker',
+    'SK Chairperson',
+  ],
+};
+
+export function positionsFor(role) {
+  return ROLE_POSITIONS[roleName(role)] || [];
+}
+
 export const BARANGAY_ROLE = 'Barangay_Personnel';
 
 export function roleName(role) {
