@@ -76,6 +76,18 @@ DATABASES = {
         'PASSWORD': env('DB_PASSWORD'),
         'HOST': env('DB_HOST', default='localhost'),
         'PORT': env('DB_PORT', default='5432'),
+        # Supabase sits behind a connection pooler that drops idle or
+        # half-open connections. Keepalives notice a dead socket instead of
+        # waiting on it, and connect_timeout stops a request hanging when
+        # the pooler is unreachable.
+        'OPTIONS': {
+            'connect_timeout': 10,
+            'keepalives': 1,
+            'keepalives_idle': 30,
+            'keepalives_interval': 10,
+            'keepalives_count': 5,
+            'sslmode': 'require',
+        },
     }
 }
 
