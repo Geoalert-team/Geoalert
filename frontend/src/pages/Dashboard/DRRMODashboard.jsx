@@ -19,15 +19,13 @@ const STATUS_TABS = [
 
 const PAGE_SIZE = 5;
 
+// 'Most people affected' used to sit here. It sorted on the casualty counts,
+// which the report form no longer collects, so it would have sorted every
+// report as zero.
 const SORTS = {
   newest: { label: 'Newest first', fn: (a, b) => new Date(b.created_at) - new Date(a.created_at) },
   oldest: { label: 'Oldest first', fn: (a, b) => new Date(a.created_at) - new Date(b.created_at) },
-  impact: { label: 'Most people affected', fn: (a, b) => affected(b) - affected(a) },
 };
-
-function affected(r) {
-  return (r.casualties_dead || 0) + (r.casualties_injured || 0) + (r.casualties_missing || 0) + (r.displaced || 0);
-}
 
 const typeName = (r) => r.hazard_type_details?.name || 'Incident';
 const barangayName = (r) => r.barangay_details?.name || '';
@@ -47,24 +45,6 @@ function HazardIcon({ type, size = 'md' }) {
 function StatusTag({ status }) {
   const tone = { Pending: 'warn', Validated: 'good', Rejected: 'bad' }[status] || 'neutral';
   return <span className={`adm-action adm-action-${tone}`}>{status}</span>;
-}
-
-function ImpactChips({ report }) {
-  const items = [
-    { label: 'Dead', value: report.casualties_dead, tone: 'bad' },
-    { label: 'Injured', value: report.casualties_injured, tone: 'warn' },
-    { label: 'Missing', value: report.casualties_missing, tone: 'warn' },
-    { label: 'Displaced', value: report.displaced, tone: 'info' },
-  ];
-  return (
-    <div className="drm-chips">
-      {items.map((i) => (
-        <span key={i.label} className={`drm-chip ${i.value > 0 ? `is-${i.tone}` : ''}`}>
-          <strong>{i.value ?? 0}</strong> {i.label.toLowerCase()}
-        </span>
-      ))}
-    </div>
-  );
 }
 
 function ReviewDialog({ report, decision, onCancel, onDone }) {
@@ -212,7 +192,6 @@ function ReportRow({ report, onOpen, onReview }) {
             <StatusTag status={report.status} />
           </div>
           <p className="drm-report-desc">{report.description || 'No description given.'}</p>
-          <ImpactChips report={report} />
           <p className="drm-report-meta">
             <span>{reporterName(report)}</span>
             {report.agency && <span>{report.agency}</span>}
@@ -287,7 +266,17 @@ export default function DRRMODashboard() {
   }, [reports]);
 
   const pending = useMemo(() => reports.filter((r) => r.status === 'Pending'), [reports]);
-  const peopleAffected = pending.reduce((sum, r) => sum + affected(r), 0);
+
+  // Replaces the old "People affected" total. The report form no longer
+  // collects casualty counts, so that figure could only ever read zero — and
+  // a dashboard saying nobody is affected during a flood is worse than no
+  // figure at all. How many barangays are reporting is the honest measure of
+  // spread from the data still collected.
+  const barangaysAffected = useMemo(
+    () => new Set(pending.map(barangayName).filter(Boolean)).size,
+    [pending],
+  );
+
   const oldestPending = pending.reduce((old, r) => (!old || new Date(r.created_at) < new Date(old) ? r.created_at : old), null);
   const activeHazards = hazards?.features?.length;
 
@@ -381,10 +370,10 @@ export default function DRRMODashboard() {
             </div>
           </div>
           <div className="adm-metric">
-            <span className="adm-metric-icon adm-metric-blue"><Icon name="users" size={20} /></span>
+            <span className="adm-metric-icon adm-metric-blue"><Icon name="building" size={20} /></span>
             <div className="adm-metric-text">
-              <span className="adm-metric-label">People affected</span>
-              <span className="adm-metric-value">{loading ? '—' : peopleAffected}</span>
+              <span className="adm-metric-label">Barangays affected</span>
+              <span className="adm-metric-value">{loading ? '—' : barangaysAffected}</span>
               <span className="adm-metric-note">Across pending reports</span>
             </div>
           </div>

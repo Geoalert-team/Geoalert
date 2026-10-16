@@ -20,20 +20,7 @@ export function StatusTag({ status }) {
   return <span className={`adm-action adm-action-${tone}`}>{label}</span>;
 }
 
-export function ImpactChips({ report }) {
-  const items = [
-    { label: 'dead', value: report.casualties_dead, tone: 'bad' },
-    { label: 'injured', value: report.casualties_injured, tone: 'warn' },
-    { label: 'missing', value: report.casualties_missing, tone: 'warn' },
-    { label: 'displaced', value: report.displaced, tone: 'info' },
-  ];
-  return (
-    <div className="drm-chips">
-      {items.map((i) => (
-        <span key={i.label} className={`drm-chip ${i.value > 0 ? `is-${i.tone}` : ''}`}>
-          <strong>{i.value ?? 0}</strong> {i.label}
-        </span>
-      ))}
-    </div>
-  );
-}
+// ImpactChips (dead / injured / missing / displaced) used to live here. The
+// report form stopped collecting casualty counts, so every chip read zero on
+// every report — a row of zeroes next to a real flood report says something
+// false, not something unknown.
