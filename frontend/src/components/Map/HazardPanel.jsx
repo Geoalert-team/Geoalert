@@ -1,8 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { severityInfo, hazardIconPath, hazardColor, DRRMO_HOTLINE } from './hazardInfo';
-import VerificationNotice from './VerificationNotice';
 import GuidanceSteps from './GuidanceSteps';
+import ResolveHazardForm from '../Resolve/ResolveHazardForm';
+import RetractHazardForm from '../Resolve/RetractHazardForm';
+import { hazardsApi } from '../../api/hazardsApi';
+import { historyApi } from '../../api/historyApi';
+// The resolve form is built from db- classes; .db-scope below supplies the
+// tokens so it looks right inside the map panel too.
+import '../../pages/css/Dashboard.css';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -15,18 +22,268 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-// Slides in from the left (desktop) or up from the bottom (mobile)
-export default function HazardPanel({ item, open, onClose, onVerified }) {
+const HISTORY_PAGE = 5; // records fetched per "Show more"
+
+// Pages already fetched this session, keyed "barangayId|type" ("" = all types),
+// so flipping between chips or pins doesn't refetch. Cleared when a hazard is
+// resolved, since that adds a record.
+const historyCache = new Map();
+export function clearHistoryCache() {
+  historyCache.clear();
+}
+
+// A blank count means nobody counted, which is not the same as zero
+function countText(label, value) {
+  if (value === null || value === undefined) return `${label}: not counted`;
+  return `${label}: ${Number(value).toLocaleString()}`;
+}
+
+function plural(n, word) {
+  return `${n} ${word}${n === 1 ? '' : 's'}`;
+}
+
+// Every past incident in this hazard's barangay, one hazard type at a time,
+// loaded a page at a time
+function PastIncidents({ item }) {
+  const [type, setType] = useState(item.type); // '' = all types
+  const [entry, setEntry] = useState(null);    // { count, items, typeCounts }
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const barangayId = item.barangayId;
+
+  // Start on the selected hazard's type whenever another hazard is opened
+  useEffect(() => {
+    setType(item.type);
+  }, [item.id, item.type]);
+
+  const key = `${barangayId}|${type}`;
+
+  const loadPage = useCallback((current) => {
+    setLoading(true);
+    setFailed(false);
+    return historyApi
+      .page({
+        barangay: barangayId,
+        hazard_type_name: type || undefined,
+        limit: HISTORY_PAGE,
+        offset: current ? current.items.length : 0,
+      })
+      .then((data) => {
+        const next = {
+          count: data.count,
+          typeCounts: data.type_counts || [],
+          items: [...(current ? current.items : []), ...(data.results || [])],
+        };
+        historyCache.set(key, next);
+        return next;
+      })
+      .finally(() => setLoading(false));
+  }, [barangayId, type, key]);
+
+  useEffect(() => {
+    if (barangayId == null) return undefined;
+    const cached = historyCache.get(key);
+    if (cached) {
+      setEntry(cached);
+      return undefined;
+    }
+    let cancelled = false;
+    setEntry(null);
+    loadPage(null)
+      .then((next) => { if (!cancelled) setEntry(next); })
+      .catch(() => { if (!cancelled) setFailed(true); });
+    return () => { cancelled = true; };
+  }, [barangayId, key, loadPage]);
+
+  function showMore() {
+    loadPage(entry).then(setEntry).catch(() => setFailed(true));
+  }
+
+  if (barangayId == null) {
+    return <p className="pm-muted">This hazard isn't inside a mapped barangay, so there are no area records to show.</p>;
+  }
+  if (failed && !entry) return <p className="pm-muted">Past records could not be loaded right now. Please try again later.</p>;
+  if (!entry) return <p className="pm-muted">Loading past records…</p>;
+
+  // One chip per type on record, the selected hazard's type first, then All
+  const counts = new Map(entry.typeCounts.map((t) => [t.name, t.count]));
+  const names = [item.type, ...entry.typeCounts.map((t) => t.name).filter((n) => n !== item.type)];
+  const total = entry.typeCounts.reduce((sum, t) => sum + t.count, 0);
+  const chips = [
+    ...names.map((n) => ({ value: n, label: n, count: counts.get(n) || 0 })),
+    ...(names.length > 1 ? [{ value: '', label: 'All', count: total }] : []),
+  ];
+  const left = entry.count - entry.items.length;
+  const what = type ? `${type.toLowerCase()} incident` : 'incident';
+
+  return (
+    <>
+      <div className="pm-history-chips" role="group" aria-label="Hazard type">
+        {chips.map((c) => (
+          <button
+            key={c.value || 'all'}
+            type="button"
+            className={`pm-history-chip ${type === c.value ? 'is-active' : ''}`}
+            aria-pressed={type === c.value}
+            onClick={() => setType(c.value)}
+          >
+            {c.label} <span>{c.count}</span>
+          </button>
+        ))}
+      </div>
+
+      <p className="pm-history-summary">
+        {entry.count === 0
+          ? `No past ${what}s on record in ${item.location}.`
+          : `${plural(entry.count, `past ${what}`)} on record in ${item.location}, newest first.`}
+      </p>
+
+      {entry.items.length > 0 && (
+        <ul className="pm-timeline pm-history-list">
+          {entry.items.map((r) => {
+            const rsev = severityInfo(r.severity_level);
+            const rtype = r.hazard_type_detail?.name || r.hazard_type_detail?.properties?.name;
+            return (
+              <li key={r.id}>
+                <span className="pm-timeline-dot" style={{ background: rsev.color }} />
+                <div>
+                  <strong>
+                    {formatDate(r.occurred_at)}
+                    {r.is_sample && <em className="pm-history-sample">Sample</em>}
+                  </strong>
+                  <span>{!type && rtype ? `${rtype}, ` : ''}{rsev.label}</span>
+                  {r.description && <p className="pm-history-desc">{r.description}</p>}
+                  <span className="pm-history-counts">
+                    {countText('People displaced', r.total_displaced)} · {countText('Casualties', r.total_casualties)}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {left > 0 && (
+        <button type="button" className="pm-history-more" onClick={showMore} disabled={loading}>
+          {loading ? 'Loading…' : `Show ${Math.min(HISTORY_PAGE, left)} more (${left} left)`}
+        </button>
+      )}
+      {failed && entry && <p className="pm-muted">More records could not be loaded. Please try again.</p>}
+    </>
+  );
+}
+
+// Every hazard zone covering the spot the user clicked, most serious first, so
+// overlapping zones can be read one after another instead of only the top pin.
+function HazardStack({ stack, current, onPick }) {
+  const pos = Math.max(0, stack.findIndex((h) => h.id === current.id));
+  const step = (by) => onPick(stack[(pos + by + stack.length) % stack.length]);
+
+  return (
+    <nav className="pm-stack" aria-label="Hazards at this spot">
+      <div className="pm-stack-head">
+        <strong>{stack.length} hazards here</strong>
+        <div className="pm-stack-step">
+          <button type="button" onClick={() => step(-1)} aria-label="Previous hazard">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+          </button>
+          <span aria-live="polite">{pos + 1} of {stack.length}</span>
+          <button type="button" onClick={() => step(1)} aria-label="Next hazard">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+          </button>
+        </div>
+      </div>
+      <ul className="pm-stack-list">
+        {stack.map((h) => {
+          const hsev = severityInfo(h.severity);
+          const active = h.id === current.id;
+          return (
+            <li key={h.id}>
+              <button
+                type="button"
+                className={`pm-stack-item ${active ? 'is-active' : ''}`}
+                aria-current={active ? 'true' : undefined}
+                onClick={() => onPick(h)}
+                style={active ? { borderColor: hsev.color } : undefined}
+              >
+                <span className="pm-stack-icon" style={{ color: hazardColor(h.type) }} aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d={hazardIconPath(h.type)} /></svg>
+                </span>
+                <span className="pm-stack-text">
+                  <strong>{h.type}</strong>
+                  <small>
+                    <span className="pm-overlap-dot" style={{ background: hsev.color }} />
+                    {hsev.label}
+                  </small>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
+// Slides in from the left (desktop) or up from the bottom (mobile).
+// stack: the hazards at the clicked spot (including item); onPick switches between them.
+export default function HazardPanel({ item, open, onClose, onResolved, onRetracted, onVerified, stack = [], onPick }) {
   const [tab, setTab] = useState('overview');
+  // 'resolve' when the hazard is over, 'retract' when it should never have
+  // been published. Only one form is ever open.
+  const [closing, setClosing] = useState(null);
+  // Ground confirmation, for barangay personnel standing in the hazard
+  const [answering, setAnswering] = useState(null); // 'Confirmed' | 'Disputed'
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
   const closeRef = useRef(null);
+  const { canPublish, user } = useAuth();
 
   // Go back to the Overview tab and move focus into the panel whenever a new pin is chosen
   useEffect(() => {
     setTab('overview');
+    setClosing(null);
+    setAnswering(null);
+    setNote('');
+    setVerifyError('');
     if (open) closeRef.current?.focus({ preventScroll: true });
   }, [item?.id, open]);
 
   const sev = item ? severityInfo(item.severity) : null;
+  const others = item ? stack.filter((h) => h.id !== item.id) : [];
+  const worst = stack[0]; // the stack is sorted most serious first
+
+  // Only DRRMO/Admin can close out a hazard, and only one that's still live.
+  // Sample hazards are resolvable on purpose: they are real rows in the
+  // database, and walking a seeded hazard through to a historical record is
+  // how the resolve flow gets demonstrated without waiting for a real one.
+  const canResolve = canPublish && item && (item.status || 'Active') === 'Active';
+
+  // Only barangay personnel confirm, and only while the hazard is live. The
+  // backend also checks the zone actually touches their barangay — the panel
+  // can't know that reliably, so it offers the buttons and shows the server's
+  // refusal if they are not the right barangay.
+  const role = user?.role?.name || user?.role;
+  const canConfirm =
+    role === 'Barangay_Personnel' && item && (item.status || 'Active') === 'Active';
+
+  async function submitVerification() {
+    if (!answering || !item) return;
+    setSaving(true);
+    setVerifyError('');
+    try {
+      const zone = await hazardsApi.verify(item.id, { status: answering, note: note.trim() });
+      setAnswering(null);
+      setNote('');
+      onVerified?.(zone);
+    } catch (err) {
+      // axiosClient flattens the server error into err.message
+      setVerifyError(err?.message || 'Could not save that. Check your connection and try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <aside className={`pm-panel ${open ? 'is-open' : ''}`} aria-label="Hazard details">
@@ -47,13 +304,15 @@ export default function HazardPanel({ item, open, onClose, onVerified }) {
             </button>
           </div>
 
+          {others.length > 0 && onPick && <HazardStack stack={stack} current={item} onPick={onPick} />}
+
           <span className="pm-badge" style={{ background: sev.tint, color: sev.text }}>
             <span className="pm-badge-dot" style={{ background: sev.color }} />
             {sev.label}
           </span>
 
           {item.sample && (
-            <p className="pm-sample-note">Sample data for design preview. This is not a real hazard.</p>
+            <p className="pm-sample-note">Sample data generated for testing. This is not a real hazard.</p>
           )}
 
           {/* ---------- Tabs ---------- */}
@@ -87,7 +346,110 @@ export default function HazardPanel({ item, open, onClose, onVerified }) {
                 <div className="pm-callout" style={{ background: sev.tint, borderColor: sev.color, color: sev.text }}>
                   <strong>{sev.label}:</strong> {sev.advice}
                 </div>
-                <VerificationNotice item={item} onVerified={onVerified} />
+                {others.length > 0 && (
+                  <div className="pm-overlap">
+                    <strong>
+                      This area overlaps {others.length === 1 ? 'another hazard zone' : `${others.length} other hazard zones`}.
+                    </strong>
+                    <p>
+                      {worst && worst.id !== item.id
+                        ? <>Follow the most serious one: {worst.type.toLowerCase()}, {severityInfo(worst.severity).label.toLowerCase()}.</>
+                        : <>This is the most serious one here, so follow its advice.</>}
+                    </p>
+                  </div>
+                )}
+
+                {/* Ground confirmation. Deliberately silent while pending:
+                    "nobody has been out to look yet" is not news to a reader
+                    standing in the hazard, and it crowded the panel. */}
+                {item.verificationStatus === 'Confirmed' && (
+                  <p className="pm-verified">
+                    <strong>Confirmed on the ground</strong>
+                    {item.verifiedByName ? ` by ${item.verifiedByName}` : ''}
+                    {item.verificationNote ? ` — "${item.verificationNote}"` : '.'}
+                  </p>
+                )}
+                {item.verificationStatus === 'Disputed' && (
+                  <p className="pm-disputed">
+                    <strong>Disputed by the barangay</strong>
+                    {item.verificationNote ? ` — "${item.verificationNote}"` : '.'}
+                    {' '}Treat this advisory with caution until DRRMO reviews it.
+                  </p>
+                )}
+
+                {/* ---------- Barangay: answer for the ground ---------- */}
+                {canConfirm && (
+                  <div className="db-scope db-embed">
+                    {answering ? (
+                      <div className="db-confirm">
+                        <p>
+                          {answering === 'Confirmed'
+                            ? 'Confirm that this hazard is on the ground as described?'
+                            : 'Report that this hazard is not there as described?'}
+                        </p>
+                        <label className="db-field" htmlFor="pm-verify-note">
+                          What did you see? (optional)
+                          <textarea
+                            id="pm-verify-note"
+                            rows={2}
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            placeholder={answering === 'Confirmed'
+                              ? 'Water about knee deep along the national road'
+                              : 'Road is clear, no landslide seen as of this morning'}
+                          />
+                        </label>
+                        {verifyError && <p className="db-error" role="alert">{verifyError}</p>}
+                        <div className="db-btn-row">
+                          <button
+                            type="button"
+                            className="db-btn db-btn-primary db-btn-sm"
+                            onClick={submitVerification}
+                            disabled={saving}
+                          >
+                            {saving
+                              ? 'Saving…'
+                              : answering === 'Confirmed' ? 'Yes, confirm' : 'Yes, dispute'}
+                          </button>
+                          <button
+                            type="button"
+                            className="db-btn db-btn-outline db-btn-sm"
+                            onClick={() => { setAnswering(null); setVerifyError(''); }}
+                            disabled={saving}
+                          >
+                            Go back
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="db-hint" style={{ marginBottom: 8 }}>
+                          You are barangay personnel. Is this hazard there as described?
+                        </p>
+                        {verifyError && <p className="db-error" role="alert">{verifyError}</p>}
+                        <div className="db-btn-row">
+                          <button
+                            type="button"
+                            className="db-btn db-btn-outline db-btn-sm"
+                            onClick={() => setAnswering('Confirmed')}
+                          >
+                            {item.verificationStatus === 'Confirmed'
+                              ? 'Change to confirmed'
+                              : 'Confirm it is there'}
+                          </button>
+                          <button
+                            type="button"
+                            className="db-btn db-btn-outline db-btn-sm"
+                            onClick={() => setAnswering('Disputed')}
+                          >
+                            {item.verificationStatus === 'Disputed' ? 'Change to disputed' : 'Dispute'}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 <dl className="pm-facts">
                   <div>
                     <dt>Status</dt>
@@ -98,6 +460,56 @@ export default function HazardPanel({ item, open, onClose, onVerified }) {
                     <dd>{formatDate(item.activatedAt)}</dd>
                   </div>
                 </dl>
+
+                {/* ---------- DRRMO: close the hazard out ---------- */}
+                {canResolve && (
+                  <div className="db-scope db-embed">
+                    {closing === 'resolve' && (
+                      <ResolveHazardForm
+                        zoneId={item.id}
+                        title={`${item.type} · ${item.location}`}
+                        onCancel={() => setClosing(null)}
+                        onResolved={(zone) => {
+                          setClosing(null);
+                          clearHistoryCache(); // the resolved zone is now a past record
+                          onResolved?.(zone);
+                        }}
+                      />
+                    )}
+
+                    {closing === 'retract' && (
+                      <RetractHazardForm
+                        zoneId={item.id}
+                        title={`${item.type} · ${item.location}`}
+                        onCancel={() => setClosing(null)}
+                        onRetracted={(zone) => {
+                          setClosing(null);
+                          // No history cache to clear: a withdrawal files no
+                          // historical record, which is the whole point.
+                          onRetracted?.(zone);
+                        }}
+                      />
+                    )}
+
+                    {!closing && (
+                      <>
+                        <div className="db-btn-row">
+                          <button type="button" className="db-btn db-btn-outline" onClick={() => setClosing('resolve')}>
+                            Mark as resolved
+                          </button>
+                          <button type="button" className="db-btn db-btn-outline" onClick={() => setClosing('retract')}>
+                            Published in error
+                          </button>
+                        </div>
+                        <p className="db-hint" style={{ marginTop: 8 }}>
+                          Resolve a hazard that happened and is over — it becomes a
+                          historical record. Withdraw one that should never have gone
+                          out; nothing is filed as an incident.
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
               </>
             )}
 
@@ -109,14 +521,21 @@ export default function HazardPanel({ item, open, onClose, onVerified }) {
                   <a className="pm-btn pm-btn-primary" href={DRRMO_HOTLINE.tel}>
                     Call DRRMO {DRRMO_HOTLINE.label}
                   </a>
-                  <Link className="pm-btn pm-btn-outline" to="/what-to-do">Full safety guide</Link>
+                  {/* Carries the hazard through, so the guidance library opens on this
+                      hazard instead of whatever it shows by default. */}
+                  <Link
+                    className="pm-btn pm-btn-outline"
+                    to={`/what-to-do?hazard=${encodeURIComponent(item.type)}`}
+                  >
+                    Full safety guide
+                  </Link>
                 </div>
               </>
             )}
 
             {tab === 'history' && (
               <>
-                <h3>History</h3>
+                <h3>Now</h3>
                 <ul className="pm-timeline">
                   <li>
                     <span className="pm-timeline-dot" style={{ background: sev.color }} />
@@ -126,9 +545,8 @@ export default function HazardPanel({ item, open, onClose, onVerified }) {
                     </div>
                   </li>
                 </ul>
-                <p className="pm-muted">
-                  Past incident records for this area will appear here once they are available.
-                </p>
+                <h3 className="pm-history-heading">Area disaster history</h3>
+                <PastIncidents item={item} />
               </>
             )}
           </div>

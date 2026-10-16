@@ -27,7 +27,17 @@ Then run migrations:
 
 python manage.py migrate
 python manage.py seed_data
+python manage.py seed_fake_hazards     (optional: sample hazards on the map and 5 years of historical records)
 python manage.py runserver
+
+Sample hazards are generated with Faker and flagged as sample data on the map and the
+historical page. They are placed where the susceptibility maps say each hazard is likely
+(floods on the low coastal plain, landslides on upland slopes, fires in built-up blocks)
+and dated by season (typhoon floods Sep-Dec, fires Mar-May). Running it again replaces
+the old samples; real hazards are never touched.
+
+python manage.py seed_fake_hazards --clear          removes all sample data
+python manage.py seed_fake_hazards --active 12 --years 8 --seed 7
 
 
 

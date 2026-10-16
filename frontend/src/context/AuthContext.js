@@ -4,6 +4,17 @@ import { primeCsrf } from "../api/axiosClient";
 
 const AuthContext = createContext(null);
 
+// True the first time the app loads in a browser tab, false on refreshes.
+function isFreshTab() {
+  try {
+    if (sessionStorage.getItem("geoalert-tab-started")) return false;
+    sessionStorage.setItem("geoalert-tab-started", "1");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -12,6 +23,20 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     (async () => {
       await primeCsrf();
+
+      // Development only: every fresh browser tab (like the one `npm start`
+      // opens) starts logged out. Refreshing the page keeps you logged in.
+      if (process.env.NODE_ENV === "development" && isFreshTab()) {
+        try {
+          await authApi.logout();
+        } catch {
+          // Not logged in to begin with — nothing to do.
+        }
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
       try {
         const me = await authApi.me();
         setUser(me);

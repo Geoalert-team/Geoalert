@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import NotificationBell from "./NotificationBell";
 import logo from "../../assets/images/logo1.png";
 import "./css/PublicNavbar.css";
 
@@ -20,12 +21,14 @@ const ROLE_LINKS = {
     { to: "/app/dashboard", label: "Dashboard" },
     { to: "/map", label: "Map" },
     { to: "/app/history", label: "History" },
+    { to: "/app/reports", label: "Reports" },
     { to: "/app/security", label: "Security" },
   ],
   DRRMO_Officer: [
     { to: "/app/dashboard", label: "Dashboard" },
     { to: "/map", label: "Map" },
     { to: "/app/history", label: "History" },
+    { to: "/app/reports", label: "Reports" },
     { to: "/app/security", label: "Security" },
   ],
   Barangay_Personnel: [
@@ -115,6 +118,9 @@ export default function PublicNavbar() {
               </li>
             ))}
           </ul>
+
+          {/* Notification bell. Only mounted (and polling) while someone is logged in. */}
+          {user && <NotificationBell />}
 
           {user ? (
             <div className="pn-user" ref={userMenuRef}>

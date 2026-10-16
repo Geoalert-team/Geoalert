@@ -4,7 +4,11 @@
    pill buttons, rounded cards. Prefix: db-
    ========================================================= */
 
-.db {
+/* Tokens live on both .db (a dashboard page) and .db-scope (just the
+   variables, no page layout) so db- components can also be used inside
+   the map panel or any other non-dashboard surface. */
+.db,
+.db-scope {
   --db-navy: #1c2e4a;
   --db-navy-hover: #2a4268;
   --db-white: #ffffff;
@@ -21,18 +25,24 @@
   --db-radius: 16px;
   --db-pill: 999px;
 
-  min-height: 100vh;
-  background: var(--db-mist);
   color: var(--db-body);
   font-family: var(--db-font-body);
-  font-size: 1rem;
   line-height: 1.55;
 }
-:where(.db) h1, :where(.db) h2, :where(.db) h3 {
+
+.db {
+  min-height: 100vh;
+  background: var(--db-mist);
+  font-size: 1rem;
+}
+
+:where(.db, .db-scope) h1,
+:where(.db, .db-scope) h2,
+:where(.db, .db-scope) h3 {
   margin: 0; font-family: var(--db-font-head); color: var(--db-heading); line-height: 1.2;
 }
-:where(.db) p { margin: 0; }
-:where(.db) ul, :where(.db) ol { margin: 0; padding: 0; list-style: none; }
+:where(.db, .db-scope) p { margin: 0; }
+:where(.db, .db-scope) ul, :where(.db, .db-scope) ol { margin: 0; padding: 0; list-style: none; }
 
 .db-wrap { max-width: 1160px; margin: 0 auto; padding: 40px 24px 64px; }
 
@@ -57,7 +67,32 @@
 .db-item-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
 .db-item-title { font-weight: 800; color: var(--db-heading); }
 .db-item-meta { font-size: .82rem; color: var(--db-soft); margin-top: 4px; }
+/* A quoted note inside an item — a withdrawal reason, a review comment */
+.db-item-note { font-size: .86rem; color: var(--db-body); margin: 8px 0 0; font-style: italic; }
 .db-empty { padding: 24px; text-align: center; color: var(--db-soft); }
+
+/* Withdrawn hazard zones: on the record, but folded away from the live list */
+.db-withdrawn { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--db-line); }
+.db-pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--db-line); font-size: .88rem; color: var(--db-soft); }
+
+.db-filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.db-field { display: flex; flex-direction: column; gap: 4px; font-size: .82rem; color: var(--db-soft); }
+.db-field select, .db-field input, .db-field textarea {
+  font: inherit; color: var(--db-body); background: var(--db-white);
+  border: 1px solid var(--db-line); border-radius: var(--db-pill); padding: 8px 14px;
+}
+/* A multi-line box can't be a pill */
+.db-field textarea { border-radius: 12px; resize: vertical; }
+.db-field select:focus, .db-field input:focus, .db-field textarea:focus {
+  outline: none; border-color: var(--db-navy); box-shadow: 0 0 0 3px rgba(28, 46, 74, .12);
+}
+.db-bars { display: flex; flex-direction: column; gap: 10px; }
+.db-bar-row { display: grid; grid-template-columns: 110px 1fr 32px; align-items: center; gap: 10px; font-size: .9rem; }
+.db-bar-track { background: var(--db-mist); border-radius: var(--db-pill); height: 10px; overflow: hidden; }
+.db-bar-fill { height: 100%; background: var(--db-navy); border-radius: var(--db-pill); }
+.db-bar-count { text-align: right; color: var(--db-heading); font-weight: 600; }
+.db-outlook { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.db-note { margin-top: 12px; font-size: .82rem; color: var(--db-soft); }
 
 /* Badges (status/severity) */
 .db-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--db-pill); font-size: .82rem; font-weight: 700; background: var(--db-mist); color: var(--db-heading); }
@@ -65,13 +100,14 @@
 .db-badge-validated, .db-badge-resolved, .db-badge-low   { background: var(--db-low-tint); color: #16693a; }
 .db-badge-rejected,  .db-badge-archived, .db-badge-high  { background: var(--db-high-tint); color: #a12f2f; }
 .db-badge-active,    .db-badge-medium                    { background: var(--db-medium-tint); color: #7a5700; }
+.db-badge-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 
 /* Buttons — same pill language as ph-btn */
 .db-btn {
   display: inline-flex; align-items: center; justify-content: center;
   min-height: 42px; padding: 0 20px; border: 2px solid transparent;
   border-radius: var(--db-pill); font-family: var(--db-font-body);
-  font-size: .92rem; font-weight: 700; cursor: pointer;
+  font-size: .92rem; font-weight: 700; cursor: pointer; text-decoration: none;
   transition: background-color .2s ease, color .2s ease, border-color .2s ease;
 }
 .db-btn-primary { background: var(--db-navy); color: var(--db-white); }
@@ -82,6 +118,8 @@
 .db-btn-danger:hover { background: var(--db-high); color: var(--db-white); }
 .db-btn:disabled { opacity: .5; cursor: not-allowed; }
 .db-btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Compact variant for a button sitting inside a list row */
+.db-btn-sm { min-height: 34px; padding: 0 14px; font-size: .84rem; border-width: 1px; }
 
 /* Tabs */
 .db-tabs { display: flex; gap: 4px; padding: 4px; border-radius: var(--db-pill); background: var(--db-mist); width: fit-content; margin-bottom: 20px; flex-wrap: wrap; }
@@ -112,6 +150,7 @@
 .db-chip { display: inline-flex; padding: 3px 10px; border-radius: var(--db-pill); font-size: .8rem; font-weight: 700; background: var(--db-mist); color: var(--db-body); }
 .db-chip-danger { background: var(--db-high-tint); color: #a12f2f; }
 .db-chip-warn { background: var(--db-medium-tint); color: #7a5700; }
+.db-chip-ok { background: var(--db-low-tint); color: #16693a; }
 
 /* ---- Clickable report rows + full-report modal (DRRMO) ---- */
 .db-item-clickable { cursor: pointer; transition: border-color .2s ease, box-shadow .2s ease; }
@@ -129,3 +168,210 @@
 
 .db-field-row-3 { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 560px) { .db-field-row-3 { grid-template-columns: 1fr; } }
+
+/* ---- Dedicated status badges (separate from report validation colors) ---- */
+.db-badge-active-status   { background: var(--db-low-tint);  color: #16693a; }
+.db-badge-inactive-status { background: var(--db-mist);      color: var(--db-soft); }
+
+/* ---- Temporary password reveal card ---- */
+.db-reveal { border: 2px solid var(--db-navy); background: #eff6ff; }
+.db-reveal h2 { font-size: 1.05rem; }
+.db-reveal-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+.db-code {
+  flex: 1; padding: 10px 14px; border: 1px solid var(--db-line); border-radius: 10px;
+  background: var(--db-white); font-family: 'Courier New', monospace; font-size: .98rem;
+  color: var(--db-heading); word-break: break-all;
+}
+
+/* ---- Named metric cards with an icon slot (Overview tab) ---- */
+.db-metric { display: flex; align-items: center; gap: 14px; padding: 20px; border: 1px solid var(--db-line); border-radius: var(--db-radius); background: var(--db-white); }
+.db-metric-icon {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 44px; height: 44px; border-radius: 12px; background: var(--db-mist);
+  font-size: 1.3rem;
+}
+.db-metric-value { font-family: var(--db-font-head); font-size: 1.6rem; font-weight: 800; color: var(--db-heading); line-height: 1.1; }
+.db-metric-label { font-size: .84rem; color: var(--db-soft); margin-top: 2px; }
+
+/* ---- System status pill (Operational / degraded) ---- */
+.db-status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+.db-status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--db-low); }
+.db-status-dot.is-down { background: var(--db-high); }
+
+/* ---- Activity feed (audit log on Overview + Logs tab) ---- */
+.db-activity { display: flex; flex-direction: column; gap: 2px; }
+.db-activity-item { display: flex; gap: 12px; padding: 14px 4px; border-bottom: 1px solid var(--db-line); }
+.db-activity-item:last-child { border-bottom: 0; }
+.db-activity-dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--db-navy); margin-top: 7px; }
+.db-activity-body { flex: 1; min-width: 0; }
+.db-activity-title { font-weight: 700; color: var(--db-heading); font-size: .92rem; }
+.db-activity-meta { font-size: .8rem; color: var(--db-soft); margin-top: 2px; }
+
+@media (max-width: 560px) {
+  .db-reveal-row { flex-direction: column; align-items: stretch; }
+}
+
+/* ---- Callouts, errors, confirmations ---- */
+.db-callout {
+  margin: 12px 0 16px; padding: 12px 14px;
+  border-left: 3px solid var(--db-navy); border-radius: 0 12px 12px 0;
+  background: var(--db-mist); font-size: .86rem; line-height: 1.5; color: var(--db-body);
+}
+.db-error {
+  margin: 0 0 12px; padding: 10px 14px; border-radius: 12px;
+  background: var(--db-high-tint); color: #a12f2f; font-size: .86rem; font-weight: 600;
+}
+.db-success {
+  margin: 0 0 12px; padding: 10px 14px; border-radius: 12px;
+  background: var(--db-low-tint); color: #16693a; font-size: .86rem; font-weight: 600;
+}
+.db-confirm {
+  padding: 12px 14px; border: 1px solid var(--db-medium); border-radius: 12px;
+  background: var(--db-medium-tint);
+}
+.db-confirm p { margin-bottom: 10px; font-size: .88rem; font-weight: 700; color: #7a5700; }
+
+/* ---- One-time code entry (2FA) ---- */
+.db-otp input {
+  font-family: 'Courier New', monospace;
+  font-size: 1.3rem; font-weight: 700; letter-spacing: .4em;
+  text-align: center; padding: 10px 14px;
+}
+
+/* ---- QR code panel (2FA setup) ---- */
+.db-qr {
+  display: inline-flex; padding: 12px; margin-bottom: 14px;
+  border: 1px solid var(--db-line); border-radius: 12px; background: var(--db-white);
+}
+.db-qr img { display: block; width: 180px; height: 180px; }
+
+/* ---- Live requirement checklist (password rules) ---- */
+.db-reqs { margin: 0 0 14px; font-size: .8rem; color: var(--db-soft); }
+.db-reqs li { display: flex; align-items: center; gap: 7px; padding: 2px 0; }
+.db-reqs li::before { content: '○'; font-size: .7rem; }
+.db-reqs li.is-met { color: #16693a; }
+.db-reqs li.is-met::before { content: '●'; }
+
+/* ---- Inline text button (show/hide password) ---- */
+.db-link-btn {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: .78rem; font-weight: 700;
+  color: var(--db-navy); text-decoration: underline;
+}
+
+/* ---- Resolve & archive (map hazard panel + DRRMO dashboard) ---- */
+/* .db-embed is for a db- component living in a non-dashboard surface,
+   e.g. the resolve form inside the map's .pm-panel */
+.db-embed { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--db-line); }
+
+.db-resolve h3 { font-size: 1.05rem; font-weight: 800; }
+.db-resolve .db-field { margin-bottom: 12px; }
+.db-resolve .db-field-row .db-field { margin-bottom: 0; }
+.db-resolve .db-field-row { margin-bottom: 12px; }
+
+/* ---- Seasonal risk outlook (History page) ---- */
+.db-outlook-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px; margin-bottom: 16px;
+}
+.db-outlook-card {
+  padding: 16px; border: 1px solid var(--db-line); border-left-width: 4px;
+  border-radius: 12px; background: var(--db-white);
+}
+.db-outlook-card[data-level="Elevated"]   { border-left-color: var(--db-high);   background: var(--db-high-tint); }
+.db-outlook-card[data-level="Typical"]    { border-left-color: var(--db-medium); }
+.db-outlook-card[data-level="Lower"]      { border-left-color: var(--db-low); }
+.db-outlook-card[data-level="No history"] { border-left-color: var(--db-line); }
+
+.db-outlook-month { font-size: .76rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--db-soft); }
+.db-outlook-level { margin: 4px 0; font-family: var(--db-font-head); font-size: 1.1rem; font-weight: 800; color: var(--db-heading); }
+.db-outlook-detail { font-size: .78rem; line-height: 1.45; color: var(--db-soft); }
+
+.db-outlook li { padding: 6px 0; border-bottom: 1px dashed var(--db-line); font-size: .9rem; }
+.db-outlook li:last-child { border-bottom: 0; }
+.db-outlook strong { color: var(--db-heading); }
+
+.db-method { margin-top: 10px; }
+.db-method summary { cursor: pointer; font-size: .82rem; font-weight: 700; color: var(--db-navy); }
+.db-method p { margin-top: 8px; font-size: .82rem; line-height: 1.55; color: var(--db-soft); }
+
+/* ---- Report type picker + print view (F7) ---- */
+.db-report-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.db-report-type {
+  display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px; text-align: left;
+  border: 2px solid var(--db-line); border-radius: 12px;
+  background: var(--db-white); cursor: pointer;
+  font-family: var(--db-font-body);
+  transition: border-color .2s ease, background-color .2s ease;
+}
+.db-report-type:hover { border-color: #b9c4d4; }
+.db-report-type.is-active { border-color: var(--db-navy); background: #f5f8fc; }
+.db-report-type > span:nth-child(2) { flex: 1; }
+.db-report-type strong {
+  display: block; font-family: var(--db-font-head);
+  font-size: 1.02rem; font-weight: 800; color: var(--db-heading);
+}
+.db-report-type small {
+  display: block; margin-top: 4px;
+  font-size: .84rem; line-height: 1.45; color: var(--db-soft);
+}
+.db-report-type-icon {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 42px; height: 42px; border-radius: 12px;
+  background: var(--db-mist); color: var(--db-navy);
+}
+.db-report-type.is-active .db-report-type-icon { background: var(--db-navy); color: var(--db-white); }
+.db-report-type-check {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid var(--db-line); color: transparent;
+}
+.db-report-type.is-active .db-report-type-check { border-color: var(--db-navy); background: var(--db-navy); color: var(--db-white); }
+
+.db-card .db-report-label {
+  margin: 24px 0 10px; font-family: var(--db-font-body);
+  font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--db-soft);
+}
+.db-report-filters {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;
+  padding: 16px; border-radius: 12px; background: var(--db-mist); margin-bottom: 16px;
+}
+.db-report-filters .db-field { font-weight: 700; color: var(--db-heading); }
+.db-report-filters .db-field input, .db-report-filters .db-field select { width: 100%; min-height: 42px; font-weight: 400; }
+
+.db-report-actions {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding-top: 16px; border-top: 1px solid var(--db-line);
+}
+.db-report-actions .db-btn-row { margin: 0; }
+.db-report-check { display: inline-flex; align-items: center; gap: 8px; font-size: .9rem; color: var(--db-body); cursor: pointer; }
+.db-report-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--db-navy); }
+
+.db-report-placeholder {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 40px 24px; text-align: center; border-style: dashed;
+}
+.db-report-placeholder strong { margin-top: 6px; font-family: var(--db-font-head); font-size: 1.05rem; color: var(--db-heading); }
+.db-report-placeholder p { max-width: 380px; font-size: .9rem; color: var(--db-soft); }
+
+.db-report h3 {
+  margin: 20px 0 10px;
+  font-size: 1rem; font-weight: 800; color: var(--db-heading);
+}
+.db-report .db-grid-2 { grid-template-columns: 1fr 1fr; gap: 28px; }
+@media (max-width: 900px) { .db-report .db-grid-2 { grid-template-columns: 1fr; } }
+
+/* Printing a report should give a clean sheet, not the whole app */
+@media print {
+  .db { background: #fff; }
+  .db-no-print,
+  .pn-header,
+  .db-header { display: none !important; }
+  .db-wrap { padding: 0; max-width: none; }
+  .db-card { border: 0; margin: 0; padding: 0; }
+  .db-bar-fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}

@@ -70,12 +70,31 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        # PostGIS, plus one retry when the pooler drops a connect mid-handshake.
+        'ENGINE': 'utils.db_backend',
         'NAME': env('DB_NAME'),
         'USER': env('DB_USER'),
         'PASSWORD': env('DB_PASSWORD'),
         'HOST': env('DB_HOST', default='localhost'),
         'PORT': env('DB_PORT', default='5432'),
+        # Supabase sits behind a connection pooler that drops idle or
+        # half-open connections. Keepalives notice a dead socket instead of
+        # waiting on it, and connect_timeout stops a request hanging when
+        # the pooler is unreachable.
+        'OPTIONS': {
+            'connect_timeout': 10,
+            'keepalives': 1,
+            'keepalives_idle': 30,
+            'keepalives_interval': 10,
+            'keepalives_count': 5,
+            'sslmode': 'require',
+        },
+        # Reuse a connection for up to a minute instead of a fresh SSL
+        # handshake per request. Health checks replace one the pooler has
+        # closed before it is used. The dev server closes connections after
+        # every request, so this only takes effect under gunicorn.
+        'CONN_MAX_AGE': env.int('DB_CONN_MAX_AGE', default=60),
+        'CONN_HEALTH_CHECKS': True,
     }
 }
 

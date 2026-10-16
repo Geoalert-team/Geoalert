@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import { hazardIconPath, DRRMO_HOTLINE } from '../components/Map/hazardInfo';
 import { GUIDES, PHASES, UNIVERSAL_TIPS, VIDEOS } from '../data/safetyGuides';
@@ -22,52 +22,92 @@ const TIP_ICONS = {
 // First aid is not a backend phase, so it stays static.
 const PHASE_TO_API = { before: 'Before', during: 'During', after: 'After' };
 
+const DEFAULT_HAZARD = HAZARDS[0];
+const DEFAULT_PHASE = 'before';
+
+// One line of an article body = one numbered step
+const stepsFrom = (body = '') => body.split('\n').map((s) => s.trim()).filter(Boolean);
+
 export default function WhatToDo() {
-  const [hazard, setHazard] = useState('Flood');
-  const [phase, setPhase] = useState('before');
+  // The hazard and phase live in the URL, not in state. That's what makes
+  // "open in a new tab" keep the reader's place, and what lets the map's
+  // "Full safety guide" button land on the right hazard.
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const hazardParam = searchParams.get('hazard') || '';
+  const phaseParam = searchParams.get('phase') || '';
+  const hazard = HAZARDS.find((h) => h.toLowerCase() === hazardParam.toLowerCase()) || DEFAULT_HAZARD;
+  const phase = PHASES.some((p) => p.key === phaseParam) ? phaseParam : DEFAULT_PHASE;
+  const filtersActive = searchParams.has('hazard') || searchParams.has('phase');
+
   const [packed, setPacked] = useState({});
   const [videoId, setVideoId] = useState(VIDEOS[0]?.id);
 
-  const [hazardTypeMap, setHazardTypeMap] = useState({}); // { Flood: '<uuid>', ... }
+  const [hazardTypeMap, setHazardTypeMap] = useState({}); // { Flood: 1, ... }
   const [liveArticles, setLiveArticles] = useState([]);
   const [loadingArticles, setLoadingArticles] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   const guide = GUIDES[hazard];
   const currentPhase = PHASES.find((p) => p.key === phase) || PHASES[0];
 
-  // One numbered step per line of every published article, oldest first
-  const liveSteps = [...liveArticles]
-    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-    .flatMap((a) => (a.body || '').split('\n').map((s) => s.trim()).filter(Boolean));
+  function applyFilters(next) {
+    const params = new URLSearchParams(searchParams);
+    if (next.hazard) params.set('hazard', next.hazard);
+    if (next.phase) params.set('phase', next.phase);
+    setSearchParams(params);
+  }
 
-  // Load real hazard type IDs once, so guidance can be filtered by the backend hazard_type
+  function clearFilters() {
+    setSearchParams({}, { replace: true });
+  }
+
+  // Load real hazard type IDs once, so guidance can be filtered by hazard_type
   useEffect(() => {
     hazardsApi
       .types()
       .then((types) => {
         const list = Array.isArray(types) ? types : types?.results || [];
         const map = {};
-        list.forEach((t) => {
-          map[t.name] = t.id;
-        });
+        list.forEach((t) => { map[t.name] = t.id; });
         setHazardTypeMap(map);
       })
-      .catch(() => {});
+      .catch(() => setHazardTypeMap({}));
   }, []);
 
-  // Fetch real guidance whenever the hazard or phase changes (not for first aid)
+  // Fetch published guidance whenever the hazard or phase changes
   useEffect(() => {
-    if (phase === 'firstaid') return;
+    if (phase === 'firstaid') {
+      setLiveArticles([]);
+      setLoadError('');
+      return undefined;
+    }
     const hazardTypeId = hazardTypeMap[hazard];
-    if (!hazardTypeId) return;
+    if (!hazardTypeId) return undefined;
 
+    let cancelled = false;
     setLoadingArticles(true);
+    setLoadError('');
+
     guidanceApi
       .list({ hazard_type: hazardTypeId, phase: PHASE_TO_API[phase] })
-      .then((data) => setLiveArticles(Array.isArray(data) ? data : data?.results || []))
-      .catch(() => setLiveArticles([]))
-      .finally(() => setLoadingArticles(false));
-  }, [hazard, phase, hazardTypeMap]);
+      .then((data) => {
+        if (cancelled) return;
+        const list = Array.isArray(data) ? data : data?.results || [];
+        setLiveArticles([...list].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLiveArticles([]);
+        setLoadError('Guidance could not be loaded right now.');
+      })
+      .finally(() => { if (!cancelled) setLoadingArticles(false); });
+
+    return () => { cancelled = true; };
+  }, [hazard, phase, hazardTypeMap, reloadKey]);
+
+  const retry = useCallback(() => setReloadKey((k) => k + 1), []);
 
   const sortedVideos = [...VIDEOS].sort(
     (a, b) => Number(b.hazard === hazard) - Number(a.hazard === hazard),
@@ -77,8 +117,7 @@ export default function WhatToDo() {
   const packedCount = guide.supplies.filter((item) => packed[`${hazard}:${item}`]).length;
 
   function chooseHazard(name) {
-    setHazard(name);
-    setPhase('before');
+    applyFilters({ hazard: name, phase: DEFAULT_PHASE });
     const firstVideo = VIDEOS.find((v) => v.hazard === name);
     if (firstVideo) setVideoId(firstVideo.id);
   }
@@ -87,6 +126,14 @@ export default function WhatToDo() {
     const key = `${hazard}:${item}`;
     setPacked((prev) => ({ ...prev, [key]: !prev[key] }));
   }
+
+  // A link to this exact article, so right-click → open in a new tab keeps
+  // the hazard and phase the reader was looking at.
+  const articleHref = (article) =>
+    `/what-to-do?hazard=${encodeURIComponent(hazard)}&phase=${phase}#article-${article.id}`;
+
+  const hasPublished = liveArticles.length > 0;
+  const isFirstAid = currentPhase.key === 'firstaid';
 
   return (
     <div className="ph">
@@ -109,22 +156,30 @@ export default function WhatToDo() {
         {/* ============ HAZARD GUIDE ============ */}
         <section className="ph-section">
           <div className="ph-container">
-            <div className="wt-hazard-tabs" role="tablist" aria-label="Choose a hazard">
-              {HAZARDS.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  role="tab"
-                  aria-selected={hazard === name}
-                  className={`wt-hazard-tab wt-hazard-${name.toLowerCase()} ${hazard === name ? 'is-active' : ''}`}
-                  onClick={() => chooseHazard(name)}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d={hazardIconPath(name)} />
-                  </svg>
-                  {name}
+            <div className="wt-filter-bar">
+              <div className="wt-hazard-tabs" role="tablist" aria-label="Choose a hazard">
+                {HAZARDS.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    role="tab"
+                    aria-selected={hazard === name}
+                    className={`wt-hazard-tab wt-hazard-${name.toLowerCase()} ${hazard === name ? 'is-active' : ''}`}
+                    onClick={() => chooseHazard(name)}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d={hazardIconPath(name)} />
+                    </svg>
+                    {name}
+                  </button>
+                ))}
+              </div>
+
+              {filtersActive && (
+                <button type="button" className="wt-reset" onClick={clearFilters}>
+                  Clear filters
                 </button>
-              ))}
+              )}
             </div>
 
             <div className="wt-guide-head">
@@ -141,7 +196,7 @@ export default function WhatToDo() {
                   role="tab"
                   aria-selected={phase === p.key}
                   className={`wt-phase ${phase === p.key ? 'is-active' : ''}`}
-                  onClick={() => setPhase(p.key)}
+                  onClick={() => applyFilters({ hazard, phase: p.key })}
                 >
                   <span className="wt-phase-num" aria-hidden="true">{p.number ?? '+'}</span>
                   <span className="wt-phase-text">
@@ -155,34 +210,72 @@ export default function WhatToDo() {
             <div className="wt-guide-body">
               <div className="wt-steps-card" role="tabpanel">
                 <h3>
-                  {currentPhase.key === 'firstaid'
+                  {isFirstAid
                     ? `First aid for ${hazard.toLowerCase()} injuries`
                     : `${currentPhase.title} a ${hazard.toLowerCase()}`}
                 </h3>
 
-                {currentPhase.key === 'firstaid' ? (
-                  // First aid is always the static sample content
+                {isFirstAid ? (
+                  /* First aid is always the static reference content */
                   <ol className="wt-steps">
-                    {guide.phases.firstaid.map((step) => (
-                      <li key={step}>{step}</li>
-                    ))}
+                    {guide.phases.firstaid.map((step) => <li key={step}>{step}</li>)}
                   </ol>
                 ) : loadingArticles ? (
                   <p className="wt-muted">Loading guidance…</p>
-                ) : liveSteps.length > 0 ? (
-                  // Real, DRRMO-published guidance, one numbered step per line
-                  <ol className="wt-steps">
-                    {liveSteps.map((step, i) => (
-                      <li key={`${i}-${step}`}>{step}</li>
+                ) : loadError ? (
+                  <>
+                    <div className="wt-error" role="alert">
+                      <p>{loadError}</p>
+                      <button type="button" className="wt-retry" onClick={retry}>Try again</button>
+                    </div>
+                    <p className="wt-source-note">
+                      Showing general safety steps in the meantime. These are standard advice, not
+                      the Talisay City DRRMO's published guidance.
+                    </p>
+                    <ol className="wt-steps">
+                      {guide.phases[phase].map((step) => <li key={step}>{step}</li>)}
+                    </ol>
+                  </>
+                ) : hasPublished ? (
+                  /* Published guidance, one card per article so its title shows */
+                  <div className="wt-articles">
+                    {liveArticles.map((article) => (
+                      <article key={article.id} id={`article-${article.id}`} className="wt-article">
+                        <div className="wt-article-head">
+                          <h4>
+                            <a href={articleHref(article)}>{article.title}</a>
+                          </h4>
+                          <p className="wt-article-meta">
+                            {article.hazard_type_detail?.name || hazard} · {article.timeline_phase}
+                            {article.updated_at && (
+                              <> · updated {new Date(article.updated_at).toLocaleDateString('en-PH', {
+                                year: 'numeric', month: 'long', day: 'numeric',
+                              })}</>
+                            )}
+                          </p>
+                        </div>
+                        <ol className="wt-steps">
+                          {stepsFrom(article.body).map((step, i) => (
+                            <li key={`${i}-${step}`}>{step}</li>
+                          ))}
+                        </ol>
+                      </article>
                     ))}
-                  </ol>
+                  </div>
                 ) : (
-                  // Fallback to static content until DRRMO publishes something for this combination
-                  <ol className="wt-steps">
-                    {guide.phases[phase].map((step) => (
-                      <li key={step}>{step}</li>
-                    ))}
-                  </ol>
+                  <>
+                    <p className="wt-notice">
+                      No guidance content available for selected criteria. Please try different
+                      filters.
+                    </p>
+                    <p className="wt-source-note">
+                      General safety steps for a {hazard.toLowerCase()}, shown until the DRRMO
+                      publishes guidance for this phase.
+                    </p>
+                    <ol className="wt-steps">
+                      {guide.phases[phase].map((step) => <li key={step}>{step}</li>)}
+                    </ol>
+                  </>
                 )}
               </div>
 

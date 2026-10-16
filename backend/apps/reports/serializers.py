@@ -38,24 +38,18 @@ class IncidentReportSerializer(serializers.ModelSerializer):
         ]
 
 class IncidentReportCreateSerializer(serializers.ModelSerializer):
+    # No casualty or displaced counts: while a hazard is active only the
+    # DRRMO records how many people are affected.
     class Meta:
         model = IncidentReport
         fields = [
             'barangay',
             'hazard_type',
             'description',
-            'casualties_dead',
-            'casualties_injured',
-            'casualties_missing',
             'agency',
             'position',
             'severity_estimate',
         ]
-        extra_kwargs = {
-            'casualties_dead':    {'min_value': 0, 'required': False},
-            'casualties_injured': {'min_value': 0, 'required': False},
-            'casualties_missing': {'min_value': 0, 'required': False},
-        }
 
 class IncidentReportReviewSerializer(serializers.ModelSerializer):
     class Meta:

@@ -97,35 +97,6 @@ export const DRRMO_HOTLINE = { label: '(032) 407-5928', tel: 'tel:+63324075928' 
 // Used to sort a barangay's hazards, most serious first
 export const SEVERITY_RANK = { Red: 3, Orange: 2, Green: 1 };
 
-// Barangay confirmation of conditions on the ground
-export const VERIFICATION = {
-  Confirmed: {
-    label: 'Confirmed by barangay',
-    short: 'confirmed',
-    color: '#1f9d55',
-    tint: '#e8f6ee',
-    text: '#16693a',
-  },
-  Pending: {
-    label: 'Not yet confirmed by barangay',
-    short: 'not yet confirmed',
-    color: '#6a778d',
-    tint: '#eef1f5',
-    text: '#43516a',
-  },
-  Disputed: {
-    label: 'Barangay reported different conditions',
-    short: 'disputed',
-    color: '#b86b00',
-    tint: '#fdf0de',
-    text: '#7a4600',
-  },
-};
-
-export function verificationInfo(code) {
-  return VERIFICATION[code] || VERIFICATION.Pending;
-}
-
 // Natural color of each hazard icon (independent of the risk level)
 export const HAZARD_COLORS = {
   Flood: '#1e88e5',     // water blue

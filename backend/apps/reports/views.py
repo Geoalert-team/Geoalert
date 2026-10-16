@@ -7,6 +7,8 @@ from django.db.models import Count
 from apps.hazards.models import HazardZone, HazardAlert
 from apps.history.models import HistoricalRecord
 from utils.permissions import IsDRRMOOfficer
+from utils.audit import log_event
+from utils.sampling import include_samples, without_samples
 
 from django.utils import timezone
 from apps.reports.models import IncidentReport
@@ -33,7 +35,9 @@ class HazardSummaryReportView(APIView):
     permission_classes = [IsAuthenticated, IsDRRMOOfficer]
 
     def get(self, request):
-        records = HistoricalRecord.objects.all()
+        # Seeded sample events are excluded unless asked for: a report is
+        # read as an official figure, and Faker incidents are not one.
+        records = without_samples(HistoricalRecord.objects.all(), request)
 
         date_from = request.query_params.get('date_from')
         if date_from:
@@ -51,7 +55,16 @@ class HazardSummaryReportView(APIView):
         if hazard_type:
             records = records.filter(hazard_type_id=hazard_type)
 
+        criteria = (
+            f"date_from={date_from or '-'} date_to={date_to or '-'} "
+            f"barangay={barangay or 'all'} hazard_type={hazard_type or 'all'}"
+        )
+
         if not records.exists():
+            log_event(
+                request, 'GENERATE_REPORT', 'historical_record', '',
+                f'Hazard Summary — no data. {criteria}',
+            )
             return Response(
                 {'error': 'Insufficient data available for selected criteria. Please expand the date range or modify filters.'},
                 status=status.HTTP_200_OK
@@ -82,9 +95,16 @@ class HazardSummaryReportView(APIView):
             r.total_displaced or 0 for r in records
         )
 
+        log_event(
+            request, 'GENERATE_REPORT', 'historical_record', '',
+            f'Hazard Summary — {records.count()} record(s). {criteria}',
+        )
+
         return Response({
             'report_type':            'Hazard Summary Report',
+            'includes_samples':       include_samples(request),
             'generated_by':           request.user.full_name,
+            'generated_at':           timezone.now(),
             'total_occurrences':      records.count(),
             'breakdown_by_type':      breakdown_by_type,
             'severity_distribution':  severity_distribution,
@@ -107,8 +127,12 @@ class ResponseStatusReportView(APIView):
     permission_classes = [IsAuthenticated, IsDRRMOOfficer]
 
     def get(self, request):
-        zones = HazardZone.objects.all()
-        alerts = HazardAlert.objects.all()
+        zones = without_samples(HazardZone.objects.all(), request)
+        # HazardAlert has no flag of its own; a sample alert is one raised
+        # over a sample zone.
+        alerts = without_samples(
+            HazardAlert.objects.all(), request, 'hazard_zone__is_sample',
+        )
 
         date_from = request.query_params.get('date_from')
         if date_from:
@@ -124,11 +148,27 @@ class ResponseStatusReportView(APIView):
         if barangay:
             zones = zones.filter(barangay_id=barangay)
 
-        active_count   = zones.filter(status='Active').count()
-        resolved_count = zones.filter(status='Resolved').count()
-        archived_count = zones.filter(status='Archived').count()
+        criteria = (
+            f"date_from={date_from or '-'} date_to={date_to or '-'} "
+            f"barangay={barangay or 'all'}"
+        )
+
+        active_count    = zones.filter(status='Active').count()
+        resolved_count  = zones.filter(status='Resolved').count()
+        archived_count  = zones.filter(status='Archived').count()
+        retracted_count = zones.filter(status='Retracted').count()
+
+        # Zones withdrawn as published in error are not hazard events — they
+        # never happened — so they are reported as their own figure rather
+        # than counted in the total. The alert total below still counts the
+        # alerts they issued, because those alerts really did go out.
+        events = zones.exclude(status='Retracted')
 
         if zones.count() == 0:
+            log_event(
+                request, 'GENERATE_REPORT', 'hazard_zone', '',
+                f'Response Status — no data. {criteria}',
+            )
             return Response(
                 {'error': 'Insufficient data available for selected criteria. Please expand the date range or modify filters.'},
                 status=status.HTTP_200_OK
@@ -140,13 +180,21 @@ class ResponseStatusReportView(APIView):
             .order_by('-count')
         )
 
+        log_event(
+            request, 'GENERATE_REPORT', 'hazard_zone', '',
+            f'Response Status — {zones.count()} zone(s). {criteria}',
+        )
+
         return Response({
             'report_type':          'Response Status Report',
+            'includes_samples':     include_samples(request),
             'generated_by':         request.user.full_name,
+            'generated_at':         timezone.now(),
             'active_hazards':       active_count,
             'resolved_hazards':     resolved_count,
             'archived_hazards':     archived_count,
-            'total_hazard_events':  zones.count(),
+            'retracted_hazards':    retracted_count,
+            'total_hazard_events':  events.count(),
             'total_alerts_issued':  alerts.count(),
             'alerts_by_severity':   alerts_by_severity,
             
@@ -181,10 +229,7 @@ class IncidentReportListCreateView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        report = serializer.save(
-            submitted_by=request.user,
-            reporter_name=request.user.full_name,
-        )
+        report = serializer.save(submitted_by=request.user)
         return Response(
             IncidentReportSerializer(report).data,
             status=status.HTTP_201_CREATED
@@ -209,12 +254,8 @@ class IncidentReportReviewView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        extra = {}
-        if serializer.validated_data.get('status') == 'Validated':
-            extra = {'validated_by': request.user, 'validated_at': timezone.now()}
         report = serializer.save(
             reviewed_by=request.user,
-            reviewed_at=timezone.now(),
-            **extra,
+            reviewed_at=timezone.now()
         )
         return Response(IncidentReportSerializer(report).data)

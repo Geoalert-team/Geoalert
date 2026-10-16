@@ -12,15 +12,15 @@ class GuidanceContent(models.Model):
         ('After',  'After'),
     ]
 
-    id             = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    hazard_type    = models.ForeignKey(HazardType, on_delete=models.CASCADE)
-    created_by     = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    title          = models.CharField(max_length=200)
-    body           = models.TextField()
-    timeline_phase = models.CharField(max_length=10, choices=PHASE_CHOICES)
-    is_published   = models.BooleanField(default=True)
-    created_at     = models.DateTimeField(auto_now_add=True)
-    updated_at     = models.DateTimeField(auto_now=True)
+    id             = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column='gdcn_id')
+    hazard_type    = models.ForeignKey(HazardType, on_delete=models.CASCADE, db_column='gdcn_hztp_id')
+    created_by     = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, db_column='gdcn_created_by')
+    title          = models.CharField(max_length=200, db_column='gdcn_title')
+    body           = models.TextField(db_column='gdcn_body')
+    timeline_phase = models.CharField(max_length=10, choices=PHASE_CHOICES, db_column='gdcn_phase')
+    is_published   = models.BooleanField(default=True, db_column='gdcn_is_active')
+    created_at     = models.DateTimeField(auto_now_add=True, db_column='gdcn_created_at')
+    updated_at     = models.DateTimeField(auto_now=True, db_column='gdcn_updated_at')
 
     class Meta:
         db_table = 'guidance_content'

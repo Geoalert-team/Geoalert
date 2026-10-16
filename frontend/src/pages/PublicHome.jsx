@@ -5,6 +5,10 @@ import logo from '../assets/images/logo1.png';
 import photo1 from '../assets/images/p1.jpg';
 import photo2 from '../assets/images/p2.jpg';
 import photo3 from '../assets/images/p3.jpg';
+import photo4 from '../assets/images/drrmo1.jpg';
+import photo5 from '../assets/images/drrmo2.jpg';
+import photo6 from '../assets/images/drrmo3.jpg';
+
 import './css/PublicHome.css';
 
 /* ---------- Page content (edit these lists to change the text) ---------- */
@@ -14,6 +18,9 @@ const SLIDES = [
   { src: photo1, alt: 'Rescue team loading a stretcher into an ambulance' },
   { src: photo2, alt: 'Residents taking part in a community drill' },
   { src: photo3, alt: 'Talisay City coastline' },
+  { src: photo4, alt: 'DRRMO personnel conducting a survey' },
+  { src: photo5, alt: 'DRRMO personnel providing training' },
+  { src: photo6, alt: 'DRRMO personnel conducting a drill' },
 ];
 
 const SLIDE_INTERVAL_MS = 6000;

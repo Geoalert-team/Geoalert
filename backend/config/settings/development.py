@@ -1,4 +1,6 @@
 from .base import *
+import os
+os.environ.setdefault('PROJ_LIB', r'C:\...\venv\Lib\site-packages\osgeo\data\proj')
 
 DEBUG = True
 
