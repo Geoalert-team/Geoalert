@@ -7,7 +7,7 @@ import { reportsApi } from '../../api/reportApi';
 import { guidanceApi } from '../../api/guidanceApi';
 import { hazardsApi } from '../../api/hazardsApi';
 import { Icon, Toast, fieldErrors, formatDateTime, timeAgo } from './admin/adminShared';
-import { HazardIcon, ImpactChips, StatusTag } from './reportShared';
+import { HazardIcon,  StatusTag } from './reportShared';
 import ConfirmHazardCard from '../../components/Verify/ConfirmHazardCard';
 import '../css/Dashboard.css';
 import '../css/AdminDashboard.css';
@@ -404,7 +404,7 @@ export default function BarangayDashboard() {
                           <StatusTag status={r.status} />
                         </div>
                         <p className="drm-report-desc">{r.description}</p>
-                        <ImpactChips report={r} />
+                        
                         <p className="drm-report-meta">
                           <span title={formatDateTime(r.created_at)}>Sent {timeAgo(r.created_at).toLowerCase()}</span>
                           {r.severity_estimate && <span>Severity: {r.severity_estimate}</span>}

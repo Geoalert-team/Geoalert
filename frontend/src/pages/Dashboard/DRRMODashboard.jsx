@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import PublicNavbar from '../../components/Navbar/PublicNavbar';
 import { hazardsApi } from '../../api/hazardsApi';
 import { reportsApi } from '../../api/reportApi';
-import { hazardColor, hazardIconPath } from '../../components/Map/hazardInfo';
+import { hazardColor, hazardIconPath } from '../../components/Map/hazardInfo'
 import { Icon, Modal, Toast, fieldErrors, formatDateTime, timeAgo } from './admin/adminShared';
 import ActiveZonesCard from '../../components/Resolve/ActiveZonesCard';
 import '../css/Dashboard.css';
@@ -22,12 +22,10 @@ const PAGE_SIZE = 5;
 const SORTS = {
   newest: { label: 'Newest first', fn: (a, b) => new Date(b.created_at) - new Date(a.created_at) },
   oldest: { label: 'Oldest first', fn: (a, b) => new Date(a.created_at) - new Date(b.created_at) },
-  impact: { label: 'Most people affected', fn: (a, b) => affected(b) - affected(a) },
+  
 };
 
-function affected(r) {
-  return (r.casualties_dead || 0) + (r.casualties_injured || 0) + (r.casualties_missing || 0) + (r.displaced || 0);
-}
+
 
 const typeName = (r) => r.hazard_type_details?.name || 'Incident';
 const barangayName = (r) => r.barangay_details?.name || '';
@@ -49,23 +47,8 @@ function StatusTag({ status }) {
   return <span className={`adm-action adm-action-${tone}`}>{status}</span>;
 }
 
-function ImpactChips({ report }) {
-  const items = [
-    { label: 'Dead', value: report.casualties_dead, tone: 'bad' },
-    { label: 'Injured', value: report.casualties_injured, tone: 'warn' },
-    { label: 'Missing', value: report.casualties_missing, tone: 'warn' },
-    { label: 'Displaced', value: report.displaced, tone: 'info' },
-  ];
-  return (
-    <div className="drm-chips">
-      {items.map((i) => (
-        <span key={i.label} className={`drm-chip ${i.value > 0 ? `is-${i.tone}` : ''}`}>
-          <strong>{i.value ?? 0}</strong> {i.label.toLowerCase()}
-        </span>
-      ))}
-    </div>
-  );
-}
+
+ 
 
 function ReviewDialog({ report, decision, onCancel, onDone }) {
   const [note, setNote] = useState('');
@@ -211,8 +194,7 @@ function ReportRow({ report, onOpen, onReview }) {
             </span>
             <StatusTag status={report.status} />
           </div>
-          <p className="drm-report-desc">{report.description || 'No description given.'}</p>
-          <ImpactChips report={report} />
+        
           <p className="drm-report-meta">
             <span>{reporterName(report)}</span>
             {report.agency && <span>{report.agency}</span>}
@@ -287,7 +269,7 @@ export default function DRRMODashboard() {
   }, [reports]);
 
   const pending = useMemo(() => reports.filter((r) => r.status === 'Pending'), [reports]);
-  const peopleAffected = pending.reduce((sum, r) => sum + affected(r), 0);
+ 
   const oldestPending = pending.reduce((old, r) => (!old || new Date(r.created_at) < new Date(old) ? r.created_at : old), null);
   const activeHazards = hazards?.features?.length;
 
@@ -383,8 +365,7 @@ export default function DRRMODashboard() {
           <div className="adm-metric">
             <span className="adm-metric-icon adm-metric-blue"><Icon name="users" size={20} /></span>
             <div className="adm-metric-text">
-              <span className="adm-metric-label">People affected</span>
-              <span className="adm-metric-value">{loading ? '—' : peopleAffected}</span>
+              
               <span className="adm-metric-note">Across pending reports</span>
             </div>
           </div>
