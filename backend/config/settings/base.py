@@ -70,7 +70,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        # PostGIS, plus one retry when the pooler drops a connect mid-handshake.
+        'ENGINE': 'utils.db_backend',
         'NAME': env('DB_NAME'),
         'USER': env('DB_USER'),
         'PASSWORD': env('DB_PASSWORD'),
@@ -88,6 +89,12 @@ DATABASES = {
             'keepalives_count': 5,
             'sslmode': 'require',
         },
+        # Reuse a connection for up to a minute instead of a fresh SSL
+        # handshake per request. Health checks replace one the pooler has
+        # closed before it is used. The dev server closes connections after
+        # every request, so this only takes effect under gunicorn.
+        'CONN_MAX_AGE': env.int('DB_CONN_MAX_AGE', default=60),
+        'CONN_HEALTH_CHECKS': True,
     }
 }
 
