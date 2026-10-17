@@ -14,13 +14,17 @@ from apps.accounts.models import User
 from apps.barangays.models import Barangay
 from apps.history.models import HistoricalRecord
 
-from apps.hazards.models import HazardType, HazardZone, HazardAlert
+from apps.hazards.geometry import main_barangay
+from apps.hazards.models import HazardType, HazardZone, HazardAlert, HazardVerification
 from apps.hazards.serializers import (
+    clean_zone_geometry,
     HazardZoneGeoSerializer,
     HazardZoneSerializer,
     HazardZoneCreateSerializer,
     HazardTypeSerializer,
 )
+from rest_framework_gis.fields import GeometryField
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from utils.permissions import IsDRRMOOfficer, IsBarangayPersonnel
 from utils.audit import log_event
 
@@ -76,7 +80,8 @@ class HazardZoneListView(APIView):
         zones = (
             HazardZone.objects
             .filter(status='Active')
-            .select_related('hazard_type', 'barangay')
+            .select_related('hazard_type', 'barangay', 'verified_by', 'approved_by', 'reviewed_by')
+            .prefetch_related('verifications__barangay', 'verifications__answered_by')
         )
 
         barangay = request.query_params.get('barangay')
@@ -276,12 +281,35 @@ class HazardZoneDetailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Reshaping: the officer redrew the outline of a live zone. Same
+        # cleanup as publishing (repair, cut at the city boundary).
+        reshaped = 'geometry' in request.data
+        if reshaped:
+            if zone.status != 'Active':
+                return Response(
+                    {'error': 'Only an active hazard zone can be reshaped.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            try:
+                drawn = GeometryField().to_internal_value(request.data['geometry'])
+                clipped, outline = clean_zone_geometry(drawn)
+            except DRFValidationError as exc:
+                detail = exc.detail[0] if isinstance(exc.detail, list) else exc.detail
+                return Response({'error': str(detail)}, status=status.HTTP_400_BAD_REQUEST)
+            before = {b.id for b in affected_barangays(zone)}
+            zone.geometry = clipped
+            zone.outline = outline
+            home = main_barangay(clipped, Barangay.objects.filter(boundary__intersects=clipped))
+            if home is not None:
+                zone.barangay = home
+
         zone.severity    = new_severity
         zone.status      = new_status
         zone.description = request.data.get('description', zone.description)
 
-        # A severity change makes any earlier ground confirmation stale
-        if zone.severity != old_severity:
+        # A severity or shape change makes every earlier ground answer stale:
+        # the barangays confirmed a different hazard.
+        if zone.severity != old_severity or reshaped:
             zone.reset_verification()
 
         is_resolving = (
@@ -293,6 +321,26 @@ class HazardZoneDetailView(APIView):
             zone.resolved_at = timezone.now()
 
         zone.save()
+
+        if reshaped:
+            after = affected_barangays(zone)
+            added = [b for b in after if b.id not in before]
+            # Barangays the zone now reaches never got the original alert
+            if added:
+                notify(
+                    User.objects
+                    .filter(is_active=True, assigned_barangay__in=added)
+                    .exclude(id=request.user.id),
+                    f'{type_name(zone)} alert ({zone.severity}) now covers {where_text(added)}: '
+                    f'DRRMO enlarged the hazard zone. Tap to see it and what to do.',
+                    zone,
+                )
+            log_event(
+                request, 'RESHAPE_HAZARD', 'hazard_zone', zone.id,
+                f'{type_name(zone)} / {zone.severity} reshaped. Now covers {where_text(after)}'
+                + (f'; newly added and notified: {where_text(added)}.' if added else '.')
+                + ' Barangay answers reset.',
+            )
 
         # Archive to historical records on the transition into Resolved,
         # not on every PATCH that happens to carry status='Resolved'.
@@ -544,17 +592,55 @@ class HazardZoneVerifyView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        zone.verification_status = new_status
-        zone.verified_by         = request.user
-        zone.verified_at         = timezone.now()
-        zone.verification_note   = (request.data.get('note') or '').strip()
-        zone.save(update_fields=[
-            'verification_status', 'verified_by', 'verified_at', 'verification_note',
-        ])
+        note = (request.data.get('note') or '').strip()
+        with transaction.atomic():
+            previous = (
+                HazardVerification.objects
+                .filter(hazard_zone=zone, barangay_id=assigned)
+                .values_list('status', flat=True)
+                .first()
+            )
+            answer, _ = HazardVerification.objects.update_or_create(
+                hazard_zone=zone,
+                barangay_id=assigned,
+                defaults={
+                    'status': new_status,
+                    'note': note,
+                    'answered_by': request.user,
+                    'answered_at': timezone.now(),
+                },
+            )
+            newly_disputed = new_status == 'Disputed' and previous != 'Disputed'
+            if newly_disputed:
+                # A review answered the earlier disputes, not this one
+                zone.clear_review()
+            zone.refresh_verification_summary()
+            zone.save(update_fields=[
+                'verification_status', 'verified_by', 'verified_at', 'verification_note',
+                'review_note', 'reviewed_by', 'reviewed_at',
+            ])
+
+            if newly_disputed:
+                # Tell the officer who published it, or every officer when
+                # that account is gone, so a wrong alert is looked at now
+                # rather than whenever someone happens to open it.
+                publisher = zone.published_by if zone.published_by and zone.published_by.is_active else None
+                officers = (
+                    [publisher] if publisher
+                    else User.objects.filter(is_active=True, role__name__in=['DRRMO_Officer', 'System_Admin'])
+                )
+                notify(
+                    officers,
+                    f'Disputed: {answer.barangay.name} personnel say the {type_name(zone)} alert '
+                    f'is not there as published'
+                    + (f': "{note}".' if note else '.')
+                    + ' Review it, withdraw it, or reshape it.',
+                    zone,
+                )
 
         log_event(
             request, 'VERIFY_HAZARD', 'hazard_zone', zone.id,
-            f'{new_status} by {request.user.email}',
+            f'{new_status} for {answer.barangay.name} by {request.user.email}',
         )
 
         return Response(HazardZoneSerializer(zone).data)
@@ -616,7 +702,7 @@ class HazardZoneForBarangayView(APIView):
                 )
 
         if (request.query_params.get('pending') or '').strip().lower() in ('1', 'true', 'yes'):
-            zones = zones.filter(verification_status='Pending')
+            zones = zones.exclude(verifications__barangay_id=assigned)
 
         return Response({
             'barangay': assigned,
@@ -924,3 +1010,62 @@ class HazardZoneApproveView(APIView):
             'recipients_notified': len(recipients),
         }
         return Response(payload)
+
+
+class HazardZoneReviewView(APIView):
+    """
+    POST /api/hazards/<id>/review/
+
+        {"note": "Checked with the barangay captain; the creek is still rising upstream."}
+
+    DRRMO's answer to a dispute: the zone was looked at and stays as it is.
+    The alternatives are withdrawing it or reshaping it, which have their
+    own endpoints. The note shows on the public map next to the dispute, and
+    the personnel who disputed it are told. A new dispute clears the review.
+    """
+    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+    MIN_NOTE = 5
+
+    def post(self, request, pk):
+        zone = (
+            HazardZone.objects
+            .select_related('hazard_type', 'barangay')
+            .filter(pk=pk)
+            .first()
+        )
+        if zone is None:
+            return Response({'error': 'Hazard zone not found'}, status=status.HTTP_404_NOT_FOUND)
+        if zone.status != 'Active':
+            return Response({'error': 'Only an active hazard zone can be reviewed.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if zone.verification_status != 'Disputed':
+            return Response({'error': 'No barangay has disputed this hazard, so there is nothing to review.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        note = (request.data.get('note') or '').strip()
+        if len(note) < self.MIN_NOTE:
+            return Response({'error': 'Say what was checked and why the zone stays. '
+                                      'The note is shown with the dispute on the public map.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        disputers = [
+            v.answered_by for v in
+            zone.verifications.filter(status='Disputed').select_related('answered_by')
+            if v.answered_by and v.answered_by.is_active
+        ]
+        with transaction.atomic():
+            zone.review_note = note
+            zone.reviewed_by = request.user
+            zone.reviewed_at = timezone.now()
+            zone.save(update_fields=['review_note', 'reviewed_by', 'reviewed_at'])
+            notify(
+                disputers,
+                f'DRRMO reviewed your dispute about the {type_name(zone)} alert and is keeping it: "{note}"',
+                zone,
+            )
+
+        log_event(
+            request, 'REVIEW_HAZARD_DISPUTE', 'hazard_zone', zone.id,
+            f'Dispute reviewed, zone kept. {len(disputers)} disputer(s) told. Note: {note}',
+        )
+        return Response(HazardZoneSerializer(zone).data)

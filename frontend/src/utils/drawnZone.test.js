@@ -38,3 +38,38 @@ test('middle is the average of the corners', () => {
   expect(lat).toBeCloseTo(LAT + DLAT / 2, 9);
   expect(lng).toBeCloseTo(LNG + DLNG / 2, 9);
 });
+
+describe('reshaping helpers', () => {
+  // eslint-disable-next-line global-require
+  const { insertCorner, simplifyOutline, cornersOfZone } = require('./drawnZone');
+
+  test('a new corner goes into the nearest edge, not the end', () => {
+    const below = [LAT - DLAT * 0.2, LNG + DLNG / 2]; // just under the bottom edge
+    const out = insertCorner(SQUARE, below);
+    expect(out).toHaveLength(5);
+    expect(out[1]).toEqual(below); // between corner 0 and corner 1
+  });
+
+  test('a long outline is thinned to a draggable number of corners', () => {
+    const circle = Array.from({ length: 300 }, (_, i) => {
+      const t = (2 * Math.PI * i) / 300;
+      return [LAT + DLAT * Math.sin(t), LNG + DLNG * Math.cos(t)];
+    });
+    const out = simplifyOutline(circle, 40);
+    expect(out.length).toBeLessThanOrEqual(40);
+    expect(out.length).toBeGreaterThanOrEqual(8);
+  });
+
+  test('corners come from the drawn outline when there is one', () => {
+    const ring = [[LNG, LAT], [LNG + DLNG, LAT], [LNG + DLNG, LAT + DLAT], [LNG, LAT]];
+    const feature = { properties: { outline: { type: 'Polygon', coordinates: [ring] } }, geometry: null };
+    expect(cornersOfZone(feature)).toEqual([[LAT, LNG], [LAT, LNG + DLNG], [LAT + DLAT, LNG + DLNG]]);
+  });
+
+  test('otherwise from the largest part of the saved shape', () => {
+    const small = [[LNG, LAT], [LNG + DLNG / 10, LAT], [LNG, LAT + DLAT / 10], [LNG, LAT]];
+    const big = [[LNG, LAT], [LNG + DLNG, LAT], [LNG + DLNG, LAT + DLAT], [LNG, LAT + DLAT], [LNG, LAT]];
+    const feature = { properties: {}, geometry: { type: 'MultiPolygon', coordinates: [[small], [big]] } };
+    expect(cornersOfZone(feature)).toHaveLength(4);
+  });
+});

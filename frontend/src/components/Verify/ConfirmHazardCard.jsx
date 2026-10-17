@@ -41,6 +41,9 @@ function hazardName(zone) {
 
 export default function ConfirmHazardCard({ onAnswered }) {
   const [zones, setZones] = useState([]);
+  // The signed-in user's barangay. A zone crossing several barangays holds
+  // one answer per barangay, and this card is about this barangay's.
+  const [myBarangay, setMyBarangay] = useState(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
 
@@ -55,6 +58,7 @@ export default function ConfirmHazardCard({ onAnswered }) {
     return hazardsApi.forBarangay()
       .then((data) => {
         setZones(data?.results || []);
+        setMyBarangay(data?.barangay ?? null);
         setFailed(false);
       })
       .catch(() => setFailed(true))
@@ -96,8 +100,10 @@ export default function ConfirmHazardCard({ onAnswered }) {
     }
   }
 
-  const pending = zones.filter((z) => (z.verification_status || 'Pending') === 'Pending');
-  const answered = zones.filter((z) => (z.verification_status || 'Pending') !== 'Pending');
+  const ownAnswer = (zone) =>
+    (zone.verifications || []).find((v) => String(v.barangay) === String(myBarangay)) || null;
+  const pending = zones.filter((z) => !ownAnswer(z));
+  const answered = zones.filter((z) => ownAnswer(z));
 
   return (
     <div className="db-card">
@@ -152,7 +158,9 @@ export default function ConfirmHazardCard({ onAnswered }) {
           <div className="db-list">
             {[...pending, ...answered].map((zone) => {
               const sev = SEVERITY[zone.severity] || { label: zone.severity, tone: '' };
-              const state = ANSWERED[zone.verification_status];
+              const mine = ownAnswer(zone);
+              const state = mine ? ANSWERED[mine.status] : null;
+              const others = (zone.verifications || []).filter((v) => v !== mine);
               const isAnswering = answering?.id === zone.id;
 
               return (
@@ -178,16 +186,27 @@ export default function ConfirmHazardCard({ onAnswered }) {
                   {state && (
                     <div style={{ marginTop: 8 }}>
                       <span className={`db-badge ${state.tone}`}>{state.label}</span>
-                      {zone.verification_note && (
+                      {mine.note && (
                         <p className="db-item-meta" style={{ marginTop: 6 }}>
-                          “{zone.verification_note}”
+                          “{mine.note}”
                         </p>
                       )}
                       <p className="db-hint">
-                        {zone.verified_by_name || 'Recorded'}
-                        {zone.verified_at ? ` · ${formatWhen(zone.verified_at)}` : ''}
+                        {mine.answered_by_name || 'Recorded'}
+                        {mine.answered_at ? ` · ${formatWhen(mine.answered_at)}` : ''}
                       </p>
                     </div>
+                  )}
+                  {others.length > 0 && (
+                    <p className="db-hint" style={{ marginTop: 6 }}>
+                      Other barangays:{' '}
+                      {others.map((v) => `${v.barangay_name} ${v.status === 'Confirmed' ? 'confirmed' : 'disputed'}`).join(', ')}
+                    </p>
+                  )}
+                  {zone.review_note && zone.verification_status === 'Disputed' && (
+                    <p className="db-hint" style={{ marginTop: 6 }}>
+                      DRRMO reviewed the dispute and kept it: “{zone.review_note}”
+                    </p>
                   )}
 
                   {isAnswering ? (

@@ -15,6 +15,15 @@ export const hazardsApi = {
   // To refuse one, withdraw it with retract() and a reason.
   awaiting: () => client.get('/api/hazards/awaiting/').then((r) => r.data),
   approve: (id) => client.post(`/api/hazards/${id}/approve/`).then((r) => r.data),
+
+  // DRRMO's answer to a dispute: checked, and the zone stays. The note shows
+  // with the dispute on the public map. Withdrawing or reshaping are the
+  // other answers.
+  review: (id, note) => client.post(`/api/hazards/${id}/review/`, { note }).then((r) => r.data),
+
+  // Redraw a live zone's outline. Every barangay is asked to confirm again,
+  // and barangays the new shape reaches are told.
+  reshape: (id, geometry) => client.patch(`/api/hazards/${id}/`, { geometry }).then((r) => r.data),
   update: (id, payload) => client.patch(`/api/hazards/${id}/`, payload).then((r) => r.data),
 
   // Ground confirmation from the barangay: status is 'Confirmed' or 'Disputed'.

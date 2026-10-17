@@ -57,6 +57,10 @@ class HazardZone(models.Model):
     severity     = models.CharField(max_length=20, choices=SEVERITY_CHOICES, db_column='hzzn_severity')
     status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active', db_column='hzzn_status')
     geometry     = models.MultiPolygonField(srid=4326, db_column='hzzn_polygon')
+    # The outline as the officer drew it, before cutting at the city
+    # boundary. Reshaping starts from this: the saved geometry can follow
+    # the coastline with hundreds of corners nobody could drag.
+    outline      = models.PolygonField(srid=4326, null=True, blank=True, db_column='hzzn_outline')
     description  = models.TextField(blank=True, db_column='hzzn_desc')
     activated_at = models.DateTimeField(auto_now_add=True, db_column='hzzn_activated_at')
     resolved_at  = models.DateTimeField(null=True, blank=True, db_column='hzzn_resolved_at')
@@ -72,6 +76,16 @@ class HazardZone(models.Model):
     )
     verified_at       = models.DateTimeField(null=True, blank=True, db_column='hzzn_verified_at')
     verification_note = models.TextField(blank=True, default='', db_column='hzzn_verification_note')
+
+    # DRRMO's answer to a dispute: "we checked, and it stays". Cleared when
+    # a new dispute comes in, so a stale review never covers a fresh one.
+    review_note = models.TextField(blank=True, default='', db_column='hzzn_review_note')
+    reviewed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='reviewed_hazard_zones',
+        db_column='hzzn_reviewed_by',
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True, db_column='hzzn_reviewed_at')
 
     # Retraction. Set together, only by the retract endpoint, and never
     # cleared: a withdrawn alert stays on the record with who withdrew it,
@@ -104,11 +118,72 @@ class HazardZone(models.Model):
         return f'{self.hazard_type} - {self.severity} - {self.status}'
 
     def reset_verification(self):
-        """Call when severity or shape changes: the old confirmation no longer applies."""
+        """
+        Call when severity or shape changes: the old answers were about a
+        different hazard, so every barangay is asked again. Deletes the
+        per-barangay answers, so only call it on a zone that is being saved.
+        """
         self.verification_status = 'Pending'
         self.verified_by         = None
         self.verified_at         = None
         self.verification_note   = ''
+        self.clear_review()
+        if self.pk:
+            self.verifications.all().delete()
+
+    def clear_review(self):
+        self.review_note = ''
+        self.reviewed_by = None
+        self.reviewed_at = None
+
+    def refresh_verification_summary(self):
+        """
+        Set the zone-level fields from the per-barangay answers, so older
+        screens that only read verification_status keep working.
+
+        Any dispute wins: one barangay saying "it isn't there" is what DRRMO
+        needs to look at, even if another barangay confirmed its own part.
+        The note and name are from the most recent answer with that status.
+        """
+        answers = list(self.verifications.select_related('answered_by').order_by('-answered_at'))
+        disputed = [a for a in answers if a.status == 'Disputed']
+        confirmed = [a for a in answers if a.status == 'Confirmed']
+        latest = (disputed or confirmed or [None])[0]
+        self.verification_status = 'Disputed' if disputed else 'Confirmed' if confirmed else 'Pending'
+        self.verified_by = latest.answered_by if latest else None
+        self.verified_at = latest.answered_at if latest else None
+        self.verification_note = latest.note if latest else ''
+
+
+class HazardVerification(models.Model):
+    """
+    One barangay's answer about one hazard zone.
+
+    A zone crossing two barangays used to hold a single answer, so the
+    second barangay to answer erased the first. Each barangay now keeps its
+    own, and changing an answer replaces only that barangay's row.
+    """
+    STATUS_CHOICES = [
+        ('Confirmed', 'Confirmed by barangay'),
+        ('Disputed',  'Disputed by barangay'),
+    ]
+
+    id          = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column='hzvf_id')
+    hazard_zone = models.ForeignKey(HazardZone, on_delete=models.CASCADE, related_name='verifications', db_column='hzvf_hzzn_id')
+    barangay    = models.ForeignKey(Barangay, on_delete=models.CASCADE, related_name='hazard_verifications', db_column='hzvf_brgy_id')
+    status      = models.CharField(max_length=20, choices=STATUS_CHOICES, db_column='hzvf_status')
+    note        = models.TextField(blank=True, default='', db_column='hzvf_note')
+    answered_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='hazard_verifications', db_column='hzvf_answered_by')
+    answered_at = models.DateTimeField(db_column='hzvf_answered_at')
+
+    class Meta:
+        db_table = 'hazard_verification'
+        constraints = [
+            models.UniqueConstraint(fields=['hazard_zone', 'barangay'], name='one_answer_per_barangay'),
+        ]
+
+    def __str__(self):
+        return f'{self.barangay} {self.status} {self.hazard_zone_id}'
 
 
 class HazardAlert(models.Model):

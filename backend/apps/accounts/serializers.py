@@ -10,10 +10,14 @@ class RoleSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     role = RoleSerializer(read_only=True)
+    # So the map can tell barangay personnel which answer on a hazard is
+    # their own barangay's. Read-only: assignment is an admin action.
+    assigned_barangay = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'full_name', 'email', 'role', 'is_active', 'created_at', 'two_factor_enabled']
+        fields = ['id', 'full_name', 'email', 'role', 'is_active', 'created_at', 'two_factor_enabled',
+                  'assigned_barangay']
 
 
 class LoginSerializer(serializers.Serializer):

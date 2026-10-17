@@ -227,7 +227,7 @@ function HazardStack({ stack, current, onPick }) {
 
 // Slides in from the left (desktop) or up from the bottom (mobile).
 // stack: the hazards at the clicked spot (including item); onPick switches between them.
-export default function HazardPanel({ item, open, onClose, onResolved, onRetracted, onVerified, stack = [], onPick }) {
+export default function HazardPanel({ item, open, onClose, onResolved, onRetracted, onVerified, onReshape, stack = [], onPick }) {
   const [tab, setTab] = useState('overview');
   // 'resolve' when the hazard is over, 'retract' when it should never have
   // been published. Only one form is ever open.
@@ -237,6 +237,10 @@ export default function HazardPanel({ item, open, onClose, onResolved, onRetract
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [verifyError, setVerifyError] = useState('');
+  // DRRMO's reply to a dispute
+  const [reviewNote, setReviewNote] = useState('');
+  const [reviewing, setReviewing] = useState(false);
+  const [reviewError, setReviewError] = useState('');
   const closeRef = useRef(null);
   const { canPublish, user } = useAuth();
 
@@ -247,6 +251,8 @@ export default function HazardPanel({ item, open, onClose, onResolved, onRetract
     setAnswering(null);
     setNote('');
     setVerifyError('');
+    setReviewNote('');
+    setReviewError('');
     if (open) closeRef.current?.focus({ preventScroll: true });
   }, [item?.id, open]);
 
@@ -267,6 +273,28 @@ export default function HazardPanel({ item, open, onClose, onResolved, onRetract
   const role = user?.role?.name || user?.role;
   const canConfirm =
     role === 'Barangay_Personnel' && item && (item.status || 'Active') === 'Active';
+
+  // This user's own barangay's answer, if they gave one. Other barangays
+  // the zone crosses keep their own answers.
+  const answers = item?.verifications || [];
+  const myAnswer = answers.find((v) => String(v.barangay) === String(user?.assigned_barangay));
+  const disputed = item?.verificationStatus === 'Disputed';
+  const canReview = canResolve && disputed && !item?.reviewNote;
+
+  async function submitReview() {
+    if (!item) return;
+    setReviewing(true);
+    setReviewError('');
+    try {
+      const zone = await hazardsApi.review(item.id, reviewNote.trim());
+      setReviewNote('');
+      onVerified?.(zone);
+    } catch (err) {
+      setReviewError(err?.message || 'Could not save the review.');
+    } finally {
+      setReviewing(false);
+    }
+  }
 
   async function submitVerification() {
     if (!answering || !item) return;
@@ -359,17 +387,38 @@ export default function HazardPanel({ item, open, onClose, onResolved, onRetract
                   </div>
                 )}
 
-                {/* Ground confirmation. Deliberately silent while pending:
-                    "nobody has been out to look yet" is not news to a reader
-                    standing in the hazard, and it crowded the panel. */}
-                {item.verificationStatus === 'Confirmed' && (
+                {/* Ground confirmation, one line per barangay that answered.
+                    Deliberately silent while nobody has: "nobody has been out
+                    to look yet" is not news to a reader standing in the
+                    hazard, and it crowded the panel. */}
+                {answers.length > 0 && answers.map((v) => (
+                  <p key={v.barangay} className={v.status === 'Disputed' ? 'pm-disputed' : 'pm-verified'}>
+                    <strong>
+                      {v.status === 'Disputed' ? 'Disputed' : 'Confirmed'} by {v.barangay_name}
+                    </strong>
+                    {v.answered_by_name ? ` (${v.answered_by_name})` : ''}
+                    {v.note ? ` — "${v.note}"` : '.'}
+                  </p>
+                ))}
+                {answers.length > 0 && disputed && !item.reviewNote && (
+                  <p className="pm-disputed">Treat this advisory with caution until DRRMO reviews it.</p>
+                )}
+                {disputed && item.reviewNote && (
+                  <p className="pm-verified">
+                    <strong>DRRMO reviewed the dispute and kept this alert</strong>
+                    {item.reviewedByName ? ` (${item.reviewedByName})` : ''}: "{item.reviewNote}"
+                  </p>
+                )}
+
+                {/* Answers given before each barangay kept its own */}
+                {answers.length === 0 && item.verificationStatus === 'Confirmed' && (
                   <p className="pm-verified">
                     <strong>Confirmed on the ground</strong>
                     {item.verifiedByName ? ` by ${item.verifiedByName}` : ''}
                     {item.verificationNote ? ` — "${item.verificationNote}"` : '.'}
                   </p>
                 )}
-                {item.verificationStatus === 'Disputed' && (
+                {answers.length === 0 && item.verificationStatus === 'Disputed' && (
                   <p className="pm-disputed">
                     <strong>Disputed by the barangay</strong>
                     {item.verificationNote ? ` — "${item.verificationNote}"` : '.'}
@@ -424,7 +473,9 @@ export default function HazardPanel({ item, open, onClose, onResolved, onRetract
                     ) : (
                       <>
                         <p className="db-hint" style={{ marginBottom: 8 }}>
-                          You are barangay personnel. Is this hazard there as described?
+                          {myAnswer
+                            ? `Your barangay ${myAnswer.status === 'Confirmed' ? 'confirmed' : 'disputed'} this. Has it changed?`
+                            : 'You are barangay personnel. Is this hazard there as described?'}
                         </p>
                         {verifyError && <p className="db-error" role="alert">{verifyError}</p>}
                         <div className="db-btn-row">
@@ -433,16 +484,16 @@ export default function HazardPanel({ item, open, onClose, onResolved, onRetract
                             className="db-btn db-btn-outline db-btn-sm"
                             onClick={() => setAnswering('Confirmed')}
                           >
-                            {item.verificationStatus === 'Confirmed'
+                            {myAnswer?.status === 'Disputed'
                               ? 'Change to confirmed'
-                              : 'Confirm it is there'}
+                              : myAnswer?.status === 'Confirmed' ? 'Confirm again' : 'Confirm it is there'}
                           </button>
                           <button
                             type="button"
                             className="db-btn db-btn-outline db-btn-sm"
                             onClick={() => setAnswering('Disputed')}
                           >
-                            {item.verificationStatus === 'Disputed' ? 'Change to disputed' : 'Dispute'}
+                            {myAnswer?.status === 'Confirmed' ? 'Change to disputed' : 'Dispute'}
                           </button>
                         </div>
                       </>
@@ -460,6 +511,35 @@ export default function HazardPanel({ item, open, onClose, onResolved, onRetract
                     <dd>{formatDate(item.activatedAt)}</dd>
                   </div>
                 </dl>
+
+                {/* ---------- DRRMO: answer a dispute ---------- */}
+                {canReview && !closing && (
+                  <div className="db-scope db-embed">
+                    <p className="db-hint" style={{ marginBottom: 8 }}>
+                      A barangay disputed this. If you checked and it stays as it
+                      is, say why. Otherwise withdraw it or edit its area.
+                    </p>
+                    <label className="db-field" htmlFor="pm-review-note">
+                      What did you check?
+                      <textarea
+                        id="pm-review-note"
+                        rows={2}
+                        value={reviewNote}
+                        onChange={(e) => setReviewNote(e.target.value)}
+                        placeholder="Called the barangay captain; water is still rising upstream"
+                      />
+                    </label>
+                    {reviewError && <p className="db-error" role="alert">{reviewError}</p>}
+                    <button
+                      type="button"
+                      className="db-btn db-btn-outline db-btn-sm"
+                      onClick={submitReview}
+                      disabled={reviewing || reviewNote.trim().length < 5}
+                    >
+                      {reviewing ? 'Saving…' : 'Keep it, with this note'}
+                    </button>
+                  </div>
+                )}
 
                 {/* ---------- DRRMO: close the hazard out ---------- */}
                 {canResolve && (
@@ -500,6 +580,11 @@ export default function HazardPanel({ item, open, onClose, onResolved, onRetract
                           <button type="button" className="db-btn db-btn-outline" onClick={() => setClosing('retract')}>
                             Published in error
                           </button>
+                          {onReshape && (
+                            <button type="button" className="db-btn db-btn-outline" onClick={() => onReshape(item)}>
+                              Edit area
+                            </button>
+                          )}
                         </div>
                         <p className="db-hint" style={{ marginTop: 8 }}>
                           Resolve a hazard that happened and is over — it becomes a
