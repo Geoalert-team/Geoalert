@@ -1,3 +1,4 @@
+import os
 import uuid
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -6,6 +7,19 @@ from apps.accounts.models import User
 from apps.barangays.models import Barangay
 from apps.hazards.models import HazardType, HazardZone
 from apps.history.models import HistoricalRecord
+
+
+def report_photo_path(instance, filename):
+    """
+    Where an uploaded photo is stored, under MEDIA_ROOT.
+
+    The uploader's own filename is dropped and the report's id used instead.
+    A name typed on a phone can carry anything — path separators, a second
+    extension, characters the filesystem will not take — and keeping it buys
+    nothing, since the report already says what the photo is of.
+    """
+    ext = os.path.splitext(filename)[1].lower()[:10]
+    return f'incident_reports/{timezone.now():%Y/%m}/{instance.id}{ext}'
 
 
 class IncidentReport(models.Model):
@@ -26,6 +40,14 @@ class IncidentReport(models.Model):
     reviewed_by  = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_reports', db_column='incr_reviewed_by')
     created_at   = models.DateTimeField(auto_now_add=True, db_column='incr_created_at')
     reviewed_at  = models.DateTimeField(null=True, blank=True, db_column='incr_reviewed_at')
+
+    # One optional photo of what the reporter is looking at. A picture of
+    # knee-deep water on the national road settles in a second what a
+    # description argues about, and gives DRRMO something to check a report
+    # against before validating it.
+    photo = models.ImageField(
+        upload_to=report_photo_path, null=True, blank=True, db_column='incr_photo',
+    )
 
     reporter_name     = models.CharField(max_length=150, blank=True, default='', db_column='incr_reporter_name')
     agency            = models.CharField(max_length=150, blank=True, default='', db_column='incr_agency')

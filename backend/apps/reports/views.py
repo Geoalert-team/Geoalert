@@ -222,16 +222,23 @@ class IncidentReportListCreateView(APIView):
         if status_filter:
             reports = reports.filter(status=status_filter)
 
-        return Response(IncidentReportSerializer(reports, many=True).data)
+        # context carries the request so the photo URL comes back absolute
+        return Response(
+            IncidentReportSerializer(reports, many=True, context={'request': request}).data
+        )
 
     def post(self, request):
+        # request.data covers both JSON and multipart/form-data, so a report
+        # with a photo and one without arrive through the same path. DRF's
+        # MultiPartParser is on by default; nothing here needs to know which
+        # was used.
         serializer = IncidentReportCreateSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         report = serializer.save(submitted_by=request.user)
         return Response(
-            IncidentReportSerializer(report).data,
+            IncidentReportSerializer(report, context={'request': request}).data,
             status=status.HTTP_201_CREATED
         )
 
@@ -258,4 +265,4 @@ class IncidentReportReviewView(APIView):
             reviewed_by=request.user,
             reviewed_at=timezone.now()
         )
-        return Response(IncidentReportSerializer(report).data)
+        return Response(IncidentReportSerializer(report, context={'request': request}).data)

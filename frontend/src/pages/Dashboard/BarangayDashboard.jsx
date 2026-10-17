@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PublicNavbar from '../../components/Navbar/PublicNavbar';
 import { useAuth } from '../../context/AuthContext';
@@ -7,7 +7,7 @@ import { reportsApi } from '../../api/reportApi';
 import { guidanceApi } from '../../api/guidanceApi';
 import { hazardsApi } from '../../api/hazardsApi';
 import { Icon, Toast, fieldErrors, formatDateTime, timeAgo } from './admin/adminShared';
-import { HazardIcon, StatusTag } from './reportShared';
+import { HazardIcon, ReportPhoto, StatusTag } from './reportShared';
 import ConfirmHazardCard from '../../components/Verify/ConfirmHazardCard';
 import '../css/Dashboard.css';
 import '../css/AdminDashboard.css';
@@ -45,12 +45,34 @@ function withCurrent(options, current) {
   return current && !options.includes(current) ? [current, ...options] : options;
 }
 
+// Matches MAX_PHOTO_BYTES in apps/reports/serializers.py. Checked here as
+// well so a 12 MB photo is refused before it is pushed up a barangay's
+// connection, not after.
+const MAX_PHOTO_MB = 5;
+
 const REPORT_TABS = ['All', 'Pending', 'Validated', 'Rejected'];
 const TAB_LABEL = { All: 'All', Pending: 'Awaiting review', Validated: 'Validated', Rejected: 'Rejected' };
 
+/**
+ * The barangay this account is assigned to, as a string id or ''.
+ *
+ * Two serializers return this field in two shapes: the signed-in user comes
+ * from UserSerializer, where assigned_barangay is a plain id, while the
+ * admin user list nests an object. Reading `.id` off the number gave
+ * undefined, which left the form's barangay empty while the UI still treated
+ * the account as assigned — the field locked itself to a barangay it could
+ * not name and the form refused to submit, with no dropdown to escape with.
+ * Accepting both shapes means neither serializer can break this again.
+ */
+function assignedBarangayId(user) {
+  const value = user?.assigned_barangay;
+  if (value === null || value === undefined || value === '') return '';
+  return String(value?.id ?? value);
+}
+
 function emptyForm(user) {
   return {
-    barangay: user?.assigned_barangay?.id ? String(user.assigned_barangay.id) : '',
+    barangay: assignedBarangayId(user),
     hazard_type: '',
     description: '',
     severity_estimate: '',
@@ -79,7 +101,7 @@ function GuidanceItem({ item }) {
 
 export default function BarangayDashboard() {
   const { user } = useAuth();
-  const assigned = user?.assigned_barangay;
+  const assignedId = assignedBarangayId(user);
 
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -88,6 +110,12 @@ export default function BarangayDashboard() {
   const [guidance, setGuidance] = useState([]);
 
   const [form, setForm] = useState(() => emptyForm(user));
+  // The photo is a File, not a form value, so it lives outside `form`.
+  // preview is an object URL and has to be revoked, or every re-pick leaks
+  // the previous image for as long as the page is open.
+  const [photo, setPhoto] = useState(null);
+  const [preview, setPreview] = useState('');
+  const fileInput = useRef(null);
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState(null);
@@ -123,7 +151,7 @@ export default function BarangayDashboard() {
     if (!user) return;
     setForm((f) => ({
       ...f,
-      barangay: f.barangay || (user.assigned_barangay?.id ? String(user.assigned_barangay.id) : ''),
+      barangay: f.barangay || assignedBarangayId(user),
       position: f.position || user.position || '',
     }));
   }, [user]);
@@ -133,6 +161,41 @@ export default function BarangayDashboard() {
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
     if (errors[field] || errors.form) setErrors((e) => ({ ...e, [field]: undefined, form: undefined }));
+  }
+
+  // Release the preview when the component goes away mid-report
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+
+  function clearPhoto() {
+    setPhoto(null);
+    setPreview('');
+    // Clearing the input's value matters: without it, picking the same file
+    // again fires no change event and the photo silently does not come back.
+    if (fileInput.current) fileInput.current.value = '';
+    setErrors((e) => ({ ...e, photo: undefined }));
+  }
+
+  function pickPhoto(file) {
+    if (!file) return clearPhoto();
+
+    if (!file.type.startsWith('image/')) {
+      setErrors((e) => ({ ...e, photo: 'That file is not a photo. Pick a JPG or PNG.' }));
+      if (fileInput.current) fileInput.current.value = '';
+      return undefined;
+    }
+    if (file.size > MAX_PHOTO_MB * 1024 * 1024) {
+      setErrors((e) => ({
+        ...e,
+        photo: `That photo is ${(file.size / 1024 / 1024).toFixed(1)} MB. Please use one under ${MAX_PHOTO_MB} MB.`,
+      }));
+      if (fileInput.current) fileInput.current.value = '';
+      return undefined;
+    }
+
+    setPhoto(file);
+    setPreview((old) => { if (old) URL.revokeObjectURL(old); return URL.createObjectURL(file); });
+    setErrors((e) => ({ ...e, photo: undefined, form: undefined }));
+    return undefined;
   }
 
   function validate() {
@@ -159,8 +222,10 @@ export default function BarangayDashboard() {
         severity_estimate: form.severity_estimate,
         position: form.position,
         agency: form.agency,
+        photo,
       });
       setForm({ ...emptyForm(user), position: form.position, agency: form.agency });
+      clearPhoto();
       setErrors({});
       setTab('All');
       setToast({ id: Date.now(), tone: 'good', message: 'Report sent. The DRRMO will review it shortly.' });
@@ -187,7 +252,14 @@ export default function BarangayDashboard() {
   }, [reports, tab, search]);
 
   const lastReport = reports[0];
-  const barangayName = assigned?.name || barangays.find((b) => String(b.id) === String(form.barangay))?.name;
+  // The name from the API, or looked up in the list the page already loaded
+  // if an older backend is serving this build.
+  const assignedName = user?.assigned_barangay_name
+    || user?.assigned_barangay?.name
+    || barangays.find((b) => String(b.id) === assignedId)?.name
+    || '';
+  const barangayName = assignedName
+    || barangays.find((b) => String(b.id) === String(form.barangay))?.name;
 
   return (
     <div className="db adm drm brg">
@@ -195,7 +267,7 @@ export default function BarangayDashboard() {
       <div className="adm-wrap">
         <header className="adm-header">
           <div>
-            <p className="adm-eyebrow">{assigned ? `Barangay ${assigned.name}` : 'Barangay personnel'}</p>
+            <p className="adm-eyebrow">{assignedName ? `Barangay ${assignedName}` : 'Barangay personnel'}</p>
             <h1>Barangay dashboard</h1>
             <p className="adm-lede">Report incidents in your barangay to the DRRMO and follow their review.</p>
           </div>
@@ -263,10 +335,10 @@ export default function BarangayDashboard() {
               <h3><span className="adm-step">1</span>Where and what</h3>
               <div className={`adm-field ${errors.barangay ? 'has-error' : ''}`}>
                 <label htmlFor="brg-barangay">Barangay<span className="adm-req">*</span></label>
-                {assigned ? (
+                {assignedId && assignedName ? (
                   <div className="brg-locked">
                     <Icon name="building" size={16} />
-                    <span><strong>{assigned.name}</strong> · your assigned barangay</span>
+                    <span><strong>{assignedName}</strong> · your assigned barangay</span>
                   </div>
                 ) : (
                   <select id="brg-barangay" value={form.barangay} onChange={(e) => set('barangay', e.target.value)}>
@@ -312,6 +384,42 @@ export default function BarangayDashboard() {
                   {errors.description ? <p className="adm-field-error">{errors.description}</p> : <span />}
                   <span className="brg-count">{form.description.length}/1000</span>
                 </div>
+              </div>
+
+              {/* capture="environment" opens the rear camera straight away on
+                  a phone, which is how most of these will be taken. On a
+                  laptop it is ignored and this is an ordinary file picker. */}
+              <div className={`adm-field ${errors.photo ? 'has-error' : ''}`}>
+                <label htmlFor="brg-photo">Photo <span className="brg-optional">optional</span></label>
+                {preview ? (
+                  <div className="brg-photo-picked">
+                    <img src={preview} alt="What you are about to send" />
+                    <div className="brg-photo-meta">
+                      <strong>{photo?.name}</strong>
+                      <span>{photo ? `${(photo.size / 1024 / 1024).toFixed(1)} MB` : ''}</span>
+                      <button type="button" className="adm-btn adm-btn-outline adm-btn-sm" onClick={clearPhoto}>
+                        Remove photo
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="brg-photo-drop" htmlFor="brg-photo">
+                    <Icon name="camera" size={22} />
+                    <span><strong>Add a photo</strong><small>JPG or PNG, up to {MAX_PHOTO_MB} MB</small></span>
+                  </label>
+                )}
+                <input
+                  id="brg-photo"
+                  ref={fileInput}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="brg-photo-input"
+                  onChange={(e) => pickPhoto(e.target.files?.[0] || null)}
+                />
+                {errors.photo
+                  ? <p className="adm-field-error">{errors.photo}</p>
+                  : <p className="adm-hint">A picture of what you can see helps the DRRMO judge this faster.</p>}
               </div>
 
               <div className={`adm-field ${errors.severity_estimate ? 'has-error' : ''}`}>
@@ -404,6 +512,7 @@ export default function BarangayDashboard() {
                           <StatusTag status={r.status} />
                         </div>
                         <p className="drm-report-desc">{r.description}</p>
+                        <ReportPhoto report={r} alt={`Photo you sent with the ${r.hazard_type_details?.name || 'incident'} report`} />
                         <p className="drm-report-meta">
                           <span title={formatDateTime(r.created_at)}>Sent {timeAgo(r.created_at).toLowerCase()}</span>
                           {r.severity_estimate && <span>Severity: {r.severity_estimate}</span>}

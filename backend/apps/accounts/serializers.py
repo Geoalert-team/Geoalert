@@ -13,11 +13,18 @@ class UserSerializer(serializers.ModelSerializer):
     # So the map can tell barangay personnel which answer on a hazard is
     # their own barangay's. Read-only: assignment is an admin action.
     assigned_barangay = serializers.PrimaryKeyRelatedField(read_only=True)
+    # The id above is what the map compares answers against, so it stays an
+    # id. Screens that need to *show* the barangay were reading
+    # assigned_barangay.name off that number and silently getting undefined,
+    # so the name is its own field rather than a change of shape.
+    assigned_barangay_name = serializers.CharField(
+        source='assigned_barangay.name', read_only=True, default=None,
+    )
 
     class Meta:
         model = User
         fields = ['id', 'full_name', 'email', 'role', 'is_active', 'created_at', 'two_factor_enabled',
-                  'assigned_barangay']
+                  'assigned_barangay', 'assigned_barangay_name']
 
 
 class LoginSerializer(serializers.Serializer):
