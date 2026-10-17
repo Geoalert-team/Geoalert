@@ -715,7 +715,12 @@ export default function PublicMap() {
               draggable
               keyboard={false}
               title={`Corner ${i + 1}. Drag to move.`}
-              eventHandlers={{ dragend: (e) => moveDraftCorner(i, e.target.getLatLng()) }}
+              // 'drag' fires on every mouse move, so the outline and the
+              // area follow the corner live instead of jumping on release.
+              eventHandlers={{
+                drag: (e) => moveDraftCorner(i, e.target.getLatLng()),
+                dragend: (e) => moveDraftCorner(i, e.target.getLatLng()),
+              }}
             />
           ))}
 
