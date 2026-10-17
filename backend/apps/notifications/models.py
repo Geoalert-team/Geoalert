@@ -1,12 +1,16 @@
 import uuid
 from django.db import models
 from apps.accounts.models import User
-from apps.hazards.models import HazardAlert
+from apps.hazards.models import HazardAlert, HazardZone
 
 
 class Notification(models.Model):
     id           = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column='notf_id')
     hazard_alert = models.ForeignKey(HazardAlert, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications', db_column='notf_hzal_id')
+    # The zone a notice is about when it isn't the alert itself: a request
+    # for approval, a dispute, a withdrawal. Lets the bell link to it
+    # without attaching the notice to the alert and inflating its reach.
+    hazard_zone  = models.ForeignKey(HazardZone, on_delete=models.CASCADE, null=True, blank=True, related_name='notices', db_column='notf_hzzn_id')
     recipient    = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', db_column='notf_recipient_id')
     content      = models.TextField(db_column='notf_content')
     is_read      = models.BooleanField(default=False, db_column='notf_is_read')

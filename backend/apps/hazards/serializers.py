@@ -28,6 +28,9 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
     verified_by_name = serializers.CharField(
         source='verified_by.full_name', read_only=True, default=None
     )
+    approved_by_name = serializers.CharField(
+        source='approved_by.full_name', read_only=True, default=None
+    )
 
     class Meta:
         model       = HazardZone
@@ -41,6 +44,8 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
             # barangay has actually been out to look.
             'verification_status', 'verification_note',
             'verified_at', 'verified_by_name',
+            # Second approval for Extreme alerts
+            'approved_by_name', 'approved_at', 'auto_released',
         ]
 
 
@@ -55,6 +60,12 @@ class HazardZoneSerializer(serializers.ModelSerializer):
     retracted_by_name = serializers.CharField(
         source='retracted_by.full_name', read_only=True, default=None
     )
+    published_by_name = serializers.CharField(
+        source='published_by.full_name', read_only=True, default=None
+    )
+    approved_by_name = serializers.CharField(
+        source='approved_by.full_name', read_only=True, default=None
+    )
 
     class Meta:
         model  = HazardZone
@@ -67,6 +78,9 @@ class HazardZoneSerializer(serializers.ModelSerializer):
             'verified_at', 'verified_by_name',
             # Withdrawal, so the DRRMO list can say who withdrew it and why
             'retracted_at', 'retracted_by_name', 'retraction_reason',
+            'published_by_name',
+            # Second approval for Extreme alerts
+            'approved_by_name', 'approved_at', 'auto_released',
         ]
 
 

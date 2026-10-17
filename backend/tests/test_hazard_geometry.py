@@ -31,6 +31,15 @@ class ClipToCityTests(SimpleTestCase):
         with self.assertRaises(OutsideCity):
             clip_to_city(square(20, 20, 22, 22), CITY)
 
+    def test_outline_mostly_outside_is_refused(self):
+        # 0.2 x 10 inside out of 10 x 10 drawn: 2 percent
+        with self.assertRaises(OutsideCity):
+            clip_to_city(square(9.8, 0, 19.8, 10), CITY)
+
+    def test_outline_half_outside_is_kept(self):
+        out = clip_to_city(square(5, 0, 15, 10), CITY)
+        self.assertAlmostEqual(out.area, 50)
+
     def test_no_boundaries_loaded_means_no_clipping(self):
         out = clip_to_city(square(8, 8, 12, 12), None)
         self.assertAlmostEqual(out.area, 16)

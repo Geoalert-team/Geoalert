@@ -6,6 +6,7 @@ import { reportsApi } from '../../api/reportApi';
 import { hazardColor, hazardIconPath } from '../../components/Map/hazardInfo';
 import { Icon, Modal, Toast, fieldErrors, formatDateTime, timeAgo } from './admin/adminShared';
 import ActiveZonesCard from '../../components/Resolve/ActiveZonesCard';
+import AwaitingApprovalCard from '../../components/Resolve/AwaitingApprovalCard';
 import '../css/Dashboard.css';
 import '../css/AdminDashboard.css';
 import '../css/DRRMODashboard.css';
@@ -386,6 +387,8 @@ export default function DRRMODashboard() {
             </div>
           </div>
         </div>
+
+        <AwaitingApprovalCard onChanged={load} />
 
         <ActiveZonesCard onResolved={load} />
 

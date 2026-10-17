@@ -1,9 +1,11 @@
+import json
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.gis.geos import Polygon
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 
@@ -22,55 +24,19 @@ from apps.hazards.serializers import (
 from utils.permissions import IsDRRMOOfficer, IsBarangayPersonnel
 from utils.audit import log_event
 
-
-def affected_barangays(zone, manual_ids=None):
-    """
-    Which barangays a hazard zone actually touches.
-
-    F2 calls for the affected barangays to be identified from the zone's
-    geometry rather than from the single barangay the officer happened to
-    tap: a 1 km zone can cross three of them, and only notifying one leaves
-    the rest uninformed.
-
-    manual_ids is the fallback the spec asks for when the GIS data can't
-    answer - the officer names the barangays and we use those instead.
-    """
-    if manual_ids:
-        return list(Barangay.objects.filter(id__in=manual_ids))
-
-    try:
-        found = list(Barangay.objects.filter(boundary__intersects=zone.geometry))
-    except Exception:
-        # A malformed boundary shouldn't stop an alert going out
-        found = []
-
-    if found:
-        return found
-    # No boundary data, or the zone sits outside every mapped boundary:
-    # fall back to whatever barangay the zone itself records.
-    return [zone.barangay] if zone.barangay else []
-
-
-def alert_recipients(publisher, barangays):
-    """
-    Who gets told. Barangay personnel assigned to an affected barangay, plus
-    DRRMO and admins who need city-wide visibility.
-
-    Anyone with no assigned barangay is included too: until every account has
-    one set, excluding them would silently stop their alerts, which is a worse
-    failure than one extra notification.
-    """
-    return (
-        User.objects
-        .filter(is_active=True)
-        .exclude(id=publisher.id)
-        .filter(
-            Q(assigned_barangay__in=barangays)
-            | Q(assigned_barangay__isnull=True)
-            | Q(role__name__in=['DRRMO_Officer', 'System_Admin'])
-        )
-        .distinct()
-    )
+from apps.hazards.alerts import (
+    affected_barangays,
+    alert_recipients,
+    APPROVAL_WINDOW,
+    approval_due_at,
+    approvers_for,
+    issue_alert,
+    needs_second_approval,
+    notify,
+    release_overdue_quietly,
+    type_name,
+    where_text,
+)
 
 
 def _as_count(value):
@@ -103,6 +69,10 @@ class HazardZoneListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
+        # The public map is the busiest caller, so it is one of the places
+        # an unanswered Extreme alert gets sent once its window is up.
+        release_overdue_quietly()
+
         zones = (
             HazardZone.objects
             .filter(status='Active')
@@ -146,39 +116,49 @@ class HazardZoneCreateView(APIView):
         # Optional override for when the GIS data can't name the affected
         # barangays and the officer picks them by hand.
         manual_ids = request.data.get('affected_barangays') or None
+        severity = serializer.validated_data['severity']
+
+        # Extreme alerts wait for a second officer. If there is nobody else
+        # who could approve, waiting would only delay the warning, so it
+        # goes straight out.
+        hold = needs_second_approval(severity) and approvers_for(request.user).exists()
+
+        if hold:
+            with transaction.atomic():
+                zone = serializer.save(published_by=request.user, status='Awaiting_Approval')
+                barangays = affected_barangays(zone, manual_ids)
+                where = where_text(barangays)
+                due = approval_due_at(zone)
+                notify(
+                    approvers_for(request.user),
+                    f'Approval needed: Extreme {type_name(zone)} alert for {where}, '
+                    f'published by {request.user.full_name}. It goes out automatically at '
+                    f'{timezone.localtime(due):%I:%M %p} if no officer answers.',
+                    zone,
+                )
+            log_event(
+                request, 'HOLD_HAZARD_ALERT', 'hazard_zone', zone.id,
+                f'{type_name(zone)} / Red for {where} held for a second approval.',
+            )
+            payload = HazardZoneSerializer(zone).data
+            payload['approval'] = {
+                'required': True,
+                'due_at': due,
+                'affected_barangays': [b.name for b in barangays],
+            }
+            return Response(payload, status=status.HTTP_201_CREATED)
 
         # One transaction: a hazard that is half-published - saved but with
         # nobody notified - is worse than one that failed outright.
         with transaction.atomic():
             zone = serializer.save(published_by=request.user)
-
-            barangays = affected_barangays(zone, manual_ids)
+            if needs_second_approval(severity):
+                # Extreme, but no second officer exists to approve it
+                zone.auto_released = True
+                zone.save(update_fields=['auto_released'])
+            alert, barangays, recipients = issue_alert(zone, request.user, manual_ids)
             names = [b.name for b in barangays] or ['Talisay City']
             where = ', '.join(names)
-
-            alert = HazardAlert.objects.create(
-                hazard_zone = zone,
-                issued_by   = request.user,
-                hazard_type = zone.hazard_type,
-                severity    = zone.severity,
-                notes       = zone.description,
-            )
-
-            recipients = list(alert_recipients(request.user, barangays))
-            type_name = zone.hazard_type.name if zone.hazard_type else 'Hazard'
-
-            Notification.objects.bulk_create([
-                Notification(
-                    hazard_alert=alert,
-                    recipient=u,
-                    # Carries the hazard type, severity and every affected
-                    # barangay. The serializer adds the link through to the
-                    # zone and its safety guidance.
-                    content=f'{type_name} alert ({zone.severity}) for {where}. '
-                            f'Tap to see the hazard zone and what to do.',
-                )
-                for u in recipients
-            ])
 
         log_event(
             request,
@@ -186,7 +166,7 @@ class HazardZoneCreateView(APIView):
             table='hazard_alert',
             target_id=alert.id,
             details=(
-                f'{type_name} / {zone.severity} published for {where}. '
+                f'{type_name(zone)} / {zone.severity} published for {where}. '
                 f'{len(recipients)} recipient(s) notified. '
                 f'Zone {zone.id}. '
                 f'Barangays identified {"manually" if manual_ids else "from zone geometry"}.'
@@ -252,6 +232,13 @@ class HazardZoneDetailView(APIView):
             return Response(
                 {'error': 'This hazard was withdrawn and can no longer be changed. '
                           'Publish a new zone if the hazard is real.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if zone.status == 'Awaiting_Approval':
+            return Response(
+                {'error': 'This Extreme alert is still waiting for a second approval. '
+                          'Approve it or withdraw it first.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -380,12 +367,13 @@ class HazardZoneRetractView(APIView):
                 {'error': 'This hazard has already been withdrawn.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        if zone.status != 'Active':
+        if zone.status not in ('Active', 'Awaiting_Approval'):
             return Response(
                 {'error': 'This hazard has already been resolved and archived as a '
                           'historical record, so it can no longer be withdrawn.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        was_awaiting = zone.status == 'Awaiting_Approval'
 
         reason = (request.data.get('reason') or '').strip()
         if len(reason) < self.MIN_REASON:
@@ -423,6 +411,7 @@ class HazardZoneRetractView(APIView):
             Notification.objects.bulk_create([
                 Notification(
                     hazard_alert=None,
+                    hazard_zone=zone,
                     recipient=u,
                     content=f'WITHDRAWN: the {type_name} alert for {where} was '
                             f'published in error and has been withdrawn by DRRMO. '
@@ -430,6 +419,16 @@ class HazardZoneRetractView(APIView):
                 )
                 for u in recipients
             ])
+
+            # An Extreme alert stopped before it went out: nobody else was
+            # told about it, but the officer who published it should know.
+            if was_awaiting and zone.published_by and zone.published_by != request.user:
+                notify(
+                    [zone.published_by],
+                    f'{request.user.full_name} did not approve your Extreme {type_name} alert '
+                    f'for {where}, so it was not sent. Reason: {reason}',
+                    zone,
+                )
 
         log_event(
             request, 'RETRACT_HAZARD', 'hazard_zone', zone.id,
@@ -760,3 +759,168 @@ class HazardLayerListView(APIView):
             'Layers': layers,
             'Total_active_hazards': HazardZone.objects.filter(status='Active').count(),
         })
+
+class HazardZonePreviewView(APIView):
+    """
+    POST /api/hazards/preview/
+    Same body as /api/hazards/create/. Saves nothing and notifies nobody.
+
+    What the officer sees before an alert goes out: the shape as it will be
+    saved (clipped to the city), the barangays it reaches, how many accounts
+    will be notified, whether it needs a second approval, and any active zone
+    of the same hazard type it overlaps, which is usually a double publish.
+    """
+    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+
+    def post(self, request):
+        serializer = HazardZoneCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        geometry = data['geometry']
+        manual_ids = request.data.get('affected_barangays') or None
+        barangays = affected_barangays(geometry, manual_ids)
+        recipients = alert_recipients(request.user, barangays).count()
+
+        overlapping = (
+            HazardZone.objects
+            .filter(
+                status__in=['Active', 'Awaiting_Approval'],
+                hazard_type=data.get('hazard_type'),
+                geometry__intersects=geometry,
+            )
+            .select_related('hazard_type', 'barangay', 'published_by')
+            .order_by('-activated_at')
+        )
+
+        # Measured by PostGIS on the spheroid rather than by reprojecting
+        # here: GDAL needs PROJ's data files, which aren't set up on every
+        # developer machine, and the database already has them.
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute('SELECT ST_Area(ST_GeomFromEWKB(%s)::geography)', [bytes(geometry.ewkb)])
+                area = cursor.fetchone()[0]
+        except Exception:
+            area = None
+
+        needs_approval = (
+            needs_second_approval(data['severity'])
+            and approvers_for(request.user).exists()
+        )
+        home = data.get('barangay')
+
+        return Response({
+            'geometry': json.loads(geometry.geojson),
+            'area_m2': round(area) if area is not None else None,
+            'barangay': {'id': home.id, 'name': home.name} if home else None,
+            'affected_barangays': [b.name for b in barangays],
+            'recipients': recipients,
+            'needs_approval': needs_approval,
+            'approval_minutes': int(APPROVAL_WINDOW.total_seconds() // 60),
+            'duplicates': [
+                {
+                    'id': str(z.id),
+                    'type': type_name(z),
+                    'severity': z.severity,
+                    'status': z.status,
+                    'barangay': z.barangay.name if z.barangay else None,
+                    'activated_at': z.activated_at,
+                    'published_by': z.published_by.full_name if z.published_by else None,
+                }
+                for z in overlapping
+            ],
+        })
+
+
+class HazardZoneAwaitingListView(APIView):
+    """
+    GET /api/hazards/awaiting/
+    Extreme alerts waiting for a second officer, oldest first, with when each
+    goes out on its own. DRRMO Officer / System Admin only.
+    """
+    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+
+    def get(self, request):
+        release_overdue_quietly()
+        zones = (
+            HazardZone.objects
+            .filter(status='Awaiting_Approval')
+            .select_related('hazard_type', 'barangay', 'published_by')
+            .order_by('activated_at')
+        )
+        results = []
+        for zone in zones:
+            row = HazardZoneSerializer(zone).data
+            row['approval_due_at'] = approval_due_at(zone)
+            row['affected_barangays'] = [b.name for b in affected_barangays(zone)]
+            row['can_approve'] = zone.published_by_id != request.user.id
+            results.append(row)
+        return Response({'count': len(results), 'results': results})
+
+
+class HazardZoneApproveView(APIView):
+    """
+    POST /api/hazards/<id>/approve/
+    The second officer's approval for an Extreme alert. Sends it.
+
+    Not the officer who published it: approving your own alert is the check
+    this exists to add. To stop an alert instead, withdraw it with a reason
+    through /retract/, which tells the publisher why.
+    """
+    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+
+    def post(self, request, pk):
+        with transaction.atomic():
+            zone = (
+                HazardZone.objects
+                .select_for_update(of=('self',))
+                .select_related('hazard_type', 'barangay', 'published_by')
+                .filter(pk=pk)
+                .first()
+            )
+            if zone is None:
+                return Response({'error': 'Hazard zone not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            if zone.status != 'Awaiting_Approval':
+                message = {
+                    'Active': 'This alert has already gone out'
+                              + (' on its own after the approval window.' if zone.auto_released else '.'),
+                    'Retracted': 'This alert was withdrawn, so it can no longer be approved.',
+                }.get(zone.status, 'This alert is not waiting for approval.')
+                return Response({'error': message}, status=status.HTTP_400_BAD_REQUEST)
+
+            if zone.published_by_id == request.user.id:
+                return Response(
+                    {'error': 'You published this alert, so another officer has to approve it.'},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            zone.status = 'Active'
+            zone.approved_by = request.user
+            zone.approved_at = timezone.now()
+            zone.save(update_fields=['status', 'approved_by', 'approved_at'])
+
+            alert, barangays, recipients = issue_alert(zone, issued_by=zone.published_by or request.user)
+            where = where_text(barangays)
+            if zone.published_by:
+                notify(
+                    [zone.published_by],
+                    f'{request.user.full_name} approved your Extreme {type_name(zone)} alert '
+                    f'for {where}. It has been sent.',
+                    zone,
+                )
+
+        log_event(
+            request, 'APPROVE_HAZARD_ALERT', 'hazard_alert', alert.id,
+            f'{type_name(zone)} / Red for {where} approved and sent. '
+            f'{len(recipients)} recipient(s) notified. Zone {zone.id}.',
+        )
+
+        payload = HazardZoneSerializer(zone).data
+        payload['alert'] = {
+            'id': str(alert.id),
+            'affected_barangays': [b.name for b in barangays],
+            'recipients_notified': len(recipients),
+        }
+        return Response(payload)

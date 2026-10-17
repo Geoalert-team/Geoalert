@@ -14,6 +14,106 @@ const TYPICAL_SIZE = {
   Fire:      'house fire 30-80 m across, block of 50+ houses 80-200 m',
 };
 
+function timeOf(iso) {
+  try {
+    return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+}
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/**
+ * The last look before an alert goes out: who it reaches and what it
+ * overlaps. Publishing notifies people straight away and can't be taken
+ * back, only withdrawn, so a wrong hazard type or a double publish is
+ * cheapest to catch here.
+ */
+function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCancel }) {
+  const places = preview.affected_barangays.length
+    ? preview.affected_barangays.join(', ')
+    : 'Talisay City';
+  const held = preview.needs_approval;
+
+  return (
+    <div className="pub db-scope" role="dialog" aria-label="Check before sending">
+      <div className="pub-head">
+        <h3>Check before sending</h3>
+        <button type="button" className="pub-close" onClick={onCancel} aria-label="Cancel">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </div>
+
+      <dl className="pub-summary">
+        <dt>Hazard</dt>
+        <dd>
+          <span className="pub-sev-dot" style={{ background: sev.color }} /> {typeName}, {sev.label.toLowerCase()}
+        </dd>
+        {preview.area_m2 != null && (
+          <>
+            <dt>Area</dt>
+            <dd>{formatArea(preview.area_m2)}{' '}<small>(after cutting at the city boundary)</small></dd>
+          </>
+        )}
+        <dt>Barangays</dt>
+        <dd>{places}</dd>
+        <dt>Notifies</dt>
+        <dd><strong>{plural(preview.recipients, 'account')}</strong></dd>
+      </dl>
+
+      {preview.duplicates.length > 0 && (
+        <div className="pub-dupes" role="alert">
+          <strong>Already active here.</strong> This overlaps{' '}
+          {preview.duplicates.length === 1 ? 'a zone' : `${preview.duplicates.length} zones`} of the same type:
+          <ul>
+            {preview.duplicates.map((d) => (
+              <li key={d.id}>
+                {d.type}, {(SEVERITY[d.severity]?.label || d.severity).toLowerCase()}
+                {d.barangay ? ` in ${d.barangay}` : ''}
+                {d.activated_at ? `, published ${timeOf(d.activated_at)}` : ''}
+                {d.published_by ? ` by ${d.published_by}` : ''}
+                {d.status === 'Awaiting_Approval' ? ' (waiting for approval)' : ''}
+              </li>
+            ))}
+          </ul>
+          Publishing again sends a second alert for the same hazard.
+          To change the existing one, edit it instead.
+        </div>
+      )}
+
+      {held && (
+        <p className="db-callout" style={{ margin: '0 0 12px' }}>
+          Extreme alerts need a second officer. It stays off the public map
+          until another officer approves it. If nobody answers within{' '}
+          {preview.approval_minutes} minutes, it goes out on its own.
+        </p>
+      )}
+
+      {error && <p className="db-error" role="alert">{error}</p>}
+
+      <div className="db-btn-row">
+        <button
+          type="button"
+          className="db-btn db-btn-primary"
+          disabled={busy}
+          onClick={onSend}
+          style={busy ? undefined : { background: sev.color, borderColor: sev.color }}
+        >
+          {busy
+            ? 'Sending…'
+            : held
+              ? 'Send for approval'
+              : `Send to ${plural(preview.recipients, 'account')}`}
+        </button>
+        <button type="button" className="db-btn db-btn-outline" onClick={onBack} disabled={busy}>
+          Back to edit
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /**
  * The form DRRMO fills in while outlining a hazard on the map. Sits in a
  * floating card so the outline stays visible while corners are added — a
@@ -47,6 +147,9 @@ export default function PublishHazardPanel({
   const [description, setDescription] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // The server's answer to "what would publishing this do?", shown for the
+  // officer to confirm before anything goes out. Null while still editing.
+  const [preview, setPreview] = useState(null);
 
   useEffect(() => {
     hazardsApi.types()
@@ -73,6 +176,17 @@ export default function PublishHazardPanel({
   const allOutside = boundariesReady && closed && outsideCorners === corners && !barangay;
   const blocked = busy || !hazardTypeId || !closed || allOutside;
 
+  function payload() {
+    return {
+      hazard_type: hazardTypeId,
+      barangay: barangay?.id ?? null,
+      severity,
+      description: description.trim(),
+      geometry: pointsToPolygon(points),
+    };
+  }
+
+  // Step one: ask the server what publishing would do, and show it.
   async function submit(e) {
     e.preventDefault();
     if (!hazardTypeId) {
@@ -89,22 +203,48 @@ export default function PublishHazardPanel({
     setBusy(true);
     setError('');
     try {
-      const zone = await hazardsApi.create({
-        hazard_type: hazardTypeId,
-        barangay: barangay?.id ?? null,
-        severity,
-        description: description.trim(),
-        geometry: pointsToPolygon(points),
-      });
-      onPublished?.(zone);
+      setPreview(await hazardsApi.preview(payload()));
     } catch (err) {
-      setError(err?.message || 'Could not publish this hazard zone.');
+      setError(err?.message || 'Could not check this hazard zone.');
     } finally {
       setBusy(false);
     }
   }
 
+  // Step two: the officer has seen who it reaches. Send it.
+  async function send() {
+    setBusy(true);
+    setError('');
+    try {
+      const zone = await hazardsApi.create(payload());
+      onPublished?.(zone);
+    } catch (err) {
+      setError(err?.message || 'Could not publish this hazard zone.');
+      setBusy(false);
+    }
+  }
+
+  // Anything changed after the check makes the summary stale
+  useEffect(() => {
+    setPreview(null);
+  }, [points, hazardTypeId, severity, description]);
+
   const sev = SEVERITY[severity];
+
+  if (preview) {
+    return (
+      <ConfirmStep
+        preview={preview}
+        typeName={typeName || 'Hazard'}
+        sev={sev}
+        busy={busy}
+        error={error}
+        onBack={() => { setPreview(null); setError(''); }}
+        onSend={send}
+        onCancel={onCancel}
+      />
+    );
+  }
 
   return (
     <div className="pub db-scope" role="dialog" aria-label="Publish a hazard zone">

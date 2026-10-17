@@ -5,6 +5,16 @@ export const hazardsApi = {
   list: (bbox) => client.get('/api/hazards/', { params: bbox ? { bbox } : {} }).then((r) => r.data),
   detail: (id) => client.get(`/api/hazards/${id}/`).then((r) => r.data),
   create: (payload) => client.post('/api/hazards/create/', payload).then((r) => r.data),
+
+  // What a publish would do, without doing it: the clipped shape, the
+  // barangays and number of accounts it reaches, overlapping zones of the
+  // same type, and whether it needs a second officer. Saves nothing.
+  preview: (payload) => client.post('/api/hazards/preview/', payload).then((r) => r.data),
+
+  // Extreme alerts waiting for a second officer, and approving one (sends it).
+  // To refuse one, withdraw it with retract() and a reason.
+  awaiting: () => client.get('/api/hazards/awaiting/').then((r) => r.data),
+  approve: (id) => client.post(`/api/hazards/${id}/approve/`).then((r) => r.data),
   update: (id, payload) => client.patch(`/api/hazards/${id}/`, payload).then((r) => r.data),
 
   // Ground confirmation from the barangay: status is 'Confirmed' or 'Disputed'.

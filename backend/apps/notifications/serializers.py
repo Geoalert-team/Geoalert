@@ -39,7 +39,7 @@ class NotificationSerializer(serializers.ModelSerializer):
         hazard; the rest is inferred from the wording until those
         notifications are created with a category of their own.
         """
-        if obj.hazard_alert_id:
+        if obj.hazard_alert_id or obj.hazard_zone_id:
             return 'hazard'
 
         content = (obj.content or '').lower()
@@ -61,4 +61,11 @@ class NotificationSerializer(serializers.ModelSerializer):
         alert = obj.hazard_alert
         if alert and alert.hazard_zone_id:
             return f'/map?zone={alert.hazard_zone_id}'
+        zone = obj.hazard_zone
+        if zone is not None:
+            # Waiting for approval or withdrawn: not on the public map, so
+            # the dashboard is where it can be acted on or read about.
+            if zone.status == 'Active':
+                return f'/map?zone={zone.id}'
+            return '/app/dashboard'
         return None

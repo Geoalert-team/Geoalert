@@ -20,6 +20,12 @@ from django.contrib.gis.geos import GeometryCollection, MultiPolygon, Polygon
 from apps.barangays.models import Barangay
 
 
+# Less than this share of the drawn outline inside the city is refused.
+# Tracing loosely along the coast or the city line keeps far more than this;
+# only an outline that mostly missed the city falls below it.
+MIN_INSIDE_SHARE = 0.05
+
+
 class OutsideCity(ValueError):
     """The zone does not overlap the city at all."""
 
@@ -72,7 +78,17 @@ def clip_to_city(geom, city):
     clipped = _polygons_only(geom.intersection(city))
     if not clipped:
         raise OutsideCity('The outlined area is entirely outside Talisay City.')
-    return MultiPolygon(clipped, srid=geom.srid)
+    result = MultiPolygon(clipped, srid=geom.srid)
+
+    # A sliver left over from an outline drawn almost entirely over the sea
+    # or a neighbouring city is a mis-tap, not a hazard zone. Publishing it
+    # would notify a barangay about an area too small to see on the map.
+    if result.area < geom.area * MIN_INSIDE_SHARE:
+        raise OutsideCity(
+            'Almost all of the outlined area is outside Talisay City. '
+            'Draw it over the affected barangays.'
+        )
+    return result
 
 
 def main_barangay(geom, barangays):

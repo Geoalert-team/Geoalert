@@ -47,11 +47,13 @@ function dedupe(lines) {
 }
 
 function messageFor(err) {
-  const status = err?.response?.status;
+  // axiosClient puts the status on the error itself; there is no
+  // err.response by the time it reaches here.
+  const status = err?.status ?? err?.response?.status;
   if (status === 401 || status === 403) {
     return 'Only DRRMO Officers and Admins can edit guidance. Try logging in again.';
   }
-  return 'Something went wrong. Please try again.';
+  return err?.message || 'Something went wrong. Please try again.';
 }
 
 export default function GuidanceSteps({ type }) {

@@ -215,6 +215,7 @@ export default function PublicMap() {
   const { canPublish } = useAuth();
   const [publishMode, setPublishMode] = useState('off');
   const [draftPoints, setDraftPoints] = useState([]);
+  const [publishNotice, setPublishNotice] = useState('');
 
   // F6: several hazard layers can be visible at once, so this is a set of
   // type names rather than the old single-select filter.
@@ -550,8 +551,17 @@ export default function PublicMap() {
     setDraftPoints((pts) => pts.slice(0, -1));
   }
 
-  async function handlePublished() {
+  async function handlePublished(zone) {
     cancelPublish();
+    // A held Extreme alert isn't on the map yet, so without a word here the
+    // officer would see nothing happen and might publish it again.
+    if (zone?.status === 'Awaiting_Approval') {
+      const due = zone.approval?.due_at ? new Date(zone.approval.due_at) : null;
+      setPublishNotice(
+        'Sent for approval. Another DRRMO officer has to approve this Extreme alert before it goes out'
+        + (due ? `, or it goes out on its own at ${due.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.` : '.'),
+      );
+    }
     // A new zone changes the pins and the Layers counts, and it may raise the
     // shading a level where it overlaps past events.
     await refreshMap();
@@ -943,6 +953,12 @@ export default function PublicMap() {
           stack={stack}
           onPick={showStacked}
         />
+        {publishNotice && (
+          <div className="pub-notice" role="status">
+            <span>{publishNotice}</span>
+            <button type="button" onClick={() => setPublishNotice('')}>OK</button>
+          </div>
+        )}
         {publishMode === 'placing' && (
           <div className="pub-hint">
             <span>Tap the map to start outlining the affected area</span>

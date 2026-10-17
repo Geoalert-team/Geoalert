@@ -8,6 +8,9 @@ from apps.hazards.views import (
     HazardZoneRetractedListView,
     HazardZoneVerifyView,
     HazardZoneForBarangayView,
+    HazardZonePreviewView,
+    HazardZoneAwaitingListView,
+    HazardZoneApproveView,
     HazardTypeListView,
     HazardUnifiedView,
     HazardLayerListView,
@@ -15,6 +18,9 @@ from apps.hazards.views import (
 
 urlpatterns = [
     path('',                  HazardZoneListView.as_view(),         name='hazard-list'),
+    path('preview/',          HazardZonePreviewView.as_view(),      name='hazard-preview'),
+    path('awaiting/',         HazardZoneAwaitingListView.as_view(), name='hazard-awaiting'),
+    path('<uuid:pk>/approve/', HazardZoneApproveView.as_view(),      name='hazard-approve'),
     path('create/',           HazardZoneCreateView.as_view(),       name='hazard-create'),
     path('types/',            HazardTypeListView.as_view(),         name='hazard-types'),
     path('unified/',          HazardUnifiedView.as_view(),          name='hazard-unified'),

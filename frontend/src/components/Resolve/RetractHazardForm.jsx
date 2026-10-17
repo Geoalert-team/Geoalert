@@ -19,12 +19,14 @@ import { hazardsApi } from '../../api/hazardsApi';
  *   title              what's being withdrawn, e.g. "Flood · Tabunok"
  *   onCancel()         close without doing anything
  *   onRetracted(zone)  called with the updated zone after a successful POST
+ *   held               true for an Extreme alert still waiting for approval:
+ *                      nothing went out yet, so this is refusing to send it
  */
 
 // Matches HazardZoneRetractView.MIN_REASON
 const MIN_REASON = 5;
 
-export default function RetractHazardForm({ zoneId, title, onCancel, onRetracted }) {
+export default function RetractHazardForm({ zoneId, title, onCancel, onRetracted, held = false }) {
   const [reason, setReason] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -51,18 +53,26 @@ export default function RetractHazardForm({ zoneId, title, onCancel, onRetracted
 
   return (
     <div className="db-resolve">
-      <h3>Withdraw this hazard</h3>
+      <h3>{held ? "Don't send this alert" : 'Withdraw this hazard'}</h3>
       {title && <p className="db-hint">{title}</p>}
 
-      <p className="db-callout">
-        For a hazard published in error. This takes the zone off the public map
-        and files <strong>no</strong> historical record, so it is never counted
-        as an incident that happened. The alert that already went out stays on
-        the record, and everyone who received it is told it was withdrawn.
-      </p>
+      {held ? (
+        <p className="db-callout">
+          This Extreme alert hasn&apos;t gone out yet, so nobody else is told.
+          The officer who published it gets your reason, and it stays on the
+          record as withdrawn.
+        </p>
+      ) : (
+        <p className="db-callout">
+          For a hazard published in error. This takes the zone off the public map
+          and files <strong>no</strong> historical record, so it is never counted
+          as an incident that happened. The alert that already went out stays on
+          the record, and everyone who received it is told it was withdrawn.
+        </p>
+      )}
 
       <label className="db-field" htmlFor="db-rt-reason">
-        Why is it being withdrawn? (required)
+        {held ? "Why shouldn't it be sent? (required)" : 'Why is it being withdrawn? (required)'}
         <textarea
           id="db-rt-reason"
           rows={3}
@@ -73,8 +83,9 @@ export default function RetractHazardForm({ zoneId, title, onCancel, onRetracted
       </label>
 
       <p className="db-hint">
-        This reason is kept permanently with the zone, written to the activity
-        log, and included in the withdrawal notice sent to recipients.
+        {held
+          ? 'This reason is kept permanently with the zone, written to the activity log, and sent to the officer who published it.'
+          : 'This reason is kept permanently with the zone, written to the activity log, and included in the withdrawal notice sent to recipients.'}
       </p>
 
       {error && <p className="db-error" role="alert">{error}</p>}
@@ -82,12 +93,13 @@ export default function RetractHazardForm({ zoneId, title, onCancel, onRetracted
       {confirming ? (
         <div className="db-confirm">
           <p>
-            Withdraw this hazard? It cannot be undone — if the hazard turns out
-            to be real, publish it again as a new zone.
+            {held
+              ? "Stop this alert? It won't be sent, and it cannot be undone. If the hazard is real, it has to be published again."
+              : 'Withdraw this hazard? It cannot be undone — if the hazard turns out to be real, publish it again as a new zone.'}
           </p>
           <div className="db-btn-row">
             <button type="button" className="db-btn db-btn-primary" onClick={submit} disabled={busy}>
-              {busy ? 'Withdrawing…' : 'Yes, withdraw it'}
+              {busy ? 'Withdrawing…' : held ? "Yes, don't send it" : 'Yes, withdraw it'}
             </button>
             <button type="button" className="db-btn db-btn-outline" onClick={() => setConfirming(false)} disabled={busy}>
               Go back
@@ -103,7 +115,7 @@ export default function RetractHazardForm({ zoneId, title, onCancel, onRetracted
             disabled={busy || !ready}
             title={ready ? undefined : 'Type a reason first'}
           >
-            Withdraw as published in error
+            {held ? "Don't send" : 'Withdraw as published in error'}
           </button>
           {onCancel && (
             <button type="button" className="db-btn db-btn-outline" onClick={onCancel} disabled={busy}>

@@ -48,6 +48,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Turns an unhandled error on /api/ into a short JSON message instead of
+    # a 280 KB HTML debug page the frontend can only call "status code 500".
+    'utils.errors.ApiErrorMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'

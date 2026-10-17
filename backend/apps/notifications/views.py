@@ -6,6 +6,7 @@ from rest_framework import status
 
 from apps.notifications.models import Notification
 from apps.notifications.serializers import NotificationSerializer
+from apps.hazards.alerts import release_overdue_quietly
 
 DEFAULT_LIMIT = 30
 MAX_LIMIT = 100
@@ -36,10 +37,15 @@ class NotificationListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        # Every signed-in bell polls this, so it is one of the places an
+        # unanswered Extreme alert gets sent once its window is up.
+        release_overdue_quietly()
+
         notes = (
             Notification.objects
             .filter(recipient=request.user)
             .select_related(
+                'hazard_zone',
                 'hazard_alert',
                 'hazard_alert__hazard_type',
                 'hazard_alert__hazard_zone',
