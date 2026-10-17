@@ -7,7 +7,7 @@ import { reportsApi } from '../../api/reportApi';
 import { guidanceApi } from '../../api/guidanceApi';
 import { hazardsApi } from '../../api/hazardsApi';
 import { Icon, Toast, fieldErrors, formatDateTime, timeAgo } from './admin/adminShared';
-import { HazardIcon, ReportPhoto, StatusTag } from './reportShared';
+import { HazardIcon, ReportPhotos, StatusTag } from './reportShared';
 import ConfirmHazardCard from '../../components/Verify/ConfirmHazardCard';
 import '../css/Dashboard.css';
 import '../css/AdminDashboard.css';
@@ -49,6 +49,9 @@ function withCurrent(options, current) {
 // well so a 12 MB photo is refused before it is pushed up a barangay's
 // connection, not after.
 const MAX_PHOTO_MB = 5;
+
+// Matches MAX_PHOTOS_PER_REPORT in apps/reports/serializers.py
+const MAX_PHOTOS = 5;
 
 const REPORT_TABS = ['All', 'Pending', 'Validated', 'Rejected'];
 const TAB_LABEL = { All: 'All', Pending: 'Awaiting review', Validated: 'Validated', Rejected: 'Rejected' };
@@ -113,8 +116,10 @@ export default function BarangayDashboard() {
   // The photo is a File, not a form value, so it lives outside `form`.
   // preview is an object URL and has to be revoked, or every re-pick leaks
   // the previous image for as long as the page is open.
-  const [photo, setPhoto] = useState(null);
-  const [preview, setPreview] = useState('');
+  // Each entry is { file, preview, key }. preview is an object URL and has
+  // to be revoked by hand, or every pick leaks the image for as long as the
+  // page stays open.
+  const [photos, setPhotos] = useState([]);
   const fileInput = useRef(null);
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
@@ -163,39 +168,72 @@ export default function BarangayDashboard() {
     if (errors[field] || errors.form) setErrors((e) => ({ ...e, [field]: undefined, form: undefined }));
   }
 
-  // Release the preview when the component goes away mid-report
-  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+  // Release every preview if the page is left mid-report. The ref keeps the
+  // current list without making this effect re-run on each pick, which would
+  // revoke the URLs of images still on screen.
+  const photosRef = useRef(photos);
+  photosRef.current = photos;
+  useEffect(() => () => {
+    photosRef.current.forEach((p) => URL.revokeObjectURL(p.preview));
+  }, []);
 
-  function clearPhoto() {
-    setPhoto(null);
-    setPreview('');
-    // Clearing the input's value matters: without it, picking the same file
-    // again fires no change event and the photo silently does not come back.
+  function clearPhotos() {
+    photos.forEach((p) => URL.revokeObjectURL(p.preview));
+    setPhotos([]);
     if (fileInput.current) fileInput.current.value = '';
-    setErrors((e) => ({ ...e, photo: undefined }));
+    setErrors((e) => ({ ...e, photos: undefined }));
   }
 
-  function pickPhoto(file) {
-    if (!file) return clearPhoto();
+  function removePhoto(key) {
+    setPhotos((list) => {
+      const gone = list.find((p) => p.key === key);
+      if (gone) URL.revokeObjectURL(gone.preview);
+      return list.filter((p) => p.key !== key);
+    });
+    setErrors((e) => ({ ...e, photos: undefined }));
+  }
 
-    if (!file.type.startsWith('image/')) {
-      setErrors((e) => ({ ...e, photo: 'That file is not a photo. Pick a JPG or PNG.' }));
-      if (fileInput.current) fileInput.current.value = '';
-      return undefined;
+  function addPhotos(fileList) {
+    const picked = Array.from(fileList || []);
+    // Clearing the input matters: without it, choosing the same file again
+    // fires no change event and the photo silently does not come back.
+    if (fileInput.current) fileInput.current.value = '';
+    if (picked.length === 0) return;
+
+    const problems = [];
+    const accepted = [];
+
+    for (const file of picked) {
+      if (!file.type.startsWith('image/')) {
+        problems.push(`${file.name} is not a photo.`);
+      } else if (file.size > MAX_PHOTO_MB * 1024 * 1024) {
+        problems.push(`${file.name} is ${(file.size / 1024 / 1024).toFixed(1)} MB.`);
+      } else {
+        accepted.push(file);
+      }
     }
-    if (file.size > MAX_PHOTO_MB * 1024 * 1024) {
-      setErrors((e) => ({
-        ...e,
-        photo: `That photo is ${(file.size / 1024 / 1024).toFixed(1)} MB. Please use one under ${MAX_PHOTO_MB} MB.`,
+
+    setPhotos((list) => {
+      const room = MAX_PHOTOS - list.length;
+      if (accepted.length > room) {
+        problems.push(`Only ${MAX_PHOTOS} photos can be attached to one report.`);
+      }
+      const added = accepted.slice(0, Math.max(0, room)).map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+        // Date.now() alone collides when several files are added at once
+        key: `${file.name}-${file.size}-${Math.random().toString(36).slice(2)}`,
       }));
-      if (fileInput.current) fileInput.current.value = '';
-      return undefined;
-    }
+      return [...list, ...added];
+    });
 
-    setPhoto(file);
-    setPreview((old) => { if (old) URL.revokeObjectURL(old); return URL.createObjectURL(file); });
-    setErrors((e) => ({ ...e, photo: undefined, form: undefined }));
-    return undefined;
+    setErrors((e) => ({
+      ...e,
+      photos: problems.length
+        ? `${problems.join(' ')} Photos must be JPG or PNG, each under ${MAX_PHOTO_MB} MB.`
+        : undefined,
+      form: undefined,
+    }));
   }
 
   function validate() {
@@ -222,10 +260,10 @@ export default function BarangayDashboard() {
         severity_estimate: form.severity_estimate,
         position: form.position,
         agency: form.agency,
-        photo,
+        photos: photos.map((p) => p.file),
       });
       setForm({ ...emptyForm(user), position: form.position, agency: form.agency });
-      clearPhoto();
+      clearPhotos();
       setErrors({});
       setTab('All');
       setToast({ id: Date.now(), tone: 'good', message: 'Report sent. The DRRMO will review it shortly.' });
@@ -389,37 +427,64 @@ export default function BarangayDashboard() {
               {/* capture="environment" opens the rear camera straight away on
                   a phone, which is how most of these will be taken. On a
                   laptop it is ignored and this is an ordinary file picker. */}
-              <div className={`adm-field ${errors.photo ? 'has-error' : ''}`}>
-                <label htmlFor="brg-photo">Photo <span className="brg-optional">optional</span></label>
-                {preview ? (
-                  <div className="brg-photo-picked">
-                    <img src={preview} alt="What you are about to send" />
-                    <div className="brg-photo-meta">
-                      <strong>{photo?.name}</strong>
-                      <span>{photo ? `${(photo.size / 1024 / 1024).toFixed(1)} MB` : ''}</span>
-                      <button type="button" className="adm-btn adm-btn-outline adm-btn-sm" onClick={clearPhoto}>
-                        Remove photo
-                      </button>
-                    </div>
-                  </div>
-                ) : (
+              <div className={`adm-field ${errors.photos ? 'has-error' : ''}`}>
+                <label htmlFor="brg-photo">
+                  Photos <span className="brg-optional">optional</span>
+                  {photos.length > 0 && (
+                    <span className="brg-photo-count">{photos.length} of {MAX_PHOTOS}</span>
+                  )}
+                </label>
+
+                {photos.length > 0 && (
+                  <ul className="brg-photo-grid">
+                    {photos.map((p) => (
+                      <li key={p.key} className="brg-photo-thumb">
+                        <img src={p.preview} alt={`Attached: ${p.file.name}`} />
+                        <button
+                          type="button"
+                          className="brg-photo-remove"
+                          onClick={() => removePhoto(p.key)}
+                          title={`Remove ${p.file.name}`}
+                          aria-label={`Remove ${p.file.name}`}
+                        >
+                          <Icon name="x" size={14} strokeWidth={3} />
+                        </button>
+                        <span className="brg-photo-size">
+                          {(p.file.size / 1024 / 1024).toFixed(1)} MB
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {photos.length < MAX_PHOTOS && (
                   <label className="brg-photo-drop" htmlFor="brg-photo">
                     <Icon name="camera" size={22} />
-                    <span><strong>Add a photo</strong><small>JPG or PNG, up to {MAX_PHOTO_MB} MB</small></span>
+                    <span>
+                      <strong>{photos.length ? 'Add another photo' : 'Add photos'}</strong>
+                      <small>JPG or PNG, up to {MAX_PHOTO_MB} MB each</small>
+                    </span>
                   </label>
                 )}
+
                 <input
                   id="brg-photo"
                   ref={fileInput}
                   type="file"
                   accept="image/*"
                   capture="environment"
+                  multiple
                   className="brg-photo-input"
-                  onChange={(e) => pickPhoto(e.target.files?.[0] || null)}
+                  onChange={(e) => addPhotos(e.target.files)}
                 />
-                {errors.photo
-                  ? <p className="adm-field-error">{errors.photo}</p>
-                  : <p className="adm-hint">A picture of what you can see helps the DRRMO judge this faster.</p>}
+                {errors.photos
+                  ? <p className="adm-field-error">{errors.photos}</p>
+                  : (
+                    <p className="adm-hint">
+                      Pictures of what you can see help the DRRMO judge this faster —
+                      a wide shot of how far it reaches and a close one of how bad it is.
+                    </p>
+                  )}
               </div>
 
               <div className={`adm-field ${errors.severity_estimate ? 'has-error' : ''}`}>
@@ -512,7 +577,7 @@ export default function BarangayDashboard() {
                           <StatusTag status={r.status} />
                         </div>
                         <p className="drm-report-desc">{r.description}</p>
-                        <ReportPhoto report={r} alt={`Photo you sent with the ${r.hazard_type_details?.name || 'incident'} report`} />
+                        <ReportPhotos report={r} alt={`Photo you sent with the ${r.hazard_type_details?.name || 'incident'} report`} />
                         <p className="drm-report-meta">
                           <span title={formatDateTime(r.created_at)}>Sent {timeAgo(r.created_at).toLowerCase()}</span>
                           {r.severity_estimate && <span>Severity: {r.severity_estimate}</span>}

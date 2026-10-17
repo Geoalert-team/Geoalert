@@ -57,24 +57,37 @@
 .brg-photo-drop strong { color: var(--db-heading); font-size: .92rem; }
 .brg-photo-drop small { font-size: .78rem; }
 
-.brg-photo-picked {
-  display: flex; gap: 14px; align-items: flex-start; padding: 12px;
-  border: 1px solid var(--adm-line, #e4e9f0); border-radius: 12px; background: var(--db-white, #fff);
+.brg-photo-count {
+  margin-left: 8px; font-size: .74rem; font-weight: 700; color: var(--db-soft);
 }
-.brg-photo-picked img {
-  width: 110px; height: 110px; object-fit: cover; border-radius: 10px; flex: none;
+
+/* The photos chosen but not yet sent */
+.brg-photo-grid {
+  list-style: none; display: flex; flex-wrap: wrap; gap: 10px;
+  margin: 0 0 10px; padding: 0;
+}
+.brg-photo-thumb {
+  position: relative; width: 104px; height: 104px; border-radius: 10px;
+  overflow: hidden; border: 1px solid var(--adm-line, #e4e9f0);
   background: var(--db-mist, #f6f8fb);
 }
-.brg-photo-meta { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.brg-photo-meta strong {
-  font-size: .88rem; color: var(--db-heading);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.brg-photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.brg-photo-remove {
+  position: absolute; top: 5px; right: 5px; width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 50%; cursor: pointer;
+  background: rgba(16, 26, 43, .72); color: #fff;
 }
-.brg-photo-meta span { font-size: .78rem; color: var(--db-soft); }
-.brg-photo-meta .adm-btn { margin-top: 6px; align-self: flex-start; }
+.brg-photo-remove:hover { background: rgba(16, 26, 43, .92); }
+.brg-photo-remove:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.brg-photo-size {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 6px;
+  font-size: .68rem; color: #fff; background: linear-gradient(transparent, rgba(16, 26, 43, .75));
+  text-align: right;
+}
 
 @media (max-width: 520px) {
-  .brg-photo-picked img { width: 84px; height: 84px; }
+  .brg-photo-thumb { width: 84px; height: 84px; }
 }
 
 .brg-severity { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }

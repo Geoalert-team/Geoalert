@@ -39,8 +39,12 @@
   margin-top: 4px !important; font-size: .92rem; color: var(--db-body);
   display: -webkit-box; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-/* Photo attached to a report. Shown in both the DRRMO queue and the
-   barangay's own list, so it lives in the stylesheet both import. */
+/* Photos attached to a report. Shown in both the DRRMO queue and the
+   barangay's own list, so they live in the stylesheet both import. */
+.drm-report-photos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.drm-report-photos .drm-report-photo { margin-top: 0; }
+.drm-report-photos .drm-report-photo img { max-width: 150px; max-height: 120px; }
+
 .drm-report-photo {
   display: inline-block; margin-top: 10px; padding: 0; border: 0;
   background: none; cursor: zoom-in; border-radius: 10px; line-height: 0;

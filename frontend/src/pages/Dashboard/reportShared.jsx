@@ -37,22 +37,14 @@ export function StatusTag({ status }) {
  * shared database — the image will not load, which onError says plainly
  * instead of leaving a broken icon.
  */
-export function ReportPhoto({ report, alt, linked = true }) {
+function OnePhoto({ photo, alt, linked }) {
   const [failed, setFailed] = React.useState(false);
-  if (!report?.photo) return null;
-
-  if (failed) {
-    return (
-      <p className="drm-photo-missing">
-        A photo was attached but could not be loaded from this server.
-      </p>
-    );
-  }
+  if (failed || !photo?.url) return null;
 
   const image = (
     <img
-      src={report.photo}
-      alt={alt || 'Photo attached to this report'}
+      src={photo.url}
+      alt={alt}
       loading="lazy"
       onError={() => setFailed(true)}
     />
@@ -60,18 +52,38 @@ export function ReportPhoto({ report, alt, linked = true }) {
 
   // linked={false} for rows that are themselves a button: an anchor inside a
   // button is invalid HTML, and a click would both follow the link and open
-  // the row. Those rows open a dialog that carries the full-size version.
+  // the row. Those rows open a dialog that carries the full-size versions.
   if (!linked) return <span className="drm-report-photo is-plain">{image}</span>;
 
   return (
     <a
       className="drm-report-photo"
-      href={report.photo}
+      href={photo.url}
       target="_blank"
       rel="noreferrer"
       title="Open the full-size photo"
     >
       {image}
     </a>
+  );
+}
+
+export function ReportPhotos({ report, alt, linked = true }) {
+  const photos = report?.photos || [];
+  if (photos.length === 0) return null;
+
+  return (
+    <div className="drm-report-photos">
+      {photos.map((photo, i) => (
+        <OnePhoto
+          key={photo.id || photo.url}
+          photo={photo}
+          linked={linked}
+          alt={photos.length > 1
+            ? `${alt || 'Attached photo'} (${i + 1} of ${photos.length})`
+            : (alt || 'Attached photo')}
+        />
+      ))}
+    </div>
   );
 }

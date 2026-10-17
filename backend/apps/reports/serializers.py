@@ -1,11 +1,16 @@
 from rest_framework import serializers
-from apps.reports.models import IncidentReport
+from apps.reports.models import IncidentReport, ReportPhoto
 from apps.hazards.serializers import HazardTypeSerializer
 from apps.barangays.serializers import BarangaySerializer
 
 # A phone photo is 2-4 MB. Past this it is someone uploading something that
 # is not a snapshot, and the barangay's connection has to carry it.
 MAX_PHOTO_BYTES = 5 * 1024 * 1024
+
+# Enough for a wide shot, a close one and a couple of angles. The cap is
+# here so one report cannot fill the bucket or hold a request open for
+# minutes on a barangay's connection.
+MAX_PHOTOS_PER_REPORT = 5
 
 
 def validate_photo_size(photo):
@@ -18,11 +23,46 @@ def validate_photo_size(photo):
     return photo
 
 
+def photo_url(image, request=None):
+    """
+    The URL the browser should fetch for a stored image.
+
+    Two storage backends give two different URLs. Local disk gives
+    '/media/incident_reports/...', relative, which the React app on :3000
+    would resolve against itself rather than the API on :8000 and render as
+    a broken image, so it needs the API's host prepending. Supabase Storage
+    gives a full signed URL, already absolute and carrying an AWS Signature
+    Version 4 query string; prepending anything to that would corrupt it.
+
+    So the host is added only when the URL is relative. Testing the shape of
+    the URL rather than which backend is configured keeps this correct if
+    the backend changes under it.
+    """
+    if not image:
+        return None
+    url = image.url
+    if request is not None and not url.startswith(('http://', 'https://')):
+        url = request.build_absolute_uri(url)
+    return url
+
+
+class ReportPhotoSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReportPhoto
+        fields = ['id', 'url', 'uploaded_at']
+
+    def get_url(self, obj):
+        return photo_url(obj.image, self.context.get('request'))
+
+
 class IncidentReportSerializer(serializers.ModelSerializer):
     hazard_type_details = HazardTypeSerializer(source='hazard_type', read_only=True)
     barangay_details = BarangaySerializer(source='barangay', read_only=True)
     submitted_by_name = serializers.CharField(source='submitted_by.full_name', read_only=True)
     reviewed_by_name = serializers.CharField(source='reviewed_by.full_name', read_only=True)
+    photos = ReportPhotoSerializer(many=True, read_only=True)
 
     class Meta:
         model = IncidentReport
@@ -43,7 +83,7 @@ class IncidentReportSerializer(serializers.ModelSerializer):
             'agency',
             'position',
             'severity_estimate',
-            'photo',
+            'photos',
             'status',
             'review_note',
             'reviewed_by',
@@ -53,32 +93,23 @@ class IncidentReportSerializer(serializers.ModelSerializer):
             'validated_at',
         ]
 
-    def to_representation(self, instance):
-        """
-        Make the photo URL absolute.
-
-        DRF builds an absolute URL only when the serializer has the request
-        in its context; without it the field comes back as '/media/...',
-        which the React app on :3000 would resolve against itself rather
-        than the API on :8000 and render as a broken image. The views pass
-        the request, and this is the belt to that braces: if one ever
-        forgets, the URL is still built from the API's own host.
-        """
-        data = super().to_representation(instance)
-        request = self.context.get('request')
-        if request is not None and instance.photo:
-            data['photo'] = request.build_absolute_uri(instance.photo.url)
-        return data
 
 class IncidentReportCreateSerializer(serializers.ModelSerializer):
     # No casualty or displaced counts: while a hazard is active only the
     # DRRMO records how many people are affected.
 
-    # Declared rather than inherited so the size check is attached. Being a
-    # serializers.ImageField, Pillow opens and verifies the upload, so a file
-    # renamed to .jpg is rejected on its contents rather than its extension.
-    photo = serializers.ImageField(
-        required=False, allow_null=True, validators=[validate_photo_size],
+    # A list, because a report usually carries more than one picture. Each
+    # entry is a serializers.ImageField, so Pillow opens and verifies it and
+    # a file renamed to .jpg is refused on its contents rather than its
+    # extension. ListField validates every item before anything is saved,
+    # which is what keeps one bad file in a batch of four from leaving the
+    # other three uploaded against a report that was never created.
+    photos = serializers.ListField(
+        child=serializers.ImageField(validators=[validate_photo_size]),
+        required=False, allow_empty=True, max_length=MAX_PHOTOS_PER_REPORT,
+        error_messages={
+            'max_length': f'Please attach at most {MAX_PHOTOS_PER_REPORT} photos.',
+        },
     )
 
     class Meta:
@@ -90,8 +121,25 @@ class IncidentReportCreateSerializer(serializers.ModelSerializer):
             'agency',
             'position',
             'severity_estimate',
-            'photo',
+            'photos',
         ]
+
+    def create(self, validated_data):
+        """
+        Save the report and its photos together, or save neither.
+
+        The files are popped before the model is created, because `photos`
+        is not a field on IncidentReport -- it is rows in another table. The
+        view wraps this in a transaction, so a photo that fails to upload
+        takes the whole report back with it rather than leaving a report
+        whose pictures are missing without saying so.
+        """
+        photos = validated_data.pop('photos', [])
+        report = super().create(validated_data)
+        for image in photos:
+            ReportPhoto.objects.create(report=report, image=image)
+        return report
+
 
 class IncidentReportReviewSerializer(serializers.ModelSerializer):
     class Meta:

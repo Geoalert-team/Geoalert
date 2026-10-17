@@ -10,26 +10,28 @@ export const reportsApi = {
 
 
   // Barangay Personnel: submit a new incident report.
-  // photo is an optional File from an <input type="file">.
+  // photos is an optional array of File objects from an <input type="file" multiple>.
   submit: ({
     barangay, hazard_type, description,
-    agency = '', position = '', severity_estimate = '', photo = null,
+    agency = '', position = '', severity_estimate = '', photos = [],
   }) => {
     const body = { barangay, hazard_type, description, agency, position, severity_estimate };
 
-    if (!photo) {
+    if (!photos || photos.length === 0) {
       return client.post('/api/reports/incidents/', body).then((r) => r.data);
     }
 
     const form = new FormData();
     Object.entries(body).forEach(([k, v]) => form.append(k, v ?? ''));
-    form.append('photo', photo, photo.name);
+    // Appended under the same key once per file. DRF reads them back with
+    // getlist(), so all of them arrive rather than only the last.
+    photos.forEach((file) => form.append('photos', file, file.name));
 
     // The Content-Type override is not optional. axiosClient sets
     // 'application/json' as a default header, and axios turns FormData into
-    // JSON whenever the content type says JSON — the file would be sent as
-    // "photo":{} and the request would still come back 200, so the report
-    // would save with no photo and nothing would look wrong. Naming
+    // JSON whenever the content type says JSON — the files would be sent as
+    // "photos":{} and the request would still come back 201, so the report
+    // would save with no photos and nothing would look wrong. Naming
     // multipart here keeps the FormData intact; axios replaces this value
     // with the real boundary before sending.
     return client

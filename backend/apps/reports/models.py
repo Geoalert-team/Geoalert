@@ -11,12 +11,16 @@ from apps.history.models import HistoricalRecord
 
 def report_photo_path(instance, filename):
     """
-    Where an uploaded photo is stored, under MEDIA_ROOT.
+    Where an uploaded photo is stored — a key in the Supabase bucket, or a
+    path under MEDIA_ROOT when storage falls back to local disk.
 
-    The uploader's own filename is dropped and the report's id used instead.
-    A name typed on a phone can carry anything — path separators, a second
-    extension, characters the filesystem will not take — and keeping it buys
-    nothing, since the report already says what the photo is of.
+    The uploader's own filename is dropped and the photo row's id used
+    instead. A name typed on a phone can carry anything — path separators, a
+    second extension, characters the filesystem will not take — and keeping
+    it buys nothing, since the report already says what the photo is of.
+
+    Named after the photo rather than the report, because a report can carry
+    several and they would otherwise collide.
     """
     ext = os.path.splitext(filename)[1].lower()[:10]
     return f'incident_reports/{timezone.now():%Y/%m}/{instance.id}{ext}'
@@ -41,14 +45,6 @@ class IncidentReport(models.Model):
     created_at   = models.DateTimeField(auto_now_add=True, db_column='incr_created_at')
     reviewed_at  = models.DateTimeField(null=True, blank=True, db_column='incr_reviewed_at')
 
-    # One optional photo of what the reporter is looking at. A picture of
-    # knee-deep water on the national road settles in a second what a
-    # description argues about, and gives DRRMO something to check a report
-    # against before validating it.
-    photo = models.ImageField(
-        upload_to=report_photo_path, null=True, blank=True, db_column='incr_photo',
-    )
-
     reporter_name     = models.CharField(max_length=150, blank=True, default='', db_column='incr_reporter_name')
     agency            = models.CharField(max_length=150, blank=True, default='', db_column='incr_agency')
     position          = models.CharField(max_length=100, blank=True, default='', db_column='incr_position')
@@ -70,3 +66,40 @@ class IncidentReport(models.Model):
 
     def __str__(self):
         return f'{self.hazard_type} — {self.barangay} — {self.status}'
+
+
+class ReportPhoto(models.Model):
+    """
+    A photo attached to an incident report, one row per picture.
+
+    A report usually needs more than one: a wide shot showing how far the
+    water reaches, and a close one showing how deep it is at the door. A
+    picture settles in a second what a description argues about, and gives
+    the DRRMO something to check a report against before validating it.
+
+    The file itself is never in this table. `image` holds the key in the
+    Supabase bucket (or the path under MEDIA_ROOT when storage falls back to
+    local disk), and Django builds a URL from it on the way out — signed and
+    short-lived for Supabase. Storing the key rather than a finished URL is
+    what lets the same row work under either backend, and stops a signed URL
+    being written to the database on the day it was generated and served
+    stale forever after.
+    """
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False, db_column='inrp_id',
+    )
+    report = models.ForeignKey(
+        IncidentReport, on_delete=models.CASCADE,
+        related_name='photos', db_column='inrp_incr_id',
+    )
+    # 200 rather than Django's default 100: a stored key is about 65
+    # characters today, and the headroom costs nothing on a varchar.
+    image = models.ImageField(upload_to=report_photo_path, max_length=200, db_column='inrp_url')
+    uploaded_at = models.DateTimeField(auto_now_add=True, db_column='inrp_uploaded_at')
+
+    class Meta:
+        db_table = 'incident_report_photo'
+        ordering = ['uploaded_at']
+
+    def __str__(self):
+        return f'Photo for {self.report_id}'
