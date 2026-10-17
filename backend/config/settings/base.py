@@ -101,6 +101,22 @@ DATABASES = {
     }
 }
 
+# Supabase's pooler has two modes on the same host. Port 5432 is session
+# mode: one pooler client per open connection, at most 15, shared by every
+# developer and server. Port 6543 is transaction mode: a server connection
+# is borrowed only for each transaction, so many short-lived clients fit.
+# Set DB_PORT=6543 (or DB_TRANSACTION_POOLER=true) to use it. Two things
+# don't survive between transactions there, so they are switched off:
+#   * server-side cursors (named cursors live in the session), and
+#   * holding connections open, which only helps when the pooler keeps
+#     the session; here each request takes a fresh slot anyway.
+DB_TRANSACTION_POOLER = env.bool(
+    'DB_TRANSACTION_POOLER', default=str(DATABASES['default']['PORT']) == '6543',
+)
+if DB_TRANSACTION_POOLER:
+    DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
+    DATABASES['default']['CONN_MAX_AGE'] = 0
+
 # Sessions are read from a cache first and the database only on a miss.
 # Every request reads the session to know who is signed in, including the
 # notification bell's poll every 30 seconds per open tab, so that was one
