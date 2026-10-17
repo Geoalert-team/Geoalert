@@ -264,6 +264,8 @@ export default function PublishHazardPanel({
           </p>
           <p className="pub-draw-help">
             Follow the edge of the affected area. Drag a corner to move it.
+            Corners near a barangay line or the coast snap onto it; hold Alt
+            to place one freely.
           </p>
           <div className="pub-draw-tools">
             <button type="button" className="pub-tool" onClick={onUndo} disabled={!corners || busy}>

@@ -52,7 +52,8 @@ export default function ReshapeZonePanel({ zone, points, canUndo, onUndo, onRese
         </p>
         <p className="pub-draw-help">
           Drag a corner to move it. Tap the map to add a corner on the nearest
-          edge. Right-click a corner to remove it.
+          edge. Right-click a corner to remove it. Corners near a barangay
+          line snap onto it; hold Alt to place one freely.
         </p>
         <div className="pub-draw-tools">
           <button type="button" className="pub-tool" onClick={onUndo} disabled={!canUndo || busy}>

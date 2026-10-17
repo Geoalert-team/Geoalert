@@ -172,3 +172,21 @@
   flex-shrink: 0; padding: 0; border: 0; background: none; cursor: pointer;
   font: inherit; font-weight: 700; color: #cfe0ff; text-decoration: underline;
 }
+
+/* While the drawing card is open it covers the bottom-right corner, where
+   the zoom buttons, scale bar and map-style switch live. Slide them left
+   of the card on desktop, and up to the top-right on phones, where the
+   card spans the bottom of the screen. */
+.pm-stage.has-pub-panel .leaflet-bottom.leaflet-right { right: 352px; }
+.pm-stage.has-pub-panel .pm-basemap { right: 362px; }
+
+@media (max-width: 860px) {
+  /* On a phone the card and the legend together left almost no map to
+     draw on, and the legend sat on top of the card. While drawing, the
+     card takes under half the screen and the legend steps aside. */
+  .pm-stage.has-pub-panel .pub { max-height: 45%; }
+  .pm-stage.has-pub-panel .pm-legend { display: none; }
+  .pm-stage.has-pub-panel .leaflet-bottom.leaflet-right { right: 0; bottom: auto; top: 176px; }
+  .pm-stage.has-pub-panel .leaflet-bottom.leaflet-right .leaflet-control-scale { display: none; }
+  .pm-stage.has-pub-panel .pm-basemap { display: none; }
+}

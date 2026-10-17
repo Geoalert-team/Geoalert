@@ -13,6 +13,7 @@ import { useSusceptibility } from '../components/Map/susceptibility';
 import { HAZARD_LEVELS, useHazardLevelLayer } from '../components/Map/hazardLevels';
 import { HAZARD_TYPES, SEVERITY, severityInfo, hazardKey, hazardIconPath, hazardColor } from '../components/Map/hazardInfo';
 import { MIN_CORNERS, cornersOfZone, insertCorner, middleOf } from '../utils/drawnZone';
+import { boundaryRings, snapPoint } from '../utils/snap';
 import { hazardsApi } from '../api/hazardsApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { historyApi } from '../api/historyApi';
@@ -229,6 +230,8 @@ export default function PublicMap() {
   // of the outline so a change can be undone one step at a time.
   const [reshapeZone, setReshapeZone] = useState(null);
   const [draftHistory, setDraftHistory] = useState([]);
+  // Alt held down: place corners exactly where tapped, without snapping
+  const altHeld = useRef(false);
 
   // F6: several hazard layers can be visible at once, so this is a set of
   // type names rather than the old single-select filter.
@@ -537,6 +540,38 @@ export default function PublicMap() {
 
   /* ---------- Publishing ---------- */
 
+  // Every barangay line and the coast, for snapping corners onto them
+  const snapRings = useMemo(() => boundaryRings(barangays.map((b) => b.feature)), [barangays]);
+
+  useEffect(() => {
+    const track = (e) => { altHeld.current = e.altKey; };
+    const release = () => { altHeld.current = false; };
+    window.addEventListener('keydown', track);
+    window.addEventListener('keyup', track);
+    window.addEventListener('blur', release);
+    return () => {
+      window.removeEventListener('keydown', track);
+      window.removeEventListener('keyup', track);
+      window.removeEventListener('blur', release);
+    };
+  }, []);
+
+  // A corner within a few pixels of a barangay line lands on the line, so
+  // a zone meant to stop at a border stops exactly there. Hold Alt to skip.
+  function snapLatLng(latlng) {
+    if (!map || altHeld.current || !snapRings.length) return latlng;
+    const { point } = snapPoint(
+      [latlng.lat, latlng.lng],
+      snapRings,
+      (ll) => map.latLngToLayerPoint(ll),
+      (pt) => {
+        const ll = map.layerPointToLatLng(L.point(pt.x, pt.y));
+        return [ll.lat, ll.lng];
+      },
+    );
+    return { lat: point[0], lng: point[1] };
+  }
+
   function startPublish() {
     setSelection(null);
     setPanelOpen(false);
@@ -587,7 +622,8 @@ export default function PublicMap() {
 
   // One handler for every map click: add a corner to the outline while
   // publishing, otherwise close whichever details panel is open.
-  function handleMapClick(latlng) {
+  function handleMapClick(clicked) {
+    const latlng = publishMode === 'off' ? clicked : snapLatLng(clicked);
     if (publishMode === 'reshaping') {
       changeDraft(insertCorner(draftPoints, [latlng.lat, latlng.lng]));
       return;
@@ -680,7 +716,14 @@ export default function PublicMap() {
     <div className="pm">
       <PublicNavbar />
 
-      <div className={`pm-stage ${publishMode !== 'off' ? 'is-placing' : ''}`}>
+      <div
+        className={[
+          'pm-stage',
+          publishMode !== 'off' ? 'is-placing' : '',
+          // The drawing card sits bottom-right, where the zoom buttons are
+          publishMode === 'editing' || publishMode === 'reshaping' ? 'has-pub-panel' : '',
+        ].filter(Boolean).join(' ')}
+      >
         {/* ============ MAP ============ */}
         <MapContainer
           ref={setMap}
@@ -788,7 +831,7 @@ export default function PublicMap() {
                 // Remember the outline before the drag, so Undo can put it back
                 dragstart: () => { if (publishMode === 'reshaping') setDraftHistory((h) => [...h, draftPoints]); },
                 drag: (e) => moveDraftCorner(i, e.target.getLatLng()),
-                dragend: (e) => moveDraftCorner(i, e.target.getLatLng()),
+                dragend: (e) => moveDraftCorner(i, snapLatLng(e.target.getLatLng())),
                 contextmenu: (e) => { L.DomEvent.preventDefault(e.originalEvent); removeDraftCorner(i); },
               }}
             />
@@ -802,7 +845,12 @@ export default function PublicMap() {
               title={`${h.location}: ${h.type}, ${severityInfo(h.severity).label}`}
               eventHandlers={{
                 click: (e) => {
-                  if (publishMode !== 'off') { handleMapClick(e.latlng); return; }
+                  // A pin's click reports the pin's own position; while
+                  // drawing, the corner belongs where the finger landed.
+                  if (publishMode !== 'off') {
+                    handleMapClick(map && e.originalEvent ? map.mouseEventToLatLng(e.originalEvent) : e.latlng);
+                    return;
+                  }
                   selectHazard(h);
                 },
               }}
