@@ -65,12 +65,35 @@
 .pub-sev-btn.is-active { border-width: 2px; }
 .pub-sev-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
-/* Range input — the one control with no db- equivalent */
-.pub input[type='range'] {
-  width: 100%; padding: 0; margin-top: 2px;
-  border: 0; background: transparent;
-  accent-color: var(--db-navy);
+/* Outline drawing: status, help and the undo / start-over buttons */
+.pub-draw {
+  margin-bottom: 10px; padding: 10px 12px;
+  border: 1px solid var(--db-line); border-radius: 10px;
+  background: var(--db-mist);
 }
+.pub-draw-status { font-size: .86rem; color: var(--db-body); }
+.pub-draw-status strong { color: var(--db-heading); }
+.pub-draw-help { margin-top: 2px; font-size: .78rem; color: var(--db-soft); }
+.pub-draw-tools { display: flex; gap: 6px; margin-top: 8px; }
+.pub-tool {
+  min-height: 32px; padding: 0 12px;
+  border: 1px solid var(--db-line); border-radius: var(--db-pill);
+  background: var(--db-white); color: var(--db-body);
+  font: inherit; font-size: .76rem; font-weight: 700; cursor: pointer;
+}
+.pub-tool:hover:not(:disabled) { border-color: var(--db-navy); }
+.pub-tool:disabled { opacity: .45; cursor: default; }
+.pub-note { color: var(--db-soft); }
+
+/* Draggable corner handle on the map */
+.pub-corner-wrap { background: none; border: 0; }
+.pub-corner {
+  display: block; width: 18px; height: 18px;
+  border: 3px solid #1c2e4a; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .35);
+  cursor: grab;
+}
+.pub-corner-wrap:active .pub-corner { cursor: grabbing; }
 
 /* Instruction pill shown while waiting for a tap on the map */
 .pub-hint {
@@ -91,7 +114,7 @@
   color: #cfe0ff; text-decoration: underline;
 }
 
-/* While placing, the whole map is a target */
+/* While outlining, the whole map is a target */
 .pm-stage.is-placing .leaflet-container { cursor: crosshair; }
 
 @media (max-width: 860px) {

@@ -1,36 +1,45 @@
 import React, { useEffect, useState } from 'react';
 import { hazardsApi } from '../../api/hazardsApi';
-import { circleToPolygon } from '../../utils/circlePolygon';
+import { MIN_CORNERS, areaSqM, formatArea, pointsToPolygon } from '../../utils/drawnZone';
 import { SEVERITY } from '../Map/hazardInfo';
 import './css/PublishHazard.css';
 
 const SEVERITY_ORDER = ['Green', 'Orange', 'Red'];
 
-// Starting radius when a hazard type is picked, and what sizes are usual for it.
+// What sizes are usual for each hazard, as a guide while outlining.
 // A burned block is small (40 razed houses cover ~0.25 ha); floods spread wide.
 const TYPICAL_SIZE = {
-  Flood:     { radius: 200, hint: 'Street ponding 50-120 m, river overflow 250-700 m' },
-  Landslide: { radius: 50,  hint: 'Rockfall 10-25 m, slope failure with houses below 60-150 m' },
-  Fire:      { radius: 40,  hint: 'House fire 15-40 m, block of 50+ houses 40-100 m' },
+  Flood:     'street ponding 100-250 m across, river overflow 500 m to 1.5 km',
+  Landslide: 'rockfall 20-50 m across, slope failure with houses below 100-300 m',
+  Fire:      'house fire 30-80 m across, block of 50+ houses 80-200 m',
 };
 
 /**
- * The form DRRMO fills in after tapping a point on the map. Sits in a
- * floating card so the draft circle stays visible while the radius is
- * adjusted — a modal would cover the thing being adjusted.
+ * The form DRRMO fills in while outlining a hazard on the map. Sits in a
+ * floating card so the outline stays visible while corners are added — a
+ * modal would cover the thing being drawn.
+ *
+ * The zone is drawn as a polygon, not a circle: floods follow low ground and
+ * creeks, landslides follow slopes, and a circle around a pin both misses
+ * houses just past its edge and alarms dry ones inside it.
  *
  * Props:
- *   center        [lat, lng] of the tapped point
- *   radius        metres, controlled by the parent so the map can draw it
- *   onRadius(n)   radius changed
- *   barangay          { id, name } detected from the point, or null
+ *   points            [lat, lng] corners tapped so far, controlled by the
+ *                     parent so the map can draw them
+ *   onUndo()          remove the last corner
+ *   onClear()         start the outline again
+ *   barangay          { id, name } around the middle of the outline, or null.
+ *                     Only a preview: the server files the zone under
+ *                     whichever barangay holds most of it.
+ *   outsideCorners    how many corners fall outside every barangay
  *   boundariesReady   false when the barangay outlines failed to load, in
  *                     which case "outside" can't be told from "unknown"
  *   onCancel()
  *   onPublished(zone)
  */
 export default function PublishHazardPanel({
-  center, radius, onRadius, barangay, boundariesReady = true, onCancel, onPublished,
+  points, onUndo, onClear, barangay, outsideCorners = 0, boundariesReady = true,
+  onCancel, onPublished,
 }) {
   const [types, setTypes] = useState([]);
   const [hazardTypeId, setHazardTypeId] = useState('');
@@ -48,12 +57,21 @@ export default function PublishHazardPanel({
       .catch(() => setError('Could not load hazard types. Check the backend is running.'));
   }, []);
 
-  // Reset the radius to the usual size whenever the hazard type changes
   const typeName = types.find((t) => String(t.id) === String(hazardTypeId))?.name;
   const typical = TYPICAL_SIZE[typeName];
-  useEffect(() => {
-    if (typical) onRadius(typical.radius);
-  }, [typeName]); // eslint-disable-line react-hooks/exhaustive-deps
+  const corners = points.length;
+  const closed = corners >= MIN_CORNERS;
+  const area = areaSqM(points);
+
+  // Corners outside the city are fine: the server cuts the zone off at the
+  // city boundary, so the officer can trace along it loosely. A zone that
+  // misses the city completely is refused.
+  //
+  // Only warn when the outlines actually loaded. If they failed, every
+  // corner looks "outside", and saying so would be noise.
+  const spills = boundariesReady && outsideCorners > 0;
+  const allOutside = boundariesReady && closed && outsideCorners === corners && !barangay;
+  const blocked = busy || !hazardTypeId || !closed || allOutside;
 
   async function submit(e) {
     e.preventDefault();
@@ -63,8 +81,8 @@ export default function PublishHazardPanel({
     }
     // The button is disabled in this case, but pressing Enter in a field can
     // still reach here on some browsers.
-    if (boundariesReady && !barangay) {
-      setError('Pick a point inside a barangay before publishing.');
+    if (!closed) {
+      setError(`Tap at least ${MIN_CORNERS} corners on the map to outline the area.`);
       return;
     }
 
@@ -76,7 +94,7 @@ export default function PublishHazardPanel({
         barangay: barangay?.id ?? null,
         severity,
         description: description.trim(),
-        geometry: circleToPolygon(center, radius),
+        geometry: pointsToPolygon(points),
       });
       onPublished?.(zone);
     } catch (err) {
@@ -88,17 +106,6 @@ export default function PublishHazardPanel({
 
   const sev = SEVERITY[severity];
 
-  // A hazard has to belong to a barangay: the alert goes to that barangay's
-  // personnel, and the reports count by barangay. A point outside every
-  // boundary would publish a zone nobody is responsible for, so the button
-  // stays off until the officer taps inside the city.
-  //
-  // Only when the outlines actually loaded, though. If they failed, every
-  // point looks "outside", and blocking on that would disable publishing
-  // altogether — worse than letting it through during an emergency.
-  const outside = boundariesReady && !barangay;
-  const blocked = busy || !hazardTypeId || outside;
-
   return (
     <div className="pub db-scope" role="dialog" aria-label="Publish a hazard zone">
       <form onSubmit={submit}>
@@ -109,14 +116,37 @@ export default function PublishHazardPanel({
           </button>
         </div>
 
+        <div className="pub-draw">
+          <p className="pub-draw-status" aria-live="polite">
+            {closed
+              ? <><strong>{formatArea(area)}</strong> outlined with {corners} corners</>
+              : <>Tap the map to add corners: <strong>{corners} of {MIN_CORNERS}</strong></>}
+          </p>
+          <p className="pub-draw-help">
+            Follow the edge of the affected area. Drag a corner to move it.
+          </p>
+          <div className="pub-draw-tools">
+            <button type="button" className="pub-tool" onClick={onUndo} disabled={!corners || busy}>
+              Undo corner
+            </button>
+            <button type="button" className="pub-tool" onClick={onClear} disabled={!corners || busy}>
+              Start over
+            </button>
+          </div>
+          {typical && <small className="pub-size-hint">Typical size: {typical}.</small>}
+        </div>
+
         <p className="pub-where">
-          {barangay && <>Inside <strong>{barangay.name}</strong></>}
-          {outside && (
+          {barangay && <>Mostly in <strong>{barangay.name}</strong>. </>}
+          {allOutside && (
             <span className="pub-warn">
-              That point is outside Talisay City. Tap again inside a barangay to publish.
+              The outline is outside Talisay City. Draw it over the affected barangays.
             </span>
           )}
-          {!barangay && !outside && (
+          {spills && !allOutside && (
+            <span className="pub-note">Parts outside Talisay City will be cut off.</span>
+          )}
+          {!boundariesReady && (
             <span className="pub-warn">
               Barangay outlines didn't load, so the barangay can't be checked.
             </span>
@@ -157,20 +187,6 @@ export default function PublishHazardPanel({
           </div>
         </fieldset>
 
-        <label className="db-field" htmlFor="pub-radius">
-          Affected radius — {radius} m
-          <input
-            id="pub-radius"
-            type="range"
-            min="10"
-            max="1000"
-            step="5"
-            value={radius}
-            onChange={(e) => onRadius(Number(e.target.value))}
-          />
-          {typical && <small className="pub-size-hint">{typical.hint}</small>}
-        </label>
-
         <label className="db-field" htmlFor="pub-desc">
           What is happening here?
           <textarea
@@ -193,7 +209,7 @@ export default function PublishHazardPanel({
           <button
             className="db-btn db-btn-primary"
             disabled={blocked}
-            title={outside ? 'Move the point inside a barangay first' : undefined}
+            title={!closed ? `Outline the area with at least ${MIN_CORNERS} corners first` : undefined}
             style={blocked ? undefined : { background: sev.color, borderColor: sev.color }}
           >
             {busy ? 'Publishing…' : `Publish ${sev.label.toLowerCase()}`}

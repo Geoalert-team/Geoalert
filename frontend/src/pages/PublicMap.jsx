@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, Circle, ZoomControl, ScaleControl, Pane, ImageOverlay, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, Polygon, Polyline, ZoomControl, ScaleControl, Pane, ImageOverlay, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import { useSearchParams } from 'react-router-dom';
@@ -11,6 +11,7 @@ import BarangayPanel from '../components/Map/BarangayPanel';
 import { useSusceptibility } from '../components/Map/susceptibility';
 import { HAZARD_LEVELS, useHazardLevelLayer } from '../components/Map/hazardLevels';
 import { HAZARD_TYPES, SEVERITY, severityInfo, hazardKey, hazardIconPath, hazardColor } from '../components/Map/hazardInfo';
+import { MIN_CORNERS, middleOf } from '../utils/drawnZone';
 import { hazardsApi } from '../api/hazardsApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { historyApi } from '../api/historyApi';
@@ -170,7 +171,16 @@ function pinIcon(item, selected, overlapping) {
   });
 }
 
-// Clicking empty map either places a publish point or closes the panel
+// Corner handle for the outline being drawn. Drawn as a div so it can be
+// styled in CSS and is big enough to grab on a phone.
+const CORNER_ICON = L.divIcon({
+  className: 'pub-corner-wrap',
+  html: '<span class="pub-corner"></span>',
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
+
+// Clicking empty map either adds a publish corner or closes the panel
 function MapClickHandler({ onMapClick }) {
   useMapEvents({ click: (e) => onMapClick(e.latlng) });
   return null;
@@ -199,12 +209,12 @@ export default function PublicMap() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
 
-  // Publishing: 'off' until DRRMO starts, 'placing' while waiting for a tap,
-  // then the form opens with draftPoint set.
+  // Publishing: 'off' until DRRMO starts, 'placing' while waiting for the
+  // first tap, then 'editing' with the form open while more corners of the
+  // outline are tapped in.
   const { canPublish } = useAuth();
   const [publishMode, setPublishMode] = useState('off');
-  const [draftPoint, setDraftPoint] = useState(null);
-  const [draftRadius, setDraftRadius] = useState(250);
+  const [draftPoints, setDraftPoints] = useState([]);
 
   // F6: several hazard layers can be visible at once, so this is a set of
   // type names rather than the old single-select filter.
@@ -512,24 +522,32 @@ export default function PublicMap() {
   function startPublish() {
     setSelection(null);
     setPanelOpen(false);
-    setDraftPoint(null);
+    setDraftPoints([]);
     setPublishMode('placing');
   }
 
   function cancelPublish() {
     setPublishMode('off');
-    setDraftPoint(null);
+    setDraftPoints([]);
   }
 
-  // One handler for every map click: place a draft point while publishing,
-  // otherwise close whichever details panel is open.
+  // One handler for every map click: add a corner to the outline while
+  // publishing, otherwise close whichever details panel is open.
   function handleMapClick(latlng) {
     if (publishMode === 'placing' || publishMode === 'editing') {
-      setDraftPoint([latlng.lat, latlng.lng]);
+      setDraftPoints((pts) => [...pts, [latlng.lat, latlng.lng]]);
       setPublishMode('editing');
       return;
     }
     setPanelOpen(false);
+  }
+
+  function moveDraftCorner(index, latlng) {
+    setDraftPoints((pts) => pts.map((p, i) => (i === index ? [latlng.lat, latlng.lng] : p)));
+  }
+
+  function undoDraftCorner() {
+    setDraftPoints((pts) => pts.slice(0, -1));
   }
 
   async function handlePublished() {
@@ -539,13 +557,24 @@ export default function PublicMap() {
     await refreshMap();
   }
 
-  // Which barangay the draft point falls inside, so DRRMO doesn't pick it
-  // by hand and can't file a hazard against the wrong one.
+  // Roughly which barangay the outline sits in, so DRRMO can see it before
+  // publishing. The server makes the final call from the actual overlap.
+  // The middle of the outline is tried first; for an odd shape whose middle
+  // falls outside, the first corner that lands in a barangay is used.
   const draftBarangay = useMemo(() => {
-    if (!draftPoint) return null;
-    const home = barangays.find((b) => containsPoint(b.feature, draftPoint));
-    return home ? { id: home.id, name: home.name } : null;
-  }, [draftPoint, barangays]);
+    if (!draftPoints.length) return null;
+    const probes = [middleOf(draftPoints), ...draftPoints];
+    for (const p of probes) {
+      const home = barangays.find((b) => containsPoint(b.feature, p));
+      if (home) return { id: home.id, name: home.name };
+    }
+    return null;
+  }, [draftPoints, barangays]);
+
+  const draftOutsideCorners = useMemo(
+    () => draftPoints.filter((p) => !barangays.some((b) => containsPoint(b.feature, p))).length,
+    [draftPoints, barangays],
+  );
 
   // Thin dark boundaries, like sub-catchment lines on a GIS map. Transparent fill keeps them clickable.
   function barangayStyle(feature) {
@@ -584,7 +613,7 @@ export default function PublicMap() {
     <div className="pm">
       <PublicNavbar />
 
-      <div className={`pm-stage ${publishMode === 'placing' ? 'is-placing' : ''}`}>
+      <div className={`pm-stage ${publishMode !== 'off' ? 'is-placing' : ''}`}>
         {/* ============ MAP ============ */}
         <MapContainer
           ref={setMap}
@@ -662,14 +691,33 @@ export default function PublicMap() {
           )}
 
 
-          {/* Draft circle while a hazard is being published */}
-          {draftPoint && (
-            <Circle
-              center={draftPoint}
-              radius={draftRadius}
+          {/* Outline being drawn while a hazard is published. Not
+              interactive, so taps on it pass through and add corners. */}
+          {draftPoints.length >= MIN_CORNERS && (
+            <Polygon
+              positions={draftPoints}
+              interactive={false}
               pathOptions={{ color: '#1c2e4a', weight: 2, dashArray: '6 4', fillOpacity: 0.12 }}
             />
           )}
+          {draftPoints.length === 2 && (
+            <Polyline
+              positions={draftPoints}
+              interactive={false}
+              pathOptions={{ color: '#1c2e4a', weight: 2, dashArray: '6 4' }}
+            />
+          )}
+          {draftPoints.map((p, i) => (
+            <Marker
+              key={`corner-${i}`}
+              position={p}
+              icon={CORNER_ICON}
+              draggable
+              keyboard={false}
+              title={`Corner ${i + 1}. Drag to move.`}
+              eventHandlers={{ dragend: (e) => moveDraftCorner(i, e.target.getLatLng()) }}
+            />
+          ))}
 
           {visibleHazards.map((h) => (
             <Marker
@@ -892,17 +940,18 @@ export default function PublicMap() {
         />
         {publishMode === 'placing' && (
           <div className="pub-hint">
-            <span>Tap the map where the hazard is</span>
+            <span>Tap the map to start outlining the affected area</span>
             <button type="button" onClick={cancelPublish}>Cancel</button>
           </div>
         )}
 
-        {publishMode === 'editing' && draftPoint && (
+        {publishMode === 'editing' && (
           <PublishHazardPanel
-            center={draftPoint}
-            radius={draftRadius}
-            onRadius={setDraftRadius}
+            points={draftPoints}
+            onUndo={undoDraftCorner}
+            onClear={() => setDraftPoints([])}
             barangay={draftBarangay}
+            outsideCorners={draftOutsideCorners}
             boundariesReady={barangays.length > 0}
             onCancel={cancelPublish}
             onPublished={handlePublished}

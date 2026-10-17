@@ -2,6 +2,8 @@ from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from rest_framework_gis.fields import GeometryField
 from django.contrib.gis.geos import MultiPolygon, Polygon
+from apps.barangays.models import Barangay
+from apps.hazards.geometry import city_outline, clip_to_city, main_barangay
 from apps.hazards.models import HazardType, HazardZone, HazardAlert
 from apps.accounts.serializers import UserSerializer
 
@@ -110,7 +112,26 @@ class HazardZoneCreateSerializer(serializers.ModelSerializer):
         # an SRID is rejected by PostGIS when the column declares 4326.
         if not getattr(value, 'srid', None):
             value.srid = 4326
-        return value
+
+        # Zones are outlined by hand, so repair a self-crossing outline and
+        # cut off whatever spills past the city. See apps/hazards/geometry.py.
+        try:
+            return clip_to_city(value, city_outline())
+        except ValueError as exc:  # also catches OutsideCity
+            raise serializers.ValidationError(str(exc))
+
+    def validate(self, attrs):
+        # The zone belongs to the barangay holding most of it. The map only
+        # previews this; deciding it here means a zone spanning two barangays
+        # is filed under the one it mostly covers, not wherever the officer
+        # happened to tap first.
+        geom = attrs.get('geometry')
+        if geom is not None:
+            touched = Barangay.objects.filter(boundary__intersects=geom)
+            home = main_barangay(geom, touched)
+            if home is not None:
+                attrs['barangay'] = home
+        return attrs
 
 
 class HazardAlertSerializer(serializers.ModelSerializer):
