@@ -91,8 +91,8 @@ DATABASES = {
         },
         # Reuse a connection for up to a minute instead of a fresh SSL
         # handshake per request. Health checks replace one the pooler has
-        # closed before it is used. The dev server closes connections after
-        # every request, so this only takes effect under gunicorn.
+        # closed before it is used. The dev server opens a thread per request and
+        # never reuses a thread's connection, so development.py turns it off.
         'CONN_MAX_AGE': env.int('DB_CONN_MAX_AGE', default=60),
         'CONN_HEALTH_CHECKS': True,
     }
