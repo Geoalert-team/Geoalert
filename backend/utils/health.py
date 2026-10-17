@@ -151,6 +151,39 @@ def _guidance():
                   'Published guidance exists for every active hazard type.')
 
 
+def _file_storage():
+    """
+    Can an uploaded photo actually be written and read back?
+
+    Worth its own check because the failure is invisible until someone tries.
+    With the Supabase keys wrong or the bucket missing, every report submitted
+    with a photo fails at the moment a barangay is trying to send one -- which
+    is the worst time to find out.
+
+    Only a metadata lookup, so it costs one small request and uploads nothing.
+    """
+    from django.conf import settings
+    from django.core.files.storage import default_storage
+
+    if not getattr(settings, 'USE_SUPABASE_STORAGE', False):
+        return _check('storage', 'Photo storage', 'ok',
+                      'Local disk. Photos are on this machine only, so another '
+                      'server running against the same database cannot show them.')
+
+    bucket = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '?')
+
+    # HeadBucket, not exists(). Looking for a key that should not be there
+    # answers 404 whether the key is missing or the whole bucket is, so a
+    # wrong bucket name reads as healthy right up until the first upload
+    # fails. HeadBucket distinguishes them, and still costs one request and
+    # uploads nothing.
+    client = default_storage.connection.meta.client
+    client.head_bucket(Bucket=default_storage.bucket_name)
+
+    return _check('storage', 'Photo storage', 'ok',
+                  f'Supabase Storage, bucket "{bucket}", reachable.')
+
+
 def system_health():
     """
     Run every check and fold the results into one status.
@@ -191,6 +224,16 @@ def system_health():
         except Exception as exc:
             checks.append(_check(key, label, 'fail',
                                  f'{type(exc).__name__}: {exc}'.strip()[:200]))
+
+    # Outside the loop above: file storage is the one check that does not go
+    # through the database, so it is still worth answering when the database
+    # is the thing that is down.
+    try:
+        checks.append(_file_storage())
+    except Exception as exc:
+        checks.append(_check('storage', 'Photo storage', 'fail',
+                             f'Photos cannot be stored or read: '
+                             f'{type(exc).__name__}: {exc}'.strip()[:200]))
 
     states = {c['state'] for c in checks}
     if 'fail' in states:
