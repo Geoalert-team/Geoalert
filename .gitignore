@@ -20,6 +20,7 @@ backend/db.sqlite3
 backend/staticfiles/
 backend/media/
 backend/logs/
+backend/.cache/
 
 # ── React ────────────────────────────────────────────
 frontend/node_modules/

@@ -101,6 +101,28 @@ DATABASES = {
     }
 }
 
+# Sessions are read from a cache first and the database only on a miss.
+# Every request reads the session to know who is signed in, including the
+# notification bell's poll every 30 seconds per open tab, so that was one
+# Supabase round trip per request for a row that rarely changes. Writes
+# still go to the database, so nobody is signed out when the cache is
+# cleared or the server restarts.
+#
+# File-based rather than in-memory on purpose: every gunicorn worker on the
+# machine shares the same files, so signing out (or an admin deactivating
+# an account) takes effect in all of them at once. An in-memory cache would
+# keep a signed-out session alive in the other workers. A deployment across
+# several machines needs a shared cache such as Redis instead.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': env('CACHE_DIR', default=str(BASE_DIR / '.cache' / 'django')),
+        'TIMEOUT': 300,
+        'OPTIONS': {'MAX_ENTRIES': 5000},
+    }
+}
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+
 AUTH_USER_MODEL = 'accounts.User'
 
 AUTH_PASSWORD_VALIDATORS = [

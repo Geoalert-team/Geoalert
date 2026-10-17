@@ -10,6 +10,7 @@ recipients and the wording can't drift apart between them.
 import logging
 from datetime import timedelta
 
+from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -210,9 +211,23 @@ def release_overdue_approvals(now=None):
     return released
 
 
+# How often request paths look for overdue alerts. The map and every bell
+# poll call in, so without a limit this was a database query on almost
+# every request to answer a question that changes once in ten minutes.
+RELEASE_CHECK_EVERY = 20  # seconds
+
+
 def release_overdue_quietly():
     """For request paths: a failure here must never break the map or the bell."""
     try:
+        # cache.add only succeeds for the first caller in each window, across
+        # every worker sharing the cache. If the cache itself fails, check
+        # anyway: a late alert is worse than an extra query.
+        try:
+            if not cache.add('geoalert:release-check', 1, timeout=RELEASE_CHECK_EVERY):
+                return 0
+        except Exception:
+            logger.warning('Cache unavailable; checking for overdue alerts without a limit')
         return release_overdue_approvals()
     except Exception:
         logger.exception('Releasing overdue Extreme alerts failed')
