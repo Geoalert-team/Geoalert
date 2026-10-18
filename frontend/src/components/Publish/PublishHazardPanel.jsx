@@ -136,15 +136,17 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
  *                     which case "outside" can't be told from "unknown"
  *   onCancel()
  *   onPublished(zone)
+ *   prefill           { reportId, typeName, description } when publishing
+ *                     from a validated incident report, or null
  */
 export default function PublishHazardPanel({
   points, onUndo, onClear, barangay, outsideCorners = 0, boundariesReady = true,
-  onCancel, onPublished,
+  onCancel, onPublished, prefill = null,
 }) {
   const [types, setTypes] = useState([]);
   const [hazardTypeId, setHazardTypeId] = useState('');
   const [severity, setSeverity] = useState('Orange');
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(prefill?.description || '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   // The server's answer to "what would publishing this do?", shown for the
@@ -155,10 +157,13 @@ export default function PublishHazardPanel({
     hazardsApi.types()
       .then((list) => {
         setTypes(list || []);
-        if (list?.length) setHazardTypeId((prev) => prev || list[0].id);
+        // From a report: start on the report's hazard type
+        const fromReport = prefill?.typeName
+          && list?.find((t) => t.name.toLowerCase() === prefill.typeName.toLowerCase());
+        if (list?.length) setHazardTypeId((prev) => prev || (fromReport || list[0]).id);
       })
       .catch(() => setError('Could not load hazard types. Check the backend is running.'));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- the report is fixed when the panel opens
 
   const typeName = types.find((t) => String(t.id) === String(hazardTypeId))?.name;
   const typical = TYPICAL_SIZE[typeName];
@@ -183,6 +188,8 @@ export default function PublishHazardPanel({
       severity,
       description: description.trim(),
       geometry: pointsToPolygon(points),
+      // Links the validated report to the zone published from it
+      ...(prefill?.reportId ? { incident_report: prefill.reportId } : {}),
     };
   }
 
@@ -278,6 +285,11 @@ export default function PublishHazardPanel({
           {typical && <small className="pub-size-hint">Typical size: {typical}.</small>}
         </div>
 
+        {prefill?.reportId && (
+          <p className="pub-where" style={{ marginBottom: 6 }}>
+            From a validated incident report. Its type and description are filled in.
+          </p>
+        )}
         <p className="pub-where">
           {barangay && <>Mostly in <strong>{barangay.name}</strong>. </>}
           {allOutside && (

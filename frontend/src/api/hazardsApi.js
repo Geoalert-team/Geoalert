@@ -16,6 +16,11 @@ export const hazardsApi = {
   awaiting: () => client.get('/api/hazards/awaiting/', BACKGROUND).then((r) => r.data),
   approve: (id) => client.post(`/api/hazards/${id}/approve/`).then((r) => r.data),
 
+  // Don't raise a live zone to Extreme after all; it stays at its current
+  // level and the officer who asked is told the reason.
+  refuseRaise: (id, reason) =>
+    client.post(`/api/hazards/${id}/raise/refuse/`, { reason }).then((r) => r.data),
+
   // DRRMO's answer to a dispute: checked, and the zone stays. The note shows
   // with the dispute on the public map. Withdrawing or reshaping are the
   // other answers.

@@ -11,7 +11,7 @@ goes out on time:
 
 from django.core.management.base import BaseCommand
 
-from apps.hazards.alerts import release_overdue_approvals
+from apps.hazards.alerts import release_overdue_approvals, remind_unread_extreme
 
 
 class Command(BaseCommand):
@@ -19,4 +19,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         sent = release_overdue_approvals()
-        self.stdout.write(f'{sent} alert(s) sent.')
+        reminded = remind_unread_extreme()
+        self.stdout.write(f'{sent} alert(s) sent, {reminded} unread alert(s) followed up.')

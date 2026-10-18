@@ -65,6 +65,8 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
             # Each barangay's own answer, and DRRMO's answer to a dispute
             'verifications', 'review_note', 'reviewed_at', 'reviewed_by_name',
             'outline',
+            # A raise to Extreme waiting for a second officer
+            'pending_severity', 'pending_at',
         ]
 
 
@@ -106,6 +108,8 @@ class HazardZoneSerializer(serializers.ModelSerializer):
             'approved_by_name', 'approved_at', 'auto_released',
             # Each barangay's own answer, and DRRMO's answer to a dispute
             'verifications', 'review_note', 'reviewed_at', 'reviewed_by_name',
+            # A raise to Extreme waiting for a second officer
+            'pending_severity', 'pending_at',
         ]
 
 

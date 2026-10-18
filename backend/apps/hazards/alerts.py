@@ -35,8 +35,65 @@ def needs_second_approval(severity):
     return severity == 'Red'
 
 
+# An Extreme alert nobody in a barangay has opened after this long is sent
+# to them again, once, and the publisher is told who hasn't read it.
+REMIND_AFTER = timedelta(minutes=15)
+
+
 def approval_due_at(zone):
+    """When a held Extreme alert, or a held raise to Extreme, goes out on its own."""
+    if zone.status == 'Active' and zone.pending_severity and zone.pending_at:
+        return zone.pending_at + APPROVAL_WINDOW
     return zone.activated_at + APPROVAL_WINDOW if zone.activated_at else None
+
+
+def request_raise(zone, requested_by, now=None):
+    """
+    Hold a live zone's raise to Extreme for a second officer. The zone stays
+    live at its current severity meanwhile; taking it off the map to wait
+    would hide a hazard that is already there.
+    """
+    zone.pending_severity = 'Red'
+    zone.pending_by = requested_by
+    zone.pending_at = now or timezone.now()
+    barangays = affected_barangays(zone)
+    notify(
+        approvers_for(requested_by),
+        f'Approval needed: raise the {type_name(zone)} alert for {where_text(barangays)} to Extreme, '
+        f'asked by {requested_by.full_name}. It is raised automatically at '
+        f'{timezone.localtime(zone.pending_at + APPROVAL_WINDOW):%I:%M %p} if no officer answers.',
+        zone,
+    )
+
+
+def apply_raise(zone, approver=None, auto=False):
+    """
+    Make a held raise to Extreme happen and send the Extreme alert. Call
+    inside a transaction. approver None with auto=True means the window ran
+    out with nobody answering.
+    """
+    requested_by = zone.pending_by
+    zone.severity = 'Red'
+    zone.reset_verification()  # the barangays answered for a lower severity
+    zone.pending_severity = ''
+    zone.pending_by = None
+    zone.pending_at = None
+    zone.approved_by = approver
+    zone.approved_at = timezone.now() if approver else None
+    zone.auto_released = auto
+    zone.save()
+    suffix = ' Raised to Extreme.' + (' Sent without a second approval after 10 minutes.' if auto else '')
+    alert, barangays, recipients = issue_alert(zone, issued_by=requested_by or approver, suffix=suffix)
+    if requested_by and requested_by != approver:
+        notify(
+            [requested_by],
+            (f'{approver.full_name} approved raising the {type_name(zone)} alert for '
+             f'{where_text(barangays)} to Extreme. It has been sent.') if approver else
+            (f'The {type_name(zone)} alert for {where_text(barangays)} was raised to Extreme '
+             f'without a second approval: no officer answered within 10 minutes.'),
+            zone,
+        )
+    return alert, barangays, recipients
 
 
 def affected_barangays(zone_or_geometry, manual_ids=None):
@@ -166,7 +223,10 @@ def release_overdue_approvals(now=None):
     """
     now = now or timezone.now()
     cutoff = now - APPROVAL_WINDOW
-    if not HazardZone.objects.filter(status='Awaiting_Approval', activated_at__lte=cutoff).exists():
+    if not HazardZone.objects.filter(
+        Q(status='Awaiting_Approval', activated_at__lte=cutoff)
+        | Q(status='Active', pending_severity='Red', pending_at__lte=cutoff)
+    ).exists():
         return 0
 
     released = 0
@@ -208,7 +268,101 @@ def release_overdue_approvals(now=None):
                         f'{len(recipients)} recipient(s) notified. Zone {zone.id}.',
             )
             released += 1
+
+    # Raises to Extreme on live zones that nobody answered
+    while True:
+        with transaction.atomic():
+            zone = (
+                HazardZone.objects
+                .select_for_update(skip_locked=True, of=('self',))
+                .select_related('hazard_type', 'barangay', 'published_by', 'pending_by')
+                .filter(status='Active', pending_severity='Red', pending_at__lte=cutoff)
+                .order_by('pending_at')
+                .first()
+            )
+            if zone is None:
+                break
+            alert, barangays, recipients = apply_raise(zone, approver=None, auto=True)
+            AuditLog.objects.create(
+                user=None,
+                action='AUTO_RELEASE_HAZARD_RAISE',
+                target_table='hazard_alert',
+                target_id=str(alert.id),
+                details=f'{type_name(zone)} raised to Red for {where_text(barangays)} without a '
+                        f'second approval after the approval window. '
+                        f'{len(recipients)} recipient(s) notified. Zone {zone.id}.',
+            )
+            released += 1
     return released
+
+
+def remind_unread_extreme(now=None):
+    """
+    Re-send Extreme alerts that barangay personnel haven't opened after
+    REMIND_AFTER, once per alert, and tell the officer who published it
+    which barangays haven't read it. Returns how many alerts were followed up.
+
+    Only personnel are reminded: they act on the ground, and DRRMO already
+    has the map and the dashboard. Alerts more than a day old are left
+    alone, so turning this on doesn't remind people about last week.
+    """
+    now = now or timezone.now()
+    due = HazardAlert.objects.filter(
+        severity='Red',
+        reminded_at__isnull=True,
+        created_at__lte=now - REMIND_AFTER,
+        created_at__gte=now - timedelta(days=1),
+        hazard_zone__status='Active',
+    )
+    if not due.exists():
+        return 0
+
+    done = 0
+    while True:
+        with transaction.atomic():
+            alert = (
+                HazardAlert.objects
+                .select_for_update(skip_locked=True, of=('self',))
+                .select_related('hazard_zone', 'hazard_zone__hazard_type', 'hazard_zone__published_by')
+                .filter(pk__in=due.values('pk'), reminded_at__isnull=True)
+                .order_by('created_at')
+                .first()
+            )
+            if alert is None:
+                break
+            alert.reminded_at = now
+            alert.save(update_fields=['reminded_at'])
+            zone = alert.hazard_zone
+            unread = list(
+                Notification.objects
+                .filter(hazard_alert=alert, is_read=False, recipient__is_active=True,
+                        recipient__role__name='Barangay_Personnel')
+                .select_related('recipient__assigned_barangay')
+            )
+            if unread:
+                notify(
+                    [n.recipient for n in unread],
+                    f'REMINDER: Extreme {type_name(zone)} alert for your barangay. '
+                    f'You have not opened it yet. Tap to see the hazard zone and what to do.',
+                    zone,
+                )
+                places = sorted({n.recipient.assigned_barangay.name for n in unread if n.recipient.assigned_barangay})
+                if zone.published_by and zone.published_by.is_active:
+                    notify(
+                        [zone.published_by],
+                        f'{len(unread)} barangay personnel have not opened your Extreme {type_name(zone)} alert '
+                        f'after 15 minutes ({", ".join(places) or "no barangay set"}). They were reminded.',
+                        zone,
+                    )
+                AuditLog.objects.create(
+                    user=None,
+                    action='REMIND_UNREAD_ALERT',
+                    target_table='hazard_alert',
+                    target_id=str(alert.id),
+                    details=f'{len(unread)} unread after 15 minutes; reminded. Barangays: {", ".join(places) or "-"}.',
+                )
+            done += 1
+    return done
 
 
 # How often request paths look for overdue alerts. The map and every bell
@@ -228,7 +382,9 @@ def release_overdue_quietly():
                 return 0
         except Exception:
             logger.warning('Cache unavailable; checking for overdue alerts without a limit')
-        return release_overdue_approvals()
+        released = release_overdue_approvals()
+        remind_unread_extreme()
+        return released
     except Exception:
         logger.exception('Releasing overdue Extreme alerts failed')
         return 0

@@ -32,12 +32,14 @@ from apps.hazards.alerts import (
     affected_barangays,
     alert_recipients,
     APPROVAL_WINDOW,
+    apply_raise,
     approval_due_at,
     approvers_for,
     issue_alert,
     needs_second_approval,
     notify,
     release_overdue_quietly,
+    request_raise,
     type_name,
     where_text,
 )
@@ -61,6 +63,24 @@ def _as_count(value):
     except (TypeError, ValueError):
         return None
     return number if number >= 0 else None
+
+
+def link_report(request, zone):
+    """
+    Published from a validated incident report ("Publish hazard here" on the
+    dashboard): record which zone came of it, so the report shows it was
+    acted on and the same report isn't published twice.
+    """
+    report_id = request.data.get('incident_report')
+    if not report_id:
+        return
+    from apps.reports.models import IncidentReport
+    try:
+        IncidentReport.objects.filter(
+            id=report_id, status='Validated', hazard_zone__isnull=True,
+        ).update(hazard_zone=zone)
+    except Exception:
+        pass  # a bad report id must not stop the alert going out
 
 
 class HazardZoneListView(APIView):
@@ -131,6 +151,7 @@ class HazardZoneCreateView(APIView):
         if hold:
             with transaction.atomic():
                 zone = serializer.save(published_by=request.user, status='Awaiting_Approval')
+                link_report(request, zone)
                 barangays = affected_barangays(zone, manual_ids)
                 where = where_text(barangays)
                 due = approval_due_at(zone)
@@ -157,6 +178,7 @@ class HazardZoneCreateView(APIView):
         # nobody notified - is worse than one that failed outright.
         with transaction.atomic():
             zone = serializer.save(published_by=request.user)
+            link_report(request, zone)
             if needs_second_approval(severity):
                 # Extreme, but no second officer exists to approve it
                 zone.auto_released = True
@@ -303,6 +325,22 @@ class HazardZoneDetailView(APIView):
             if home is not None:
                 zone.barangay = home
 
+        # Raising a live zone to Extreme needs a second officer, the same as
+        # publishing an Extreme one; otherwise Edit was a way around the
+        # approval. The zone stays live at its current severity meanwhile.
+        raising = (
+            zone.status == 'Active' and new_status == 'Active'
+            and new_severity == 'Red' and old_severity != 'Red'
+        )
+        hold_raise = raising and approvers_for(request.user).exists()
+        if hold_raise:
+            new_severity = old_severity
+        if new_status != 'Active' or (new_severity != 'Red' and 'severity' in request.data):
+            # Resolved, or an officer chose a lower severity: any held raise is moot
+            zone.pending_severity = ''
+            zone.pending_by = None
+            zone.pending_at = None
+
         zone.severity    = new_severity
         zone.status      = new_status
         zone.description = request.data.get('description', zone.description)
@@ -321,6 +359,26 @@ class HazardZoneDetailView(APIView):
             zone.resolved_at = timezone.now()
 
         zone.save()
+
+        if hold_raise:
+            request_raise(zone, request.user)
+            zone.save(update_fields=['pending_severity', 'pending_by', 'pending_at'])
+            log_event(
+                request, 'HOLD_HAZARD_RAISE', 'hazard_zone', zone.id,
+                f'{type_name(zone)} raise from {old_severity} to Red held for a second approval.',
+            )
+        elif raising:
+            # No other officer exists to approve: raise it now, and send the
+            # Extreme alert, which a severity change never used to do.
+            zone.auto_released = True
+            zone.save(update_fields=['auto_released'])
+            with transaction.atomic():
+                alert, barangays, recipients = issue_alert(zone, request.user, suffix=' Raised to Extreme.')
+            log_event(
+                request, 'RAISE_HAZARD_ALERT', 'hazard_alert', alert.id,
+                f'{type_name(zone)} raised to Red with no second officer available. '
+                f'{len(recipients)} recipient(s) notified. Zone {zone.id}.',
+            )
 
         if reshaped:
             after = affected_barangays(zone)
@@ -357,7 +415,10 @@ class HazardZoneDetailView(APIView):
                 is_sample        = zone.is_sample,
             )
 
-        return Response(HazardZoneSerializer(zone).data)
+        payload = HazardZoneSerializer(zone).data
+        if hold_raise:
+            payload['approval'] = {'required': True, 'due_at': approval_due_at(zone)}
+        return Response(payload)
 
 
 class HazardZoneRetractView(APIView):
@@ -931,16 +992,23 @@ class HazardZoneAwaitingListView(APIView):
         release_overdue_quietly()
         zones = (
             HazardZone.objects
-            .filter(status='Awaiting_Approval')
-            .select_related('hazard_type', 'barangay', 'published_by')
+            .filter(Q(status='Awaiting_Approval') | Q(status='Active', pending_severity='Red'))
+            .select_related('hazard_type', 'barangay', 'published_by', 'pending_by')
             .order_by('activated_at')
         )
         results = []
         for zone in zones:
+            raise_ = zone.status == 'Active'
+            asked_by = zone.pending_by if raise_ else zone.published_by
             row = HazardZoneSerializer(zone).data
+            # 'new': an Extreme alert not sent yet. 'raise': a live zone an
+            # officer asked to raise to Extreme.
+            row['kind'] = 'raise' if raise_ else 'new'
+            row['requested_by_name'] = asked_by.full_name if asked_by else None
+            row['requested_at'] = zone.pending_at if raise_ else zone.activated_at
             row['approval_due_at'] = approval_due_at(zone)
             row['affected_barangays'] = [b.name for b in affected_barangays(zone)]
-            row['can_approve'] = zone.published_by_id != request.user.id
+            row['can_approve'] = (asked_by.id if asked_by else None) != request.user.id
             results.append(row)
         return Response({'count': len(results), 'results': results})
 
@@ -961,12 +1029,33 @@ class HazardZoneApproveView(APIView):
             zone = (
                 HazardZone.objects
                 .select_for_update(of=('self',))
-                .select_related('hazard_type', 'barangay', 'published_by')
+                .select_related('hazard_type', 'barangay', 'published_by', 'pending_by')
                 .filter(pk=pk)
                 .first()
             )
             if zone is None:
                 return Response({'error': 'Hazard zone not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            # A live zone waiting to be raised to Extreme
+            if zone.status == 'Active' and zone.pending_severity == 'Red':
+                if zone.pending_by_id == request.user.id:
+                    return Response(
+                        {'error': 'You asked for this raise, so another officer has to approve it.'},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                alert, barangays, recipients = apply_raise(zone, approver=request.user)
+                log_event(
+                    request, 'APPROVE_HAZARD_RAISE', 'hazard_alert', alert.id,
+                    f'{type_name(zone)} raised to Red for {where_text(barangays)} and sent. '
+                    f'{len(recipients)} recipient(s) notified. Zone {zone.id}.',
+                )
+                payload = HazardZoneSerializer(zone).data
+                payload['alert'] = {
+                    'id': str(alert.id),
+                    'affected_barangays': [b.name for b in barangays],
+                    'recipients_notified': len(recipients),
+                }
+                return Response(payload)
 
             if zone.status != 'Awaiting_Approval':
                 message = {
@@ -1067,5 +1156,57 @@ class HazardZoneReviewView(APIView):
         log_event(
             request, 'REVIEW_HAZARD_DISPUTE', 'hazard_zone', zone.id,
             f'Dispute reviewed, zone kept. {len(disputers)} disputer(s) told. Note: {note}',
+        )
+        return Response(HazardZoneSerializer(zone).data)
+
+
+class HazardZoneRefuseRaiseView(APIView):
+    """
+    POST /api/hazards/<id>/raise/refuse/
+
+        {"reason": "Water is going down; Moderate still fits."}
+
+    Don't raise a live zone to Extreme after all. The zone stays live at its
+    current severity, and the officer who asked is told why. The one who
+    asked may also withdraw their own request this way.
+    """
+    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+    MIN_REASON = 5
+
+    def post(self, request, pk):
+        with transaction.atomic():
+            zone = (
+                HazardZone.objects
+                .select_for_update(of=('self',))
+                .select_related('hazard_type', 'barangay', 'pending_by')
+                .filter(pk=pk)
+                .first()
+            )
+            if zone is None:
+                return Response({'error': 'Hazard zone not found'}, status=status.HTTP_404_NOT_FOUND)
+            if zone.status != 'Active' or zone.pending_severity != 'Red':
+                return Response({'error': 'This hazard is not waiting to be raised to Extreme.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            reason = (request.data.get('reason') or '').strip()
+            if len(reason) < self.MIN_REASON:
+                return Response({'error': 'Say why it should not be raised. The officer who asked is told.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            asked_by = zone.pending_by
+            zone.pending_severity = ''
+            zone.pending_by = None
+            zone.pending_at = None
+            zone.save(update_fields=['pending_severity', 'pending_by', 'pending_at'])
+            if asked_by and asked_by != request.user:
+                notify(
+                    [asked_by],
+                    f'{request.user.full_name} did not approve raising the {type_name(zone)} alert to Extreme. '
+                    f'It stays {zone.get_severity_display()}. Reason: {reason}',
+                    zone,
+                )
+
+        log_event(
+            request, 'REFUSE_HAZARD_RAISE', 'hazard_zone', zone.id,
+            f'{type_name(zone)} raise to Red not approved; stays {zone.severity}. Reason: {reason}',
         )
         return Response(HazardZoneSerializer(zone).data)

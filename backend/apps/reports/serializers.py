@@ -60,6 +60,7 @@ class ReportPhotoSerializer(serializers.ModelSerializer):
 class IncidentReportSerializer(serializers.ModelSerializer):
     hazard_type_details = HazardTypeSerializer(source='hazard_type', read_only=True)
     barangay_details = BarangaySerializer(source='barangay', read_only=True)
+    hazard_zone = serializers.PrimaryKeyRelatedField(read_only=True)
     submitted_by_name = serializers.CharField(source='submitted_by.full_name', read_only=True)
     reviewed_by_name = serializers.CharField(source='reviewed_by.full_name', read_only=True)
     photos = ReportPhotoSerializer(many=True, read_only=True)
@@ -91,6 +92,8 @@ class IncidentReportSerializer(serializers.ModelSerializer):
             'created_at',
             'reviewed_at',
             'validated_at',
+            # The zone published from this report, if any
+            'hazard_zone',
         ]
 
 

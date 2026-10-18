@@ -138,7 +138,29 @@ function ReportDetail({ report, onClose, onReview }) {
             </button>
           </>
         ) : (
-          <button type="button" className="adm-btn adm-btn-primary" onClick={onClose}>Close</button>
+          <>
+            <button type="button" className="adm-btn adm-btn-ghost" onClick={onClose}>Close</button>
+            {/* A validated report is a known hazard: offer to put it on the
+                map, or show the zone already published from it. */}
+            {report.status === 'Validated' && (report.hazard_zone ? (
+              <Link className="adm-btn adm-btn-primary" to={`/map?zone=${report.hazard_zone}`}>
+                View published zone
+              </Link>
+            ) : (
+              <Link
+                className="adm-btn adm-btn-primary"
+                to={`/map?${new URLSearchParams({
+                  publish: 'report',
+                  report: report.id,
+                  type: typeName(report),
+                  barangay: report.barangay ?? '',
+                  desc: (report.description || '').slice(0, 300),
+                })}`}
+              >
+                Publish hazard here
+              </Link>
+            ))}
+          </>
         )
       }
     >
