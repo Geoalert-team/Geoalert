@@ -58,9 +58,12 @@ const SEVERITY_RANK = { Red: 0, Orange: 1, Green: 2 };
 const NO_HISTORY = []; // stable empty list, so the heat layer isn't recomputed every render
 
 // What the shading shows. Pins are on the map in both views.
+// Active hazards leads, and is the view the map opens on: someone arriving
+// at a hazard map wants to know what is dangerous right now. Past shading is
+// background for planning, which is a second question, not the first one.
 const HEAT_MODES = [
-  { key: 'history', label: 'History', note: 'Shaded by past hazards: how often, how severe and how recent. Areas with an active hazard are raised one level.' },
   { key: 'active', label: 'Active hazards', note: 'Shaded only around hazards that are active right now, as far as the ground lets each one spread.' },
+  { key: 'history', label: 'History', note: 'Shaded by past hazards: how often, how severe and how recent. Areas with an active hazard are raised one level.' },
 ];
 
 /* ---------- Helpers ---------- */
@@ -215,7 +218,7 @@ export default function PublicMap() {
   const [liveHazards, setLiveHazards] = useState([]);
   const [barangayGeo, setBarangayGeo] = useState(null);
   const [historySpots, setHistorySpots] = useState([]); // past events, for the heat shading
-  const [heatMode, setHeatMode] = useState('history'); // 'history' | 'active'
+  const [heatMode, setHeatMode] = useState('active'); // 'active' | 'history'
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
 

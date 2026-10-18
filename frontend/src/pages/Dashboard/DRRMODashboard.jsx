@@ -5,6 +5,7 @@ import { hazardsApi } from '../../api/hazardsApi';
 import { reportsApi } from '../../api/reportApi';
 import { hazardColor, hazardIconPath } from '../../components/Map/hazardInfo';
 import { Icon, Modal, Toast, fieldErrors, formatDateTime, timeAgo } from './admin/adminShared';
+import { ReportPhotos } from './reportShared';
 import ActiveZonesCard from '../../components/Resolve/ActiveZonesCard';
 import AwaitingApprovalCard from '../../components/Resolve/AwaitingApprovalCard';
 import '../css/Dashboard.css';
@@ -155,6 +156,9 @@ function ReportDetail({ report, onClose, onReview }) {
         <section className="drm-detail-section">
           <h3>What was reported</h3>
           <p className="drm-detail-desc">{report.description || 'No description given.'}</p>
+          {/* The row's thumbnail cannot be a link, so this is where an
+              officer opens the photo full size to judge it before validating. */}
+          <ReportPhotos report={report} alt={`Photo sent with the ${typeName(report)} report`} />
         </section>
 
         <section className="drm-detail-section">
@@ -193,6 +197,7 @@ function ReportRow({ report, onOpen, onReview }) {
             <StatusTag status={report.status} />
           </div>
           <p className="drm-report-desc">{report.description || 'No description given.'}</p>
+          <ReportPhotos report={report} linked={false} alt={`Photo sent with the ${typeName(report)} report`} />
           <p className="drm-report-meta">
             <span>{reporterName(report)}</span>
             {report.agency && <span>{report.agency}</span>}

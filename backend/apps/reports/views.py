@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from django.db import transaction
 from django.db.models import Count
 
 from apps.hazards.models import HazardZone, HazardAlert
@@ -212,7 +213,9 @@ class IncidentReportListCreateView(APIView):
     permission_classes = [IsAuthenticated, IsBarangayPersonnel]
 
     def get(self, request):
-        reports = IncidentReport.objects.all()
+        # prefetch_related, or listing N reports costs N extra queries for
+        # their photos
+        reports = IncidentReport.objects.all().prefetch_related('photos')
 
         role = request.user.role.name if request.user.role else None
         if role == 'Barangay_Personnel':
@@ -222,16 +225,29 @@ class IncidentReportListCreateView(APIView):
         if status_filter:
             reports = reports.filter(status=status_filter)
 
-        return Response(IncidentReportSerializer(reports, many=True).data)
+        # context carries the request so photo URLs come back absolute
+        return Response(
+            IncidentReportSerializer(reports, many=True, context={'request': request}).data
+        )
 
     def post(self, request):
+        # request.data covers both JSON and multipart/form-data, so a report
+        # with photos and one without arrive through the same path. DRF's
+        # MultiPartParser is on by default; nothing here needs to know which
+        # was used.
         serializer = IncidentReportCreateSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        report = serializer.save(submitted_by=request.user)
+        # One transaction around the report and its photos. An upload that
+        # fails halfway would otherwise leave a report claiming pictures it
+        # does not have, which is worse than a submission that plainly
+        # failed and can be retried.
+        with transaction.atomic():
+            report = serializer.save(submitted_by=request.user)
+
         return Response(
-            IncidentReportSerializer(report).data,
+            IncidentReportSerializer(report, context={'request': request}).data,
             status=status.HTTP_201_CREATED
         )
 
@@ -258,4 +274,4 @@ class IncidentReportReviewView(APIView):
             reviewed_by=request.user,
             reviewed_at=timezone.now()
         )
-        return Response(IncidentReportSerializer(report).data)
+        return Response(IncidentReportSerializer(report, context={'request': request}).data)

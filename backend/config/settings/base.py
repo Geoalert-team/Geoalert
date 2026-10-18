@@ -169,6 +169,64 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# ---------------------------------------------------------------------------
+# Where uploaded files live
+#
+# Incident report photos go to Supabase Storage when the keys below are set,
+# and to backend/media/ on this machine when they are not.
+#
+# The fallback is deliberate. The team shares one database but each person
+# runs their own server, so with local files a photo one of us uploads is
+# invisible to everyone else -- the path travels in the database, the file
+# does not. Supabase Storage fixes that. Keeping the local path working means
+# a teammate who has not added the keys yet still has a system that runs,
+# rather than a 500 on every upload.
+#
+# The bucket is private and URLs are signed, with a one-hour life. An
+# incident photo shows somebody's house, their street and how bad the damage
+# is; a public bucket URL is readable by anyone who ever sees it, forever.
+#
+# Values come from the Supabase dashboard: Project Settings -> Storage ->
+# S3 access keys. Those keys bypass row-level security, so they belong in
+# .env on the server and nowhere near the frontend.
+# ---------------------------------------------------------------------------
+SUPABASE_S3_ENDPOINT = env('SUPABASE_S3_ENDPOINT', default='')
+SUPABASE_S3_BUCKET   = env('SUPABASE_S3_BUCKET',   default='')
+SUPABASE_S3_KEY      = env('SUPABASE_S3_KEY',      default='')
+SUPABASE_S3_SECRET   = env('SUPABASE_S3_SECRET',   default='')
+SUPABASE_S3_REGION   = env('SUPABASE_S3_REGION',   default='')
+
+USE_SUPABASE_STORAGE = all([
+    SUPABASE_S3_ENDPOINT, SUPABASE_S3_BUCKET,
+    SUPABASE_S3_KEY, SUPABASE_S3_SECRET, SUPABASE_S3_REGION,
+])
+
+if USE_SUPABASE_STORAGE:
+    STORAGES = {
+        'default': {'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage'},
+        'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+    }
+
+    AWS_S3_ENDPOINT_URL     = SUPABASE_S3_ENDPOINT
+    AWS_STORAGE_BUCKET_NAME = SUPABASE_S3_BUCKET
+    AWS_ACCESS_KEY_ID       = SUPABASE_S3_KEY
+    AWS_SECRET_ACCESS_KEY   = SUPABASE_S3_SECRET
+    AWS_S3_REGION_NAME      = SUPABASE_S3_REGION
+
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    # The Supabase endpoint already carries a path (/storage/v1/s3), so the
+    # bucket cannot go in the hostname the way it does on real S3.
+    AWS_S3_ADDRESSING_STYLE = 'path'
+    # Private bucket: every URL is signed and expires.
+    AWS_QUERYSTRING_AUTH   = True
+    AWS_QUERYSTRING_EXPIRE = 3600
+    # Supabase Storage does not implement S3 ACLs. Sending one makes every
+    # upload fail, so django-storages must be told not to.
+    AWS_DEFAULT_ACL = None
+    # Each report's photo is named after the report id, so a collision would
+    # mean two photos for one report. Keep both rather than overwrite.
+    AWS_S3_FILE_OVERWRITE = False
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {

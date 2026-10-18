@@ -98,7 +98,9 @@ function ProfileCard({ user }) {
     { icon: 'phone', label: 'Mobile', value: user?.phone ? formatPhone(user.phone) : null },
     { icon: 'user', label: 'Position', value: user?.position },
     { icon: 'key', label: 'Employee ID', value: user?.employee_id },
-    { icon: 'building', label: 'Assigned barangay', value: user?.assigned_barangay?.name },
+    // assigned_barangay is a plain id on the signed-in user, so reading
+    // .name off it was always undefined and this row rendered blank.
+    { icon: 'building', label: 'Assigned barangay', value: user?.assigned_barangay_name || user?.assigned_barangay?.name },
     { icon: 'clock', label: 'Member since', value: user?.created_at ? formatDateTime(user.created_at).replace(/,\s*\d+:\d+.*$/, '') : null },
   ].filter((r) => r.value);
 
