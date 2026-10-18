@@ -22,6 +22,9 @@ class Command(BaseCommand):
                             help='Output folder (default: frontend/public/hazard-index).')
         parser.add_argument('--refresh', action='store_true',
                             help='Download elevation and OpenStreetMap data again instead of reusing saved copies.')
+        parser.add_argument('--terrain-only', action='store_true',
+                            help='Only write terrain.png (height above drainage, for drawing floods from a '
+                                 'water depth); leave the published susceptibility layers untouched.')
 
     def handle(self, *args, **options):
         barangays = list(Barangay.objects.exclude(boundary__isnull=True))
@@ -46,6 +49,7 @@ class Command(BaseCommand):
                 polygons, names, (west, south, east, north), out,
                 zoom=options['zoom'], pad_m=options['pad'], log=self.stdout.write,
                 cache_dir=Path(settings.BASE_DIR) / '.hazard_cache', refresh=options['refresh'],
+                terrain_only=options['terrain_only'],
             )
         except Exception as exc:  # network problems are the usual cause
             raise CommandError(f'Build failed: {exc}') from exc

@@ -7,6 +7,7 @@ from rest_framework import status
 from django.contrib.gis.geos import Polygon
 from django.db import connection, transaction
 from django.db.models import Count, Q
+from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
 from apps.notifications.models import Notification
@@ -14,7 +15,7 @@ from apps.accounts.models import User
 from apps.barangays.models import Barangay
 from apps.history.models import HistoricalRecord
 
-from apps.hazards.geometry import main_barangay, overlap_shares
+from apps.hazards.geometry import main_barangay, overlap_shares, with_cordon
 from apps.hazards.models import HazardType, HazardZone, HazardAlert, HazardVerification
 from apps.hazards.serializers import (
     clean_zone_geometry,
@@ -33,7 +34,7 @@ from apps.hazards.alerts import (
     affected_barangays,
     all_clear,
     alert_recipients,
-    APPROVAL_WINDOW,
+    approval_window,
     apply_raise,
     approval_due_at,
     approvers_for,
@@ -58,6 +59,14 @@ def find_duplicates(geometry, hazard_type):
     Active (or held) zones of the same hazard type that overlap a new
     drawing, most-overlapping first, each with the share of the new drawing
     it already covers (0-1).
+
+    Compares the hazards themselves, never their cordons. A duplicate means
+    "the same event published twice", and the burning block is what
+    identifies the event. Two fires a street apart have cordons that overlap
+    heavily while being separate events; comparing buffered shapes would
+    flag them, and a warning that fires on every neighbouring fire soon gets
+    clicked past. On bare blocks the DUPLICATE_SHARE threshold keeps the
+    meaning it had before cordons existed, so it is left unchanged.
     """
     zones = list(
         HazardZone.objects
@@ -283,7 +292,8 @@ class HazardZoneCreateView(APIView):
                 )
             log_event(
                 request, 'HOLD_HAZARD_ALERT', 'hazard_zone', zone.id,
-                f'{type_name(zone)} / Red for {where} held for a second approval.{duplicate_note}',
+                f'{type_name(zone)} / Red for {where} held for a second approval.'
+                f'{f" Cordon {zone.cordon_m} m." if zone.cordon_m else ""}{duplicate_note}',
             )
             payload = HazardZoneSerializer(zone).data
             payload['approval'] = {
@@ -315,7 +325,8 @@ class HazardZoneCreateView(APIView):
                 f'{type_name(zone)} / {zone.severity} published for {where}. '
                 f'{len(recipients)} recipient(s) notified. '
                 f'Zone {zone.id}. '
-                f'Barangays identified {"manually" if manual_ids else "from zone geometry"}.'
+                f'Barangays identified {"manually" if manual_ids else "from zone geometry"}'
+                f'{f", including a {zone.cordon_m} m cordon" if zone.cordon_m else ""}.'
                 f'{duplicate_note}'
             ),
         )
@@ -876,9 +887,19 @@ class HazardZoneForBarangayView(APIView):
         if boundary is None:
             zones = zones.filter(barangay_id=assigned)
         else:
+            # A zone whose cordon alone reaches this barangay alerted it too
+            # (see affected_barangays), so it belongs on this dashboard.
+            cordon_reaches = RawSQL(
+                'SELECT z.hzzn_id FROM hazard_zone z, barangay b '
+                'WHERE b.brgy_id = %s AND z.hzzn_cordon_m IS NOT NULL '
+                "AND z.hzzn_status = 'Active' "
+                'AND ST_DWithin(z.hzzn_polygon::geography, b.brgy_boundary::geography, z.hzzn_cordon_m)',
+                [assigned],
+            )
             try:
                 zones = zones.filter(
                     Q(geometry__intersects=boundary) | Q(barangay_id=assigned)
+                    | Q(id__in=cordon_reaches)
                 )
                 zones.exists()  # force the query now, so a bad boundary is caught here
             except Exception:
@@ -1053,21 +1074,28 @@ class HazardZonePreviewView(APIView):
 
         data = serializer.validated_data
         geometry = data['geometry']
+        cordon_m = data.get('cordon_m')
         manual_ids = request.data.get('affected_barangays') or None
-        barangays = affected_barangays(geometry, manual_ids)
+        # Routed on the block plus its cordon, the same as the real publish
+        barangays = affected_barangays(geometry, manual_ids, cordon_m)
         recipients = alert_recipients(request.user, barangays).count()
 
         duplicates = find_duplicates(geometry, data.get('hazard_type'))
+        reach = with_cordon(geometry, cordon_m) if cordon_m else None
 
         # Measured by PostGIS on the spheroid rather than by reprojecting
         # here: GDAL needs PROJ's data files, which aren't set up on every
         # developer machine, and the database already has them.
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute('SELECT ST_Area(ST_GeomFromEWKB(%s)::geography)', [bytes(geometry.ewkb)])
-                area = cursor.fetchone()[0]
-        except Exception:
-            area = None
+        def measure(shape):
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute('SELECT ST_Area(ST_GeomFromEWKB(%s)::geography)', [bytes(shape.ewkb)])
+                    return cursor.fetchone()[0]
+            except Exception:
+                return None
+
+        area = measure(geometry)
+        total = measure(reach) if reach is not None else area
 
         needs_approval = (
             needs_second_approval(data['severity'])
@@ -1078,11 +1106,16 @@ class HazardZonePreviewView(APIView):
         return Response({
             'geometry': json.loads(geometry.geojson),
             'area_m2': round(area) if area is not None else None,
+            # With a cordon the area people are told about can be several
+            # times the hazard itself, so the officer sees both figures.
+            'cordon_m': cordon_m,
+            'cordon_geometry': json.loads(reach.geojson) if reach is not None else None,
+            'total_area_m2': round(total) if total is not None else None,
             'barangay': {'id': home.id, 'name': home.name} if home else None,
             'affected_barangays': [b.name for b in barangays],
             'recipients': recipients,
             'needs_approval': needs_approval,
-            'approval_minutes': int(APPROVAL_WINDOW.total_seconds() // 60),
+            'approval_minutes': int(approval_window().total_seconds() // 60),
             'duplicates': duplicates,
             # True when one of them covers DUPLICATE_SHARE or more of this
             # drawing: publishing then needs confirm_duplicate.

@@ -227,3 +227,76 @@ class HistoricalHeatView(APIView):
             })
 
         return Response({'years': years, 'spots': spots})
+
+
+class HistoricalForecastView(APIView):
+    """
+    GET /api/history/forecast/?month=11
+    Seasonal likelihood per barangay and hazard type for a month, from the
+    historical record. Public: residents see it as a heads-up, not an alert.
+
+    Rule-based statistics only (see apps/history/forecast.py): how often
+    that month was hit in past years, recent years counting more.
+
+      ?month=1-12            defaults to next month
+      ?hazard_type_name=Flood
+      ?barangay=7            also returns that barangay's 12-month profile
+      ?years=10              how many past years to read (1-10)
+
+    Without ?barangay the profile is for the whole city.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from apps.history.forecast import (
+            MAX_YEARS, as_local, seasonal_forecast, seasonal_profile,
+        )
+
+        now = timezone.localtime()
+        try:
+            month = int(request.query_params.get('month') or (now.month % 12 + 1))
+            if not 1 <= month <= 12:
+                raise ValueError
+        except (TypeError, ValueError):
+            return Response({'error': 'month must be a number from 1 to 12.'}, status=400)
+        try:
+            years = min(max(int(request.query_params.get('years', MAX_YEARS)), 1), MAX_YEARS)
+        except (TypeError, ValueError):
+            years = MAX_YEARS
+
+        hazard = (request.query_params.get('hazard_type_name') or '').strip() or None
+        barangay = request.query_params.get('barangay')
+        try:
+            barangay = int(barangay) if barangay else None
+        except ValueError:
+            return Response({'error': 'barangay must be an id.'}, status=400)
+
+        records = HistoricalRecord.objects.values(
+            'barangay_id', 'barangay__name', 'hazard_type__name',
+            'occurred_at', 'severity_level', 'is_sample',
+        )
+        tz = timezone.get_current_timezone()
+        events = [
+            {
+                'barangay_id': r['barangay_id'],
+                'barangay': r['barangay__name'],
+                'hazard': r['hazard_type__name'],
+                'when': as_local(r['occurred_at'], tz),
+                'severity': r['severity_level'],
+                'is_sample': r['is_sample'],
+            }
+            for r in records
+        ]
+        picked = [e for e in events if not hazard or (e['hazard'] or '').lower() == hazard.lower()]
+
+        result = seasonal_forecast(picked, month, now, max_years=years)
+        result['profile'] = seasonal_profile(events, now, barangay_id=barangay, hazard=hazard, max_years=years)
+        result['profile_barangay'] = barangay
+        result['hazard_type'] = hazard
+        result['basis'] = {
+            'records': len(picked),
+            'sample_records': sum(1 for e in picked if e['is_sample']),
+            'method': 'Share of past years with an event in this month; '
+                      'a year counts half as much every 3 years back. Rule-based, no AI.',
+        }
+        return Response(result)

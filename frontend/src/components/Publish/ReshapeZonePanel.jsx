@@ -17,7 +17,7 @@ import './css/PublishHazard.css';
  *   onCancel()
  *   onSaved(zone)
  */
-export default function ReshapeZonePanel({ zone, points, canUndo, onUndo, onReset, onCancel, onSaved }) {
+export default function ReshapeZonePanel({ zone, points, canUndo, onUndo, onReset, onCancel, onSaved, marks = [] }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [confirming, setConfirming] = useState(false);
@@ -55,6 +55,18 @@ export default function ReshapeZonePanel({ zone, points, canUndo, onUndo, onRese
           edge. Right-click a corner to remove it. Corners near a barangay
           line snap onto it; hold Alt to place one freely.
         </p>
+        {marks.length > 0 && (
+          <p className="pub-draw-note">
+            {marks.length} spot{marks.length === 1 ? '' : 's'} checked on the ground are on the map
+            (blue: affected, white: clear).
+            {marks.filter((m) => m.disagrees).length > 0 && (
+              <strong>
+                {' '}{marks.filter((m) => m.disagrees).length} ringed in red disagree with the saved outline;
+                move the edge to match them.
+              </strong>
+            )}
+          </p>
+        )}
         <div className="pub-draw-tools">
           <button type="button" className="pub-tool" onClick={onUndo} disabled={!canUndo || busy}>
             Undo

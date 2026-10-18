@@ -8,12 +8,15 @@
  *
  * THE CONTRACT, which every method must keep:
  *
- *   generate(taps, context) -> [[lat, lng], ...] | null
+ *   generate(taps, context) -> [[lat, lng], ...]
+ *                            | { corners: [[lat, lng], ...] | null, note }
+ *                            | null
  *
- * A method turns the officer's taps into corners and returns them. That is
- * ALL it does. It never builds the publish payload, never calls the API,
- * never sets severity, and never decides who gets alerted. The panel owns
- * all of that.
+ * A method turns what the officer gave it (a tap, a water depth, reports
+ * already on file) into corners and returns them, optionally with a short
+ * note for the officer. That is ALL it does. It never builds the publish
+ * payload, never calls the API, never sets severity, and never decides who
+ * gets alerted. The panel owns all of that.
  *
  * Keeping that line means every method ends as an ordinary polygon, so
  * alerts, barangay routing, grading, reports, reshaping, the duplicate check
@@ -21,18 +24,74 @@
  * method produced the shape. Break the contract and each of those has to
  * learn about every method separately.
  *
- * Returning null means "I can't make a shape from these taps yet" — not an
- * error. The panel keeps showing the drawing help until a shape appears.
+ * Returning null (or corners: null) means "I can't make a shape from this
+ * yet" — not an error. The panel keeps showing the method's help.
  *
- * `available()` keeps a half-finished method off an officer's screen. The
- * picker only appears once a hazard type has more than one method, so adding
- * the first smart method is what makes it visible.
+ * Every generated shape lands on the map as ordinary corners the officer
+ * can drag before publishing: the system proposes, the officer decides.
+ * All methods are rule-based (terrain arithmetic, geometry, records on
+ * file). None of them is AI.
+ *
+ * `available(ctx)` keeps a method off the screen when the data behind it is
+ * missing. `seed: true` means a tap on the map is the method's starting
+ * point rather than a corner. The picker only appears once a hazard type has
+ * more than one usable method.
  */
+
+import { floodFromDepth } from '../../utils/terrain';
+import { hullAround } from '../../utils/gridGeometry';
 
 /** Tap corners directly. Always present, for every hazard type. */
 export const HAND = 'hand';
+export const FLOOD_DEPTH = 'flood-depth';
+export const REPORTS = 'reports';
+export const PAST = 'past';
+
+// How far around each reported spot the zone reaches, in metres
+export const REPORT_RADIUS_M = 40;
+
+// Water depths an officer can tell by eye, in metres
+export const DEPTH_PRESETS = [
+  { label: 'Ankle', value: 0.15 },
+  { label: 'Knee', value: 0.5 },
+  { label: 'Waist', value: 1.0 },
+  { label: 'Chest', value: 1.4 },
+];
 
 const METHODS = [
+  {
+    key: FLOOD_DEPTH,
+    label: 'From water depth',
+    help: 'Tap where you saw the water and pick how deep it was. The water is spread over the '
+        + 'low ground around that spot: deeper water reaches further, and rising ground stops it. '
+        + 'Tap again to move the spot; drag corners to fix the edge.',
+    types: ['Flood'],
+    seed: true,
+    // Needs terrain.png in the hazard index
+    available: (ctx) => Boolean(ctx.hasTerrain),
+    generate: (taps, ctx) => {
+      if (!taps.length) return null;
+      return floodFromDepth(ctx.terrain, taps[taps.length - 1], ctx.depthM);
+    },
+  },
+  {
+    key: REPORTS,
+    label: 'Around reported spots',
+    help: 'Wraps the zone around where reporters pinned this hazard in the last three days. '
+        + 'Drag corners to fix the edge.',
+    types: null,
+    seed: false,
+    available: (ctx) => (ctx.reports || []).length > 0,
+    generate: (taps, ctx) => {
+      const spots = (ctx.reports || []).map((r) => [r.latitude, r.longitude]);
+      if (!spots.length) return null;
+      return {
+        corners: hullAround(spots, REPORT_RADIUS_M),
+        note: `Drawn around ${spots.length} reported spot${spots.length === 1 ? '' : 's'}, `
+          + `${REPORT_RADIUS_M} m around each.`,
+      };
+    },
+  },
   {
     key: HAND,
     label: 'Draw by hand',
@@ -42,23 +101,36 @@ const METHODS = [
         + 'to place one freely.',
     // null = offered for every hazard type
     types: null,
+    seed: false,
     // The failsafe is never unavailable: if the data behind a smart method
     // is missing, the officer can always still draw.
     available: () => true,
     // The taps already are the corners, so there is nothing to generate.
     generate: null,
   },
+  {
+    key: PAST,
+    label: 'Start from a past zone',
+    help: 'Tap where the hazard is. The nearest past zone of this type is loaded as a starting '
+        + 'shape; pick another below if a different one fits better, then drag corners to match today.',
+    types: null,
+    seed: true,
+    available: () => true,
+    generate: (taps, ctx) => {
+      if (!taps.length) return null;
+      const zone = (ctx.pastZones || [])[ctx.pastPick || 0];
+      if (!zone) {
+        return {
+          corners: null,
+          note: ctx.pastZones ? 'No past zone of this type within 600 m of that spot.' : 'Looking for past zones…',
+        };
+      }
+      return { corners: zone.corners, note: null };
+    },
+  },
 
-  // Smart methods get added here. Sketch of the next one, for reference:
-  //
-  // {
-  //   key: 'slide-path',
-  //   label: 'Slide path from the top',
-  //   help: 'Tap where the slope failed, and the toe if you can see it.',
-  //   types: ['Landslide'],
-  //   available: (ctx) => Boolean(ctx.rasters?.slope),
-  //   generate: (taps, ctx) => pathCorners(taps, ctx.rasters.slope),
-  // },
+  // Next candidate: a landslide path traced downhill from the failure point,
+  // using the slope already computed for the susceptibility layer.
 ];
 
 const byKey = new Map(METHODS.map((m) => [m.key, m]));
@@ -83,12 +155,21 @@ export function methodsFor(typeName, context = {}) {
 }
 
 /**
- * The method a hazard type should open on: its first smart method, falling
- * back to hand drawing. Registry order decides, so the preferred method for
- * a type goes above the others.
+ * The method a hazard type should open on: the first usable method in
+ * registry order. Methods that build from evidence (terrain, reports) sit
+ * above hand drawing; "start from a past zone" sits below it, so it is
+ * offered but never chosen for the officer.
  */
 export function defaultMethodFor(typeName, context = {}) {
   const usable = methodsFor(typeName, context);
-  const smart = usable.find((m) => m.key !== HAND);
-  return (smart || usable[0] || byKey.get(HAND)).key;
+  return (usable[0] || byKey.get(HAND)).key;
+}
+
+/** Normalise what generate() returned into { corners, note }. */
+export function runMethod(method, taps, context) {
+  if (!method?.generate) return { corners: null, note: null };
+  const out = method.generate(taps, context);
+  if (!out) return { corners: null, note: null };
+  if (Array.isArray(out)) return { corners: out, note: null };
+  return { corners: out.corners || null, note: out.note || null };
 }

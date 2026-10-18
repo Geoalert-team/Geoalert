@@ -24,6 +24,15 @@
 //    It used to shade the whole polygon at the published level, which said
 //    nothing about which part was worse, and before that spread out from
 //    the pin in a circle whatever shape was drawn.
+//
+// 3. Cordons. A zone published with a cordon (cordon_m, mostly fires) is
+//    two areas with two meanings: the hazard itself, where it is happening,
+//    and the ring around it that people are told to leave. Grading the two
+//    together by terrain flattened a burning block into the same Moderate
+//    as its surroundings. So for such a zone the hazard is shaded at the
+//    published level throughout, and the cordon ring one level below it
+//    (never below Low). The ring is the shape the server sends as
+//    `cordon`, the same one the alert was routed on.
 
 import { useEffect, useState } from 'react';
 import { hazardKey } from './hazardInfo';
@@ -119,7 +128,7 @@ function loadImage(url) {
 }
 
 // Reads one susceptibility PNG back into class numbers (0 = outside the city, 1..5)
-async function loadClassGrid(index, layer) {
+export async function loadClassGrid(index, layer) {
   const img = await loadImage(`${BASE}/${index.layers[layer]}?v=${encodeURIComponent(index.generated || '')}`);
   const canvas = document.createElement('canvas');
   canvas.width = img.width;
@@ -321,11 +330,31 @@ function levelForExposure(rank, cap) {
   return Math.max(level, 1);
 }
 
+// A zone with a cordon: the hazard at the published level, the ring
+// around it one level lower. Returns false when the zone has no cordon.
+function shadeCordon(pin, cap, inside, cls, project, width, height, live) {
+  const ring = pin.feature?.properties?.cordon;
+  if (!ring || !inside) return false;
+  const reach = zoneCells({ geometry: ring }, project, width, height);
+  if (!reach) return false;
+
+  const ringLevel = Math.max(cap - 1, 1);
+  reach.forEach((i) => {
+    if (cls[i] && !inside.has(i) && ringLevel > live[i]) live[i] = ringLevel;
+  });
+  inside.forEach((i) => {
+    if (cls[i] && cap > live[i]) live[i] = cap;
+  });
+  return true;
+}
+
 // A live hazard: writes its graded level into live[], keeping the higher
 // level where zones overlap.
 function gradePin(pin, type, cls, width, height, project, cell, live) {
   const cap = SEVERITY_LEVEL[pin.severity] ?? 1;
   const inside = zoneCells(pin.feature, project, width, height);
+
+  if (shadeCordon(pin, cap, inside, cls, project, width, height, live)) return;
 
   if (!inside) {
     // No drawn polygon (older data): spread from the pin over the ground,

@@ -8,6 +8,7 @@ import { Icon, Modal, Toast, fieldErrors, formatDateTime, timeAgo } from './admi
 import { ReportPhotos } from './reportShared';
 import ActiveZonesCard from '../../components/Resolve/ActiveZonesCard';
 import AwaitingApprovalCard from '../../components/Resolve/AwaitingApprovalCard';
+import BarangayLikelihood from '../../components/Forecast/BarangayLikelihood';
 import '../css/Dashboard.css';
 import '../css/AdminDashboard.css';
 import '../css/DRRMODashboard.css';
@@ -418,6 +419,20 @@ export default function DRRMODashboard() {
         <AwaitingApprovalCard onChanged={load} />
 
         <ActiveZonesCard onResolved={load} />
+
+        {/* What past seasons say is coming, so the office can prepare ahead */}
+        <section className="adm-card">
+          <div className="drm-section-head">
+            <div>
+              <h2>Likely next month</h2>
+              <p>
+                Barangays this month has tended to hit in past years.{' '}
+                <Link to="/app/history">See every barangay and month</Link>
+              </p>
+            </div>
+          </div>
+          <BarangayLikelihood compact limit={5} />
+        </section>
 
         <section className="adm-card adm-card-flush">
           <div className="drm-section-head">

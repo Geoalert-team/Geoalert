@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, Polygon, Polyline, ZoomControl, ScaleControl, Pane, ImageOverlay, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, Polygon, Polyline, ZoomControl, ScaleControl, Pane, ImageOverlay, CircleMarker, Tooltip, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import { useSearchParams } from 'react-router-dom';
@@ -9,6 +9,7 @@ import ReshapeZonePanel from '../components/Publish/ReshapeZonePanel';
 import LayerControl from '../components/Map/LayerControl';
 import HazardPanel, { clearHistoryCache } from '../components/Map/HazardPanel';
 import BarangayPanel from '../components/Map/BarangayPanel';
+import { MARK_STYLE, markPathOptions } from '../components/Map/FieldMarks';
 import { useSusceptibility } from '../components/Map/susceptibility';
 import { HAZARD_LEVELS, useHazardLevelLayer } from '../components/Map/hazardLevels';
 import { HAZARD_TYPES, SEVERITY, severityInfo, hazardKey, hazardIconPath, hazardColor } from '../components/Map/hazardInfo';
@@ -17,6 +18,7 @@ import { boundaryRings, snapPoint } from '../utils/snap';
 import { hazardsApi } from '../api/hazardsApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { historyApi } from '../api/historyApi';
+import { LIKELIHOOD, MONTHS, FORECAST_DISCLAIMER, likelihoodInfo, nextMonth, yearsText } from '../components/Forecast/forecastLevels';
 import './css/PublicMap.css';
 import './css/PublicMapGis.css';
 import './css/PublicMapLayers.css';
@@ -57,6 +59,8 @@ const MAX_RADIUS = 1000;
 const SAMPLE_ZOOM_RADIUS = 500; // meters shown around a pin when it is selected
 const SEVERITY_RANK = { Red: 0, Orange: 1, Green: 2 };
 const NO_HISTORY = []; // stable empty list, so the heat layer isn't recomputed every render
+// Failed background tiles, with none loaded, before the tile server counts as down
+const TILE_FAIL_LIMIT = 6;
 
 // What the shading shows. Pins are on the map in both views.
 // Active hazards leads, and is the view the map opens on: someone arriving
@@ -65,7 +69,13 @@ const NO_HISTORY = []; // stable empty list, so the heat layer isn't recomputed 
 const HEAT_MODES = [
   { key: 'active', label: 'Active hazards', note: 'Shaded inside the drawn area of each active hazard, graded by the ground like a Project NOAH map: its published level where the ground is most at risk, stepping down where it is safer.' },
   { key: 'history', label: 'History', note: 'Shaded by past hazards: how often, how severe and how recent. Active hazards show on top at their graded level.' },
+  // Seasonal likelihood per barangay for a chosen month, from past years.
+  // Rule-based counting (backend apps/history/forecast.py), not AI.
+  { key: 'likely', label: 'Likely by month', note: FORECAST_DISCLAIMER },
 ];
+
+// Barangay fill per likelihood level in the 'likely' view
+const LIKELY_FILL = { High: 0.42, Moderate: 0.32, Low: 0.22, None: 0 };
 
 /* ---------- Helpers ---------- */
 
@@ -73,6 +83,9 @@ const isDesktop = () => window.innerWidth > MOBILE_BREAKPOINT;
 
 // rest_framework_gis puts the primary key on feature.id, not in properties
 const featureId = (feature) => feature?.id ?? feature?.properties?.id;
+
+// A cordon is shown one level below the zone's own severity
+const CORDON_SEVERITY = { Red: 'Orange', Orange: 'Green', Green: 'Green' };
 
 // Turns one GeoJSON feature from /api/hazards/ into the shape this page uses
 function featureToItem(feature) {
@@ -229,14 +242,23 @@ export default function PublicMap() {
   const [liveHazards, setLiveHazards] = useState([]);
   const [barangayGeo, setBarangayGeo] = useState(null);
   const [historySpots, setHistorySpots] = useState([]); // past events, for the heat shading
-  const [heatMode, setHeatMode] = useState('active'); // 'active' | 'history'
+  const [heatMode, setHeatMode] = useState('active'); // 'active' | 'history' | 'likely'
+  // Seasonal likelihood for the 'likely' view: which month, and the answer
+  const [likelyMonth, setLikelyMonth] = useState(nextMonth());
+  const [likely, setLikely] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
 
   // Publishing: 'off' until DRRMO starts, 'placing' while waiting for the
   // first tap, then 'editing' with the form open while more corners of the
   // outline are tapped in.
-  const { canPublish } = useAuth();
+  const { canPublish, user } = useAuth();
+  // Staff who can check zones on the ground: barangay personnel and officers
+  const staffRole = user?.role?.name || user?.role;
+  const canMark = ['Barangay_Personnel', 'DRRMO_Officer', 'System_Admin'].includes(staffRole);
+  // Spots checked on the ground for the zone in view, and a mark being placed
+  const [zoneMarks, setZoneMarks] = useState({ zoneId: null, results: [] });
+  const [marking, setMarking] = useState(null); // { zoneId, kind } while placing
   const [publishMode, setPublishMode] = useState('off');
   const [draftPoints, setDraftPoints] = useState([]);
   // Which shaping method the publish panel is on. Hand drawing treats a tap
@@ -244,6 +266,9 @@ export default function PublicMap() {
   // treat a tap as a seed instead, and this is what it reads to tell them
   // apart — nothing branches on it yet.
   const [draftMethod, setDraftMethod] = useState('hand');
+  // The officer's last tap while publishing: the starting point for a
+  // generating method (water depth, past zone), which then hands back corners.
+  const [draftSeed, setDraftSeed] = useState(null);
   const [publishNotice, setPublishNotice] = useState('');
   // Publishing from a validated incident report: its type, description and
   // id, so the form starts filled in and the report is linked to the zone.
@@ -273,6 +298,38 @@ export default function PublicMap() {
   const [stackIds, setStackIds] = useState([]);
   const [panelOpen, setPanelOpen] = useState(false);
   const [basemap, setBasemap] = useState('streets');
+  // Map background health. Tiles that fail with none loading mean the tile
+  // server is unreachable: switch once to the other provider, and if that
+  // fails too, say so instead of leaving a blank grey map.
+  const [tileFailures, setTileFailures] = useState({ count: 0, loaded: false });
+  const [failedBasemaps, setFailedBasemaps] = useState(() => new Set());
+  const [tileSwitchNote, setTileSwitchNote] = useState('');
+  useEffect(() => { setTileFailures({ count: 0, loaded: false }); }, [basemap]);
+  useEffect(() => {
+    // Came back: this background works again
+    if (tileFailures.loaded) {
+      if (failedBasemaps.has(basemap)) {
+        const next = new Set(failedBasemaps);
+        next.delete(basemap);
+        setFailedBasemaps(next);
+      }
+      return;
+    }
+    if (tileFailures.count < TILE_FAIL_LIMIT || failedBasemaps.has(basemap)) return;
+    const next = new Set(failedBasemaps);
+    next.add(basemap);
+    setFailedBasemaps(next);
+    const other = Object.keys(BASEMAPS).find((k) => !next.has(k));
+    if (other) {
+      setTileSwitchNote(`The ${BASEMAPS[basemap].label.toLowerCase()} background did not load, so the ${BASEMAPS[other].label.toLowerCase()} background is shown instead.`);
+      setBasemap(other);
+    }
+  }, [tileFailures, basemap, failedBasemaps]);
+  const tilesDown = Object.keys(BASEMAPS).every((k) => failedBasemaps.has(k));
+  const tileEvents = useMemo(() => ({
+    tileerror: () => setTileFailures((t) => (t.loaded ? t : { ...t, count: t.count + 1 })),
+    tileload: () => setTileFailures((t) => (t.loaded ? t : { count: 0, loaded: true })),
+  }), []);
   const susceptibility = useSusceptibility();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -416,14 +473,28 @@ export default function PublicMap() {
     });
   }, []);
 
-  // Outlines of the visible zones, as one GeoJSON layer
+  // Outlines of the visible zones, as one GeoJSON layer. A zone with a
+  // cordon adds its ring first, so the hazard's own line draws on top.
   const zoneOutlines = useMemo(() => {
-    const features = visibleHazards.map((h) => h.feature).filter((f) => f?.geometry);
+    const features = [];
+    visibleHazards.forEach((h) => {
+      const f = h.feature;
+      if (!f?.geometry) return;
+      const ring = f.properties?.cordon;
+      if (ring) {
+        features.push({
+          type: 'Feature',
+          properties: { severity: f.properties.severity, part: 'cordon' },
+          geometry: ring,
+        });
+      }
+      features.push(f);
+    });
     return features.length ? { type: 'FeatureCollection', features } : null;
   }, [visibleHazards]);
   // react-leaflet's GeoJSON only reads its data once, so remount it when the set changes
   const zoneOutlinesKey = useMemo(
-    () => visibleHazards.map((h) => `${h.id}:${h.severity}`).join('|'),
+    () => visibleHazards.map((h) => `${h.id}:${h.severity}:${h.feature?.properties?.cordon_m || 0}`).join('|'),
     [visibleHazards],
   );
 
@@ -681,12 +752,14 @@ export default function PublicMap() {
     setSelection(null);
     setPanelOpen(false);
     setDraftPoints([]);
+    setDraftSeed(null);
     setPublishMode('placing');
   }
 
   function cancelPublish() {
     setPublishMode('off');
     setDraftPoints([]);
+    setDraftSeed(null);
     setPublishPrefill(null);
     setPreviewShape(null);
     setReshapeZone(null);
@@ -730,19 +803,25 @@ export default function PublicMap() {
   // One handler for every map click: add a corner to the outline while
   // publishing, otherwise close whichever details panel is open.
   function handleMapClick(clicked) {
+    if (marking) {
+      placeMark(clicked);
+      return;
+    }
     const latlng = publishMode === 'off' ? clicked : snapLatLng(clicked);
     if (publishMode === 'reshaping') {
       changeDraft(insertCorner(draftPoints, [latlng.lat, latlng.lng]));
       return;
     }
     if (publishMode === 'placing' || publishMode === 'editing') {
-      // Hand drawing is the only method that reads a tap as a corner. A
-      // generating method takes the tap as a seed and hands back a finished
-      // outline through onReplacePoints, so it must not collect corners
-      // here. Hand is the only method today, so this always passes.
+      // Hand drawing reads a tap as a corner. A generating method takes the
+      // tap as its starting point (unsnapped: it is where the officer saw the
+      // hazard) and hands back a finished outline through onReplacePoints.
+      // Before the panel opens the method is still 'hand', so the very first
+      // tap is both; the panel replaces that lone corner once it generates.
       if (draftMethod === 'hand') {
         setDraftPoints((pts) => [...pts, [latlng.lat, latlng.lng]]);
       }
+      setDraftSeed([clicked.lat, clicked.lng]);
       setPublishMode('editing');
       return;
     }
@@ -792,8 +871,68 @@ export default function PublicMap() {
     [draftPoints, barangays],
   );
 
+  // Field marks for the zone open in the panel, or the one being reshaped
+  const marksZoneId = reshapeZone?.id || selectedHazard?.id || null;
+  const loadMarks = useCallback((zoneId) => {
+    if (!zoneId || !canMark) { setZoneMarks({ zoneId: null, results: [] }); return; }
+    hazardsApi.marks(zoneId)
+      .then((d) => setZoneMarks({ zoneId, results: d?.results || [] }))
+      .catch(() => setZoneMarks({ zoneId, results: [] }));
+  }, [canMark]);
+  useEffect(() => { loadMarks(marksZoneId); }, [marksZoneId, loadMarks]);
+  const visibleMarks = zoneMarks.zoneId && zoneMarks.zoneId === marksZoneId ? zoneMarks.results : [];
+
+  async function placeMark(latlng) {
+    const { zoneId, kind } = marking;
+    setMarking(null);
+    try {
+      const mark = await hazardsApi.addMark(zoneId, { kind, latitude: latlng.lat, longitude: latlng.lng });
+      setPublishNotice(mark.disagrees
+        ? 'Spot marked. It disagrees with the outline, so the officer who published it has been told.'
+        : 'Spot marked.');
+      loadMarks(zoneId);
+    } catch (err) {
+      setPublishNotice(err?.message || 'Could not mark that spot.');
+    }
+  }
+
+  // Seasonal likelihood, fetched only while that view is open
+  useEffect(() => {
+    if (heatMode !== 'likely') return undefined;
+    let cancelled = false;
+    historyApi.forecast({ month: likelyMonth })
+      .then((d) => { if (!cancelled) setLikely(d); })
+      .catch(() => { if (!cancelled) setLikely({ error: true, results: [] }); });
+    return () => { cancelled = true; };
+  }, [heatMode, likelyMonth]);
+
+  // Per barangay: its rows for the hazard types shown, worst first. The
+  // layer checkboxes apply here too, so "Fire only" shows fire likelihood.
+  const likelyByBarangay = useMemo(() => {
+    const map = new Map();
+    (likely?.results || [])
+      .filter((r) => activeTypes.has(hazardKey(r.hazard_type)))
+      .forEach((r) => {
+        const key = String(r.barangay_id);
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(r);
+      });
+    map.forEach((rows) => rows.sort((a, b) => likelihoodInfo(b.level).rank - likelihoodInfo(a.level).rank
+      || b.probability - a.probability));
+    return map;
+  }, [likely, activeTypes]);
+
   // Thin dark boundaries, like sub-catchment lines on a GIS map. Transparent fill keeps them clickable.
   function barangayStyle(feature) {
+    if (heatMode === 'likely') {
+      const rows = likelyByBarangay.get(String(featureId(feature))) || [];
+      const level = rows[0]?.level || 'None';
+      const info = likelihoodInfo(level);
+      return {
+        className: 'pm-brgy', color: '#2b2b2b', weight: 1, opacity: 0.8,
+        fillColor: info.color, fillOpacity: LIKELY_FILL[level] ?? 0,
+      };
+    }
     // Bold only while its panel is open
     const selected =
       panelOpen && selectedBarangayId != null && String(featureId(feature)) === String(selectedBarangayId);
@@ -852,6 +991,7 @@ export default function PublicMap() {
               attribution={BASEMAPS[basemap].attribution}
               maxNativeZoom={BASEMAPS[basemap].nativeZoom}
               maxZoom={20}
+              eventHandlers={tileEvents}
             />
           )}
           <ZoomControl position="bottomright" />
@@ -886,12 +1026,23 @@ export default function PublicMap() {
           {/* Barangay boundaries: hover for the name, click for barangay-specific hazards */}
           {barangayGeo && (
             <GeoJSON
-              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}-${publishMode}`}
+              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}-${publishMode}-${heatMode}-${likelyMonth}-${likely?.results?.length ?? 0}-${[...activeTypes].join('')}`}
               data={barangayGeo}
               style={barangayStyle}
               bubblingMouseEvents={false}
               onEachFeature={(feature, layer) => {
-                layer.bindTooltip(feature.properties?.name || 'Barangay', {
+                const name = feature.properties?.name || 'Barangay';
+                let tip = name;
+                if (heatMode === 'likely') {
+                  const rows = likelyByBarangay.get(String(featureId(feature))) || [];
+                  const monthName = MONTHS[likelyMonth - 1];
+                  tip = rows.length
+                    ? `<strong>${name}</strong><br>${rows.slice(0, 3)
+                      .map((r) => `${r.hazard_type}: ${likelihoodInfo(r.level).label} (${yearsText(r, monthName)})`)
+                      .join('<br>')}`
+                    : `<strong>${name}</strong><br>Nothing on record in past ${monthName}s`;
+                }
+                layer.bindTooltip(tip, {
                   sticky: true,
                   direction: 'top',
                   className: 'pm-brgy-tip',
@@ -902,7 +1053,7 @@ export default function PublicMap() {
                   // Barangay polygons cover the whole city, so while a hazard
                   // is being placed they have to pass the click through
                   // instead of opening the barangay panel.
-                  if (publishMode !== 'off') {
+                  if (publishMode !== 'off' || marking) {
                     handleMapClick(e.latlng);
                     return;
                   }
@@ -923,12 +1074,22 @@ export default function PublicMap() {
               key={zoneOutlinesKey}
               data={zoneOutlines}
               interactive={false}
-              style={(f) => ({
-                color: severityInfo(f.properties?.severity).color,
-                weight: 2.5,
-                opacity: 0.95,
-                fill: false,
-              })}
+              style={(f) => (f.properties?.part === 'cordon'
+                // The cordon is drawn one level below the hazard, dashed,
+                // matching how the shading steps down across it
+                ? {
+                  color: severityInfo(CORDON_SEVERITY[f.properties?.severity] || 'Green').color,
+                  weight: 2,
+                  opacity: 0.9,
+                  dashArray: '6 5',
+                  fill: false,
+                }
+                : {
+                  color: severityInfo(f.properties?.severity).color,
+                  weight: 2.5,
+                  opacity: 0.95,
+                  fill: false,
+                })}
             />
           )}
 
@@ -938,7 +1099,30 @@ export default function PublicMap() {
               key={JSON.stringify(previewShape).length}
               data={previewShape}
               interactive={false}
-              style={{ color: '#0b6b3a', weight: 2, fillColor: '#1f9d55', fillOpacity: 0.35 }}
+              style={(f) => (f?.properties?.part === 'cordon'
+                ? { color: '#0b6b3a', weight: 2, dashArray: '6 5', fillColor: '#1f9d55', fillOpacity: 0.12 }
+                : { color: '#0b6b3a', weight: 2, fillColor: '#1f9d55', fillOpacity: 0.35 })}
+            />
+          )}
+
+          {/* Spots checked on the ground for the zone in view (staff only) */}
+          {visibleMarks.map((m) => (
+            <CircleMarker key={m.id} center={[m.lat, m.lng]} pathOptions={markPathOptions(m)} bubblingMouseEvents={false}>
+              <Tooltip direction="top">
+                {MARK_STYLE[m.kind]?.label || m.kind}
+                {m.by ? ` · ${m.by}` : ''}
+                {m.note ? ` · "${m.note}"` : ''}
+                {m.disagrees ? ' · disagrees with the outline' : ''}
+              </Tooltip>
+            </CircleMarker>
+          ))}
+
+          {/* Starting point of a generating method */}
+          {publishMode === 'editing' && draftSeed && draftMethod !== 'hand' && (
+            <Marker
+              position={draftSeed}
+              interactive={false}
+              icon={L.divIcon({ className: '', html: '<div class="pub-seed"></div>', iconSize: [18, 18], iconAnchor: [9, 9] })}
             />
           )}
 
@@ -1066,6 +1250,15 @@ export default function PublicMap() {
               ))}
             </div>
 
+            {heatMode === 'likely' && (
+              <label className="pm-chip pm-likely-month">
+                <span className="pm-sr">Month</span>
+                <select value={likelyMonth} onChange={(e) => setLikelyMonth(Number(e.target.value))}>
+                  {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+                </select>
+              </label>
+            )}
+
             <button
               type="button"
               className={`pm-chip ${layersOpen ? 'is-active' : ''}`}
@@ -1101,6 +1294,17 @@ export default function PublicMap() {
         <div className={`pm-status ${panelOpen ? 'is-hidden-mobile' : ''}`}>
           {loading && <span className="pm-pill">Loading hazards…</span>}
           {!loading && loadFailed && <span className="pm-pill pm-pill-error">Live hazard data is unavailable right now</span>}
+          {tilesDown && (
+            <span className="pm-pill pm-pill-error">
+              Map tiles temporarily unavailable. Hazard zones and barangay lines are still shown.
+            </span>
+          )}
+          {!tilesDown && tileSwitchNote && (
+            <span className="pm-pill">
+              {tileSwitchNote}{' '}
+              <button type="button" className="pm-pill-close" onClick={() => setTileSwitchNote('')} aria-label="Dismiss">×</button>
+            </span>
+          )}
           {!loading && hazards.length === 0 && !loadFailed && (
             <span className="pm-pill">No active hazards right now</span>
           )}
@@ -1126,15 +1330,42 @@ export default function PublicMap() {
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
           </button>
 
-          <p className="pm-legend-title">Hazard level: {layerName.toLowerCase()}</p>
-          <ul>
-            {[...HAZARD_LEVELS].reverse().map((l) => (
-              <li key={l.key}>
-                <span className="pm-legend-swatch" style={{ background: l.color }} />
-                {l.label}
-              </li>
-            ))}
-          </ul>
+          {heatMode === 'likely' ? (
+            <>
+              <p className="pm-legend-title">
+                Likely in {MONTHS[likelyMonth - 1]}: {layerName.toLowerCase()}
+              </p>
+              <ul>
+                {['High', 'Moderate', 'Low', 'None'].map((k) => (
+                  <li key={k}>
+                    <span
+                      className="pm-legend-swatch"
+                      style={{ background: LIKELIHOOD[k].color, opacity: k === 'None' ? 0.35 : 1 }}
+                    />
+                    {LIKELIHOOD[k].label}
+                  </li>
+                ))}
+              </ul>
+              {likely?.error && <p className="pm-legend-note">Could not load the likelihood.</p>}
+              {likely?.basis?.sample_records > 0 && (
+                <p className="pm-legend-note">
+                  Includes {likely.basis.sample_records} sample records made for testing.
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="pm-legend-title">Hazard level: {layerName.toLowerCase()}</p>
+              <ul>
+                {[...HAZARD_LEVELS].reverse().map((l) => (
+                  <li key={l.key}>
+                    <span className="pm-legend-swatch" style={{ background: l.color }} />
+                    {l.label}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           {legendOpen && (
             <>
             <p className="pm-legend-note">{heatNote}</p>
@@ -1213,7 +1444,16 @@ export default function PublicMap() {
           onChanged={() => refreshMap()}
           stack={stack}
           onPick={showStacked}
+          marks={canMark && selectedHazard ? visibleMarks : null}
+          onMark={canMark && selectedHazard ? (kind) => setMarking({ zoneId: selectedHazard.id, kind }) : undefined}
+          marking={marking && selectedHazard && marking.zoneId === selectedHazard.id ? marking.kind : null}
         />
+        {marking && (
+          <div className="pub-hint">
+            <span>Tap the map where you checked: {MARK_STYLE[marking.kind].label.toLowerCase()}</span>
+            <button type="button" onClick={() => setMarking(null)}>Cancel</button>
+          </div>
+        )}
         {publishNotice && (
           <div className="pub-notice" role="status">
             <span>{publishNotice}</span>
@@ -1240,6 +1480,7 @@ export default function PublicMap() {
             onReset={() => { setDraftPoints(draftHistory[0] || draftPoints); setDraftHistory([]); }}
             onCancel={cancelPublish}
             onSaved={handleReshaped}
+            marks={visibleMarks}
           />
         )}
 
@@ -1247,7 +1488,7 @@ export default function PublicMap() {
           <PublishHazardPanel
             points={draftPoints}
             onUndo={undoDraftCorner}
-            onClear={() => setDraftPoints([])}
+            onClear={() => { setDraftPoints([]); setDraftSeed(null); }}
             barangay={draftBarangay}
             outsideCorners={draftOutsideCorners}
             boundariesReady={barangays.length > 0}
@@ -1257,6 +1498,8 @@ export default function PublicMap() {
             onPreviewShape={setPreviewShape}
             onReplacePoints={changeDraft}
             onMethodChange={setDraftMethod}
+            seed={draftSeed}
+            susceptibilityIndex={susceptibility.index}
           />
         )}
 

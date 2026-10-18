@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import { hazardIconPath, DRRMO_HOTLINE } from '../components/Map/hazardInfo';
@@ -28,6 +28,28 @@ const DEFAULT_PHASE = 'before';
 // One line of an article body = one numbered step
 const stepsFrom = (body = '') => body.split('\n').map((s) => s.trim()).filter(Boolean);
 
+// Every word of the search must appear (any order, any case)
+const wordsOf = (q) => q.toLowerCase().split(/\s+/).filter(Boolean);
+const matchesAll = (text, words) => {
+  const t = (text || '').toLowerCase();
+  return words.every((w) => t.includes(w));
+};
+
+// Search the built-in general safety steps, one hit per matching step
+function searchStaticGuides(q) {
+  const words = wordsOf(q);
+  if (!words.length) return [];
+  const hits = [];
+  HAZARDS.forEach((name) => {
+    PHASES.forEach((p) => {
+      (GUIDES[name].phases[p.key] || []).forEach((step) => {
+        if (matchesAll(`${name} ${p.title} ${step}`, words)) hits.push({ hazard: name, phase: p, step });
+      });
+    });
+  });
+  return hits;
+}
+
 export default function WhatToDo() {
   // The hazard and phase live in the URL, not in state. That's what makes
   // "open in a new tab" keep the reader's place, and what lets the map's
@@ -38,7 +60,10 @@ export default function WhatToDo() {
   const phaseParam = searchParams.get('phase') || '';
   const hazard = HAZARDS.find((h) => h.toLowerCase() === hazardParam.toLowerCase()) || DEFAULT_HAZARD;
   const phase = PHASES.some((p) => p.key === phaseParam) ? phaseParam : DEFAULT_PHASE;
-  const filtersActive = searchParams.has('hazard') || searchParams.has('phase');
+  // Keyword search (?q=): kept in the URL like the other filters
+  const qParam = (searchParams.get('q') || '').trim();
+  const [query, setQuery] = useState(qParam);
+  const filtersActive = searchParams.has('hazard') || searchParams.has('phase') || Boolean(qParam);
 
   const [packed, setPacked] = useState({});
   const [videoId, setVideoId] = useState(VIDEOS[0]?.id);
@@ -60,7 +85,45 @@ export default function WhatToDo() {
   }
 
   function clearFilters() {
+    setQuery('');
     setSearchParams({}, { replace: true });
+  }
+
+  // Typing updates the URL after a short pause, so each keystroke is not a request
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const next = query.trim();
+      if (next === qParam) return;
+      const params = new URLSearchParams(searchParams);
+      if (next) params.set('q', next); else params.delete('q');
+      setSearchParams(params, { replace: true });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep the box in step when the URL changes (back button, Clear filters)
+  useEffect(() => { setQuery(qParam); }, [qParam]);
+
+  // Published articles matching the search, across every hazard and phase
+  const [searchHits, setSearchHits] = useState(null);
+  const [searching, setSearching] = useState(false);
+  useEffect(() => {
+    if (!qParam) { setSearchHits(null); return undefined; }
+    let cancelled = false;
+    setSearching(true);
+    guidanceApi.list({ search: qParam })
+      .then((data) => { if (!cancelled) setSearchHits(Array.isArray(data) ? data : data?.results || []); })
+      .catch(() => { if (!cancelled) setSearchHits([]); })
+      .finally(() => { if (!cancelled) setSearching(false); });
+    return () => { cancelled = true; };
+  }, [qParam]);
+  const staticHits = useMemo(() => searchStaticGuides(qParam), [qParam]);
+
+  // Open a result: drop the search and go to that hazard and phase
+  function openResult(hazardName, phaseKey, hash = '') {
+    setQuery('');
+    setSearchParams({ hazard: hazardName, phase: phaseKey }, { replace: false });
+    if (hash) setTimeout(() => document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' }), 400);
   }
 
   // Load real hazard type IDs once, so guidance can be filtered by hazard_type
@@ -175,6 +238,17 @@ export default function WhatToDo() {
                 ))}
               </div>
 
+              <label className="wt-search">
+                <span className="wt-sr">Search the safety guides</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M21 21l-5-5" /></svg>
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search guides, e.g. sandbag, LPG, evacuation"
+                />
+              </label>
+
               {filtersActive && (
                 <button type="button" className="wt-reset" onClick={clearFilters}>
                   Clear filters
@@ -182,6 +256,59 @@ export default function WhatToDo() {
               )}
             </div>
 
+            {qParam ? (
+              <div className="wt-results" aria-live="polite">
+                <h2>Results for &ldquo;{qParam}&rdquo;</h2>
+                {searching && <p className="wt-muted">Searching…</p>}
+
+                {!searching && searchHits && searchHits.length > 0 && (
+                  <>
+                    <h3>Published by the Talisay City DRRMO</h3>
+                    <ul className="wt-result-list">
+                      {searchHits.map((a) => {
+                        const name = a.hazard_type_detail?.name || '';
+                        const phaseKey = (a.timeline_phase || '').toLowerCase();
+                        return (
+                          <li key={a.id}>
+                            <button type="button" onClick={() => openResult(HAZARDS.find((h) => h === name) || DEFAULT_HAZARD, phaseKey, `article-${a.id}`)}>
+                              <strong>{a.title}</strong>
+                              <small>{name} · {a.timeline_phase}</small>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </>
+                )}
+
+                {staticHits.length > 0 && (
+                  <>
+                    <h3>General safety steps</h3>
+                    <ul className="wt-result-list">
+                      {staticHits.map((h) => (
+                        <li key={`${h.hazard}-${h.phase.key}-${h.step}`}>
+                          <button type="button" onClick={() => openResult(h.hazard, h.phase.key)}>
+                            <strong>{h.step}</strong>
+                            <small>{h.hazard} · {h.phase.title}</small>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+
+                {!searching && searchHits && searchHits.length === 0 && staticHits.length === 0 && (
+                  <p className="wt-notice">
+                    No guidance matches &ldquo;{qParam}&rdquo;. Try a different word, or clear the search to
+                    browse by hazard.
+                  </p>
+                )}
+                <p className="wt-source-note">
+                  Searches the DRRMO&apos;s published guidance and the general safety steps on this page.
+                </p>
+              </div>
+            ) : (
+            <>
             <div className="wt-guide-head">
               <h2>{guide.title}</h2>
               <p>{guide.intro}</p>
@@ -309,6 +436,8 @@ export default function WhatToDo() {
                 </ul>
               </aside>
             </div>
+            </>
+            )}
           </div>
         </section>
 

@@ -205,3 +205,44 @@
 .pub-method:hover:not(:disabled) { border-color: var(--db-navy); }
 .pub-method.is-active { border-width: 2px; border-color: var(--db-navy); }
 .pub-method:disabled { opacity: .45; cursor: default; }
+
+/* Safety cordon around a fire: a toggle and a width in meters */
+.pub-cordon { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--db-line, #e3e7ee); }
+.pub-cordon-toggle,
+.pub-cordon-width {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .8rem; font-weight: 600; color: var(--db-heading);
+}
+.pub-cordon-width { margin-left: 12px; }
+.pub-cordon-width input {
+  width: 64px; padding: 4px 6px;
+  border: 1px solid var(--db-line, #cfd6e1); border-radius: 6px;
+  font: inherit; font-size: .8rem;
+}
+.pub-cordon-width input[aria-invalid] { border-color: #d9534f; }
+
+/* Generating methods: water depth, past zone choice, notes, map check */
+.pub-depth { margin-top: 8px; }
+.pub-depth-label { display: block; font-size: .78rem; font-weight: 600; color: var(--db-heading); }
+.pub-depth-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+.pub-depth-custom { display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; color: var(--db-soft); }
+.pub-depth-custom input {
+  width: 64px; padding: 4px 6px;
+  border: 1px solid var(--db-line, #cfd6e1); border-radius: 6px; font: inherit; font-size: .8rem;
+}
+.pub-past { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; font-size: .78rem; }
+.pub-past-row { display: flex; align-items: flex-start; gap: 6px; color: var(--db-body); cursor: pointer; }
+.pub-draw-note { margin-top: 6px; font-size: .78rem; color: var(--db-body); }
+.pub-check {
+  margin: 8px 0 0; padding: 8px 10px;
+  border: 1px solid #e3b341; border-radius: 8px; background: #fdf5de;
+  font-size: .78rem; line-height: 1.45; color: #5c4300;
+}
+.pub-check ul { margin: 4px 0 0; padding-left: 16px; }
+.pub-check strong { color: #5c4300; }
+
+/* Starting point of a generating method on the map */
+.pub-seed {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #1c64f2; border: 3px solid #fff; box-shadow: 0 0 0 2px #1c64f2;
+}

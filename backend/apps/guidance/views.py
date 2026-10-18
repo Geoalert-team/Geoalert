@@ -15,7 +15,7 @@ class GuidanceListView(APIView):
     """
     GET /api/guidance/
     Returns all published guidance articles.
-    Supports filters: ?hazard_type=1 ?phase=Before
+    Supports filters: ?hazard_type=1 ?phase=Before ?search=sandbag
     Public access — no login required.
     """
     permission_classes = [AllowAny]
@@ -32,6 +32,14 @@ class GuidanceListView(APIView):
         phase = request.query_params.get('phase')
         if phase:
             articles = articles.filter(timeline_phase=phase)
+
+        # Keyword search (?search=sandbag): every word must appear in the
+        # title or the body, so "flood kit" finds articles about both
+        search = (request.query_params.get('search') or '').strip()
+        if search:
+            from django.db.models import Q
+            for word in search.split()[:8]:
+                articles = articles.filter(Q(title__icontains=word) | Q(body__icontains=word))
 
         serializer = GuidanceContentSerializer(articles, many=True)
         return Response(serializer.data)

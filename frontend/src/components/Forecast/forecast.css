@@ -1,0 +1,36 @@
+/* Seasonal likelihood by barangay (History page, dashboard card) */
+.fc { display: flex; flex-direction: column; gap: 12px; }
+.fc-controls { display: flex; flex-wrap: wrap; gap: 12px; }
+.fc-field { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; font-weight: 600; color: var(--db-heading, #1c2e4a); }
+.fc-field select {
+  min-width: 150px; padding: 6px 8px;
+  border: 1px solid var(--db-line, #cfd6e1); border-radius: 6px;
+  font: inherit; font-weight: 400; background: var(--db-white, #fff);
+}
+
+.fc-table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.fc-table th { text-align: left; padding: 6px 8px; color: var(--db-soft, #5b6577); font-weight: 600; border-bottom: 1px solid var(--db-line, #e3e7ee); }
+.fc-table td { padding: 7px 8px; border-bottom: 1px dashed var(--db-line, #e3e7ee); color: var(--db-body, #2b3445); }
+.fc-table tr.is-picked td { background: var(--db-mist, #f3f5f9); }
+.fc-link { padding: 0; border: 0; background: none; font: inherit; font-weight: 700; color: var(--db-navy, #1c2e4a); text-decoration: underline; cursor: pointer; }
+
+.fc-badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+.fc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+.fc-note { margin: 0; font-size: .8rem; line-height: 1.45; color: var(--db-soft, #5b6577); }
+.fc-more { margin: 0; font-size: .8rem; color: var(--db-soft, #5b6577); }
+
+.fc-profile h3 { margin: 4px 0 2px; font-size: .95rem; color: var(--db-heading, #1c2e4a); }
+.fc-sub { margin: 0; font-size: .78rem; color: var(--db-soft, #5b6577); }
+.fc-months { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin: 10px 0 6px; padding: 0; list-style: none; }
+.fc-months button { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; font: inherit; }
+.fc-bar-wrap { display: flex; align-items: flex-end; width: 100%; height: 72px; border-radius: 4px; background: var(--db-mist, #f3f5f9); overflow: hidden; }
+.fc-bar { display: block; width: 100%; border-radius: 4px 4px 0 0; }
+.fc-month { font-size: .7rem; font-weight: 600; color: var(--db-soft, #5b6577); }
+.fc-months li.is-current .fc-month { color: var(--db-heading, #1c2e4a); text-decoration: underline; }
+.fc-months li.is-current .fc-bar-wrap { outline: 2px solid var(--db-navy, #1c2e4a); outline-offset: 1px; }
+
+@media (max-width: 560px) {
+  .fc-table th:nth-child(4), .fc-table td:nth-child(4) { display: none; }
+  .fc-bar-wrap { height: 52px; }
+}

@@ -1,5 +1,6 @@
 import os
 import uuid
+from django.contrib.gis.db.models import PointField
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
@@ -54,6 +55,12 @@ class IncidentReport(models.Model):
     validated_by      = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='validated_reports', db_column='incr_validated_by')
     hazard_zone       = models.ForeignKey(HazardZone, on_delete=models.SET_NULL, null=True, blank=True, db_column='incr_hzzn_id')
     historical_record = models.ForeignKey(HistoricalRecord, on_delete=models.SET_NULL, null=True, blank=True, db_column='incr_hstr_id')
+
+    # Where the reporter saw it, tapped on a map. Optional: a report from a
+    # barangay hall about a whole sitio has no single spot. When several
+    # reports of one event carry a pin, DRRMO can draw the zone around them
+    # instead of guessing where the edge is.
+    location = PointField(srid=4326, null=True, blank=True, db_column='incr_location')
 
     casualties_dead    = models.IntegerField(null=True, blank=True, default=0, validators=[MinValueValidator(0)], db_column='incr_casualties_dead')
     casualties_injured = models.IntegerField(null=True, blank=True, default=0, validators=[MinValueValidator(0)], db_column='incr_casualties_injured')

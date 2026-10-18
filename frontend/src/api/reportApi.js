@@ -4,23 +4,39 @@ import client from './axiosClient';
 export const reportsApi = {
   // F7: record that a generated report was printed, before the browser
   // opens its print dialog. criteria is the filters, as text.
-  printed: (report, criteria) =>
-    client.post('/api/reports/printed/', { report, criteria }).then((r) => r.data),
+  // via is 'print', 'pdf' or 'csv'; report may also be 'analytics'.
+  printed: (report, criteria, via = 'print') =>
+    client.post('/api/reports/printed/', { report, criteria, via }).then((r) => r.data),
+
+  // F7 analytics dashboard: { kpis, monthly, zones_by_type, ... } for the
+  // last `months` months (3, 6, 12 or 24)
+  analytics: (params) =>
+    client.get('/api/reports/analytics/', { params }).then((r) => r.data),
 
   // Barangay Personnel: list their own reports
   // DRRMO/Admin: list all reports (optional ?status= filter)
   list: (status) =>
     client.get('/api/reports/incidents/', { params: status ? { status } : {} }).then((r) => r.data),
 
-
+  // Pinned, non-rejected reports of one hazard type from the last hours, for
+  // drawing a zone around where they were seen. DRRMO/Admin.
+  located: (hazardTypeName, sinceHours = 72) =>
+    client.get('/api/reports/incidents/', {
+      params: { located: 'true', hazard_type_name: hazardTypeName, since_hours: sinceHours },
+    }).then((r) => r.data),
 
   // Barangay Personnel: submit a new incident report.
   // photos is an optional array of File objects from an <input type="file" multiple>.
   submit: ({
     barangay, hazard_type, description,
-    agency = '', position = '', severity_estimate = '', photos = [],
+    agency = '', position = '', severity_estimate = '', photos = [], location = null,
   }) => {
     const body = { barangay, hazard_type, description, agency, position, severity_estimate };
+    // Optional map pin [lat, lng]: sent only when one was placed
+    if (location) {
+      body.latitude = Number(location[0].toFixed(6));
+      body.longitude = Number(location[1].toFixed(6));
+    }
 
     if (!photos || photos.length === 0) {
       return client.post('/api/reports/incidents/', body).then((r) => r.data);

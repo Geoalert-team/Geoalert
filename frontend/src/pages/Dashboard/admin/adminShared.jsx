@@ -107,6 +107,7 @@ export const ACTION_META = {
   RETRACT_HAZARD: { label: 'Withdrew hazard alert', tone: 'bad', icon: 'userX' },
   VERIFY_HAZARD: { label: 'Ground confirmation', tone: 'info', icon: 'check' },
   GENERATE_REPORT: { label: 'Generated report', tone: 'neutral', icon: 'list' },
+  CONFIG_CHANGED: { label: 'Changed a setting', tone: 'warn', icon: 'shield' },
 };
 
 export function actionMeta(action) {

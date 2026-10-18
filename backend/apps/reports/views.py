@@ -119,26 +119,40 @@ class ReportPrintedView(APIView):
     """
     POST /api/reports/printed/
 
-        {"report": "hazard-summary" | "response-status",
-         "criteria": "date_from=... barangay=..."}
+        {"report": "hazard-summary" | "response-status" | "analytics",
+         "criteria": "date_from=... barangay=...",
+         "via": "print" | "csv" | "pdf"}
 
     F7: generating a report is logged by the report endpoints themselves.
-    Printing happens in the browser, where the server can't see it, so the
-    Print button reports it here first. That way the audit log shows which
-    reports left the system on paper, by whom and with what filters.
+    Printing, saving as PDF and downloading as CSV happen in the browser,
+    where the server can't see them, so the page reports each one here
+    first. That way the audit log shows which reports left the system, in
+    what form, by whom and with what filters.
     """
     permission_classes = [IsAuthenticated, IsDRRMOOfficer]
-    REPORTS = {'hazard-summary': 'Hazard Summary', 'response-status': 'Response Status'}
+    REPORTS = {
+        'hazard-summary': 'Hazard Summary',
+        'response-status': 'Response Status',
+        'analytics': 'Analytics',
+    }
+    VIA = {'print': ('PRINT_REPORT', 'printed'),
+           'pdf': ('EXPORT_REPORT', 'saved as PDF'),
+           'csv': ('EXPORT_REPORT', 'downloaded as CSV')}
 
     def post(self, request):
         kind = request.data.get('report')
         if kind not in self.REPORTS:
             return Response({'error': f'report must be one of {list(self.REPORTS)}.'},
                             status=status.HTTP_400_BAD_REQUEST)
+        via = request.data.get('via') or 'print'
+        if via not in self.VIA:
+            return Response({'error': f'via must be one of {list(self.VIA)}.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        action, verb = self.VIA[via]
         criteria = str(request.data.get('criteria') or '')[:300]
         log_event(
-            request, 'PRINT_REPORT', 'hazard_zone' if kind == 'response-status' else 'historical_record', '',
-            f'{self.REPORTS[kind]} printed. {criteria}'.strip(),
+            request, action, 'historical_record' if kind == 'hazard-summary' else 'hazard_zone', '',
+            f'{self.REPORTS[kind]} {verb}. {criteria}'.strip(),
         )
         return Response({'logged': True})
 
@@ -252,6 +266,23 @@ class IncidentReportListCreateView(APIView):
         status_filter = request.query_params.get('status')
         if status_filter:
             reports = reports.filter(status=status_filter)
+
+        # For drawing a zone around reported spots: only pinned, not
+        # rejected, of one hazard type, from the last few hours.
+        params = request.query_params
+        if (params.get('located') or '').lower() in ('1', 'true', 'yes'):
+            reports = reports.filter(location__isnull=False).exclude(status='Rejected')
+        hazard_name = (params.get('hazard_type_name') or '').strip()
+        if hazard_name:
+            reports = reports.filter(hazard_type__name__iexact=hazard_name)
+        try:
+            since_hours = float(params.get('since_hours')) if params.get('since_hours') else None
+        except ValueError:
+            since_hours = None
+        if since_hours:
+            from datetime import timedelta
+            from django.utils import timezone
+            reports = reports.filter(submitted_at__gte=timezone.now() - timedelta(hours=min(since_hours, 24 * 14)))
 
         # context carries the request so photo URLs come back absolute
         return Response(

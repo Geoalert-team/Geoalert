@@ -18,6 +18,14 @@ export const hazardsApi = {
   // What a publish would do, without doing it: the clipped shape, the
   // barangays and number of accounts it reaches, overlapping zones of the
   // same type, and whether it needs a second officer. Saves nothing.
+  // Resolved or archived zones of a type near a spot, each with corners to start from
+  pastZones: ({ type, lat, lng, radius }) =>
+    client.get('/api/hazards/past-zones/', { params: { type, lat, lng, ...(radius ? { radius } : {}) } })
+      .then((r) => r.data),
+  // Spots checked on the ground for a live zone ("Affected here" / "Clear here")
+  marks: (id) => client.get(`/api/hazards/${id}/marks/`).then((r) => r.data),
+  addMark: (id, { kind, latitude, longitude, note }) =>
+    client.post(`/api/hazards/${id}/marks/`, { kind, latitude, longitude, note }).then((r) => r.data),
   preview: (payload) => client.post('/api/hazards/preview/', payload).then((r) => r.data),
 
   // Extreme alerts waiting for a second officer, and approving one (sends it).

@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import HistoricalData from "./pages/HistoricalData";
 import Security from "./pages/Security";
 import Reports from "./pages/Reports";
+import Analytics from "./pages/Analytics";
 
 function Gate({ children, roles }) {
   const { user, loading } = useAuth();
@@ -55,6 +56,16 @@ function AppRoutes() {
         element={
           <Gate roles={["System_Admin", "DRRMO_Officer"]}>
             <Reports />
+          </Gate>
+        }
+      />
+
+      {/* F7 analytics dashboard: DRRMO and Admin, like Reports */}
+      <Route
+        path="/app/analytics"
+        element={
+          <Gate roles={["System_Admin", "DRRMO_Officer"]}>
+            <Analytics />
           </Gate>
         }
       />

@@ -418,3 +418,15 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
 @media (prefers-reduced-motion: reduce) {
   .adm *, .adm-backdrop, .adm-modal, .adm-toast { animation: none !important; transition: none !important; }
 }
+/* System configuration panel (F8) */
+.adm-settings-group { border: 1px solid var(--adm-line); border-radius: 10px; padding: 12px 16px 4px; margin: 0 0 16px; }
+.adm-settings-group legend { font-weight: 800; padding: 0 6px; }
+.adm-setting { margin-bottom: 14px; }
+.adm-setting-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.adm-setting-row input { width: 110px; }
+.adm-setting-unit { color: var(--db-soft); font-size: .85rem; }
+.adm-setting-changed { font-size: .72rem; font-weight: 800; text-transform: uppercase; color: #9a6400; background: #fff3d6; border-radius: 999px; padding: 2px 8px; }
+.adm-setting-help { margin: 4px 0 0 !important; font-size: .8rem; color: var(--db-soft); }
+.adm-setting.has-error input { border-color: #e9958c; }
+.adm-setting-msg { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.adm-settings-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }

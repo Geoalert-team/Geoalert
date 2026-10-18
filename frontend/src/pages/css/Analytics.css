@@ -1,0 +1,39 @@
+/* F7 Analytics dashboard. Builds on Dashboard.css (db-*). */
+.an-toolbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.an-exports { margin-left: auto; }
+
+.an-seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--db-line); border-radius: 10px; overflow: hidden; }
+.an-seg button {
+  border: 0; border-right: 1px solid var(--db-line); background: var(--db-white); color: var(--db-body);
+  padding: 8px 14px; font: inherit; font-size: .86rem; font-weight: 700; cursor: pointer;
+}
+.an-seg button:last-child { border-right: 0; }
+.an-seg button.is-active { background: var(--db-navy); color: #fff; }
+.an-seg button:disabled { cursor: default; }
+.an-seg-sm button { padding: 6px 10px; font-size: .78rem; }
+
+.an-body.is-busy { opacity: .55; transition: opacity .15s; }
+.an-period { margin: 0 0 16px; color: var(--db-soft); font-size: .9rem; }
+.an-stat-hint { margin-top: 4px; font-size: .78rem; color: var(--db-soft); }
+
+.an-response { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-top: 8px; }
+.an-response > div { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: 10px; background: #f5f7fa; }
+.an-big { font-family: var(--db-font-head); font-size: 1.5rem; font-weight: 800; color: var(--db-heading); }
+.an-response span:not(.an-big) { color: var(--db-body); font-size: .88rem; font-weight: 600; }
+.an-response small { color: var(--db-soft); font-size: .78rem; }
+
+.an-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.an-grid { grid-template-columns: 1fr 1fr; }
+@media (max-width: 900px) { .an-grid { grid-template-columns: 1fr; } .an-exports { margin-left: 0; } }
+
+.an-table-wrap { margin-top: 14px; }
+.an-table-wrap summary { cursor: pointer; font-weight: 700; color: var(--db-heading); font-size: .88rem; }
+.an-table-wrap .db-table { margin-top: 10px; }
+@media (max-width: 640px) { .an-table-wrap { overflow-x: auto; } }
+
+@media print {
+  .an-table-wrap { display: block; }
+  .an-table-wrap > summary { display: none; }
+  .an-body.is-busy { opacity: 1; }
+  .an-grid .db-card, .an-response > div { break-inside: avoid; }
+}

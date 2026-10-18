@@ -22,6 +22,7 @@ const ROLE_LINKS = {
     { to: "/map", label: "Map" },
     { to: "/app/history", label: "History" },
     { to: "/app/reports", label: "Reports" },
+    { to: "/app/analytics", label: "Analytics" },
     { to: "/app/security", label: "Security" },
   ],
   DRRMO_Officer: [
@@ -29,6 +30,7 @@ const ROLE_LINKS = {
     { to: "/map", label: "Map" },
     { to: "/app/history", label: "History" },
     { to: "/app/reports", label: "Reports" },
+    { to: "/app/analytics", label: "Analytics" },
     { to: "/app/security", label: "Security" },
   ],
   Barangay_Personnel: [

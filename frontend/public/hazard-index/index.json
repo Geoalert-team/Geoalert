@@ -761,5 +761,20 @@
     0.0
    ]
   }
+ },
+ "terrain": {
+  "file": "terrain.png",
+  "bounds": [
+   [
+    10.229619796808128,
+    123.77334594726562
+   ],
+   [
+    10.342699980654269,
+    123.87694358825684
+   ]
+  ],
+  "encoding": "Height above nearest drainage in cm = R*256 + G; B = 255 inside the city",
+  "source": "SRTM (~30 m) via AWS Terrain Tiles; drainage from OpenStreetMap waterways, elevation-derived channels and the coast"
  }
 }

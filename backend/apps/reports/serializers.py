@@ -64,6 +64,14 @@ class IncidentReportSerializer(serializers.ModelSerializer):
     submitted_by_name = serializers.CharField(source='submitted_by.full_name', read_only=True)
     reviewed_by_name = serializers.CharField(source='reviewed_by.full_name', read_only=True)
     photos = ReportPhotoSerializer(many=True, read_only=True)
+    latitude = serializers.SerializerMethodField()
+    longitude = serializers.SerializerMethodField()
+
+    def get_latitude(self, obj):
+        return round(obj.location.y, 6) if obj.location else None
+
+    def get_longitude(self, obj):
+        return round(obj.location.x, 6) if obj.location else None
 
     class Meta:
         model = IncidentReport
@@ -94,6 +102,8 @@ class IncidentReportSerializer(serializers.ModelSerializer):
             'validated_at',
             # The zone published from this report, if any
             'hazard_zone',
+            # Where the reporter saw it, or null when no pin was dropped
+            'latitude', 'longitude',
         ]
 
 
@@ -115,6 +125,11 @@ class IncidentReportCreateSerializer(serializers.ModelSerializer):
         },
     )
 
+    # Optional map pin. Two plain numbers rather than GeoJSON, because a
+    # report with photos arrives as multipart form data.
+    latitude = serializers.FloatField(required=False, allow_null=True, min_value=-90, max_value=90)
+    longitude = serializers.FloatField(required=False, allow_null=True, min_value=-180, max_value=180)
+
     class Meta:
         model = IncidentReport
         fields = [
@@ -125,7 +140,27 @@ class IncidentReportCreateSerializer(serializers.ModelSerializer):
             'position',
             'severity_estimate',
             'photos',
+            'latitude',
+            'longitude',
         ]
+
+    def validate(self, attrs):
+        from django.contrib.gis.geos import Point
+        from apps.hazards.geometry import city_outline
+
+        lat = attrs.pop('latitude', None)
+        lng = attrs.pop('longitude', None)
+        if (lat is None) != (lng is None):
+            raise serializers.ValidationError({'location': 'Send both latitude and longitude, or neither.'})
+        if lat is not None:
+            point = Point(lng, lat, srid=4326)
+            city = city_outline()
+            if city is not None and not city.buffer(0.002).contains(point):
+                raise serializers.ValidationError(
+                    {'location': 'The pin is outside Talisay City. Place it where you saw the hazard.'}
+                )
+            attrs['location'] = point
+        return attrs
 
     def create(self, validated_data):
         """

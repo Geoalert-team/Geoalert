@@ -5,6 +5,7 @@ import { adminApi } from '../../api/adminApi';
 import UsersTab from './admin/UsersTab';
 import LogsTab, { ActionTag } from './admin/LogsTab';
 import AlertsTab from './admin/AlertsTab';
+import SettingsTab from './admin/SettingsTab';
 import { Icon, ROLE_META, Toast, roleName, timeAgo } from './admin/adminShared';
 import '../css/Dashboard.css';
 import '../css/AdminDashboard.css';
@@ -14,6 +15,7 @@ const TABS = [
   { key: 'users', label: 'Users', icon: 'users' },
   { key: 'alerts', label: 'Alerts', icon: 'alert' },
   { key: 'logs', label: 'Activity log', icon: 'list' },
+  { key: 'settings', label: 'Settings', icon: 'shield' },
 ];
 
 function MetricCard({ icon, tone, value, label, note }) {
@@ -349,6 +351,8 @@ export default function AdminDashboard() {
         {tab === 'alerts' && <AlertsTab />}
 
         {tab === 'logs' && <LogsTab />}
+
+        {tab === 'settings' && <SettingsTab />}
       </div>
 
       <Toast key={toast?.id} toast={toast} onDone={clearToast} />

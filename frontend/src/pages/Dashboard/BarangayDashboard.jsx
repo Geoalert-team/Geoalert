@@ -9,6 +9,7 @@ import { hazardsApi } from '../../api/hazardsApi';
 import { Icon, Toast, fieldErrors, formatDateTime, timeAgo } from './admin/adminShared';
 import { HazardIcon, ReportPhotos, StatusTag } from './reportShared';
 import ConfirmHazardCard from '../../components/Verify/ConfirmHazardCard';
+import LocationPicker from '../../components/Map/LocationPicker';
 import '../css/Dashboard.css';
 import '../css/AdminDashboard.css';
 import '../css/DRRMODashboard.css';
@@ -81,6 +82,7 @@ function emptyForm(user) {
     severity_estimate: '',
     position: user?.position || '',
     agency: '',
+    location: null, // optional map pin [lat, lng]
   };
 }
 
@@ -122,6 +124,8 @@ export default function BarangayDashboard() {
   const [photos, setPhotos] = useState([]);
   const fileInput = useRef(null);
   const [errors, setErrors] = useState({});
+  // Barangay outlines by id, so the pin map can centre on the right one
+  const [barangayShapes, setBarangayShapes] = useState(new Map());
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -139,6 +143,7 @@ export default function BarangayDashboard() {
     refreshReports();
     barangaysApi.list()
       .then((geo) => {
+        setBarangayShapes(new Map((geo?.features || []).map((f) => [String(f.id ?? f.properties?.id), f])));
         const list = (geo?.features || [])
           // The GeoJSON id sits on the feature itself, not inside properties
           .map((f) => ({ id: f.id ?? f.properties?.id, name: f.properties?.name }))
@@ -261,6 +266,7 @@ export default function BarangayDashboard() {
         position: form.position,
         agency: form.agency,
         photos: photos.map((p) => p.file),
+        location: form.location,
       });
       setForm({ ...emptyForm(user), position: form.position, agency: form.agency });
       clearPhotos();
@@ -403,6 +409,22 @@ export default function BarangayDashboard() {
                   })}
                 </div>
                 {errors.hazard_type && <p className="adm-field-error">{errors.hazard_type}</p>}
+              </div>
+
+              <div className={`adm-field ${errors.location ? 'has-error' : ''}`}>
+                <label>
+                  Where exactly <span className="brg-optional">optional</span>
+                </label>
+                <p className="adm-muted" style={{ margin: '0 0 6px', fontSize: '.8rem' }}>
+                  Drop a pin where you saw it. Pins from several reports let the DRRMO draw the hazard
+                  zone around what was actually seen.
+                </p>
+                <LocationPicker
+                  value={form.location}
+                  onChange={(v) => set('location', v)}
+                  barangay={barangayShapes.get(String(form.barangay)) || null}
+                />
+                {errors.location && <p className="adm-field-error">{errors.location}</p>}
               </div>
             </div>
 

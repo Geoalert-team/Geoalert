@@ -465,6 +465,39 @@ def write_png(path, classes):
     Image.fromarray(lut[classes], 'RGBA').save(path, optimize=True)
 
 
+TERRAIN_FILE = 'terrain.png'
+
+
+def write_terrain_png(path, hand, city_mask):
+    """
+    Height above the nearest drainage (HAND), for drawing a flood from an
+    observed water depth on the map. Packed into an ordinary RGB PNG so the
+    browser can read it back exactly through a canvas:
+
+        HAND in centimetres = R * 256 + G      (0 to 655.35 m)
+        B = 255 inside the city, 0 outside
+
+    No alpha channel on purpose: browsers premultiply alpha when reading a
+    canvas, which would corrupt the packed values.
+    """
+    cm = np.clip(np.round(hand * 100), 0, 65535).astype(np.uint16)
+    rgb = np.zeros((*cm.shape, 3), np.uint8)
+    rgb[..., 0] = cm >> 8
+    rgb[..., 1] = cm & 255
+    rgb[..., 2] = np.where(city_mask, 255, 0)
+    Image.fromarray(rgb, 'RGB').save(path, optimize=True)
+
+
+def terrain_meta(grid):
+    return {
+        'file': TERRAIN_FILE,
+        'bounds': grid.bounds(),
+        'encoding': 'Height above nearest drainage in cm = R*256 + G; B = 255 inside the city',
+        'source': 'SRTM (~30 m) via AWS Terrain Tiles; drainage from OpenStreetMap waterways, '
+                  'elevation-derived channels and the coast',
+    }
+
+
 def barangay_stats(labels, layers, names):
     stats = {}
     for bid, name in names.items():
@@ -494,13 +527,15 @@ def rivers_geojson(osm):
 
 
 def build(barangay_polygons, barangay_names, extent, out_dir, zoom=14, pad_m=500, log=print,
-          dem=None, osm=None, cache_dir=None, refresh=False):
+          dem=None, osm=None, cache_dir=None, refresh=False, terrain_only=False):
     """
     barangay_polygons  list of (barangay_id, [outer_ring, hole, ...]) with (lng, lat) coords
     barangay_names     {barangay_id: name}
     extent             (west, south, east, north) of all barangays
     dem, osm           optional pre-loaded data (used by tests); downloaded when None
     cache_dir          keeps downloads here so a rerun skips them (refresh=True downloads again)
+    terrain_only       write only terrain.png and its entry in index.json, leaving the
+                       published susceptibility layers exactly as they are
     """
     west, south, east, north = extent
     dlat = pad_m / 111320
@@ -548,10 +583,23 @@ def build(barangay_polygons, barangay_names, extent, out_dir, zoom=14, pad_m=500
     city_mask = labels > 0
 
     factors = compute_factors(grid, dem, osm, city_mask, log)
-    layers = build_layers(factors, city_mask)
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    write_terrain_png(out_dir / TERRAIN_FILE, factors['hand'], city_mask)
+
+    if terrain_only:
+        index_file = out_dir / 'index.json'
+        index = json.loads(index_file.read_text()) if index_file.exists() else {}
+        old_bounds = index.get('bounds')
+        if old_bounds and any(abs(a - b) > 1e-9 for pa, pb in zip(old_bounds, grid.bounds()) for a, b in zip(pa, pb)):
+            log('  Warning: the grid differs from the published layers; terrain.png carries its own bounds.')
+        index['terrain'] = terrain_meta(grid)
+        index_file.write_text(json.dumps(index, indent=1))
+        log(f'Wrote {TERRAIN_FILE} to {out_dir}')
+        return
+
+    layers = build_layers(factors, city_mask)
     files = {}
     for name, arr in layers.items():
         write_png(out_dir / f'{name}.png', arr)
@@ -565,6 +613,7 @@ def build(barangay_polygons, barangay_names, extent, out_dir, zoom=14, pad_m=500
         'classes': CLASSES,
         'layers': files,
         'rivers': 'rivers.geojson',
+        'terrain': terrain_meta(grid),
         'method': 'Weighted overlay of reclassified factors, five equal-interval classes',
         'factors': {h: [{'factor': f, 'breaks': b, 'direction': d, 'weight': w} for f, b, d, w in fs]
                     for h, fs in FACTORS.items()},

@@ -18,6 +18,7 @@ from django.utils import timezone
 from apps.accounts.models import User
 from apps.admin_dashboard.models import AuditLog
 from apps.barangays.models import Barangay
+from apps.hazards.geometry import with_cordon
 from apps.hazards.models import HazardAlert, HazardZone
 from apps.notifications.models import Notification
 
@@ -26,7 +27,14 @@ logger = logging.getLogger(__name__)
 # Extreme alerts wait this long for a second officer, then go out anyway.
 # Long enough for someone on duty to look; short enough that an empty
 # office at 2 AM can't hold back a warning.
+# This is the default; a System Administrator can change it from the
+# configuration panel, so code reads approval_window().
 APPROVAL_WINDOW = timedelta(minutes=10)
+
+
+def approval_window():
+    from utils.system_settings import get_setting
+    return timedelta(minutes=get_setting('alerts.approval_minutes'))
 
 OFFICER_ROLES = ['DRRMO_Officer', 'System_Admin']
 
@@ -37,7 +45,12 @@ def needs_second_approval(severity):
 
 # An Extreme alert nobody in a barangay has opened after this long is sent
 # to them again, once, and the publisher is told who hasn't read it.
-REMIND_AFTER = timedelta(minutes=15)
+REMIND_AFTER = timedelta(minutes=15)  # default; see remind_after()
+
+
+def remind_after():
+    from utils.system_settings import get_setting
+    return timedelta(minutes=get_setting('alerts.remind_after_minutes'))
 
 # A zone left Active this long with no officer update: remind the publisher
 # to resolve it or bring it up to date, then again every STALE_AFTER.
@@ -54,8 +67,8 @@ def touch(zone, now=None):
 def approval_due_at(zone):
     """When a held Extreme alert, or a held raise to Extreme, goes out on its own."""
     if zone.status == 'Active' and zone.pending_severity and zone.pending_at:
-        return zone.pending_at + APPROVAL_WINDOW
-    return zone.activated_at + APPROVAL_WINDOW if zone.activated_at else None
+        return zone.pending_at + approval_window()
+    return zone.activated_at + approval_window() if zone.activated_at else None
 
 
 def request_raise(zone, requested_by, now=None):
@@ -72,7 +85,7 @@ def request_raise(zone, requested_by, now=None):
         approvers_for(requested_by),
         f'Approval needed: raise the {type_name(zone)} alert for {where_text(barangays)} to Extreme, '
         f'asked by {requested_by.full_name}. It is raised automatically at '
-        f'{timezone.localtime(zone.pending_at + APPROVAL_WINDOW):%I:%M %p} if no officer answers.',
+        f'{timezone.localtime(zone.pending_at + approval_window()):%I:%M %p} if no officer answers.',
         zone,
     )
 
@@ -107,7 +120,7 @@ def apply_raise(zone, approver=None, auto=False):
     return alert, barangays, recipients
 
 
-def affected_barangays(zone_or_geometry, manual_ids=None):
+def affected_barangays(zone_or_geometry, manual_ids=None, cordon_m=None):
     """
     Which barangays a hazard zone actually touches.
 
@@ -115,6 +128,14 @@ def affected_barangays(zone_or_geometry, manual_ids=None):
     geometry rather than from the single barangay the officer happened to
     tap: a 1 km zone can cross three of them, and only notifying one leaves
     the rest uninformed.
+
+    THE CORDON COUNTS. Decided deliberately: the people inside a cordon are
+    the ones being told to leave, so they must be alerted. A barangay that
+    only the cordon reaches, not the burning block itself, is still
+    affected, and testing ST_Intersects on the bare block would miss it. So
+    the test runs on the block grown by its cordon (with_cordon), never on
+    zone.geometry alone. A saved zone supplies its own cordon_m; a bare
+    geometry (the publish preview) passes cordon_m explicitly.
 
     manual_ids is the fallback the spec asks for when the GIS data can't
     answer - the officer names the barangays and we use those instead.
@@ -126,8 +147,11 @@ def affected_barangays(zone_or_geometry, manual_ids=None):
 
     zone = zone_or_geometry if isinstance(zone_or_geometry, HazardZone) else None
     geometry = zone.geometry if zone else zone_or_geometry
+    if zone is not None:
+        cordon_m = zone.cordon_m
     try:
-        found = list(Barangay.objects.filter(boundary__intersects=geometry))
+        reach = with_cordon(geometry, cordon_m)
+        found = list(Barangay.objects.filter(boundary__intersects=reach))
     except Exception:
         # A malformed boundary shouldn't stop an alert going out
         found = []
@@ -235,7 +259,7 @@ def release_overdue_approvals(now=None):
     at the last second wins cleanly.
     """
     now = now or timezone.now()
-    cutoff = now - APPROVAL_WINDOW
+    cutoff = now - approval_window()
     if not HazardZone.objects.filter(
         Q(status='Awaiting_Approval', activated_at__lte=cutoff)
         | Q(status='Active', pending_severity='Red', pending_at__lte=cutoff)
@@ -323,7 +347,7 @@ def remind_unread_extreme(now=None):
     due = HazardAlert.objects.filter(
         severity='Red',
         reminded_at__isnull=True,
-        created_at__lte=now - REMIND_AFTER,
+        created_at__lte=now - remind_after(),
         created_at__gte=now - timedelta(days=1),
         hazard_zone__status='Active',
     )

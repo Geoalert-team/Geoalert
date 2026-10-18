@@ -39,4 +39,11 @@ export const adminApi = {
   // params: days (1-90), severity, page
   alerts: (params) =>
     client.get('/api/admin-dashboard/alerts/', { params }).then((r) => r.data),
+
+  // System configuration panel (F8): limits with current value, default and range
+  settings: () =>
+    client.get('/api/admin-dashboard/settings/').then((r) => r.data),
+  // values: { 'auth.lock_minutes': 30, ... }
+  saveSettings: (values) =>
+    client.put('/api/admin-dashboard/settings/', { values }).then((r) => r.data),
 };

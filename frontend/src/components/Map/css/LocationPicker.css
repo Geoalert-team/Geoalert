@@ -1,0 +1,20 @@
+.lp { display: flex; flex-direction: column; gap: 6px; }
+.lp-map {
+  height: 220px; border: 1px solid var(--db-line, #cfd6e1); border-radius: 8px; overflow: hidden;
+  cursor: crosshair;
+}
+.lp-map .leaflet-container { cursor: crosshair; }
+.lp-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.lp-btn {
+  padding: 5px 12px; border: 1px solid var(--db-line, #cfd6e1); border-radius: 999px;
+  background: var(--db-white, #fff); font: inherit; font-size: .8rem; font-weight: 700;
+  color: var(--db-heading, #1c2e4a); cursor: pointer;
+}
+.lp-btn:hover:not(:disabled) { border-color: var(--db-navy, #1c2e4a); }
+.lp-btn:disabled { opacity: .55; cursor: default; }
+.lp-status { font-size: .78rem; color: var(--db-soft, #5b6577); }
+.lp-error { margin: 0; font-size: .78rem; color: #a12f2f; }
+.lp-pin {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #d64545; border: 3px solid #fff; box-shadow: 0 0 0 2px #d64545;
+}

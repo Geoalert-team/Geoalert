@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { FieldMarksSection } from './FieldMarks';
 import { severityInfo, hazardIconPath, hazardColor, DRRMO_HOTLINE } from './hazardInfo';
 import GuidanceSteps from './GuidanceSteps';
 import ResolveHazardForm from '../Resolve/ResolveHazardForm';
@@ -274,7 +275,10 @@ function HazardStack({ stack, current, onPick }) {
 
 // Slides in from the left (desktop) or up from the bottom (mobile).
 // stack: the hazards at the clicked spot (including item); onPick switches between them.
-export default function HazardPanel({ item, open, onClose, onResolved, onRetracted, onVerified, onReshape, onChanged, stack = [], onPick }) {
+export default function HazardPanel({
+  item, open, onClose, onResolved, onRetracted, onVerified, onReshape, onChanged, stack = [], onPick,
+  marks = null, onMark, marking = null,
+}) {
   const [tab, setTab] = useState('overview');
   // 'resolve' when the hazard is over, 'retract' when it should never have
   // been published. Only one form is ever open.
@@ -501,6 +505,11 @@ export default function HazardPanel({ item, open, onClose, onResolved, onRetract
                     {item.verificationNote ? ` — "${item.verificationNote}"` : '.'}
                     {' '}Treat this advisory with caution until DRRMO reviews it.
                   </p>
+                )}
+
+                {/* ---------- Spots checked on the ground (staff) ---------- */}
+                {marks && (item.status || 'Active') === 'Active' && (
+                  <FieldMarksSection marks={marks} onMark={onMark} marking={marking} />
                 )}
 
                 {/* ---------- Barangay: answer for the ground ---------- */}

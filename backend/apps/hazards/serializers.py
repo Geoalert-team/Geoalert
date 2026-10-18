@@ -1,9 +1,13 @@
+import json
+
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from rest_framework_gis.fields import GeometryField
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from apps.barangays.models import Barangay
-from apps.hazards.geometry import city_outline, clip_to_city, main_barangay
+from apps.hazards.geometry import (
+    CORDON_MAX_M, CORDON_MIN_M, city_outline, clip_to_city, main_barangay, with_cordon,
+)
 from apps.hazards.models import HazardType, HazardZone, HazardAlert, HazardVerification
 from apps.accounts.serializers import UserSerializer
 
@@ -50,6 +54,22 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
     # With ?bbox=: 'whole' when the zone lies entirely inside the box
     # (ST_Within), 'partial' when it crosses the edge. Null without a bbox.
     in_view = serializers.SerializerMethodField()
+    # The area the zone reaches with its cordon, as GeoJSON, or null when it
+    # has none. The same shape the alert was routed on, so the ring the map
+    # draws is exactly the area whose barangays were told.
+    cordon = serializers.SerializerMethodField()
+
+    def get_cordon(self, obj):
+        if not obj.cordon_m or obj.geometry is None:
+            return None
+        city = self.context.get('city')
+        if city is None and 'city' not in self.context:
+            # Looked up once per response, not once per zone
+            city = self.context['city'] = city_outline()
+        try:
+            return json.loads(with_cordon(obj.geometry, obj.cordon_m, city).geojson)
+        except Exception:
+            return None
 
     def get_in_view(self, obj):
         within = self.context.get('within_ids')
@@ -77,6 +97,8 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
             # A raise to Extreme waiting for a second officer
             'pending_severity', 'pending_at',
             'in_view',
+            # Safety cordon: its width, and the area it reaches
+            'cordon_m', 'cordon',
         ]
 
 
@@ -120,6 +142,7 @@ class HazardZoneSerializer(serializers.ModelSerializer):
             'verifications', 'review_note', 'reviewed_at', 'reviewed_by_name',
             # A raise to Extreme waiting for a second officer
             'pending_severity', 'pending_at',
+            'cordon_m',
         ]
 
 
@@ -165,7 +188,11 @@ class HazardZoneCreateSerializer(serializers.ModelSerializer):
 
         {"hazard_type": 1, "barangay": 7, "severity": "Orange",
          "description": "...",
-         "geometry": {"type": "Polygon", "coordinates": [[[lng, lat], ...]]}}
+         "geometry": {"type": "Polygon", "coordinates": [[[lng, lat], ...]]},
+         "cordon_m": 30}
+
+    cordon_m is optional: a safety ring that many meters wide around the
+    drawn area. The geometry stays the hazard itself; see HazardZone.cordon_m.
     """
 
     # Declared explicitly on purpose. A plain ModelSerializer can only build
@@ -175,12 +202,20 @@ class HazardZoneCreateSerializer(serializers.ModelSerializer):
     # raising while the serializer's fields are being built — which surfaces
     # as a 500 rather than a validation error.
     geometry = GeometryField()
+    cordon_m = serializers.IntegerField(
+        required=False, allow_null=True,
+        min_value=CORDON_MIN_M, max_value=CORDON_MAX_M,
+        error_messages={
+            'min_value': f'A cordon is at least {CORDON_MIN_M} m wide. Leave it off for none.',
+            'max_value': f'A cordon is at most {CORDON_MAX_M} m wide. Draw a larger zone instead.',
+        },
+    )
 
     class Meta:
         model  = HazardZone
         fields = [
             'barangay', 'hazard_type', 'severity',
-            'geometry', 'description'
+            'geometry', 'description', 'cordon_m',
         ]
 
     def validate_geometry(self, value):

@@ -62,6 +62,13 @@ class HazardZone(models.Model):
     # the coastline with hundreds of corners nobody could drag.
     outline      = models.PolygonField(srid=4326, null=True, blank=True, db_column='hzzn_outline')
     description  = models.TextField(blank=True, db_column='hzzn_desc')
+    # Safety cordon around the hazard, in meters, or null for none. Metadata
+    # on this one zone rather than a second zone: one hazard stays one zone,
+    # one alert and one retraction. `geometry` is the hazard itself (the
+    # burning block); the cordon is derived from it on demand, see
+    # apps/hazards/geometry.py with_cordon(). It counts for who is alerted
+    # and is drawn one level below the published severity.
+    cordon_m     = models.IntegerField(null=True, blank=True, db_column='hzzn_cordon_m')
     activated_at = models.DateTimeField(auto_now_add=True, db_column='hzzn_activated_at')
     resolved_at  = models.DateTimeField(null=True, blank=True, db_column='hzzn_resolved_at')
 
@@ -219,3 +226,44 @@ class HazardAlert(models.Model):
 
     def __str__(self):
         return f'Alert - {self.hazard_type} - {self.severity}'
+
+
+class ZoneFieldMark(models.Model):
+    """
+    A spot on the ground someone checked while a zone is live: "affected
+    here" (water, fire, debris) or "clear here". Barangay staff and officers
+    drop these on the map; the officer reshaping the zone sees which marks
+    fall on the wrong side of the outline.
+
+    A mark is evidence, not an edit: it never moves the zone by itself.
+    """
+    KIND_CHOICES = [
+        ('Affected', 'Affected here'),
+        ('Clear', 'Clear here'),
+    ]
+
+    id         = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column='hzmk_id')
+    zone       = models.ForeignKey(HazardZone, on_delete=models.CASCADE, related_name='field_marks', db_column='hzmk_hzzn_id')
+    kind       = models.CharField(max_length=10, choices=KIND_CHOICES, db_column='hzmk_kind')
+    location   = models.PointField(srid=4326, db_column='hzmk_location')
+    note       = models.CharField(max_length=300, blank=True, default='', db_column='hzmk_note')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='zone_field_marks', db_column='hzmk_created_by')
+    created_at = models.DateTimeField(auto_now_add=True, db_column='hzmk_created_at')
+
+    class Meta:
+        db_table = 'hazard_zone_mark'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.kind} mark on {self.zone_id}'
+
+    @property
+    def inside_zone(self):
+        geom = self.zone.geometry
+        return bool(geom and geom.covers(self.location))
+
+    @property
+    def disagrees(self):
+        """True when the mark says the outline is wrong at this spot."""
+        inside = self.inside_zone
+        return (self.kind == 'Affected' and not inside) or (self.kind == 'Clear' and inside)

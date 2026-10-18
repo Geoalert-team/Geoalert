@@ -6,6 +6,7 @@ import { hazardsApi } from '../api/hazardsApi';
 import { buildRiskOutlook } from '../utils/riskOutlook';
 import TrendLine from '../components/Charts/TrendLine';
 import CategoryBars from '../components/Charts/CategoryBars';
+import BarangayLikelihood from '../components/Forecast/BarangayLikelihood';
 import {
   SEVERITY_LABEL,
   hazardSeriesColor,
@@ -279,6 +280,15 @@ export default function HistoricalData() {
                   Records appear here once DRRMO resolves a hazard zone.
                 </p>
               )}
+            </div>
+
+            {/* ---------- Likelihood by barangay and month ---------- */}
+            <div className="db-card">
+              <h2>Likelihood by barangay</h2>
+              <p className="db-card-sub">
+                Which barangays a month has tended to hit, from the same month in past years
+              </p>
+              <BarangayLikelihood hazardTypes={hazardTypes} />
             </div>
 
             {/* ---------- Trend over time ---------- */}

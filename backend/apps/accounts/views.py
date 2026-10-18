@@ -28,15 +28,31 @@ from apps.accounts.serializers import LoginSerializer, UserSerializer, TwoFactor
 from utils import login_throttle
 from utils.audit import log_event
 from utils.session_limits import start_session_clock
+from utils.system_settings import get_setting
 
 # F1 lockout: this many wrong passwords locks the account for LOCK_MINUTES.
+# These are the defaults; a System Administrator can change both from the
+# configuration panel (utils/system_settings.py), so code reads them through
+# max_failed_logins() and lock_minutes().
 MAX_FAILED_LOGINS = 5
 LOCK_MINUTES = 15
+
+
+def max_failed_logins():
+    return get_setting('auth.max_failed_logins')
+
+
+def lock_minutes():
+    return get_setting('auth.lock_minutes')
+
+
+def locked_response():
+    return {'error': f'Account locked. Try again in {lock_minutes()} minutes.'}
+
 # Wrong 2FA codes allowed in one login attempt before it is cancelled.
 MAX_2FA_TRIES = 5
 
 INVALID = {'error': 'Invalid email or password'}
-LOCKED = {'error': f'Account locked. Try again in {LOCK_MINUTES} minutes.'}
 
 _dummy_hash = None
 
@@ -67,9 +83,9 @@ def _unknown_email_locked(email):
     key = f'geoalert:login-fail:{email.strip().lower()}'
     try:
         fails = cache.get(key, 0)
-        if fails >= MAX_FAILED_LOGINS:
+        if fails >= max_failed_logins():
             return True
-        cache.set(key, fails + 1, LOCK_MINUTES * 60)
+        cache.set(key, fails + 1, lock_minutes() * 60)
     except Exception:
         pass  # a cache outage must not stop anyone signing in
     return False
@@ -123,7 +139,7 @@ class LoginView(APIView):
             _count_ip_failure(request, email)
             if _unknown_email_locked(email):
                 log_event(request, 'LOGIN_BLOCKED_LOCKED', 'app_user', '', f'{email} (no such account)')
-                return Response(LOCKED, status=status.HTTP_423_LOCKED)
+                return Response(locked_response(), status=status.HTTP_423_LOCKED)
             log_event(request, 'LOGIN_FAILED', 'app_user', '', f'{email} (no such account)')
             return Response(INVALID, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -136,7 +152,7 @@ class LoginView(APIView):
 
         if user.is_locked():
             log_event(request, 'LOGIN_BLOCKED_LOCKED', 'app_user', user.id, user.email, user=user)
-            return Response(LOCKED, status=status.HTTP_423_LOCKED)
+            return Response(locked_response(), status=status.HTTP_423_LOCKED)
 
         # Authenticate
         auth_user = authenticate(request, username=email, password=password)
@@ -144,14 +160,14 @@ class LoginView(APIView):
         if auth_user is None:
             _count_ip_failure(request, email)
             user.failed_login_count += 1
-            locked_now = user.failed_login_count >= MAX_FAILED_LOGINS
+            locked_now = user.failed_login_count >= max_failed_logins()
             if locked_now:
-                user.locked_until = timezone.now() + timedelta(minutes=LOCK_MINUTES)
+                user.locked_until = timezone.now() + timedelta(minutes=lock_minutes())
             user.save(update_fields=['failed_login_count', 'locked_until'])
             log_event(
                 request, 'ACCOUNT_LOCKED' if locked_now else 'LOGIN_FAILED', 'app_user', user.id,
                 f'{user.email}: wrong password ({user.failed_login_count} in a row)'
-                + (f'; locked for {LOCK_MINUTES} minutes' if locked_now else ''),
+                + (f'; locked for {lock_minutes()} minutes' if locked_now else ''),
                 user=user,
             )
             return Response(INVALID, status=status.HTTP_401_UNAUTHORIZED)
@@ -232,14 +248,14 @@ class TwoFactorVerifyView(APIView):
                 # Counts as a failed sign-in, so repeating this ends in the
                 # usual lockout rather than an endless stream of guesses.
                 user.failed_login_count += 1
-                locked_now = user.failed_login_count >= MAX_FAILED_LOGINS
+                locked_now = user.failed_login_count >= max_failed_logins()
                 if locked_now:
-                    user.locked_until = timezone.now() + timedelta(minutes=LOCK_MINUTES)
+                    user.locked_until = timezone.now() + timedelta(minutes=lock_minutes())
                 user.save(update_fields=['failed_login_count', 'locked_until'])
                 log_event(
                     request, 'ACCOUNT_LOCKED' if locked_now else 'TWO_FACTOR_TOO_MANY', 'app_user', user.id,
                     f'{user.email}: {MAX_2FA_TRIES} wrong 2FA codes; login attempt cancelled'
-                    + (f'; locked for {LOCK_MINUTES} minutes' if locked_now else ''),
+                    + (f'; locked for {lock_minutes()} minutes' if locked_now else ''),
                     user=user,
                 )
                 return Response(

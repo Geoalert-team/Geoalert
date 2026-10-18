@@ -416,3 +416,61 @@ class RolesListView(APIView):
     def get(self, request):
         roles = Role.objects.all().order_by('id')
         return Response(RolesSerializer(roles, many=True).data)
+
+class SystemSettingsView(APIView):
+    """
+    GET /api/admin-dashboard/settings/
+        Every configurable setting with its current value, default and range.
+    PUT /api/admin-dashboard/settings/   {"values": {"auth.lock_minutes": 30, ...}}
+        Change one or more. All are checked first; nothing is saved if any
+        is out of range. Each change is written to the audit log.
+
+    System Administrator only (F8 System configuration panel).
+    """
+    permission_classes = [IsAuthenticated, IsSystemAdmin]
+
+    def get(self, request):
+        from utils.system_settings import all_settings
+        return Response({'settings': all_settings()})
+
+    def put(self, request):
+        from django.db import transaction
+        from apps.admin_dashboard.models import SystemConfig
+        from utils.audit import log_event
+        from utils.system_settings import SETTINGS, all_settings, forget_cache, get_setting, validate
+
+        values = request.data.get('values')
+        if not isinstance(values, dict) or not values:
+            return Response({'error': 'Send the settings to change as {"values": {key: value}}.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        clean, errors = {}, {}
+        for key, raw in values.items():
+            if key not in SETTINGS:
+                errors[key] = 'Unknown setting.'
+                continue
+            try:
+                clean[key] = validate(key, raw)
+            except ValueError as exc:
+                errors[key] = str(exc)
+        if errors:
+            return Response({'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        changed = []
+        with transaction.atomic():
+            for key, value in clean.items():
+                before = get_setting(key)
+                if before == value:
+                    continue
+                SystemConfig.objects.update_or_create(
+                    key=key, defaults={'value': str(value), 'updated_by': request.user},
+                )
+                changed.append((key, before, value))
+        forget_cache()
+
+        for key, before, value in changed:
+            log_event(
+                request, 'CONFIG_CHANGED', 'system_config', key,
+                f'{SETTINGS[key][4]}: {before} -> {value} {SETTINGS[key][3]}',
+            )
+        return Response({'settings': all_settings(), 'changed': [k for k, _, _ in changed]})

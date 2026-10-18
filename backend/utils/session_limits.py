@@ -20,6 +20,8 @@ from django.http import JsonResponse
 
 from utils.audit import log_event
 
+# Defaults. A System Administrator can change both from the configuration
+# panel (utils/system_settings.py); limits() reads the current values.
 IDLE_LIMIT = 30 * 60        # seconds without activity
 TOTAL_LIMIT = 12 * 60 * 60  # seconds since signing in
 TOUCH_EVERY = 60            # seconds between activity writes
@@ -39,20 +41,32 @@ def start_session_clock(request, now=None):
     request.session['last_activity'] = now
 
 
-def expired_reason(session, now):
+def limits():
+    """(idle seconds, total seconds) as currently configured."""
+    from utils.system_settings import get_setting
+    return get_setting('session.idle_minutes') * 60, get_setting('session.total_hours') * 3600
+
+
+def expired_reason(session, now, idle_limit=None, total_limit=None):
+    if idle_limit is None or total_limit is None:
+        idle_limit, total_limit = limits()
     login_at = session.get('login_at')
     last = session.get('last_activity')
-    if login_at is not None and now - login_at > TOTAL_LIMIT:
+    if login_at is not None and now - login_at > total_limit:
         return 'total'
-    if last is not None and now - last > IDLE_LIMIT:
+    if last is not None and now - last > idle_limit:
         return 'idle'
     return None
 
 
-MESSAGES = {
-    'idle': 'You were signed out after 30 minutes without activity. Sign in again to continue.',
-    'total': 'You were signed out because 12 hours have passed since you signed in. Sign in again to continue.',
-}
+def message(reason):
+    idle_limit, total_limit = limits()
+    if reason == 'idle':
+        return (f'You were signed out after {idle_limit // 60} minutes without activity. '
+                'Sign in again to continue.')
+    hours = total_limit // 3600
+    return (f'You were signed out because {hours} hour{"" if hours == 1 else "s"} have passed '
+            'since you signed in. Sign in again to continue.')
 
 
 class SessionLimitMiddleware:
@@ -81,7 +95,7 @@ class SessionLimitMiddleware:
             # bare "credentials were not provided".
             response = self.get_response(request)
             if response.status_code in (401, 403):
-                return JsonResponse({'error': MESSAGES[reason], 'code': 'session_expired'}, status=401)
+                return JsonResponse({'error': message(reason), 'code': 'session_expired'}, status=401)
             response[EXPIRED_HEADER] = reason
             return response
 

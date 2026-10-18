@@ -2,7 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { hazardsApi } from '../../api/hazardsApi';
 import { MIN_CORNERS, areaSqM, formatArea, pointsToPolygon } from '../../utils/drawnZone';
 import { SEVERITY } from '../Map/hazardInfo';
-import { HAND, defaultMethodFor, methodByKey, methodsFor } from './shapeMethods';
+import {
+  DEPTH_PRESETS, FLOOD_DEPTH, HAND, PAST, REPORTS,
+  defaultMethodFor, methodByKey, methodsFor, runMethod,
+} from './shapeMethods';
+import { reportsApi } from '../../api/reportApi';
+import { loadTerrain } from '../../utils/terrain';
+import { checkZone } from '../../utils/zoneCheck';
 import './css/PublishHazard.css';
 
 const SEVERITY_ORDER = ['Green', 'Orange', 'Red'];
@@ -25,13 +31,23 @@ function timeOf(iso) {
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
+// Safety cordon around the hazard. Same limits as the server
+// (CORDON_MIN_M / CORDON_MAX_M in apps/hazards/geometry.py).
+const CORDON_MIN = 10;
+const CORDON_MAX = 100;
+// Hazard types offered a cordon. A fire is the burning block plus the ring
+// people are told to leave; floods and landslides are outlined whole.
+const CORDON_TYPES = ['Fire'];
+// Suggested width by severity, in meters, until the officer types their own
+const CORDON_SUGGESTED = { Red: 30, Orange: 20, Green: 10 };
+
 /**
  * The last look before an alert goes out: who it reaches and what it
  * overlaps. Publishing notifies people straight away and can't be taken
  * back, only withdrawn, so a wrong hazard type or a double publish is
  * cheapest to catch here.
  */
-function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCancel }) {
+function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCancel, checkWarnings = [] }) {
   const places = preview.affected_barangays.length
     ? preview.affected_barangays.join(', ')
     : 'Talisay City';
@@ -56,16 +72,35 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
         <dd>
           <span className="pub-sev-dot" style={{ background: sev.color }} /> {typeName}, {sev.label.toLowerCase()}
         </dd>
-        {preview.area_m2 != null && (
+        {preview.area_m2 != null && !preview.cordon_m && (
           <>
             <dt>Area</dt>
             <dd>{formatArea(preview.area_m2)}{' '}<small>(after cutting at the city boundary)</small></dd>
           </>
         )}
+        {/* With a cordon the area people are told about can be several
+            times the hazard itself, so each figure is named. */}
+        {preview.cordon_m ? (
+          <>
+            <dt>{typeName === 'Fire' ? 'Burning area' : 'Hazard area'}</dt>
+            <dd>{preview.area_m2 != null ? formatArea(preview.area_m2) : 'Unknown'}</dd>
+            <dt>Cordon</dt>
+            <dd>{preview.cordon_m} m around it, shown one level lower on the map</dd>
+            <dt>Total area</dt>
+            <dd>
+              <strong>{preview.total_area_m2 != null ? formatArea(preview.total_area_m2) : 'Unknown'}</strong>
+              {' '}<small>(hazard and cordon, cut at the city boundary)</small>
+            </dd>
+          </>
+        ) : null}
         <dt>Barangays</dt>
-        <dd>{places}</dd>
+        <dd>{places}{preview.cordon_m ? <small>(including where only the cordon reaches)</small> : null}</dd>
         <dt>Shape</dt>
-        <dd>The green area on the map is what will be saved.</dd>
+        <dd>
+          {preview.cordon_m
+            ? 'The solid green area is the hazard. The dashed ring is the cordon.'
+            : 'The green area on the map is what will be saved.'}
+        </dd>
         <dt>Notifies</dt>
         <dd><strong>{plural(preview.recipients, 'account')}</strong></dd>
       </dl>
@@ -106,6 +141,13 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
           {major.length
             ? 'Publishing sends the same barangays a second alert. If the area or severity changed, update the existing zone (Edit area, Change severity). Publish only if this is a separate event.'
             : 'Publishing again sends a second alert for the same hazard. To change the existing one, edit it instead.'}
+        </div>
+      )}
+
+      {checkWarnings.length > 0 && (
+        <div className="pub-check" role="note">
+          <strong>Map check</strong>
+          <ul>{checkWarnings.map((w) => <li key={w}>{w}</li>)}</ul>
         </div>
       )}
 
@@ -177,13 +219,16 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
  *                     which shaping method is active, so the map can route
  *                     taps. Hand drawing treats a tap as a corner; a
  *                     generating method treats it as a seed to grow from.
- *                     That routing is the one thing the first generating
- *                     method still has to add — it isn't guessed at here.
+ *   seed              [lat, lng] of the officer's last tap, the starting
+ *                     point for a generating method, or null
+ *   susceptibilityIndex
+ *                     the hazard-index metadata (terrain for the water-depth
+ *                     method, layers for the map check), or null
  */
 export default function PublishHazardPanel({
   points, onUndo, onClear, barangay, outsideCorners = 0, boundariesReady = true,
   onCancel, onPublished, prefill = null, onPreviewShape,
-  onReplacePoints, onMethodChange,
+  onReplacePoints, onMethodChange, seed = null, susceptibilityIndex = null,
 }) {
   const [types, setTypes] = useState([]);
   const [hazardTypeId, setHazardTypeId] = useState('');
@@ -191,6 +236,10 @@ export default function PublishHazardPanel({
   const [description, setDescription] = useState(prefill?.description || '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // Safety cordon, for the hazard types that have one. The width follows the
+  // severity's suggestion until the officer types a number of their own.
+  const [cordonOn, setCordonOn] = useState(true);
+  const [cordonM, setCordonM] = useState('');
   // The server's answer to "what would publishing this do?", shown for the
   // officer to confirm before anything goes out. Null while still editing.
   const [preview, setPreview] = useState(null);
@@ -209,19 +258,76 @@ export default function PublishHazardPanel({
 
   const typeName = types.find((t) => String(t.id) === String(hazardTypeId))?.name;
 
+  // What the generating methods read: an observed water depth, the terrain
+  // to flood it over, reports pinned on the map, past zones near the tap.
+  const [depthM, setDepthM] = useState(0.5);
+  const [terrain, setTerrain] = useState(null);
+  const [reports, setReports] = useState([]);
+  const [pastZones, setPastZones] = useState(null);
+  const [pastPick, setPastPick] = useState(0);
+  const [methodNote, setMethodNote] = useState('');
+  const methodCtx = {
+    hasTerrain: Boolean(susceptibilityIndex?.terrain), terrain, depthM, reports, pastZones, pastPick,
+  };
+
   // Which shaping method is in use. Each hazard type opens on its own best
   // method; hand drawing is always available as the failsafe.
   const [method, setMethod] = useState(HAND);
-  const choices = methodsFor(typeName);
+  const choices = methodsFor(typeName, methodCtx);
   const active = methodByKey(method);
 
-  // A method that isn't offered for the newly picked hazard type would
-  // otherwise stay selected and silently do nothing.
+  // Picking a hazard type opens on that type's own best method (water depth
+  // for a flood, hand drawing otherwise), so a method meant for another
+  // type never stays selected doing nothing.
   useEffect(() => {
-    setMethod((current) => (
-      choices.some((m) => m.key === current) ? current : defaultMethodFor(typeName)
-    ));
-  }, [typeName]); // eslint-disable-line react-hooks/exhaustive-deps -- choices derives from typeName
+    setMethod(defaultMethodFor(typeName, methodCtx));
+  }, [typeName]); // eslint-disable-line react-hooks/exhaustive-deps -- methodCtx is read once per type
+
+  // Terrain for the water-depth method, fetched the first time it is used
+  useEffect(() => {
+    if (method !== FLOOD_DEPTH || terrain) return undefined;
+    let cancelled = false;
+    loadTerrain(susceptibilityIndex).then((t) => { if (!cancelled) setTerrain(t); });
+    return () => { cancelled = true; };
+  }, [method, susceptibilityIndex, terrain]);
+
+  // Reports of this hazard type pinned on the map in the last three days
+  useEffect(() => {
+    setReports([]);
+    if (!typeName) return undefined;
+    let cancelled = false;
+    reportsApi.located(typeName, 72)
+      .then((list) => {
+        if (cancelled) return;
+        setReports((Array.isArray(list) ? list : []).filter((r) => r.latitude != null && r.longitude != null));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [typeName]);
+
+  // Past zones of this type near the tapped spot
+  useEffect(() => {
+    setPastZones(null);
+    setPastPick(0);
+    if (method !== PAST || !seed || !typeName) return undefined;
+    let cancelled = false;
+    hazardsApi.pastZones({ type: typeName, lat: seed[0], lng: seed[1], radius: 600 })
+      .then((d) => { if (!cancelled) setPastZones(d?.results || []); })
+      .catch(() => { if (!cancelled) setPastZones([]); });
+    return () => { cancelled = true; };
+  }, [method, seed, typeName]);
+
+  // Run a generating method whenever something it reads changes. It hands
+  // back corners only; they land on the map like hand-tapped ones.
+  useEffect(() => {
+    if (!active.generate || (active.seed && !seed)) {
+      setMethodNote('');
+      return;
+    }
+    const { corners, note } = runMethod(active, seed ? [seed] : [], methodCtx);
+    setMethodNote(note || '');
+    if (corners && corners.length >= MIN_CORNERS) onReplacePoints?.(corners);
+  }, [method, seed, depthM, terrain, reports, pastZones, pastPick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     onMethodChange?.(method);
@@ -232,8 +338,15 @@ export default function PublishHazardPanel({
     if (key === method) return;
     if (points.length && !window.confirm('Start the outline again with this method?')) return;
     if (points.length) onClear();
+    setMethodNote('');
     setMethod(key);
   }
+
+  const cordonOffered = CORDON_TYPES.includes(typeName);
+  const cordonWidth = cordonM === '' ? CORDON_SUGGESTED[severity] : Number(cordonM);
+  const cordonBad = cordonOffered && cordonOn
+    && !(Number.isInteger(cordonWidth) && cordonWidth >= CORDON_MIN && cordonWidth <= CORDON_MAX);
+  const cordon = cordonOffered && cordonOn && !cordonBad ? cordonWidth : null;
 
   const typical = TYPICAL_SIZE[typeName];
   const corners = points.length;
@@ -248,7 +361,22 @@ export default function PublishHazardPanel({
   // corner looks "outside", and saying so would be noise.
   const spills = boundariesReady && outsideCorners > 0;
   const allOutside = boundariesReady && closed && outsideCorners === corners && !barangay;
-  const blocked = busy || !hazardTypeId || !closed || allOutside;
+  const blocked = busy || !hazardTypeId || !closed || allOutside || cordonBad;
+
+  // A second look at the outline against the susceptibility map: drawn on
+  // safe ground, or stopping short of risky ground. Advice only.
+  const [checkWarnings, setCheckWarnings] = useState([]);
+  useEffect(() => {
+    setCheckWarnings([]);
+    if (!closed || !typeName || !susceptibilityIndex) return undefined;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      checkZone(points, typeName, susceptibilityIndex)
+        .then((r) => { if (!cancelled) setCheckWarnings(r?.warnings || []); })
+        .catch(() => {});
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [points, typeName, susceptibilityIndex, closed]);
 
   function payload() {
     return {
@@ -257,6 +385,9 @@ export default function PublishHazardPanel({
       severity,
       description: description.trim(),
       geometry: pointsToPolygon(points),
+      // The drawn area stays the hazard itself; the cordon goes alongside
+      // it as a width, never merged into the polygon.
+      cordon_m: cordon,
       // Links the validated report to the zone published from it
       ...(prefill?.reportId ? { incident_report: prefill.reportId } : {}),
     };
@@ -304,15 +435,25 @@ export default function PublishHazardPanel({
     }
   }
 
-  // Show the map what will really be saved, cut at the city boundary
+  // Show the map what will really be saved, cut at the city boundary. With
+  // a cordon, the ring goes first so the hazard draws on top of it.
   useEffect(() => {
-    onPreviewShape?.(preview?.geometry || null);
+    if (!preview?.geometry) {
+      onPreviewShape?.(null);
+      return;
+    }
+    const features = [];
+    if (preview.cordon_geometry) {
+      features.push({ type: 'Feature', properties: { part: 'cordon' }, geometry: preview.cordon_geometry });
+    }
+    features.push({ type: 'Feature', properties: { part: 'hazard' }, geometry: preview.geometry });
+    onPreviewShape?.({ type: 'FeatureCollection', features });
   }, [preview]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Anything changed after the check makes the summary stale
   useEffect(() => {
     setPreview(null);
-  }, [points, hazardTypeId, severity, description]);
+  }, [points, hazardTypeId, severity, description, cordon]);
 
   const sev = SEVERITY[severity];
 
@@ -327,6 +468,7 @@ export default function PublishHazardPanel({
         onBack={() => { setPreview(null); setError(''); }}
         onSend={send}
         onCancel={onCancel}
+        checkWarnings={checkWarnings}
       />
     );
   }
@@ -366,6 +508,83 @@ export default function PublishHazardPanel({
             </div>
           )}
           <p className="pub-draw-help">{active.help}</p>
+
+          {method === FLOOD_DEPTH && (
+            <div className="pub-depth" role="group" aria-label="How deep was the water">
+              <span className="pub-depth-label">Water depth where you tapped</span>
+              <div className="pub-depth-row">
+                {DEPTH_PRESETS.map((d) => (
+                  <button
+                    key={d.label}
+                    type="button"
+                    className={`pub-method ${Math.abs(depthM - d.value) < 0.001 ? 'is-active' : ''}`}
+                    aria-pressed={Math.abs(depthM - d.value) < 0.001}
+                    onClick={() => setDepthM(d.value)}
+                    disabled={busy}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+                <label className="pub-depth-custom">
+                  <input
+                    type="number"
+                    min={0.05}
+                    max={5}
+                    step={0.05}
+                    value={depthM}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      if (v > 0 && v <= 5) setDepthM(v);
+                    }}
+                    disabled={busy}
+                  />
+                  m
+                </label>
+              </div>
+              <small className="pub-size-hint">
+                Estimated from elevation data (about 30 m detail, can be a few metres off on flat ground).
+                Check the edge against what you see.
+              </small>
+            </div>
+          )}
+
+          {method === REPORTS && (
+            <small className="pub-size-hint">
+              {reports.length} pinned report{reports.length === 1 ? '' : 's'} of this type in the last three days.
+            </small>
+          )}
+
+          {method === PAST && pastZones && pastZones.length > 1 && (
+            <div className="pub-past" role="radiogroup" aria-label="Past zones near this spot">
+              {pastZones.map((z, i) => (
+                <label key={z.id} className="pub-past-row">
+                  <input
+                    type="radio"
+                    name="pub-past"
+                    checked={pastPick === i}
+                    onChange={() => setPastPick(i)}
+                    disabled={busy}
+                  />
+                  <span>
+                    {new Date(z.activated_at).toLocaleDateString([], { year: 'numeric', month: 'short' })}
+                    {', '}{(SEVERITY[z.severity]?.label || z.severity).toLowerCase()}
+                    {z.barangay ? `, ${z.barangay}` : ''}
+                    {`, ${z.distance_m} m away`}
+                    {z.is_sample ? ' (sample)' : ''}
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+
+          {methodNote && <p className="pub-draw-note" role="status">{methodNote}</p>}
+
+          {checkWarnings.length > 0 && (
+            <div className="pub-check" role="note">
+              <strong>Map check</strong>
+              <ul>{checkWarnings.map((w) => <li key={w}>{w}</li>)}</ul>
+            </div>
+          )}
           <div className="pub-draw-tools">
             <button type="button" className="pub-tool" onClick={onUndo} disabled={!corners || busy}>
               Undo corner
@@ -375,6 +594,46 @@ export default function PublishHazardPanel({
             </button>
           </div>
           {typical && <small className="pub-size-hint">Typical size: {typical}.</small>}
+
+          {/* Outline only what is burning. The ring people must leave is
+              set here as a width, so the map can show the two apart. */}
+          {cordonOffered && (
+            <div className="pub-cordon">
+              <label className="pub-cordon-toggle">
+                <input
+                  type="checkbox"
+                  checked={cordonOn}
+                  onChange={(e) => setCordonOn(e.target.checked)}
+                  disabled={busy}
+                />
+                Add a cordon around it
+              </label>
+              {cordonOn && (
+                <label className="pub-cordon-width" htmlFor="pub-cordon-m">
+                  <input
+                    id="pub-cordon-m"
+                    type="number"
+                    inputMode="numeric"
+                    min={CORDON_MIN}
+                    max={CORDON_MAX}
+                    step={5}
+                    value={cordonM === '' ? CORDON_SUGGESTED[severity] : cordonM}
+                    onChange={(e) => setCordonM(e.target.value)}
+                    disabled={busy}
+                    aria-invalid={cordonBad || undefined}
+                  />
+                  m wide
+                </label>
+              )}
+              <small className={`pub-size-hint ${cordonBad ? 'pub-warn' : ''}`}>
+                {cordonBad
+                  ? `Enter a whole number from ${CORDON_MIN} to ${CORDON_MAX} m.`
+                  : cordonOn
+                    ? 'Outline only the burning area. Barangays the cordon reaches are alerted too.'
+                    : 'Without a cordon, only the outlined area is alerted.'}
+              </small>
+            </div>
+          )}
         </div>
 
         {prefill?.reportId && (
