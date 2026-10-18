@@ -39,6 +39,17 @@ def needs_second_approval(severity):
 # to them again, once, and the publisher is told who hasn't read it.
 REMIND_AFTER = timedelta(minutes=15)
 
+# A zone left Active this long with no officer update: remind the publisher
+# to resolve it or bring it up to date, then again every STALE_AFTER.
+STALE_AFTER = timedelta(hours=24)
+
+SEVERITY_LABEL = {'Red': 'Extreme', 'Orange': 'Moderate', 'Green': 'Low'}
+
+
+def touch(zone, now=None):
+    """An officer just acted on this zone: restart its 24-hour reminder clock."""
+    zone.next_nudge_at = (now or timezone.now()) + STALE_AFTER
+
 
 def approval_due_at(zone):
     """When a held Extreme alert, or a held raise to Extreme, goes out on its own."""
@@ -184,6 +195,8 @@ def issue_alert(zone, issued_by, manual_ids=None, suffix=''):
     Returns (alert, barangays, recipients).
     """
     barangays = affected_barangays(zone, manual_ids)
+    touch(zone)
+    HazardZone.objects.filter(pk=zone.pk).update(next_nudge_at=zone.next_nudge_at)
     alert = HazardAlert.objects.create(
         hazard_zone=zone,
         issued_by=issued_by,
@@ -365,6 +378,88 @@ def remind_unread_extreme(now=None):
     return done
 
 
+def all_clear(zone, resolved_by, summary=''):
+    """
+    Tell everyone who got this zone's alert that it is over.
+
+    Resolving used to tell nobody: residents who were warned about a flood
+    never heard that it had passed, unless they happened to open the map.
+    Withdrawal already sent a notice; this is the same for a real hazard
+    that has ended. Everyone who received any alert for the zone is told
+    once, except the officer resolving it.
+    """
+    recipients = (
+        User.objects
+        .filter(is_active=True, notifications__hazard_alert__hazard_zone=zone)
+        .exclude(id=getattr(resolved_by, 'id', None))
+        .distinct()
+    )
+    where = where_text(affected_barangays(zone))
+    note = f' {summary.strip()}' if summary and summary.strip() else ''
+    users = list(recipients)
+    notify(
+        users,
+        f'ALL CLEAR: the {type_name(zone)} alert for {where} has been resolved by DRRMO.{note}',
+        zone,
+    )
+    return users, where
+
+
+def nudge_stale_zones(now=None):
+    """
+    Remind publishers about zones left Active with no update for 24 hours.
+    Returns how many zones were flagged.
+
+    A zone nobody resolves stays on the public map, alarming people about a
+    flood that drained yesterday. The publisher is asked to resolve it or
+    bring it up to date; if they no longer have an active account, every
+    officer is asked instead. Sample zones are left alone.
+    """
+    now = now or timezone.now()
+    due = HazardZone.objects.filter(status='Active', is_sample=False, next_nudge_at__lte=now)
+    if not due.exists():
+        return 0
+
+    done = 0
+    while True:
+        with transaction.atomic():
+            zone = (
+                HazardZone.objects
+                .select_for_update(skip_locked=True, of=('self',))
+                .select_related('hazard_type', 'published_by')
+                .filter(status='Active', is_sample=False, next_nudge_at__lte=now)
+                .order_by('next_nudge_at')
+                .first()
+            )
+            if zone is None:
+                break
+            last_change = zone.next_nudge_at - STALE_AFTER
+            idle_hours = max(int((now - last_change).total_seconds() // 3600), 24)
+            zone.next_nudge_at = now + STALE_AFTER
+            zone.save(update_fields=['next_nudge_at'])
+
+            publisher = zone.published_by if zone.published_by and zone.published_by.is_active else None
+            who = [publisher] if publisher else list(approvers_for(None))
+            where = where_text(affected_barangays(zone))
+            notify(
+                who,
+                f'Still active? The {type_name(zone)} zone ({SEVERITY_LABEL.get(zone.severity, zone.severity)}) '
+                f'for {where} has had no update for {idle_hours} hours. Resolve it if it is over, or change '
+                f'its severity or area so the public map stays accurate.',
+                zone,
+            )
+            AuditLog.objects.create(
+                user=None,
+                action='STALE_ZONE_REMINDER',
+                target_table='hazard_zone',
+                target_id=str(zone.id),
+                details=f'{type_name(zone)} for {where}: no update for {idle_hours} h; '
+                        f'reminded {"the publisher" if publisher else f"{len(who)} officer(s)"}.',
+            )
+            done += 1
+    return done
+
+
 # How often request paths look for overdue alerts. The map and every bell
 # poll call in, so without a limit this was a database query on almost
 # every request to answer a question that changes once in ten minutes.
@@ -384,6 +479,7 @@ def release_overdue_quietly():
             logger.warning('Cache unavailable; checking for overdue alerts without a limit')
         released = release_overdue_approvals()
         remind_unread_extreme()
+        nudge_stale_zones()
         return released
     except Exception:
         logger.exception('Releasing overdue Extreme alerts failed')

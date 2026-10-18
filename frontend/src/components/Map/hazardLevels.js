@@ -8,18 +8,22 @@
 //    record stay clear. History only shades the map; it never creates a
 //    hazard, which stays the DRRMO's call.
 //
-// 2. Live hazards. Each published hazard is shaded inside the polygon the
-//    officer drew, and nowhere outside it. Within the polygon the terrain
-//    still sets how strong it is: a flood is strongest on low cells, a
-//    landslide on steep ones, a fire in the built-up block. Every cell of the
-//    polygon gets at least the level it was published at, because the
-//    officer declared the whole area affected at that severity. Inside, the level is raised by at least one step,
-//    so an active event stands out from the standing risk around it. Zones
-//    that overlap add up, so a cluster of reports turns the area red.
+// 2. Live hazards, graded the way Project NOAH grades a flood map. Each
+//    published hazard is shaded inside the polygon the officer drew, and
+//    nowhere outside it. Inside, the level varies with the ground: the
+//    published severity is the WORST level, shown where the terrain is most
+//    exposed (the lowest ground for a flood, the steepest slope for a
+//    landslide, the densest block for a fire), and less exposed parts step
+//    down. A Moderate flood is Moderate along the creek and Low on the
+//    higher streets; an Extreme one runs High, Moderate, Low. Every cell
+//    inside is at least Low, because the officer declared the whole area
+//    affected. Nothing is ever shaded above the published level, so the map
+//    never contradicts the alert; overlapping zones show the higher of the
+//    two, not a sum.
 //
-//    It used to spread outward from the pin over a radius worked out from
-//    the zone's size, so every zone showed as a round blob whatever shape
-//    was drawn.
+//    It used to shade the whole polygon at the published level, which said
+//    nothing about which part was worse, and before that spread out from
+//    the pin in a circle whatever shape was drawn.
 
 import { useEffect, useState } from 'react';
 import { hazardKey } from './hazardInfo';
@@ -270,45 +274,92 @@ function zoneCells(feature, project, width, height) {
   return cells;
 }
 
-// Lowest strength anywhere inside a drawn zone: the level the officer
-// published it at (Low, Moderate or Extreme->High), so the whole zone shows
-// at least that colour, matching its pin and outline. The terrain can only
-// push parts of it higher.
-const ZONE_FLOOR = { Green: LEVEL_BREAKS[0] + 0.01, Orange: LEVEL_BREAKS[1] + 0.01, Red: LEVEL_BREAKS[2] + 0.01 };
+// The published severity as a map level: the most a zone can show
+const SEVERITY_LEVEL = { Green: 1, Orange: 2, Red: 3 };
 
-// A live report: overlapping zones combine as 1 - product(1 - strength), capped at 1
-function spreadPin(pin, type, cls, width, height, project, cell, keep) {
-  const weight = SEVERITY_WEIGHT[pin.severity] ?? SEVERITY_WEIGHT.Green;
+// How exposed a cell must be, relative to the most and least exposed ground
+// in its own zone (0..1), to keep each level below the published one. An
+// Extreme zone shows High on its most exposed 40%-or-so of ground range,
+// Moderate in the middle, Low on the safest; a Moderate zone splits into
+// Moderate and Low; a Low zone is Low throughout.
+const STEP_DOWN_AT = { 3: [0.6, 0.25], 2: [0.4], 1: [] };
+
+// How far round each cell the ground is averaged, in cells. Wide enough
+// that the change from the most to the least exposed ground passes through
+// the middle level, as on a NOAH map, instead of jumping High to Low.
+const SMOOTH_CELLS = 2;
+
+// A cell's susceptibility class averaged with its neighbours inside the
+// zone, so the grading follows the lie of the land instead of speckling
+// cell by cell. 0 when the cell is outside the city.
+function smoothedClass(cls, i, width, height, inside) {
+  if (!cls[i]) return 0;
+  const x = i % width;
+  const y = (i - x) / width;
+  let sum = 0;
+  let n = 0;
+  for (let dy = -SMOOTH_CELLS; dy <= SMOOTH_CELLS; dy += 1) {
+    for (let dx = -SMOOTH_CELLS; dx <= SMOOTH_CELLS; dx += 1) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+      const j = ny * width + nx;
+      if (!cls[j] || !inside.has(j)) continue;
+      sum += cls[j];
+      n += 1;
+    }
+  }
+  return n ? sum / n : cls[i];
+}
+
+function levelForExposure(rank, cap) {
+  let level = cap;
+  for (const t of STEP_DOWN_AT[cap] || []) {
+    if (rank >= t) break;
+    level -= 1;
+  }
+  return Math.max(level, 1);
+}
+
+// A live hazard: writes its graded level into live[], keeping the higher
+// level where zones overlap.
+function gradePin(pin, type, cls, width, height, project, cell, live) {
+  const cap = SEVERITY_LEVEL[pin.severity] ?? 1;
   const inside = zoneCells(pin.feature, project, width, height);
 
   if (!inside) {
-    // No drawn polygon (older data): spread from the pin as before
+    // No drawn polygon (older data): spread from the pin over the ground,
+    // still never above the published level
+    const weight = SEVERITY_WEIGHT[pin.severity] ?? SEVERITY_WEIGHT.Green;
     const reachM = pin.radius || MAX_SPREAD_M[type][pin.severity] || MAX_SPREAD_M[type].Green;
-    spreadFrom(pin.position, type, weight, reachM, cls, width, height, project, cell, (i, strength) => {
-      keep[i] *= 1 - strength;
+    spreadFrom(pin.position, type, weight, reachM, cls, width, height, project, cell, (i, s) => {
+      const level = s >= LEVEL_BREAKS[2] ? 3 : s >= LEVEL_BREAKS[1] ? 2 : s >= LEVEL_BREAKS[0] ? 1 : 0;
+      const capped = Math.min(level, cap);
+      if (capped > live[i]) live[i] = capped;
     });
     return;
   }
 
-  // Terrain-aware strength from the middle of the zone, far enough to reach
-  // every corner, but only kept for cells inside the polygon.
-  const strength = new Map();
-  let reachM = 0;
-  const [px, py] = project(pin.position[0], pin.position[1]);
+  // Exposure of every cell in the zone, then where each sits between the
+  // zone's own least and most exposed ground
+  const exposure = new Map();
+  let lo = Infinity;
+  let hi = -Infinity;
   inside.forEach((i) => {
-    const x = i % width;
-    const y = (i - x) / width;
-    reachM = Math.max(reachM, Math.hypot(x - px, y - py) * cell);
+    const e = smoothedClass(cls, i, width, height, inside);
+    if (!e) return; // outside the city
+    exposure.set(i, e);
+    if (e < lo) lo = e;
+    if (e > hi) hi = e;
   });
-  spreadFrom(pin.position, type, weight, reachM + cell * 2, cls, width, height, project, cell, (i, s) => {
-    if (inside.has(i)) strength.set(i, s);
-  });
+  const span = hi - lo;
 
-  const floor = ZONE_FLOOR[pin.severity] ?? ZONE_FLOOR.Green;
-  inside.forEach((i) => {
-    if (!cls[i]) return; // outside the city
-    const s = Math.max(strength.get(i) || 0, floor);
-    keep[i] *= 1 - Math.min(s, 1);
+  exposure.forEach((e, i) => {
+    // Flat ground all through: nothing to tell apart, the whole zone is at
+    // the published level
+    const rank = span > 0.25 ? (e - lo) / span : 1;
+    const level = levelForExposure(rank, cap);
+    if (level > live[i]) live[i] = level;
   });
 }
 
@@ -327,8 +378,8 @@ function computeLevels({ grids, index, hazards, history, types }) {
   const { width, height } = grids.flood;
   const project = makeProjector(index.bounds, width, height);
   const cell = index.cellSizeM || 10;
-  const base = new Uint8Array(width * height);   // level from past events, 0..3
-  const score = new Float32Array(width * height); // live hazard strength, 0..1
+  const base = new Uint8Array(width * height); // level from past events, 0..3
+  const live = new Uint8Array(width * height); // graded level of live hazards, 0..3
   const now = Date.now();
 
   (types && types.length ? types : TYPES_FOR_LAYER.all).forEach((type) => {
@@ -346,32 +397,18 @@ function computeLevels({ grids, index, hazards, history, types }) {
       }
     }
 
-    const pins = hazards.filter((h) => hazardKey(h.type) === type && h.position);
-    if (!pins.length) return;
-
-    // keep[i] = share of the cell NOT affected by any pin; nearby pins multiply up
-    const keep = new Float32Array(width * height).fill(1);
-    pins.forEach((pin) => spreadPin(pin, type, cls, width, height, project, cell, keep));
-
-    for (let i = 0; i < score.length; i += 1) {
-      if (keep[i] === 1) continue;
-      const s = 1 - keep[i];
-      if (s > score[i]) score[i] = s;
-    }
+    hazards
+      .filter((h) => hazardKey(h.type) === type && h.position)
+      .forEach((pin) => gradePin(pin, type, cls, width, height, project, cell, live));
   });
 
   const image = new ImageData(width, height);
   const px = image.data;
   let colored = 0;
-  for (let i = 0, p = 0; i < score.length; i += 1, p += 4) {
-    const s = score[i];
-    let live = 0;
-    if (s >= LEVEL_BREAKS[2]) live = 3;
-    else if (s >= LEVEL_BREAKS[1]) live = 2;
-    else if (s >= LEVEL_BREAKS[0]) live = 1;
-
-    let level = Math.max(base[i], live);
-    if (live) level = Math.max(level, Math.min(3, base[i] + 1)); // an active event always stands out
+  for (let i = 0, p = 0; i < live.length; i += 1, p += 4) {
+    // Past events and live hazards are separate facts; show the worse.
+    // A live zone is never pushed above its own graded level.
+    const level = Math.max(base[i], live[i]);
     if (!level) continue;
 
     const [r, g, b] = LEVEL_RGB[level - 1];

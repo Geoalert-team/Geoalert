@@ -120,7 +120,10 @@ export default function ResolveHazardForm({ zoneId, title, onCancel, onResolved 
 
       {confirming ? (
         <div className="db-confirm">
-          <p>Resolve this hazard? The public map will stop showing it.</p>
+          <p>
+            Resolve this hazard? The public map will stop showing it, and everyone
+            who received its alert gets an all-clear notice.
+          </p>
           <div className="db-btn-row">
             <button type="button" className="db-btn db-btn-primary" onClick={submit} disabled={busy}>
               {busy ? 'Resolving…' : 'Yes, resolve it'}

@@ -175,6 +175,53 @@ function PastIncidents({ item }) {
 
 // Every hazard zone covering the spot the user clicked, most serious first, so
 // overlapping zones can be read one after another instead of only the top pin.
+/**
+ * Who received this zone's latest alert and who has opened it, by barangay,
+ * for the officers deciding whether to phone anyone. Collapsed to one line
+ * until opened.
+ */
+function DeliveryReceipts({ zoneId }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let live = true;
+    setData(null);
+    setError('');
+    hazardsApi.receipts(zoneId)
+      .then((d) => live && setData(d))
+      .catch((err) => live && setError(err.message || 'Could not load who has read the alert.'));
+    return () => { live = false; };
+  }, [zoneId]);
+
+  if (error) return <p className="db-hint">{error}</p>;
+  if (!data) return <p className="db-hint">Checking who has read the alert…</p>;
+  if (!data.alert) return <p className="db-hint">No alert has been sent for this zone yet.</p>;
+
+  const unread = data.sent - data.opened;
+  return (
+    <details className="hp-receipts">
+      <summary>
+        Alert opened by <strong>{data.opened} of {data.sent}</strong>
+        {unread > 0 ? ` · ${unread} not yet` : ' · everyone'}
+      </summary>
+      <ul>
+        {data.groups.map((g) => (
+          <li key={g.name}>
+            <span className="hp-receipts-name">{g.name}</span>{' '}
+            <span className={g.opened === g.sent ? 'hp-receipts-ok' : 'hp-receipts-wait'}>
+              {g.opened}/{g.sent} opened
+            </span>
+            {g.unread.length > 0 && (
+              <small>Not opened: {g.unread.join(', ')}</small>
+            )}
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
 function HazardStack({ stack, current, onPick }) {
   const pos = Math.max(0, stack.findIndex((h) => h.id === current.id));
   const step = (by) => onPick(stack[(pos + by + stack.length) % stack.length]);
@@ -582,6 +629,7 @@ export default function HazardPanel({ item, open, onClose, onResolved, onRetract
                 {/* ---------- DRRMO: close the hazard out ---------- */}
                 {canResolve && (
                   <div className="db-scope db-embed">
+                    <DeliveryReceipts zoneId={item.id} />
                     {closing === 'resolve' && (
                       <ResolveHazardForm
                         zoneId={item.id}

@@ -26,6 +26,7 @@ import '../components/Publish/css/PublishHazard.css';
 const TALISAY_CENTER = [10.2446, 123.8473];
 const PANEL_WIDTH = 400; // keep in sync with .pm-panel width in PublicMap.css
 const MOBILE_BREAKPOINT = 860; // keep in sync with the @media rule in PublicMap.css
+const MAP_REFRESH_MS = 30000; // how often an open map checks for new or changed zones
 
 // Base maps (no API key needed).
 //   Map     quiet light gray map with place names drawn above the hazard colors
@@ -62,8 +63,8 @@ const NO_HISTORY = []; // stable empty list, so the heat layer isn't recomputed 
 // at a hazard map wants to know what is dangerous right now. Past shading is
 // background for planning, which is a second question, not the first one.
 const HEAT_MODES = [
-  { key: 'active', label: 'Active hazards', note: 'Shaded inside the drawn area of each hazard that is active right now, at its published level or higher where the ground is more at risk.' },
-  { key: 'history', label: 'History', note: 'Shaded by past hazards: how often, how severe and how recent. Areas with an active hazard are raised one level.' },
+  { key: 'active', label: 'Active hazards', note: 'Shaded inside the drawn area of each active hazard, graded by the ground like a Project NOAH map: its published level where the ground is most at risk, stepping down where it is safer.' },
+  { key: 'history', label: 'History', note: 'Shaded by past hazards: how often, how severe and how recent. Active hazards show on top at their graded level.' },
 ];
 
 /* ---------- Helpers ---------- */
@@ -273,19 +274,44 @@ export default function PublicMap() {
   // Load hazards. Pulled out of the effect so publishing can re-run it —
   // POST /api/hazards/create/ returns the plain serializer, not GeoJSON, so
   // featureToItem can't build a pin from the response.
-  const loadHazards = useCallback(() => {
+  const hazardsTag = useRef(null);
+  const loadHazards = useCallback((background = false) => {
     return hazardsApi
-      .list()
-      .then((data) => {
+      .listTagged()
+      .then(({ data, etag }) => {
+        // Same version as last time: nothing changed, keep the map as it is
+        if (background && etag && etag === hazardsTag.current) return;
+        hazardsTag.current = etag;
         const features = data?.features || data?.results?.features || [];
         const items = features
           .filter((f) => !f.properties?.status || f.properties.status === 'Active')
           .map(featureToItem)
           .filter(Boolean);
         setLiveHazards(items);
+        setLoadFailed(false);
       })
-      .catch(() => setLoadFailed(true));
+      .catch(() => {
+        // A failed refresh keeps the zones already shown
+        if (!background) setLoadFailed(true);
+      });
   }, []);
+
+  // A map left open (a phone on the barangay hall desk) used to show the
+  // zones from when it was opened, forever. Refresh while the tab is
+  // visible; the server answers 304 when nothing changed, so this is cheap.
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') loadHazards(true);
+    }, MAP_REFRESH_MS);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadHazards(true);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [loadHazards]);
 
   // Where past hazards happened, for the history shading. Reloaded after a
   // resolve, since that writes a new historical record.

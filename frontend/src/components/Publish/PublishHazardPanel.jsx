@@ -35,6 +35,11 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
     ? preview.affected_barangays.join(', ')
     : 'Talisay City';
   const held = preview.needs_approval;
+  // An active zone of the same type already covers half or more of this
+  // drawing: most likely the same event. The server refuses it unless the
+  // officer says it is a separate one.
+  const major = preview.duplicates.filter((d) => d.major);
+  const pct = (d) => `${Math.round((d.overlap || 0) * 100)}%`;
 
   return (
     <div className="pub db-scope" role="dialog" aria-label="Check before sending">
@@ -65,13 +70,23 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
       </dl>
 
       {preview.duplicates.length > 0 && (
-        <div className="pub-dupes" role="alert">
-          <strong>Already active here.</strong> This overlaps{' '}
-          {preview.duplicates.length === 1 ? 'a zone' : `${preview.duplicates.length} zones`} of the same type:
+        <div className={`pub-dupes ${major.length ? 'is-major' : ''}`} role="alert">
+          {major.length ? (
+            <>
+              <strong>Probably the same event.</strong> An active {major[0].type.toLowerCase()} zone
+              already covers <strong>{pct(major[0])}</strong> of this area:
+            </>
+          ) : (
+            <>
+              <strong>Already active nearby.</strong> This overlaps{' '}
+              {preview.duplicates.length === 1 ? 'a zone' : `${preview.duplicates.length} zones`} of the same type:
+            </>
+          )}
           <ul>
             {preview.duplicates.map((d) => (
               <li key={d.id}>
-                {d.type}, {(SEVERITY[d.severity]?.label || d.severity).toLowerCase()}
+                <strong>{pct(d)}</strong> covered by {d.type.toLowerCase()},{' '}
+                {(SEVERITY[d.severity]?.label || d.severity).toLowerCase()}
                 {d.barangay ? ` in ${d.barangay}` : ''}
                 {d.activated_at ? `, published ${timeOf(d.activated_at)}` : ''}
                 {d.published_by ? ` by ${d.published_by}` : ''}
@@ -79,14 +94,17 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
                 {d.status === 'Active' && (
                   <>
                     {' '}
-                    <a href={`/map?zone=${d.id}`} target="_blank" rel="noreferrer">Show it</a>
+                    <a href={`/map?zone=${d.id}`} target="_blank" rel="noreferrer">
+                      {d.major ? 'Update that zone instead' : 'Show it'}
+                    </a>
                   </>
                 )}
               </li>
             ))}
           </ul>
-          Publishing again sends a second alert for the same hazard.
-          To change the existing one, edit it instead.
+          {major.length
+            ? 'Publishing sends the same barangays a second alert. If the area or severity changed, update the existing zone (Edit area, Change severity). Publish only if this is a separate event.'
+            : 'Publishing again sends a second alert for the same hazard. To change the existing one, edit it instead.'}
         </div>
       )}
 
@@ -110,9 +128,11 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
         >
           {busy
             ? 'Sending…'
-            : held
-              ? 'Send for approval'
-              : `Send to ${plural(preview.recipients, 'account')}`}
+            : major.length
+              ? 'Separate event: publish anyway'
+              : held
+                ? 'Send for approval'
+                : `Send to ${plural(preview.recipients, 'account')}`}
         </button>
         <button type="button" className="db-btn db-btn-outline" onClick={onBack} disabled={busy}>
           Back to edit
@@ -233,7 +253,11 @@ export default function PublishHazardPanel({
     setBusy(true);
     setError('');
     try {
-      const zone = await hazardsApi.create(payload());
+      // The officer saw the overlap in the check and chose to publish
+      const zone = await hazardsApi.create({
+        ...payload(),
+        ...(preview?.major_duplicate ? { confirm_duplicate: true } : {}),
+      });
       onPublished?.(zone);
     } catch (err) {
       setError(err?.message || 'Could not publish this hazard zone.');

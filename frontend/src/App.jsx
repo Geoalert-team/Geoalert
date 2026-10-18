@@ -1,5 +1,5 @@
 ﻿import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
 import PublicHome from "./pages/PublicHome";
@@ -14,8 +14,14 @@ import Reports from "./pages/Reports";
 
 function Gate({ children, roles }) {
   const { user, loading } = useAuth();
+  const { pathname } = useLocation();
   if (loading) return <p style={{ padding: 24 }}>Checking session…</p>;
   if (!user) return <Navigate to="/login" replace />;
+  // A password an administrator set has to be replaced first; the server
+  // refuses everything else until it is.
+  if (user.must_change_password && pathname !== "/app/security") {
+    return <Navigate to="/app/security" replace />;
+  }
   const roleName = user.role?.name || user.role;
   if (roles && !roles.includes(roleName)) return <Navigate to="/app/dashboard" replace />;
   return children;

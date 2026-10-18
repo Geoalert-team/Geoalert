@@ -36,6 +36,15 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('geoalert:session-expired', onExpired);
   }, []);
 
+  // The server says this account still has an admin-set password
+  useEffect(() => {
+    function onChangeRequired() {
+      setUser((u) => (u ? { ...u, must_change_password: true } : u));
+    }
+    window.addEventListener('geoalert:password-change-required', onChangeRequired);
+    return () => window.removeEventListener('geoalert:password-change-required', onChangeRequired);
+  }, []);
+
   useEffect(() => {
     (async () => {
       await primeCsrf();

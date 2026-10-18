@@ -561,3 +561,15 @@
 }
 .pm-verified { background: #e8f6ee; color: #16693a; border-left: 3px solid #1f9d55; }
 .pm-disputed { background: #fcebeb; color: #a12f2f; border-left: 3px solid #d64545; }
+/* Officer view on a hazard: who has opened its alert */
+.hp-receipts {
+  margin: 0 0 12px; padding: 8px 10px;
+  border: 1px solid var(--db-border, #d8dee8); border-radius: 10px;
+  font-size: .84rem;
+}
+.hp-receipts summary { cursor: pointer; }
+.hp-receipts ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.hp-receipts li small { display: block; color: #5b6575; }
+.hp-receipts-name { font-weight: 600; }
+.hp-receipts-ok { color: #1e7b45; }
+.hp-receipts-wait { color: #a15c00; }

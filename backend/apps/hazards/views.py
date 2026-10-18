@@ -14,7 +14,7 @@ from apps.accounts.models import User
 from apps.barangays.models import Barangay
 from apps.history.models import HistoricalRecord
 
-from apps.hazards.geometry import main_barangay
+from apps.hazards.geometry import main_barangay, overlap_shares
 from apps.hazards.models import HazardType, HazardZone, HazardAlert, HazardVerification
 from apps.hazards.serializers import (
     clean_zone_geometry,
@@ -27,9 +27,11 @@ from rest_framework_gis.fields import GeometryField
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from utils.permissions import IsDRRMOOfficer, IsBarangayPersonnel
 from utils.audit import log_event
+from utils import map_version
 
 from apps.hazards.alerts import (
     affected_barangays,
+    all_clear,
     alert_recipients,
     APPROVAL_WINDOW,
     apply_raise,
@@ -40,9 +42,49 @@ from apps.hazards.alerts import (
     notify,
     release_overdue_quietly,
     request_raise,
+    touch,
     type_name,
     where_text,
 )
+
+# An active zone of the same hazard type already covering this share of a
+# new drawing is most likely the same event: the officer is asked to update
+# that zone instead, and has to say so to publish anyway.
+DUPLICATE_SHARE = 0.5
+
+
+def find_duplicates(geometry, hazard_type):
+    """
+    Active (or held) zones of the same hazard type that overlap a new
+    drawing, most-overlapping first, each with the share of the new drawing
+    it already covers (0-1).
+    """
+    zones = list(
+        HazardZone.objects
+        .filter(
+            status__in=['Active', 'Awaiting_Approval'],
+            hazard_type=hazard_type,
+            geometry__intersects=geometry,
+        )
+        .select_related('hazard_type', 'barangay', 'published_by')
+    )
+    shares = overlap_shares(geometry, [z.id for z in zones])
+    found = [
+        {
+            'id': str(z.id),
+            'type': type_name(z),
+            'severity': z.severity,
+            'status': z.status,
+            'barangay': z.barangay.name if z.barangay else None,
+            'activated_at': z.activated_at,
+            'published_by': z.published_by.full_name if z.published_by else None,
+            'overlap': round(shares.get(z.id, 0), 3),
+            'major': shares.get(z.id, 0) >= DUPLICATE_SHARE,
+        }
+        for z in zones
+    ]
+    found.sort(key=lambda d: d['overlap'], reverse=True)
+    return found
 
 
 def _as_count(value):
@@ -150,6 +192,11 @@ class HazardZoneListView(APIView):
         # an unanswered Extreme alert gets sent once its window is up.
         release_overdue_quietly()
 
+        # Nothing changed since this browser last asked: no queries at all
+        etag = map_version.etag_for(request)
+        if map_version.is_fresh(request, etag):
+            return map_version.tag(Response(status=status.HTTP_304_NOT_MODIFIED), etag)
+
         zones = (
             HazardZone.objects
             .filter(status='Active')
@@ -167,7 +214,7 @@ class HazardZoneListView(APIView):
             return error
 
         serializer = HazardZoneGeoSerializer(zones, many=True, context={'within_ids': within_ids})
-        return Response(serializer.data)
+        return map_version.tag(Response(serializer.data), etag)
 
 
 class HazardZoneCreateView(APIView):
@@ -190,6 +237,31 @@ class HazardZoneCreateView(APIView):
         manual_ids = request.data.get('affected_barangays') or None
         severity = serializer.validated_data['severity']
 
+        # Most of this area already has a live zone for the same hazard:
+        # likely a second alert for one event. The officer saw this in the
+        # preview and must confirm it is a separate event.
+        major = [
+            d for d in find_duplicates(serializer.validated_data['geometry'],
+                                       serializer.validated_data.get('hazard_type'))
+            if d['major']
+        ]
+        confirmed_duplicate = str(request.data.get('confirm_duplicate', '')).lower() in ('1', 'true', 'yes')
+        if major and not confirmed_duplicate:
+            top = major[0]
+            return Response(
+                {
+                    'error': f'An active {top["type"]} zone already covers {round(top["overlap"] * 100)}% '
+                             f'of this area. Update that zone instead, or confirm this is a separate event.',
+                    'code': 'duplicate_zone',
+                    'duplicates': major,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+        duplicate_note = (
+            ' Published despite overlapping active zone(s): '
+            + ', '.join(f'{d["id"]} ({round(d["overlap"] * 100)}%)' for d in major) + '.'
+        ) if major else ''
+
         # Extreme alerts wait for a second officer. If there is nobody else
         # who could approve, waiting would only delay the warning, so it
         # goes straight out.
@@ -211,7 +283,7 @@ class HazardZoneCreateView(APIView):
                 )
             log_event(
                 request, 'HOLD_HAZARD_ALERT', 'hazard_zone', zone.id,
-                f'{type_name(zone)} / Red for {where} held for a second approval.',
+                f'{type_name(zone)} / Red for {where} held for a second approval.{duplicate_note}',
             )
             payload = HazardZoneSerializer(zone).data
             payload['approval'] = {
@@ -244,6 +316,7 @@ class HazardZoneCreateView(APIView):
                 f'{len(recipients)} recipient(s) notified. '
                 f'Zone {zone.id}. '
                 f'Barangays identified {"manually" if manual_ids else "from zone geometry"}.'
+                f'{duplicate_note}'
             ),
         )
 
@@ -391,6 +464,7 @@ class HazardZoneDetailView(APIView):
         zone.severity    = new_severity
         zone.status      = new_status
         zone.description = request.data.get('description', zone.description)
+        touch(zone)  # an officer looked at it: no "still active?" reminder for 24 h
 
         # A severity or shape change makes every earlier ground answer stale:
         # the barangays confirmed a different hazard.
@@ -460,6 +534,14 @@ class HazardZoneDetailView(APIView):
                 total_casualties = _as_count(request.data.get('total_casualties')),
                 total_displaced  = _as_count(request.data.get('total_displaced')),
                 is_sample        = zone.is_sample,
+            )
+
+        if is_resolving:
+            told, where = all_clear(zone, request.user, request.data.get('summary') or '')
+            log_event(
+                request, 'RESOLVE_HAZARD', 'hazard_zone', zone.id,
+                f'{type_name(zone)} / {zone.severity} for {where} resolved. '
+                f'All-clear sent to {len(told)} account(s).',
             )
 
         payload = HazardZoneSerializer(zone).data
@@ -872,6 +954,10 @@ class HazardUnifiedView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
+        etag = map_version.etag_for(request)
+        if map_version.is_fresh(request, etag):
+            return map_version.tag(Response(status=status.HTTP_304_NOT_MODIFIED), etag)
+
         zones = HazardZone.objects.filter(
             status='Active'
         ).select_related('hazard_type', 'barangay')
@@ -895,11 +981,11 @@ class HazardUnifiedView(APIView):
             return error
 
         serializer = HazardZoneGeoSerializer(zones, many=True, context={'within_ids': within_ids})
-        return Response({
+        return map_version.tag(Response({
             'type': 'FeatureCollection',
             'count': zones.count(),
             'features': serializer.data['features']
-        })
+        }), etag)
 
 
 class HazardLayerListView(APIView):
@@ -971,16 +1057,7 @@ class HazardZonePreviewView(APIView):
         barangays = affected_barangays(geometry, manual_ids)
         recipients = alert_recipients(request.user, barangays).count()
 
-        overlapping = (
-            HazardZone.objects
-            .filter(
-                status__in=['Active', 'Awaiting_Approval'],
-                hazard_type=data.get('hazard_type'),
-                geometry__intersects=geometry,
-            )
-            .select_related('hazard_type', 'barangay', 'published_by')
-            .order_by('-activated_at')
-        )
+        duplicates = find_duplicates(geometry, data.get('hazard_type'))
 
         # Measured by PostGIS on the spheroid rather than by reprojecting
         # here: GDAL needs PROJ's data files, which aren't set up on every
@@ -1006,18 +1083,62 @@ class HazardZonePreviewView(APIView):
             'recipients': recipients,
             'needs_approval': needs_approval,
             'approval_minutes': int(APPROVAL_WINDOW.total_seconds() // 60),
-            'duplicates': [
-                {
-                    'id': str(z.id),
-                    'type': type_name(z),
-                    'severity': z.severity,
-                    'status': z.status,
-                    'barangay': z.barangay.name if z.barangay else None,
-                    'activated_at': z.activated_at,
-                    'published_by': z.published_by.full_name if z.published_by else None,
-                }
-                for z in overlapping
-            ],
+            'duplicates': duplicates,
+            # True when one of them covers DUPLICATE_SHARE or more of this
+            # drawing: publishing then needs confirm_duplicate.
+            'major_duplicate': any(d['major'] for d in duplicates),
+            'duplicate_share': DUPLICATE_SHARE,
+        })
+
+
+class HazardZoneReceiptsView(APIView):
+    """
+    GET /api/hazards/<id>/receipts/
+
+    Who received this zone's latest alert and who has opened it, by
+    barangay. The admin alert monitor already counts this for every alert;
+    this puts it on the zone itself, so the officer looking at a hazard can
+    see that Poblacion's personnel have read it and Cansojong's haven't,
+    and phone them.
+    """
+    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+
+    def get(self, request, pk):
+        alert = (
+            HazardAlert.objects.filter(hazard_zone_id=pk)
+            .order_by('-created_at').first()
+        )
+        if alert is None:
+            if not HazardZone.objects.filter(pk=pk).exists():
+                return Response({'error': 'Hazard zone not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'alert': None, 'sent': 0, 'opened': 0, 'groups': []})
+
+        rows = (
+            Notification.objects.filter(hazard_alert=alert)
+            .select_related('recipient__assigned_barangay', 'recipient__role')
+            .order_by('recipient__full_name')
+        )
+        groups = {}
+        for n in rows:
+            u = n.recipient
+            role = u.role.name if u.role else ''
+            if role == 'Barangay_Personnel':
+                name = u.assigned_barangay.name if u.assigned_barangay else 'No barangay set'
+            else:
+                name = 'DRRMO and administrators'
+            g = groups.setdefault(name, {'name': name, 'sent': 0, 'opened': 0, 'unread': []})
+            g['sent'] += 1
+            if n.is_read:
+                g['opened'] += 1
+            else:
+                g['unread'].append(u.full_name)
+
+        ordered = sorted(groups.values(), key=lambda g: (g['name'] == 'DRRMO and administrators', g['name']))
+        return Response({
+            'alert': {'id': str(alert.id), 'severity': alert.severity, 'created_at': alert.created_at},
+            'sent': sum(g['sent'] for g in ordered),
+            'opened': sum(g['opened'] for g in ordered),
+            'groups': ordered,
         })
 
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../api/authApi';
@@ -136,6 +136,9 @@ function ProfileCard({ user }) {
 
 export default function Security() {
   const { user, setUser } = useAuth();
+  const navigate = useNavigate();
+  // An administrator set this password (new account or reset)
+  const mustChange = !!user?.must_change_password;
   const [toast, setToast] = useState(null);
   const clearToast = useCallback(() => setToast(null), []);
   const notify = (message) => setToast({ id: Date.now(), tone: 'good', message });
@@ -174,10 +177,15 @@ export default function Security() {
 
     setPwBusy(true);
     try {
-      await authApi.changePassword({ current_password: currentPassword, new_password: newPassword });
+      const res = await authApi.changePassword({ current_password: currentPassword, new_password: newPassword });
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      if (res?.user) setUser(res.user);
+      if (mustChange) {
+        navigate('/app/dashboard', { replace: true });
+        return;
+      }
       notify('Your password has been changed.');
     } catch (err) {
       setPwError(err.message || 'Could not change your password.');
@@ -262,6 +270,17 @@ export default function Security() {
           </div>
         </header>
 
+        {mustChange && (
+          <div className="adm-alert sec-must-change" role="alert">
+            <Icon name="key" size={16} />
+            <span>
+              <strong>Choose your own password to continue.</strong> Your current password was set by an
+              administrator, so they know it. Enter it below as the current password, then pick a new one
+              only you know.
+            </span>
+          </div>
+        )}
+
         <div className="sec-grid">
           <ProfileCard user={user} />
 
@@ -279,7 +298,7 @@ export default function Security() {
               <form onSubmit={changePassword} className="sec-pw-form" noValidate>
                 <div className="sec-pw-fields">
                   <div className="adm-field">
-                    <label htmlFor="sec-current">Current password</label>
+                    <label htmlFor="sec-current">{mustChange ? 'Temporary password' : 'Current password'}</label>
                     <PasswordInput id="sec-current" value={currentPassword} onChange={(v) => { setCurrentPassword(v); setPwError(''); }} autoComplete="current-password" />
                   </div>
                   <div className="adm-field">

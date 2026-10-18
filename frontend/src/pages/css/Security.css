@@ -108,3 +108,9 @@
   .sec-actions .adm-btn { flex: 1; }
   .adm input.sec-code-input { width: 100%; }
 }
+/* Admin-set password: shown above everything until it is replaced */
+.sec-must-change {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin: 0 0 18px; line-height: 1.5;
+}
+.sec-must-change svg { flex: none; margin-top: 3px; }

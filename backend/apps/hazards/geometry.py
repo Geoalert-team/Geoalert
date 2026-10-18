@@ -104,3 +104,36 @@ def main_barangay(geom, barangays):
         if area > best_area:
             best, best_area = b, area
     return best
+
+
+def overlap_shares(geometry, zone_ids):
+    """
+    For each saved zone in zone_ids, the share (0-1) of `geometry` it
+    covers, measured on the spheroid by PostGIS. {zone_id: share}.
+
+    Used to tell a second alert for the same event (most of the new drawing
+    is already covered) from a neighbouring zone that just touches it.
+    """
+    from django.db import connection, transaction
+
+    if not zone_ids:
+        return {}
+    try:
+        # Savepoint: a failed query here must not break the caller's transaction
+        with transaction.atomic(), connection.cursor() as cursor:
+            cursor.execute(
+                """
+                WITH g AS (SELECT ST_MakeValid(ST_GeomFromEWKB(%s)) AS geom)
+                SELECT z.hzzn_id,
+                       ST_Area(ST_Intersection(ST_MakeValid(z.hzzn_polygon), g.geom)::geography)
+                       / NULLIF(ST_Area(g.geom::geography), 0)
+                FROM hazard_zone z, g
+                WHERE z.hzzn_id = ANY(%s::uuid[])
+                """,
+                [bytes(geometry.ewkb), [str(i) for i in zone_ids]],
+            )
+            return {row[0]: min(float(row[1] or 0), 1.0) for row in cursor.fetchall()}
+    except Exception:
+        # Can't measure: treat every overlap as a full one, so the officer
+        # is still asked rather than silently double-alerting.
+        return {i: 1.0 for i in zone_ids}

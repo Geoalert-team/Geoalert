@@ -156,6 +156,8 @@
   font-size: .82rem; line-height: 1.45;
 }
 .pub-dupes ul { margin: 6px 0; padding-left: 18px; }
+/* Half or more of the drawing is already a live zone of the same type */
+.pub-dupes.is-major { border-color: #d9534f; background: #fdecea; color: #7a1f1b; }
 
 /* Shown on the map after an Extreme alert is held for approval */
 .pub-notice {

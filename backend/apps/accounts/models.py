@@ -61,6 +61,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     failed_login_count  = models.IntegerField(default=0, db_column='user_failed_login_count')
     locked_until        = models.DateTimeField(null=True, blank=True, db_column='user_locked_until')
     is_active           = models.BooleanField(default=True, db_column='user_is_active')
+    # Set when an administrator chose the password (new account or reset):
+    # the owner must pick their own before using the account.
+    must_change_password = models.BooleanField(default=False, db_column='user_must_change_password')
     is_staff            = models.BooleanField(default=False, db_column='user_is_staff')
     created_at          = models.DateTimeField(auto_now_add=True, db_column='user_created_at')
 

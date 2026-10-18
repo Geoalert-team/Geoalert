@@ -3,8 +3,17 @@
 export const hazardsApi = {
   types: () => client.get('/api/hazards/types/').then((r) => r.data),
   list: (bbox) => client.get('/api/hazards/', { params: bbox ? { bbox } : {} }).then((r) => r.data),
+  // The map's timed refresh: a background request (doesn't keep a session
+  // alive), with the ETag so the map can skip a refresh that found nothing new.
+  // The browser revalidates with If-None-Match, so an unchanged map costs the
+  // server no queries.
+  listTagged: () =>
+    client.get('/api/hazards/', BACKGROUND).then((r) => ({ data: r.data, etag: r.headers?.etag || null })),
   detail: (id) => client.get(`/api/hazards/${id}/`).then((r) => r.data),
   create: (payload) => client.post('/api/hazards/create/', payload).then((r) => r.data),
+
+  // Who received this zone's latest alert and who has opened it, by barangay
+  receipts: (id) => client.get(`/api/hazards/${id}/receipts/`).then((r) => r.data),
 
   // What a publish would do, without doing it: the clipped shape, the
   // barangays and number of accounts it reaches, overlapping zones of the

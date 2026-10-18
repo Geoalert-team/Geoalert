@@ -52,6 +52,11 @@ client.interceptors.response.use(
     if (err.response?.status === 401 && data?.code === 'session_expired') {
       window.dispatchEvent(new CustomEvent('geoalert:session-expired', { detail: data.error }));
     }
+    // Signed in with a password an administrator set: the route guard
+    // sends the user to change it.
+    if (err.response?.status === 403 && data?.code === 'password_change_required') {
+      window.dispatchEvent(new CustomEvent('geoalert:password-change-required'));
+    }
     return Promise.reject(Object.assign(new Error(errorMessage(err)), { status: err.response?.status, data }));
   }
 );

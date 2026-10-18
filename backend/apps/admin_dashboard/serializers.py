@@ -207,6 +207,7 @@ class UserCreateSerializer(UserWriteSerializer):
         )
         user.full_name = user.compose_full_name() or legacy_name or user.email
         user.set_password(temp_password)
+        user.must_change_password = True  # the admin has seen it
         user.save()
 
         # Attach temp password to instance for the view to return

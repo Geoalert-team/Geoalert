@@ -53,6 +53,8 @@ MIDDLEWARE = [
     'utils.errors.ApiErrorMiddleware',
     # F1: sign out after 30 minutes idle or 12 hours in total
     'utils.session_limits.SessionLimitMiddleware',
+    # F1: an admin-set password must be replaced before the account is used
+    'utils.password_change.PasswordChangeRequiredMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -250,8 +252,14 @@ CORS_ALLOW_CREDENTIALS = True
 # so a tab left open doesn't count as someone working (see session_limits).
 from corsheaders.defaults import default_headers  # noqa: E402
 CORS_ALLOW_HEADERS = (*default_headers, 'x-geoalert-background')
-# Lets the frontend read "your session just ended" on a public page
-CORS_EXPOSE_HEADERS = ['x-geoalert-session-expired']
+# Lets the frontend read "your session just ended" on a public page, and
+# the map's ETag so a refresh that found nothing new skips re-rendering
+CORS_EXPOSE_HEADERS = ['x-geoalert-session-expired', 'etag']
+
+# A reverse proxy in front of Django: trust the address it adds to
+# X-Forwarded-For. Off by default, because without a proxy that header is
+# whatever the client sends. See utils/login_throttle.py.
+BEHIND_PROXY = env.bool('BEHIND_PROXY', default=False)
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')

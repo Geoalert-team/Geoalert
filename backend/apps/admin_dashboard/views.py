@@ -208,6 +208,7 @@ class ResetPasswordView(APIView):
 
         temp_password = generate_temp_password()
         user.set_password(temp_password)
+        user.must_change_password = True  # the admin has seen it
         user.failed_login_count = 0
         user.locked_until = None
         user.save()

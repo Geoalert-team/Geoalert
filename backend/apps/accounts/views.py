@@ -25,6 +25,7 @@ from datetime import timedelta
 
 from apps.accounts.models import User
 from apps.accounts.serializers import LoginSerializer, UserSerializer, TwoFactorCodeSerializer
+from utils import login_throttle
 from utils.audit import log_event
 from utils.session_limits import start_session_clock
 
@@ -73,6 +74,16 @@ def _unknown_email_locked(email):
         pass  # a cache outage must not stop anyone signing in
     return False
 
+def _count_ip_failure(request, email):
+    if login_throttle.record_failure(request):
+        log_event(
+            request, 'IP_THROTTLED', 'app_user', '',
+            f'{login_throttle.MAX_FAILS} failed sign-ins from this address in '
+            f'{login_throttle.WINDOW // 60} minutes (last tried {email}); '
+            f'refused for {login_throttle.BLOCK // 60} minutes',
+        )
+
+
 @ensure_csrf_cookie
 def csrf_view(request):
     return JsonResponse({'message': 'CSRF cookie set'})
@@ -99,10 +110,17 @@ class LoginView(APIView):
         email    = serializer.validated_data['email']
         password = serializer.validated_data['password']
 
+        # One password tried against every account never trips the
+        # per-account lockout; the per-address count does.
+        if login_throttle.is_blocked(request):
+            log_event(request, 'LOGIN_BLOCKED_IP', 'app_user', '', f'{email}: address throttled')
+            return Response(login_throttle.BLOCKED, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             _spend_a_password_check(password)
+            _count_ip_failure(request, email)
             if _unknown_email_locked(email):
                 log_event(request, 'LOGIN_BLOCKED_LOCKED', 'app_user', '', f'{email} (no such account)')
                 return Response(LOCKED, status=status.HTTP_423_LOCKED)
@@ -124,6 +142,7 @@ class LoginView(APIView):
         auth_user = authenticate(request, username=email, password=password)
 
         if auth_user is None:
+            _count_ip_failure(request, email)
             user.failed_login_count += 1
             locked_now = user.failed_login_count >= MAX_FAILED_LOGINS
             if locked_now:
@@ -178,6 +197,8 @@ class TwoFactorVerifyView(APIView):
     authentication_classes = []
 
     def post(self, request):
+        if login_throttle.is_blocked(request):
+            return Response(login_throttle.BLOCKED, status=status.HTTP_429_TOO_MANY_REQUESTS)
         pending_id = request.session.get('pending_2fa_user_id')
         if not pending_id:
             return Response(
@@ -200,6 +221,7 @@ class TwoFactorVerifyView(APIView):
 
         totp = pyotp.TOTP(user.two_factor_secret)
         if not totp.verify(serializer.validated_data['code'], valid_window=1):
+            _count_ip_failure(request, user.email)
             # Six digits is only a million codes, and each accepts the ones
             # either side of it. Without a limit the code step could be
             # guessed through by script once the password was known.
@@ -388,18 +410,25 @@ class ChangePasswordView(APIView):
         # The rules in AUTH_PASSWORD_VALIDATORS: length, not too common, not
         # all digits, not too close to the account's name or email. This
         # endpoint only checked the length before.
+        if new_password == current_password:
+            return Response({'error': 'Choose a password different from your current one.'},
+                            status=status.HTTP_400_BAD_REQUEST)
         try:
             validate_password(new_password, user=request.user)
         except ValidationError as exc:
             return Response({'error': ' '.join(exc.messages)}, status=status.HTTP_400_BAD_REQUEST)
+        was_temporary = request.user.must_change_password
         request.user.set_password(new_password)
+        request.user.must_change_password = False
         request.user.save()
         # Re-login so the session stays valid after the password hash changes
         login(request, request.user)
         start_session_clock(request)
-        log_event(request, 'PASSWORD_CHANGED', 'app_user', request.user.id, request.user.email)
+        log_event(request, 'PASSWORD_CHANGED', 'app_user', request.user.id,
+                  request.user.email + (' (replaced a temporary password)' if was_temporary else ''))
 
-        return Response({'message': 'Password changed successfully.'})
+        return Response({'message': 'Password changed successfully.',
+                         'user': UserSerializer(request.user).data})
 
 
 @method_decorator(csrf_exempt, name='dispatch')
