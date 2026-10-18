@@ -1,19 +1,69 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { barangaysApi } from '../../api/barangaysApi';
 import { severityInfo, hazardIconPath, hazardColor, SEVERITY_RANK } from './hazardInfo';
 
 const PIN_PATH = 'M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7z';
 
+const bySeverity = (a, b) => (SEVERITY_RANK[b.severity] || 0) - (SEVERITY_RANK[a.severity] || 0);
+
+function HazardList({ items, onSelectHazard }) {
+  return (
+    <ul className="pm-brgy-list">
+      {items.map((h) => {
+        const sev = severityInfo(h.severity);
+        return (
+          <li key={h.id}>
+            <button type="button" onClick={() => onSelectHazard(h)}>
+              <span className="pm-brgy-icon" style={{ background: sev.tint, color: hazardColor(h.type) }}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d={hazardIconPath(h.type)} /></svg>
+              </span>
+              <span>
+                <strong>{h.type}</strong>
+                <small>{sev.label}</small>
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 // Barangay-specific hazard information. Uses the same slide-in panel as HazardPanel.
-export default function BarangayPanel({ barangay, hazards, open, onClose, onSelectHazard }) {
+//
+// hazards     the fallback: hazards whose pin is inside the barangay
+// allHazards  every hazard on the map, to look up the ids the server returns
+//
+// The server answers with PostGIS which zones lie entirely inside the
+// barangay (ST_Within) and which cross its border (ST_Intersects). Going by
+// pins missed a zone reaching in from a neighbouring barangay.
+export default function BarangayPanel({ barangay, hazards, allHazards = [], open, onClose, onSelectHazard }) {
   const closeRef = useRef(null);
+  const [split, setSplit] = useState(null); // { inside: [ids], crossing: [ids] } or null
 
   useEffect(() => {
     if (open) closeRef.current?.focus({ preventScroll: true });
   }, [barangay?.id, open]);
 
-  const sorted = [...hazards].sort(
-    (a, b) => (SEVERITY_RANK[b.severity] || 0) - (SEVERITY_RANK[a.severity] || 0),
-  );
+  useEffect(() => {
+    setSplit(null);
+    if (!barangay?.id || !open) return undefined;
+    let live = true;
+    barangaysApi.hazards(barangay.id)
+      .then((data) => { if (live) setSplit(data); })
+      .catch(() => { /* keep the pin-based list */ });
+    return () => { live = false; };
+  }, [barangay?.id, open]);
+
+  const lookup = (ids) => ids
+    .map((id) => allHazards.find((h) => String(h.id) === String(id)))
+    .filter(Boolean)
+    .sort(bySeverity);
+  const inside = split ? lookup(split.inside) : [];
+  const crossing = split ? lookup(split.crossing) : [];
+  const shown = split ? [...inside, ...crossing] : hazards;
+
+  const sorted = [...shown].sort(bySeverity);
   const highest = sorted[0] ? severityInfo(sorted[0].severity) : null;
 
   return (
@@ -51,32 +101,30 @@ export default function BarangayPanel({ barangay, hazards, open, onClose, onSele
           )}
 
           <div className="pm-tabpanel">
-            <h3>{hazards.length === 1 ? '1 active hazard' : `${hazards.length} active hazards`}</h3>
+            <h3>{shown.length === 1 ? '1 active hazard' : `${shown.length} active hazards`}</h3>
 
-            {hazards.length === 0 ? (
+            {shown.length === 0 ? (
               <p className="pm-muted">
                 The DRRMO hasn't published a hazard for this barangay. During heavy rain or
                 other emergencies, check with your barangay officials for the latest conditions.
               </p>
+            ) : split ? (
+              <>
+                {inside.length > 0 && (
+                  <>
+                    <p className="pm-brgy-group">Entirely inside {barangay.name}</p>
+                    <HazardList items={inside} onSelectHazard={onSelectHazard} />
+                  </>
+                )}
+                {crossing.length > 0 && (
+                  <>
+                    <p className="pm-brgy-group">Crossing into {barangay.name} from a neighbouring barangay</p>
+                    <HazardList items={crossing} onSelectHazard={onSelectHazard} />
+                  </>
+                )}
+              </>
             ) : (
-              <ul className="pm-brgy-list">
-                {sorted.map((h) => {
-                  const sev = severityInfo(h.severity);
-                  return (
-                    <li key={h.id}>
-                      <button type="button" onClick={() => onSelectHazard(h)}>
-                        <span className="pm-brgy-icon" style={{ background: sev.tint, color: hazardColor(h.type) }}>
-                          <svg viewBox="0 0 24 24" aria-hidden="true"><path d={hazardIconPath(h.type)} /></svg>
-                        </span>
-                        <span>
-                          <strong>{h.type}</strong>
-                          <small>{sev.label}</small>
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+              <HazardList items={sorted} onSelectHazard={onSelectHazard} />
             )}
           </div>
         </div>

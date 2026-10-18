@@ -234,6 +234,9 @@ export default function PublicMap() {
   // Publishing from a validated incident report: its type, description and
   // id, so the form starts filled in and the report is linked to the zone.
   const [publishPrefill, setPublishPrefill] = useState(null);
+  // The shape as the server will save it (cut at the city boundary), shown
+  // while the officer checks the summary before sending
+  const [previewShape, setPreviewShape] = useState(null);
   // Reshaping a live zone ('reshaping' mode): the zone, and earlier versions
   // of the outline so a change can be undone one step at a time.
   const [reshapeZone, setReshapeZone] = useState(null);
@@ -615,6 +618,7 @@ export default function PublicMap() {
     setPublishMode('off');
     setDraftPoints([]);
     setPublishPrefill(null);
+    setPreviewShape(null);
     setReshapeZone(null);
     setDraftHistory([]);
   }
@@ -836,6 +840,16 @@ export default function PublicMap() {
 
           {/* Outline being drawn while a hazard is published. Not
               interactive, so taps on it pass through and add corners. */}
+          {/* What will actually be saved: the outline cut at the city boundary */}
+          {previewShape && (
+            <GeoJSON
+              key={JSON.stringify(previewShape).length}
+              data={previewShape}
+              interactive={false}
+              style={{ color: '#0b6b3a', weight: 2, fillColor: '#1f9d55', fillOpacity: 0.35 }}
+            />
+          )}
+
           {draftPoints.length >= MIN_CORNERS && (
             <Polygon
               positions={draftPoints}
@@ -1136,12 +1150,14 @@ export default function PublicMap() {
             onCancel={cancelPublish}
             onPublished={handlePublished}
             prefill={publishPrefill}
+            onPreviewShape={setPreviewShape}
           />
         )}
 
         <BarangayPanel
           barangay={selectedBarangay}
           hazards={barangayHazards}
+          allHazards={hazards}
           open={panelOpen && !!selectedBarangay}
           onClose={() => setPanelOpen(false)}
           onSelectHazard={selectHazard}

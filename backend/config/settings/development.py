@@ -1,6 +1,16 @@
 from .base import *
 import os
-os.environ.setdefault('PROJ_LIB', r'C:\...\venv\Lib\site-packages\osgeo\data\proj')
+from pathlib import Path
+
+# GDAL needs PROJ's data files to convert between coordinate systems. This
+# pointed at a placeholder path ("C:\\...\\venv"), so any conversion failed
+# with "Cannot find proj.db". Use the copy that ships with the GDAL wheel in
+# this project's venv, wherever the project lives; an existing PROJ_LIB in
+# the environment still wins.
+_proj = Path(BASE_DIR) / 'venv' / 'Lib' / 'site-packages' / 'osgeo' / 'data' / 'proj'
+if _proj.is_dir():
+    os.environ.setdefault('PROJ_LIB', str(_proj))
+    os.environ.setdefault('PROJ_DATA', str(_proj))
 
 DEBUG = True
 

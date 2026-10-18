@@ -223,3 +223,9 @@
 .pm-guide-remove:hover { background: #fcebeb; color: #a12f2f; }
 .pm-guide-remove svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
 .pm-guide-add { width: 100%; }
+/* Barangay panel: zones entirely inside vs crossing the border */
+.pm-brgy-group {
+  margin: 14px 0 6px;
+  font-size: .78rem; font-weight: 700; letter-spacing: .02em;
+  color: var(--pm-muted, #5b6678);
+}

@@ -58,6 +58,8 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
         )}
         <dt>Barangays</dt>
         <dd>{places}</dd>
+        <dt>Shape</dt>
+        <dd>The green area on the map is what will be saved.</dd>
         <dt>Notifies</dt>
         <dd><strong>{plural(preview.recipients, 'account')}</strong></dd>
       </dl>
@@ -74,6 +76,12 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
                 {d.activated_at ? `, published ${timeOf(d.activated_at)}` : ''}
                 {d.published_by ? ` by ${d.published_by}` : ''}
                 {d.status === 'Awaiting_Approval' ? ' (waiting for approval)' : ''}
+                {d.status === 'Active' && (
+                  <>
+                    {' '}
+                    <a href={`/map?zone=${d.id}`} target="_blank" rel="noreferrer">Show it</a>
+                  </>
+                )}
               </li>
             ))}
           </ul>
@@ -138,10 +146,12 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
  *   onPublished(zone)
  *   prefill           { reportId, typeName, description } when publishing
  *                     from a validated incident report, or null
+ *   onPreviewShape(g) the GeoJSON the server will save, for the map to
+ *                     show during the check; null when there is none
  */
 export default function PublishHazardPanel({
   points, onUndo, onClear, barangay, outsideCorners = 0, boundariesReady = true,
-  onCancel, onPublished, prefill = null,
+  onCancel, onPublished, prefill = null, onPreviewShape,
 }) {
   const [types, setTypes] = useState([]);
   const [hazardTypeId, setHazardTypeId] = useState('');
@@ -230,6 +240,11 @@ export default function PublishHazardPanel({
       setBusy(false);
     }
   }
+
+  // Show the map what will really be saved, cut at the city boundary
+  useEffect(() => {
+    onPreviewShape?.(preview?.geometry || null);
+  }, [preview]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Anything changed after the check makes the summary stale
   useEffect(() => {
