@@ -15,9 +15,13 @@ import { hazardIconPath, hazardColor, SEVERITY } from './hazardInfo';
  *   onNone()   hide every layer
  *   failed     true when the counts couldn't be loaded
  *   onRetry()
+ *   showOutlines        whether each zone's drawn outline is shown
+ *   onToggleOutlines()
  */
 
-export default function LayerControl({ types, active, onToggle, onAll, onNone, failed, onRetry }) {
+export default function LayerControl({
+  types, active, onToggle, onAll, onNone, failed, onRetry, showOutlines, onToggleOutlines,
+}) {
   const allOn = types.length > 0 && types.every((t) => active.has(t.name));
   const noneOn = active.size === 0;
 
@@ -85,6 +89,21 @@ export default function LayerControl({ types, active, onToggle, onAll, onNone, f
 
       {noneOn && (
         <p className="pm-layers-note">Every layer is hidden. Tick one to see hazards again.</p>
+      )}
+
+      {onToggleOutlines && (
+        <div className="pm-layers-display">
+          <input
+            id="pm-layer-outlines"
+            type="checkbox"
+            checked={!!showOutlines}
+            onChange={onToggleOutlines}
+          />
+          <label htmlFor="pm-layer-outlines">
+            Zone outlines
+            <small>The line around each active hazard's drawn area</small>
+          </label>
+        </div>
       )}
       {failed && (
         <button type="button" className="pm-layers-retry" onClick={onRetry}>

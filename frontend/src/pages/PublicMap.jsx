@@ -391,6 +391,26 @@ export default function PublicMap() {
     [hazards, activeTypes],
   );
 
+  // Whether the zone outlines are drawn. Remembered in this browser only;
+  // the shading inside each zone stays either way.
+  const [showOutlines, setShowOutlines] = useState(() => {
+    try {
+      return localStorage.getItem('geoalert-zone-outlines') !== 'off';
+    } catch {
+      return true;
+    }
+  });
+  const toggleOutlines = useCallback(() => {
+    setShowOutlines((on) => {
+      try {
+        localStorage.setItem('geoalert-zone-outlines', on ? 'off' : 'on');
+      } catch {
+        // storage blocked: the choice lasts until the page is closed
+      }
+      return !on;
+    });
+  }, []);
+
   // Outlines of the visible zones, as one GeoJSON layer
   const zoneOutlines = useMemo(() => {
     const features = visibleHazards.map((h) => h.feature).filter((f) => f?.geometry);
@@ -887,7 +907,7 @@ export default function PublicMap() {
               interactive, so taps on it pass through and add corners. */}
           {/* The exact shape of every visible zone, drawn over its shading.
               Not interactive, so taps still reach the pins and barangays. */}
-          {zoneOutlines && (
+          {showOutlines && zoneOutlines && (
             <GeoJSON
               key={zoneOutlinesKey}
               data={zoneOutlines}
@@ -1060,6 +1080,8 @@ export default function PublicMap() {
               onNone={() => setActiveTypes(new Set())}
               failed={layersFailed}
               onRetry={loadLayers}
+              showOutlines={showOutlines}
+              onToggleOutlines={toggleOutlines}
             />
           )}
         </div>

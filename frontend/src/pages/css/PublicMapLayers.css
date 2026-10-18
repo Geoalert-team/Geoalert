@@ -151,6 +151,24 @@
   color: #5b6878;
 }
 
+/* Display options below the hazard types: zone outlines on or off */
+.pm-layers-display {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin-top: 8px; padding: 9px 8px 2px;
+  border-top: 1px solid #e6ebf2;
+}
+.pm-layers-display input[type='checkbox'] {
+  width: 17px; height: 17px; flex-shrink: 0; margin: 2px 0 0;
+  accent-color: #1c2e4a; cursor: pointer;
+}
+.pm-layers-display label {
+  flex: 1; font-size: .9rem; font-weight: 600; color: #1c2e4a; cursor: pointer;
+}
+.pm-layers-display small {
+  display: block; margin-top: 2px;
+  font-size: .76rem; font-weight: 400; color: #5b6878;
+}
+
 .pm-layers-retry {
   margin-top: 10px; padding: 6px 12px;
   border: 1px solid #dde3ec; border-radius: 999px;
