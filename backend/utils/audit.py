@@ -16,7 +16,7 @@ def client_ip(request):
     return request.META.get('REMOTE_ADDR')
 
 
-def log_event(request, action, table='', target_id='', details=''):
+def log_event(request, action, table='', target_id='', details='', user=None):
     """
     Write one audit row.
 
@@ -25,8 +25,12 @@ def log_event(request, action, table='', target_id='', details=''):
     than recording that it happened.
     """
     try:
+        # Sign-in events happen before (or after) the request has a user,
+        # so those callers name the account themselves.
+        if user is None and getattr(request, 'user', None) is not None and request.user.is_authenticated:
+            user = request.user
         AuditLog.objects.create(
-            user=request.user if request.user.is_authenticated else None,
+            user=user,
             action=action,
             target_table=table,
             target_id=str(target_id),

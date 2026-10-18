@@ -1,4 +1,4 @@
-import client from './axiosClient';
+import client, { BACKGROUND } from './axiosClient';
 
 // Wraps the three endpoints in apps/notifications/urls.py.
 // The backend scopes everything to request.user, so no email/scope params.
@@ -15,6 +15,8 @@ export const notificationsApi = {
 
     const res = await client.get('/api/notifications/', {
       params: Object.keys(params).length ? params : undefined,
+      // Polled on a timer; see BACKGROUND in axiosClient
+      ...BACKGROUND,
     });
     return res.data;
   },

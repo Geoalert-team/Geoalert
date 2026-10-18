@@ -22,13 +22,36 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
+// A timed poll (the bell, the approval card) isn't someone using the app,
+// so it mustn't keep an idle session alive. The backend's 30-minute idle
+// limit ignores requests carrying this header.
+export const BACKGROUND = { headers: { 'X-GeoAlert-Background': '1' } };
+
 // Normalize errors so callers can just do `catch (err) { err.message }`.
 // errorMessage() turns whatever came back (a server message, a validation
 // error, an HTML error page, or nothing at all) into a sentence to show.
+const EXPIRED_MESSAGE = {
+  idle: 'You were signed out after 30 minutes without activity. Sign in again to continue.',
+  total: 'You were signed out because 12 hours have passed since you signed in. Sign in again to continue.',
+};
+
 client.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    // A public page (the map) still loads after the session ends, so the
+    // server says so in a header rather than failing the request.
+    const ended = res.headers?.['x-geoalert-session-expired'];
+    if (ended) {
+      window.dispatchEvent(new CustomEvent('geoalert:session-expired', { detail: EXPIRED_MESSAGE[ended] }));
+    }
+    return res;
+  },
   (err) => {
     const data = err.response?.data;
+    // Signed out for being idle or past the 12-hour limit: tell the app, so
+    // it can go to the login page with the reason instead of failing quietly.
+    if (err.response?.status === 401 && data?.code === 'session_expired') {
+      window.dispatchEvent(new CustomEvent('geoalert:session-expired', { detail: data.error }));
+    }
     return Promise.reject(Object.assign(new Error(errorMessage(err)), { status: err.response?.status, data }));
   }
 );

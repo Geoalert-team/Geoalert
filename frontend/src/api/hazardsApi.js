@@ -1,4 +1,4 @@
-﻿import client from './axiosClient';
+﻿import client, { BACKGROUND } from './axiosClient';
 
 export const hazardsApi = {
   types: () => client.get('/api/hazards/types/').then((r) => r.data),
@@ -13,7 +13,7 @@ export const hazardsApi = {
 
   // Extreme alerts waiting for a second officer, and approving one (sends it).
   // To refuse one, withdraw it with retract() and a reason.
-  awaiting: () => client.get('/api/hazards/awaiting/').then((r) => r.data),
+  awaiting: () => client.get('/api/hazards/awaiting/', BACKGROUND).then((r) => r.data),
   approve: (id) => client.post(`/api/hazards/${id}/approve/`).then((r) => r.data),
 
   // DRRMO's answer to a dispute: checked, and the zone stays. The note shows

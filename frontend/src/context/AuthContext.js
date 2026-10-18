@@ -20,6 +20,22 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
 
+  // The backend ends a session after 30 minutes idle or 12 hours in total.
+  // Drop the user here so the route guard sends them to the login page,
+  // and leave the reason for the login page to show.
+  useEffect(() => {
+    function onExpired(e) {
+      try {
+        sessionStorage.setItem('geoalert-signout-reason', e.detail || 'Your session ended. Sign in again.');
+      } catch {
+        // storage blocked; the login page just won't say why
+      }
+      setUser(null);
+    }
+    window.addEventListener('geoalert:session-expired', onExpired);
+    return () => window.removeEventListener('geoalert:session-expired', onExpired);
+  }, []);
+
   useEffect(() => {
     (async () => {
       await primeCsrf();

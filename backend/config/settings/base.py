@@ -51,6 +51,8 @@ MIDDLEWARE = [
     # Turns an unhandled error on /api/ into a short JSON message instead of
     # a 280 KB HTML debug page the frontend can only call "status code 500".
     'utils.errors.ApiErrorMiddleware',
+    # F1: sign out after 30 minutes idle or 12 hours in total
+    'utils.session_limits.SessionLimitMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -138,6 +140,8 @@ CACHES = {
     }
 }
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+# The cookie never outlives the 12-hour cap in utils/session_limits.py
+SESSION_COOKIE_AGE = 12 * 60 * 60
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -242,6 +246,12 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = env.list('CORS_ORIGIN', default=['http://localhost:3000'])
 CORS_ALLOW_CREDENTIALS = True
+# The bell and the approval card mark their timed polls with this header,
+# so a tab left open doesn't count as someone working (see session_limits).
+from corsheaders.defaults import default_headers  # noqa: E402
+CORS_ALLOW_HEADERS = (*default_headers, 'x-geoalert-background')
+# Lets the frontend read "your session just ended" on a public page
+CORS_EXPOSE_HEADERS = ['x-geoalert-session-expired']
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')

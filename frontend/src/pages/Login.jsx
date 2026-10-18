@@ -13,7 +13,16 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [code, setCode] = useState('');
   const [awaiting2fa, setAwaiting2fa] = useState(false);
-  const [error, setError] = useState('');
+  // Why the last session ended, if it ended on its own (idle or 12 hours)
+  const [error, setError] = useState(() => {
+    try {
+      const reason = sessionStorage.getItem('geoalert-signout-reason');
+      sessionStorage.removeItem('geoalert-signout-reason');
+      return reason || '';
+    } catch {
+      return '';
+    }
+  });
   const [busy, setBusy] = useState(false);
 
   // Step 1: email + password
@@ -47,7 +56,20 @@ export default function Login() {
       await verifyLoginCode(code);
       navigate('/app/dashboard');
     } catch (err) {
-      setError(err.message || 'Incorrect code');
+      // After 5 wrong codes the server cancels this login: back to the
+      // password step, since the code step no longer exists.
+      if (err.status === 429) {
+        setAwaiting2fa(false);
+        setCode('');
+        setPassword('');
+        setError(err.message);
+        return;
+      }
+      const left = err.data?.tries_left;
+      setError(
+        (err.message || 'Incorrect code')
+        + (typeof left === 'number' ? ` ${left} ${left === 1 ? 'try' : 'tries'} left.` : ''),
+      );
     } finally {
       setBusy(false);
     }
