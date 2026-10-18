@@ -141,6 +141,17 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
 AUTH_USER_MODEL = 'accounts.User'
 
+# F1: passwords are hashed with bcrypt. The first hasher is used for every
+# new or changed password. The PBKDF2 one stays listed only so accounts
+# created before this change can still sign in; Django re-hashes each of
+# those with bcrypt the next time its password is entered correctly.
+# BCryptSHA256 runs the password through SHA-256 first, so passwords
+# longer than bcrypt's 72-byte limit aren't silently cut short.
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+]
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
