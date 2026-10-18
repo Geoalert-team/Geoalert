@@ -83,11 +83,64 @@ def link_report(request, zone):
         pass  # a bad report id must not stop the alert going out
 
 
+def parse_bbox(value):
+    """
+    ?bbox=xmin,ymin,xmax,ymax (longitude, latitude, WGS84) as a Polygon.
+    Raises ValueError with a sentence the caller can show.
+    """
+    try:
+        xmin, ymin, xmax, ymax = [float(x) for x in value.split(',')]
+    except ValueError:
+        raise ValueError('bbox must be four numbers: xmin,ymin,xmax,ymax (longitude, latitude).')
+    if xmin >= xmax or ymin >= ymax:
+        raise ValueError('bbox must have xmin below xmax and ymin below ymax.')
+    if not (-180 <= xmin <= 180 and -180 <= xmax <= 180 and -90 <= ymin <= 90 and -90 <= ymax <= 90):
+        raise ValueError('bbox must be longitude and latitude in degrees.')
+    box = Polygon.from_bbox((xmin, ymin, xmax, ymax))
+    box.srid = 4326
+    return box
+
+
+def filter_by_bbox(zones, request):
+    """
+    F3.3: hazard zone query by bounding box, with ST_Within and ST_Intersects.
+
+    ?bbox=xmin,ymin,xmax,ymax           every zone at least partly in the box
+                                        (ST_Intersects), each marked by
+                                        ST_Within as wholly or partly in view
+    ?bbox=...&within=true               only zones entirely inside the box
+                                        (ST_Within)
+
+    The default keeps zones that are only partly on screen: a map that
+    dropped a flood zone because its edge ran off the side would hide a
+    hazard the user is looking at. ST_Within is what tells the two apart,
+    and the strict form is there for anything that wants only zones it can
+    see in full, such as a printed map of one area.
+
+    Returns (zones, within_ids, error_response). within_ids is None when no
+    bbox was given; error_response is set when the bbox is malformed, which
+    used to be ignored silently and return every zone.
+    """
+    value = request.query_params.get('bbox')
+    if not value:
+        return zones, None, None
+    try:
+        box = parse_bbox(value)
+    except ValueError as exc:
+        return zones, None, Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    within_ids = set(zones.filter(geometry__within=box).values_list('id', flat=True))   # ST_Within
+    if (request.query_params.get('within') or '').lower() in ('1', 'true', 'yes'):
+        return zones.filter(id__in=within_ids), within_ids, None
+    return zones.filter(geometry__intersects=box), within_ids, None                     # ST_Intersects
+
+
 class HazardZoneListView(APIView):
     """
     GET /api/hazards/
     Returns all active hazard zones as GeoJSON FeatureCollection.
-    Supports optional bbox filter: ?bbox=xmin,ymin,xmax,ymax
+    Supports optional bbox filter: ?bbox=xmin,ymin,xmax,ymax, and
+    &within=true for only zones entirely inside it. See filter_by_bbox.
     Public access — no login required.
     """
     permission_classes = [AllowAny]
@@ -109,17 +162,11 @@ class HazardZoneListView(APIView):
             zones = zones.filter(barangay_id=barangay)
 
         # Viewport bounding box filter for map pan/zoom
-        bbox = request.query_params.get('bbox')
-        if bbox:
-            try:
-                xmin, ymin, xmax, ymax = [float(x) for x in bbox.split(',')]
-                bbox_polygon = Polygon.from_bbox((xmin, ymin, xmax, ymax))
-                bbox_polygon.srid = 4326
-                zones = zones.filter(geometry__intersects=bbox_polygon)
-            except (ValueError, Exception):
-                pass  # ignore malformed bbox
+        zones, within_ids, error = filter_by_bbox(zones, request)
+        if error:
+            return error
 
-        serializer = HazardZoneGeoSerializer(zones, many=True)
+        serializer = HazardZoneGeoSerializer(zones, many=True, context={'within_ids': within_ids})
         return Response(serializer.data)
 
 
@@ -842,18 +889,12 @@ class HazardUnifiedView(APIView):
         if severity:
             zones = zones.filter(severity=severity)
 
-        # Filter by bbox if specified
-        bbox = request.query_params.get('bbox')
-        if bbox:
-            try:
-                xmin, ymin, xmax, ymax = [float(x) for x in bbox.split(',')]
-                bbox_polygon = Polygon.from_bbox((xmin, ymin, xmax, ymax))
-                bbox_polygon.srid = 4326
-                zones = zones.filter(geometry__intersects=bbox_polygon)
-            except (ValueError, Exception):
-                pass
+        # Filter by bbox if specified (same rules as /api/hazards/)
+        zones, within_ids, error = filter_by_bbox(zones, request)
+        if error:
+            return error
 
-        serializer = HazardZoneGeoSerializer(zones, many=True)
+        serializer = HazardZoneGeoSerializer(zones, many=True, context={'within_ids': within_ids})
         return Response({
             'type': 'FeatureCollection',
             'count': zones.count(),

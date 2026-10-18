@@ -47,6 +47,15 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
     )
     # As drawn, before cutting at the city boundary: what reshaping starts from
     outline = GeometryField(read_only=True)
+    # With ?bbox=: 'whole' when the zone lies entirely inside the box
+    # (ST_Within), 'partial' when it crosses the edge. Null without a bbox.
+    in_view = serializers.SerializerMethodField()
+
+    def get_in_view(self, obj):
+        within = self.context.get('within_ids')
+        if within is None:
+            return None
+        return 'whole' if obj.id in within else 'partial'
 
     class Meta:
         model       = HazardZone
@@ -67,6 +76,7 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
             'outline',
             # A raise to Extreme waiting for a second officer
             'pending_severity', 'pending_at',
+            'in_view',
         ]
 
 
