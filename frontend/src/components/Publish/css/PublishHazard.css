@@ -194,3 +194,14 @@
   .pm-stage.has-pub-panel .leaflet-bottom.leaflet-right .leaflet-control-scale { display: none; }
   .pm-stage.has-pub-panel .pm-basemap { display: none; }
 }
+
+/* How to shape the zone. Only rendered when a hazard type offers a choice. */
+.pub-methods { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pub-method {
+  padding: 5px 10px; border: 1px solid var(--adm-line-strong, #c9d4e3); border-radius: 9px;
+  background: var(--adm-surface, #fff); font: inherit; font-size: .78rem; font-weight: 700;
+  color: var(--db-heading); cursor: pointer; transition: border-color .15s ease;
+}
+.pub-method:hover:not(:disabled) { border-color: var(--db-navy); }
+.pub-method.is-active { border-width: 2px; border-color: var(--db-navy); }
+.pub-method:disabled { opacity: .45; cursor: default; }

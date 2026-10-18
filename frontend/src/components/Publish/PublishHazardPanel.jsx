@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { hazardsApi } from '../../api/hazardsApi';
 import { MIN_CORNERS, areaSqM, formatArea, pointsToPolygon } from '../../utils/drawnZone';
 import { SEVERITY } from '../Map/hazardInfo';
+import { HAND, defaultMethodFor, methodByKey, methodsFor } from './shapeMethods';
 import './css/PublishHazard.css';
 
 const SEVERITY_ORDER = ['Green', 'Orange', 'Red'];
@@ -168,10 +169,21 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
  *                     from a validated incident report, or null
  *   onPreviewShape(g) the GeoJSON the server will save, for the map to
  *                     show during the check; null when there is none
+ *   onReplacePoints(pts)
+ *                     replace the whole outline at once. Hand drawing never
+ *                     uses this; a generating method (slide path, flood
+ *                     fill) hands over its finished corners this way.
+ *   onMethodChange(key)
+ *                     which shaping method is active, so the map can route
+ *                     taps. Hand drawing treats a tap as a corner; a
+ *                     generating method treats it as a seed to grow from.
+ *                     That routing is the one thing the first generating
+ *                     method still has to add — it isn't guessed at here.
  */
 export default function PublishHazardPanel({
   points, onUndo, onClear, barangay, outsideCorners = 0, boundariesReady = true,
   onCancel, onPublished, prefill = null, onPreviewShape,
+  onReplacePoints, onMethodChange,
 }) {
   const [types, setTypes] = useState([]);
   const [hazardTypeId, setHazardTypeId] = useState('');
@@ -196,6 +208,33 @@ export default function PublishHazardPanel({
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- the report is fixed when the panel opens
 
   const typeName = types.find((t) => String(t.id) === String(hazardTypeId))?.name;
+
+  // Which shaping method is in use. Each hazard type opens on its own best
+  // method; hand drawing is always available as the failsafe.
+  const [method, setMethod] = useState(HAND);
+  const choices = methodsFor(typeName);
+  const active = methodByKey(method);
+
+  // A method that isn't offered for the newly picked hazard type would
+  // otherwise stay selected and silently do nothing.
+  useEffect(() => {
+    setMethod((current) => (
+      choices.some((m) => m.key === current) ? current : defaultMethodFor(typeName)
+    ));
+  }, [typeName]); // eslint-disable-line react-hooks/exhaustive-deps -- choices derives from typeName
+
+  useEffect(() => {
+    onMethodChange?.(method);
+  }, [method]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Switching method throws away a part-drawn outline, so ask first.
+  function pickMethod(key) {
+    if (key === method) return;
+    if (points.length && !window.confirm('Start the outline again with this method?')) return;
+    if (points.length) onClear();
+    setMethod(key);
+  }
+
   const typical = TYPICAL_SIZE[typeName];
   const corners = points.length;
   const closed = corners >= MIN_CORNERS;
@@ -308,11 +347,25 @@ export default function PublishHazardPanel({
               ? <><strong>{formatArea(area)}</strong> outlined with {corners} corners</>
               : <>Tap the map to add corners: <strong>{corners} of {MIN_CORNERS}</strong></>}
           </p>
-          <p className="pub-draw-help">
-            Follow the edge of the affected area. Drag a corner to move it.
-            Corners near a barangay line or the coast snap onto it; hold Alt
-            to place one freely.
-          </p>
+          {/* Only worth showing once a hazard type has a choice to make. With
+              hand drawing alone there is nothing to pick. */}
+          {choices.length > 1 && (
+            <div className="pub-methods" role="group" aria-label="How to shape the zone">
+              {choices.map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  className={`pub-method ${method === m.key ? 'is-active' : ''}`}
+                  aria-pressed={method === m.key}
+                  onClick={() => pickMethod(m.key)}
+                  disabled={busy}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <p className="pub-draw-help">{active.help}</p>
           <div className="pub-draw-tools">
             <button type="button" className="pub-tool" onClick={onUndo} disabled={!corners || busy}>
               Undo corner
@@ -391,9 +444,16 @@ export default function PublishHazardPanel({
           />
         </label>
 
+        {/* Extreme alerts are held for a second officer when there is one to
+            ask, so promising the map "straight away" would be wrong here.
+            Whether a hold actually applies depends on who else is on duty,
+            which only the server knows — the check step says for certain. */}
         <p className="db-callout" style={{ margin: '4px 0 12px' }}>
-          Publishing puts this on the public map straight away and notifies
-          every other account.
+          {severity === 'Red'
+            ? 'Extreme alerts usually wait for a second officer before going '
+              + 'out. The next step says for certain, and who it reaches.'
+            : 'Publishing puts this on the public map straight away and '
+              + 'notifies every other account.'}
         </p>
 
         {error && <p className="db-error" role="alert">{error}</p>}

@@ -62,8 +62,3 @@ to test the login endpoint
 or on browser
 
 
-
---  git hub
-git add . or specific file
-git commit - m ""
-git push -u origin develop

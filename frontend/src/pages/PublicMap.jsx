@@ -239,6 +239,11 @@ export default function PublicMap() {
   const { canPublish } = useAuth();
   const [publishMode, setPublishMode] = useState('off');
   const [draftPoints, setDraftPoints] = useState([]);
+  // Which shaping method the publish panel is on. Hand drawing treats a tap
+  // as a corner, which is what the map does below. A generating method will
+  // treat a tap as a seed instead, and this is what it reads to tell them
+  // apart — nothing branches on it yet.
+  const [draftMethod, setDraftMethod] = useState('hand');
   const [publishNotice, setPublishNotice] = useState('');
   // Publishing from a validated incident report: its type, description and
   // id, so the form starts filled in and the report is linked to the zone.
@@ -731,7 +736,13 @@ export default function PublicMap() {
       return;
     }
     if (publishMode === 'placing' || publishMode === 'editing') {
-      setDraftPoints((pts) => [...pts, [latlng.lat, latlng.lng]]);
+      // Hand drawing is the only method that reads a tap as a corner. A
+      // generating method takes the tap as a seed and hands back a finished
+      // outline through onReplacePoints, so it must not collect corners
+      // here. Hand is the only method today, so this always passes.
+      if (draftMethod === 'hand') {
+        setDraftPoints((pts) => [...pts, [latlng.lat, latlng.lng]]);
+      }
       setPublishMode('editing');
       return;
     }
@@ -1244,6 +1255,8 @@ export default function PublicMap() {
             onPublished={handlePublished}
             prefill={publishPrefill}
             onPreviewShape={setPreviewShape}
+            onReplacePoints={changeDraft}
+            onMethodChange={setDraftMethod}
           />
         )}
 
