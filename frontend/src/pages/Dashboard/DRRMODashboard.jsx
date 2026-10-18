@@ -4,6 +4,7 @@ import PublicNavbar from '../../components/Navbar/PublicNavbar';
 import { hazardsApi } from '../../api/hazardsApi';
 import { reportsApi } from '../../api/reportApi';
 import { hazardColor, hazardIconPath } from '../../components/Map/hazardInfo';
+import ReportLocationMap from '../../components/Map/ReportLocationMap';
 import { Icon, Modal, Toast, fieldErrors, formatDateTime, timeAgo } from './admin/adminShared';
 import { ReportPhotos } from './reportShared';
 import ActiveZonesCard from '../../components/Resolve/ActiveZonesCard';
@@ -182,6 +183,15 @@ function ReportDetail({ report, onClose, onReview }) {
           {/* The row's thumbnail cannot be a link, so this is where an
               officer opens the photo full size to judge it before validating. */}
           <ReportPhotos report={report} alt={`Photo sent with the ${typeName(report)} report`} />
+        </section>
+
+        {/* The reporter could drop a pin where they saw it. Showing it here
+            is what makes the pin worth collecting: it is the difference
+            between "a flood in Poblacion" and the street it is on, and
+            several pinned reports are what a hazard zone gets drawn around. */}
+        <section className="drm-detail-section">
+          <h3>Where it was seen</h3>
+          <ReportLocationMap latitude={report.latitude} longitude={report.longitude} />
         </section>
 
         <section className="drm-detail-section">

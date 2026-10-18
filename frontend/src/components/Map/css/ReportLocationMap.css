@@ -1,0 +1,31 @@
+/* Where a report said the hazard was, shown read-only while an officer
+   reviews it. Prefix: rlm- */
+
+.rlm { display: flex; flex-direction: column; gap: 6px; }
+
+.rlm-map {
+  height: 220px;
+  border: 1px solid var(--adm-line, #ccd5e2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Leaflet puts its own panes above modal content without this */
+.rlm-map .leaflet-container { z-index: 0; }
+
+.rlm-coords {
+  margin: 0;
+  font-size: .8rem;
+  color: var(--db-soft, #5b6678);
+}
+
+.rlm-none {
+  margin: 0;
+  font-size: .86rem;
+  color: var(--db-soft, #5b6678);
+  font-style: italic;
+}
+
+@media (max-width: 560px) {
+  .rlm-map { height: 170px; }
+}
