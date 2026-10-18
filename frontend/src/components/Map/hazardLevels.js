@@ -8,12 +8,18 @@
 //    record stay clear. History only shades the map; it never creates a
 //    hazard, which stays the DRRMO's call.
 //
-// 2. Live hazards. Each published hazard spreads over its own drawn zone, only
-//    as far as the terrain lets it: a flood creeps along low cells and stops at
-//    higher ground, a landslide follows the slope, a fire follows the built-up
-//    block. Inside that spread the level is raised by at least one step, so an
-//    active event stands out from the standing risk around it. Pins close
-//    together add up, so a cluster of reports turns the area red.
+// 2. Live hazards. Each published hazard is shaded inside the polygon the
+//    officer drew, and nowhere outside it. Within the polygon the terrain
+//    still sets how strong it is: a flood is strongest on low cells, a
+//    landslide on steep ones, a fire in the built-up block. Every cell of the
+//    polygon gets at least the level it was published at, because the
+//    officer declared the whole area affected at that severity. Inside, the level is raised by at least one step,
+//    so an active event stands out from the standing risk around it. Zones
+//    that overlap add up, so a cluster of reports turns the area red.
+//
+//    It used to spread outward from the pin over a radius worked out from
+//    the zone's size, so every zone showed as a round blob whatever shape
+//    was drawn.
 
 import { useEffect, useState } from 'react';
 import { hazardKey } from './hazardInfo';
@@ -218,12 +224,91 @@ function spreadFrom(position, type, weight, reachM, cls, width, height, project,
   }
 }
 
-// A live report: overlapping pins combine as 1 - product(1 - strength), capped at 1
+// Cells of the raster inside a zone's drawn polygon, as a Set of cell
+// indexes, or null when the zone has no polygon. Rasterised on a canvas
+// sized to the polygon's own box, not the whole city, so many zones stay cheap.
+function zoneCells(feature, project, width, height) {
+  const g = feature?.geometry;
+  const polys = g?.type === 'Polygon' ? [g.coordinates] : g?.type === 'MultiPolygon' ? g.coordinates : [];
+  if (!polys.length) return null;
+
+  const rings = polys.map((rings_) => rings_.map((ring) => ring.map(([lng, lat]) => project(lat, lng))));
+  let minX = Infinity; let minY = Infinity; let maxX = -Infinity; let maxY = -Infinity;
+  rings.forEach((poly) => poly[0].forEach(([x, y]) => {
+    minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+  }));
+  const x0 = Math.max(0, Math.floor(minX));
+  const y0 = Math.max(0, Math.floor(minY));
+  const x1 = Math.min(width, Math.ceil(maxX) + 1);
+  const y1 = Math.min(height, Math.ceil(maxY) + 1);
+  if (x1 <= x0 || y1 <= y0) return new Set();
+
+  const canvas = document.createElement('canvas');
+  canvas.width = x1 - x0;
+  canvas.height = y1 - y0;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  rings.forEach((poly) => poly.forEach((ring) => {
+    ring.forEach(([x, y], k) => (k ? ctx.lineTo(x - x0, y - y0) : ctx.moveTo(x - x0, y - y0)));
+    ctx.closePath();
+  }));
+  ctx.fill('evenodd'); // holes stay empty
+  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+  const cells = new Set();
+  for (let y = 0; y < canvas.height; y += 1) {
+    for (let x = 0; x < canvas.width; x += 1) {
+      if (data[(y * canvas.width + x) * 4 + 3] > 127) cells.add((y + y0) * width + (x + x0));
+    }
+  }
+  // A zone smaller than one cell still shows as a dot
+  if (!cells.size) {
+    const [cx, cy] = [Math.floor((minX + maxX) / 2), Math.floor((minY + maxY) / 2)];
+    if (cx >= 0 && cy >= 0 && cx < width && cy < height) cells.add(cy * width + cx);
+  }
+  return cells;
+}
+
+// Lowest strength anywhere inside a drawn zone: the level the officer
+// published it at (Low, Moderate or Extreme->High), so the whole zone shows
+// at least that colour, matching its pin and outline. The terrain can only
+// push parts of it higher.
+const ZONE_FLOOR = { Green: LEVEL_BREAKS[0] + 0.01, Orange: LEVEL_BREAKS[1] + 0.01, Red: LEVEL_BREAKS[2] + 0.01 };
+
+// A live report: overlapping zones combine as 1 - product(1 - strength), capped at 1
 function spreadPin(pin, type, cls, width, height, project, cell, keep) {
   const weight = SEVERITY_WEIGHT[pin.severity] ?? SEVERITY_WEIGHT.Green;
-  const reachM = pin.radius || MAX_SPREAD_M[type][pin.severity] || MAX_SPREAD_M[type].Green;
-  spreadFrom(pin.position, type, weight, reachM, cls, width, height, project, cell, (i, strength) => {
-    keep[i] *= 1 - strength;
+  const inside = zoneCells(pin.feature, project, width, height);
+
+  if (!inside) {
+    // No drawn polygon (older data): spread from the pin as before
+    const reachM = pin.radius || MAX_SPREAD_M[type][pin.severity] || MAX_SPREAD_M[type].Green;
+    spreadFrom(pin.position, type, weight, reachM, cls, width, height, project, cell, (i, strength) => {
+      keep[i] *= 1 - strength;
+    });
+    return;
+  }
+
+  // Terrain-aware strength from the middle of the zone, far enough to reach
+  // every corner, but only kept for cells inside the polygon.
+  const strength = new Map();
+  let reachM = 0;
+  const [px, py] = project(pin.position[0], pin.position[1]);
+  inside.forEach((i) => {
+    const x = i % width;
+    const y = (i - x) / width;
+    reachM = Math.max(reachM, Math.hypot(x - px, y - py) * cell);
+  });
+  spreadFrom(pin.position, type, weight, reachM + cell * 2, cls, width, height, project, cell, (i, s) => {
+    if (inside.has(i)) strength.set(i, s);
+  });
+
+  const floor = ZONE_FLOOR[pin.severity] ?? ZONE_FLOOR.Green;
+  inside.forEach((i) => {
+    if (!cls[i]) return; // outside the city
+    const s = Math.max(strength.get(i) || 0, floor);
+    keep[i] *= 1 - Math.min(s, 1);
   });
 }
 

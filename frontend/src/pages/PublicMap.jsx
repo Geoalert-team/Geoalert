@@ -62,7 +62,7 @@ const NO_HISTORY = []; // stable empty list, so the heat layer isn't recomputed 
 // at a hazard map wants to know what is dangerous right now. Past shading is
 // background for planning, which is a second question, not the first one.
 const HEAT_MODES = [
-  { key: 'active', label: 'Active hazards', note: 'Shaded only around hazards that are active right now, as far as the ground lets each one spread.' },
+  { key: 'active', label: 'Active hazards', note: 'Shaded inside the drawn area of each hazard that is active right now, at its published level or higher where the ground is more at risk.' },
   { key: 'history', label: 'History', note: 'Shaded by past hazards: how often, how severe and how recent. Areas with an active hazard are raised one level.' },
 ];
 
@@ -186,14 +186,22 @@ function pinIcon(item, selected, overlapping) {
   });
 }
 
-// Corner handle for the outline being drawn. Drawn as a div so it can be
-// styled in CSS and is big enough to grab on a phone.
-const CORNER_ICON = L.divIcon({
-  className: 'pub-corner-wrap',
-  html: '<span class="pub-corner"></span>',
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
-});
+// Corner handle for the outline being drawn, numbered in drawing order so
+// officers can tell corners apart ("move corner 3"). Drawn as a div so it can
+// be styled in CSS and is big enough to grab on a phone. Cached per number:
+// a new icon object every render would make Leaflet rebuild each handle.
+const cornerIcons = new Map();
+function cornerIcon(n) {
+  if (!cornerIcons.has(n)) {
+    cornerIcons.set(n, L.divIcon({
+      className: 'pub-corner-wrap',
+      html: `<span class="pub-corner">${n}</span>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
+    }));
+  }
+  return cornerIcons.get(n);
+}
 
 // Clicking empty map either adds a publish corner or closes the panel
 function MapClickHandler({ onMapClick }) {
@@ -355,6 +363,17 @@ export default function PublicMap() {
   const visibleHazards = useMemo(
     () => hazards.filter((h) => activeTypes.has(hazardKey(h.type))),
     [hazards, activeTypes],
+  );
+
+  // Outlines of the visible zones, as one GeoJSON layer
+  const zoneOutlines = useMemo(() => {
+    const features = visibleHazards.map((h) => h.feature).filter((f) => f?.geometry);
+    return features.length ? { type: 'FeatureCollection', features } : null;
+  }, [visibleHazards]);
+  // react-leaflet's GeoJSON only reads its data once, so remount it when the set changes
+  const zoneOutlinesKey = useMemo(
+    () => visibleHazards.map((h) => `${h.id}:${h.severity}`).join('|'),
+    [visibleHazards],
   );
 
   // F6: zones of different severities can overlap. Pins whose areas touch are
@@ -840,6 +859,22 @@ export default function PublicMap() {
 
           {/* Outline being drawn while a hazard is published. Not
               interactive, so taps on it pass through and add corners. */}
+          {/* The exact shape of every visible zone, drawn over its shading.
+              Not interactive, so taps still reach the pins and barangays. */}
+          {zoneOutlines && (
+            <GeoJSON
+              key={zoneOutlinesKey}
+              data={zoneOutlines}
+              interactive={false}
+              style={(f) => ({
+                color: severityInfo(f.properties?.severity).color,
+                weight: 2.5,
+                opacity: 0.95,
+                fill: false,
+              })}
+            />
+          )}
+
           {/* What will actually be saved: the outline cut at the city boundary */}
           {previewShape && (
             <GeoJSON
@@ -868,7 +903,7 @@ export default function PublicMap() {
             <Marker
               key={`corner-${i}`}
               position={p}
-              icon={CORNER_ICON}
+              icon={cornerIcon(i + 1)}
               draggable
               keyboard={false}
               title={`Corner ${i + 1}. Drag to move.`}

@@ -88,10 +88,12 @@
 /* Draggable corner handle on the map */
 .pub-corner-wrap { background: none; border: 0; }
 .pub-corner {
-  display: block; width: 18px; height: 18px;
-  border: 3px solid #1c2e4a; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; box-sizing: border-box;
+  border: 2.5px solid #1c2e4a; border-radius: 50%;
   background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .35);
-  cursor: grab;
+  color: #1c2e4a; font: 800 11px/1 system-ui, sans-serif;
+  cursor: grab; user-select: none;
 }
 .pub-corner-wrap:active .pub-corner { cursor: grabbing; }
 
