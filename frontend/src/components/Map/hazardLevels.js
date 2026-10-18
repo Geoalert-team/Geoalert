@@ -1,6 +1,6 @@
 // Hazard levels on the public map, shaded like a Project NOAH hazard map.
 //
-// Two layers are combined into one Low / Medium / High picture:
+// Two layers are combined into one Low / Moderate / High picture:
 //
 // 1. Past events. Every archived hazard (historical records) warms the area
 //    where it happened, weighted by how severe and how recent it was. Places
@@ -18,10 +18,12 @@
 import { useEffect, useState } from 'react';
 import { hazardKey } from './hazardInfo';
 
-// Low / Medium / High, in the same green / orange / red as the pin severities
+// Low / Moderate / High, in the same green / orange / red as the pin severities.
+// 'Moderate' matches the pins and the F6 spec (low, moderate, high); the key
+// stays 'medium' so nothing that stores it changes.
 export const HAZARD_LEVELS = [
   { key: 'low', label: 'Low', color: '#1f9d55' },
-  { key: 'medium', label: 'Medium', color: '#d99a00' },
+  { key: 'medium', label: 'Moderate', color: '#d99a00' },
   { key: 'high', label: 'High', color: '#d64545' },
 ];
 
@@ -30,7 +32,7 @@ const HISTORY_SEVERITY = { Red: 1, Orange: 0.6, Green: 0.3 };
 const HISTORY_HALF_LIFE_YEARS = 3; // an event from 3 years ago counts half as much
 const HISTORY_BUFFER_M = 50;       // reach a little past the zone that was drawn at the time
 
-// Heat needed for Low, Medium, High. One recent Extreme event scores about 1 at
+// Heat needed for Low, Moderate, High. One recent Extreme event scores about 1 at
 // its centre. Floods cover wide areas and return to the same lowlands, so it
 // takes repeat floods to turn red; fires and landslides rarely hit the same
 // spot twice, so one serious recent one is already enough.
@@ -40,7 +42,7 @@ const HISTORY_BREAKS = {
   Fire: [0.15, 0.4, 0.8],
 };
 const YEAR_MS = 365.25 * 24 * 3600 * 1000;
-const LEVEL_BREAKS = [0.25, 0.4, 0.68]; // score needed for Low, Medium, High (higher = less of that color)
+const LEVEL_BREAKS = [0.25, 0.4, 0.68]; // score needed for Low, Moderate, High (higher = less of that color)
 
 // How strongly one report counts, by severity
 const SEVERITY_WEIGHT = { Red: 1, Orange: 0.72, Green: 0.42 };

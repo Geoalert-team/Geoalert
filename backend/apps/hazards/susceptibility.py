@@ -26,7 +26,7 @@ EARTH_CIRCUMFERENCE = 40075016.686  # meters
 CLASSES = [
     {'key': 'very-low', 'label': 'Very low', 'color': '#a8a8a8'},
     {'key': 'low', 'label': 'Low', 'color': '#ffb100'},
-    {'key': 'medium', 'label': 'Medium', 'color': '#8fe800'},
+    {'key': 'medium', 'label': 'Moderate', 'color': '#8fe800'},
     {'key': 'high', 'label': 'High', 'color': '#1f3cff'},
     {'key': 'very-high', 'label': 'Very high', 'color': '#ff0000'},
 ]

@@ -55,7 +55,7 @@ const RISK_LEVELS = [
   },
   {
     key: 'medium',
-    name: 'Medium risk',
+    name: 'Moderate risk',
     meaning: 'Conditions could get worse. Stay alert.',
     action: 'watch weather updates and know your evacuation route.',
   },
@@ -202,7 +202,7 @@ export default function PublicHome() {
                   <p>{hazard.text}</p>
                   <ul className="ph-level-list">
                     <li><span className="ph-dot ph-dot-low" />Low risk</li>
-                    <li><span className="ph-dot ph-dot-medium" />Medium risk</li>
+                    <li><span className="ph-dot ph-dot-medium" />Moderate risk</li>
                     <li><span className="ph-dot ph-dot-high" />High risk</li>
                   </ul>
                 </article>

@@ -67,7 +67,7 @@ const HAZARDS = [
 
 const RISK_LEVELS = [
   { key: 'low', name: 'Low risk', meaning: 'The area is currently safe. Standard monitoring is in place.' },
-  { key: 'medium', name: 'Medium risk', meaning: 'Be prepared and keep watching for updates.' },
+  { key: 'medium', name: 'Moderate risk', meaning: 'Be prepared and keep watching for updates.' },
   { key: 'high', name: 'High risk', meaning: 'Immediate danger. Take action or evacuate.' },
 ];
 
@@ -148,7 +148,7 @@ export default function About() {
                   <p>{hazard.text}</p>
                   <ul className="ph-level-list">
                     <li><span className="ph-dot ph-dot-low" />Low risk</li>
-                    <li><span className="ph-dot ph-dot-medium" />Medium risk</li>
+                    <li><span className="ph-dot ph-dot-medium" />Moderate risk</li>
                     <li><span className="ph-dot ph-dot-high" />High risk</li>
                   </ul>
                 </article>

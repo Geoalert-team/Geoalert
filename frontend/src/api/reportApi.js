@@ -2,6 +2,11 @@ import client from './axiosClient';
 
 
 export const reportsApi = {
+  // F7: record that a generated report was printed, before the browser
+  // opens its print dialog. criteria is the filters, as text.
+  printed: (report, criteria) =>
+    client.post('/api/reports/printed/', { report, criteria }).then((r) => r.data),
+
   // Barangay Personnel: list their own reports
   // DRRMO/Admin: list all reports (optional ?status= filter)
   list: (status) =>

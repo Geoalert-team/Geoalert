@@ -1042,7 +1042,17 @@ export default function PublicMap() {
             ))}
           </ul>
           {legendOpen && (
+            <>
             <p className="pm-legend-note">{heatNote}</p>
+            {/* The susceptibility layers are built offline from elevation
+                and river data; say when, so nobody mistakes them for live. */}
+            {susceptibility.index?.generated && (
+              <p className="pm-legend-note">
+                Susceptibility data as of{' '}
+                {new Date(susceptibility.index.generated).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' })}.
+              </p>
+            )}
+            </>
           )}
 
           {legendOpen && (

@@ -133,6 +133,26 @@ export default function Reports() {
 
   const filtersOn = dateFrom || dateTo || barangay || hazardType || includeSamples;
 
+  // F7: log the print before the dialog opens. A failed log never blocks
+  // printing; the report on screen is what matters to the officer.
+  async function printReport() {
+    const brgy = barangays.find((b) => String(b.id) === String(barangay))?.name;
+    const kind = hazardTypes.find((t) => String(t.id) === String(hazardType))?.name;
+    const criteria = [
+      `date_from=${dateFrom || '-'}`,
+      `date_to=${dateTo || '-'}`,
+      `barangay=${brgy || 'all'}`,
+      `hazard_type=${kind || 'all'}`,
+      includeSamples ? 'samples=included' : '',
+    ].filter(Boolean).join(' ');
+    try {
+      await reportsApi.printed(type, criteria);
+    } catch {
+      // print anyway
+    }
+    window.print();
+  }
+
   return (
     <div className="db">
       <PublicNavbar />
@@ -261,7 +281,7 @@ export default function Reports() {
                     : 'all dates'}
                 </p>
               </div>
-              <button type="button" className="db-btn db-btn-outline db-btn-sm db-no-print" onClick={() => window.print()}>
+              <button type="button" className="db-btn db-btn-outline db-btn-sm db-no-print" onClick={printReport}>
                 Print
               </button>
             </div>

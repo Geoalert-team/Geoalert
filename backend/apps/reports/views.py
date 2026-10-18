@@ -115,6 +115,34 @@ class HazardSummaryReportView(APIView):
         })
 
 
+class ReportPrintedView(APIView):
+    """
+    POST /api/reports/printed/
+
+        {"report": "hazard-summary" | "response-status",
+         "criteria": "date_from=... barangay=..."}
+
+    F7: generating a report is logged by the report endpoints themselves.
+    Printing happens in the browser, where the server can't see it, so the
+    Print button reports it here first. That way the audit log shows which
+    reports left the system on paper, by whom and with what filters.
+    """
+    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+    REPORTS = {'hazard-summary': 'Hazard Summary', 'response-status': 'Response Status'}
+
+    def post(self, request):
+        kind = request.data.get('report')
+        if kind not in self.REPORTS:
+            return Response({'error': f'report must be one of {list(self.REPORTS)}.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        criteria = str(request.data.get('criteria') or '')[:300]
+        log_event(
+            request, 'PRINT_REPORT', 'hazard_zone' if kind == 'response-status' else 'historical_record', '',
+            f'{self.REPORTS[kind]} printed. {criteria}'.strip(),
+        )
+        return Response({'logged': True})
+
+
 class ResponseStatusReportView(APIView):
     """
     GET /api/reports/response-status/
