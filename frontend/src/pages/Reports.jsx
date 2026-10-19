@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import PublicNavbar from '../components/Navbar/PublicNavbar';
 import { reportsApi } from '../api/reportApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { hazardsApi } from '../api/hazardsApi';
@@ -92,7 +91,7 @@ function Stat({ value, label }) {
   );
 }
 
-export default function Reports() {
+export default function ReportsPanel() {
   const [type, setType] = useState('hazard-summary');
   const [barangays, setBarangays] = useState([]);
   const [hazardTypes, setHazardTypes] = useState([]);
@@ -211,13 +210,7 @@ export default function Reports() {
   }
 
   return (
-    <div className="db">
-      <PublicNavbar />
-      <div className="db-wrap">
-        <div className="db-header">
-          <h1>Reports</h1>
-          <p>Summaries of hazard activity and response for planning and decision-making.</p>
-        </div>
+    <>
 
         {/* ---------- Choose a report ---------- */}
         <div className="db-card db-no-print">
@@ -451,7 +444,6 @@ export default function Reports() {
             </p>
           </div>
         )}
-      </div>
-    </div>
+    </>
   );
 }

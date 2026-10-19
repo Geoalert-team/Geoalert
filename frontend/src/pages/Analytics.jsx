@@ -1,6 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import PublicNavbar from '../components/Navbar/PublicNavbar';
 import TrendLine from '../components/Charts/TrendLine';
 import CategoryBars from '../components/Charts/CategoryBars';
 import BarangayLikelihood from '../components/Forecast/BarangayLikelihood';
@@ -103,7 +101,7 @@ function analyticsCsv(d) {
  * be downloaded as CSV, saved as PDF or printed, and each of those is
  * written to the audit log.
  */
-export default function Analytics() {
+export default function AnalyticsPanel() {
   const [months, setMonths] = useState(12);
   const [includeSamples, setIncludeSamples] = useState(false);
   const [series, setSeries] = useState('zones');
@@ -149,16 +147,7 @@ export default function Analytics() {
   const k = data?.kpis;
 
   return (
-    <div className="db">
-      <PublicNavbar />
-      <div className="db-wrap">
-        <div className="db-header">
-          <h1>Analytics</h1>
-          <p>
-            How hazards have been handled, month by month. For what happened and where, see{' '}
-            <Link to="/app/reports">Reports</Link> and <Link to="/app/history">History</Link>.
-          </p>
-        </div>
+    <>
 
         <div className="db-card an-toolbar db-no-print">
           <div className="an-seg" role="group" aria-label="Period">
@@ -330,7 +319,6 @@ export default function Analytics() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </>
   );
 }

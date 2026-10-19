@@ -21,16 +21,18 @@ const ROLE_LINKS = {
     { to: "/app/dashboard", label: "Dashboard" },
     { to: "/map", label: "Map" },
     { to: "/app/history", label: "History" },
+    // One item for F7: Analytics is a tab on this page, not its own nav
+    // entry. /app/analytics still resolves, so old links keep working.
     { to: "/app/reports", label: "Reports" },
-    { to: "/app/analytics", label: "Analytics" },
     { to: "/app/security", label: "Security" },
   ],
   DRRMO_Officer: [
     { to: "/app/dashboard", label: "Dashboard" },
     { to: "/map", label: "Map" },
     { to: "/app/history", label: "History" },
+    // One item for F7: Analytics is a tab on this page, not its own nav
+    // entry. /app/analytics still resolves, so old links keep working.
     { to: "/app/reports", label: "Reports" },
-    { to: "/app/analytics", label: "Analytics" },
     { to: "/app/security", label: "Security" },
   ],
   Barangay_Personnel: [

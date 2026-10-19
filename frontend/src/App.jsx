@@ -10,8 +10,7 @@ import WhatToDo from "./pages/WhatToDo";
 import Dashboard from "./pages/Dashboard";
 import HistoricalData from "./pages/HistoricalData";
 import Security from "./pages/Security";
-import Reports from "./pages/Reports";
-import Analytics from "./pages/Analytics";
+import ReportingAnalytics from "./pages/ReportingAnalytics";
 
 function Gate({ children, roles }) {
   const { user, loading } = useAuth();
@@ -50,24 +49,23 @@ function AppRoutes() {
           </Gate>
         }
       />
-      {/* F7: DRRMO and Admin only, matching the spec's permission check */}
+      {/* F7 is one module, Reporting and Analytics, on one page with a tab
+          each. DRRMO and Admin only, matching the spec's permission check. */}
       <Route
         path="/app/reports"
         element={
           <Gate roles={["System_Admin", "DRRMO_Officer"]}>
-            <Reports />
+            <ReportingAnalytics />
           </Gate>
         }
       />
 
-      {/* F7 analytics dashboard: DRRMO and Admin, like Reports */}
+      {/* Analytics used to be its own page. Bookmarks, the notification
+          links and the module navigation all still point here, so it keeps
+          working and lands on that tab. */}
       <Route
         path="/app/analytics"
-        element={
-          <Gate roles={["System_Admin", "DRRMO_Officer"]}>
-            <Analytics />
-          </Gate>
-        }
+        element={<Navigate to="/app/reports?tab=analytics" replace />}
       />
 
       <Route path="*" element={<Navigate to="/" replace />} />
