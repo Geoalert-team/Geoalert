@@ -203,3 +203,12 @@ class BuildTests(SimpleTestCase):
         self.assertEqual(index['layers'], {'flood': 'flood.png'})
         self.assertTrue({'terrain', 'elevation'} <= index.keys())
         self.assertTrue((self.out / 'elevation.png').exists())
+
+    def test_ground_measured_against_the_coastline_counts_as_sea(self):
+        # OpenStreetMap's coastline is drawn on land at the shore, so it, not the
+        # open sea, is often the nearest drainage for coastal ground
+        self.osm['coastline'] = [[(123.804, 10.300), (123.804, 10.310)]]
+        self.build()
+        x, y = susc.Grid(10.300, 123.800, 10.310, 123.810, 14).to_cell(123.8045, 10.305)
+        blue = np.asarray(Image.open(self.out / 'terrain.png'))[..., 2]
+        self.assertEqual(blue[int(y), int(x)], susc.TERRAIN_B_SEA)

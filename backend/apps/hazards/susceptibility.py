@@ -537,7 +537,9 @@ def compute_factors(grid, dem, osm, city_mask, log):
         'slope': slope,
         'relief': relief,
         'hand': hand,
-        'drains_to_sea': sea[ri, ci],  # HAND above is measured against the sea, not a waterway
+        # HAND above is measured against the sea, not a waterway: the open sea
+        # or the OpenStreetMap coastline, which is drawn on land at the shore
+        'drains_to_sea': coast[ri, ci],
         'dist_water': distance_to(water_lines | dem_streams, res),
         'dist_coast': distance_to(coast, res),
         'dist_road': distance_to(roads, res),
