@@ -86,7 +86,12 @@ function loadEntry(index, entry, decode) {
       grid: makeGrid(meta.bounds || index.bounds, width, height),
       cellM: index.cellSizeM || 10,
     }))
-    .catch(() => null);
+    .catch(() => {
+      // Forget a failed load, so the next tap tries again instead of the
+      // feature staying off until the page is reloaded
+      if (cached[entry]?.promise === promise) delete cached[entry];
+      return null;
+    });
   cached[entry] = { key, promise };
   return promise;
 }

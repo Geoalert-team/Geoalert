@@ -54,3 +54,22 @@ test('readSpot: the sea mark comes through', () => {
 test('loadElevation without an elevation entry resolves null', async () => {
   await expect(loadElevation({ generated: 'x' })).resolves.toBeNull();
 });
+
+test('a failed load is tried again on the next call, not remembered', async () => {
+  const RealImage = global.Image;
+  let attempts = 0;
+  global.Image = class {
+    set src(url) {
+      attempts += 1;
+      setTimeout(() => this.onerror(new Error(`could not load ${url}`)), 0);
+    }
+  };
+  try {
+    const index = { generated: 'retry-test', bounds: [[10, 123], [10.002, 123.002]], elevation: { file: 'elevation.png' } };
+    await expect(loadElevation(index)).resolves.toBeNull();
+    await expect(loadElevation(index)).resolves.toBeNull();
+    expect(attempts).toBe(2);
+  } finally {
+    global.Image = RealImage;
+  }
+});
