@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { barangaysApi } from '../../api/barangaysApi';
 import { severityInfo, hazardIconPath, hazardColor, SEVERITY_RANK } from './hazardInfo';
+import SpotReading from './SpotReading';
 
 const PIN_PATH = 'M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7z';
 
@@ -37,7 +38,13 @@ function HazardList({ items, onSelectHazard }) {
 // The server answers with PostGIS which zones lie entirely inside the
 // barangay (ST_Within) and which cross its border (ST_Intersects). Going by
 // pins missed a zone reaching in from a neighbouring barangay.
-export default function BarangayPanel({ barangay, hazards, allHazards = [], open, onClose, onSelectHazard }) {
+//
+// spot, susceptibilityIndex, rivers  the tapped point and the data to read
+// it with, for the "This spot" section (no spot when chosen from search)
+export default function BarangayPanel({
+  barangay, hazards, allHazards = [], open, onClose, onSelectHazard,
+  spot = null, susceptibilityIndex = null, rivers = null,
+}) {
   const closeRef = useRef(null);
   const [split, setSplit] = useState(null); // { inside: [ids], crossing: [ids] } or null
 
@@ -87,6 +94,8 @@ export default function BarangayPanel({ barangay, hazards, allHazards = [], open
               <span className="pm-visually-hidden">Close details</span>
             </button>
           </div>
+
+          <SpotReading spot={spot} index={susceptibilityIndex} rivers={rivers} />
 
           {highest ? (
             <span className="pm-badge" style={{ background: highest.tint, color: highest.text }}>

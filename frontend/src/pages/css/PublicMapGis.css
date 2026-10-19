@@ -57,6 +57,17 @@
 .pm-stage.is-terrain .leaflet-hazard-levels-pane { mix-blend-mode: multiply; }
 .pm-legend-source { font-size: .7rem; }
 
+/* "This spot" in the barangay panel: what the ground is like where the map was tapped */
+.pm-spot {
+  margin: 4px 0 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--pm-line);
+  border-radius: 12px;
+}
+.pm-spot h3 { margin: 0 0 6px; font-size: 1rem; font-weight: 800; color: var(--pm-heading); }
+.pm-spot p { margin: 0 0 4px; font-size: .92rem; line-height: 1.4; }
+.pm-spot small { display: block; margin-top: 8px; color: var(--pm-soft); font-size: .78rem; line-height: 1.35; }
+
 /* ---------- Barangay outlines ---------- */
 .pm .leaflet-interactive.pm-brgy {
   transition: stroke-width .15s ease, fill-opacity .15s ease;

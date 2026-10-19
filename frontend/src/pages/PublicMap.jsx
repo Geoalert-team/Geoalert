@@ -650,10 +650,16 @@ export default function PublicMap() {
     if (map && item.position) map.panInside(item.position, panelPadding());
   }
 
-  function selectBarangay(barangay) {
-    setSelection({ kind: 'barangay', id: barangay.id });
+  // spot: [lat, lng] when the barangay was tapped on the map, for the panel's
+  // "This spot" reading; null when it was picked from search.
+  function selectBarangay(barangay, spot = null) {
+    const alreadyOpen = panelOpen && selection?.kind === 'barangay' && String(selection.id) === String(barangay.id);
+    setSelection({ kind: 'barangay', id: barangay.id, spot });
     setPanelOpen(true);
     setQuery('');
+    // Tapping around inside the open barangay only moves the spot; fitting
+    // the barangay again on every tap would keep pulling the map away.
+    if (alreadyOpen && spot) return;
     if (!map || !barangay.feature?.geometry) return;
 
     const bounds = L.geoJSON(barangay.feature).getBounds();
@@ -1087,12 +1093,23 @@ export default function PublicMap() {
                     return;
                   }
                   const f = e.propagatedFrom?.feature || e.layer?.feature;
-                  if (f) selectBarangay(featureToBarangay(f));
+                  if (f) selectBarangay(featureToBarangay(f), [e.latlng.lat, e.latlng.lng]);
                 },
               }}
             />
           )}
 
+
+          {/* The tapped spot the barangay panel is reading. Not interactive,
+              so the next tap lands on the map and moves it. */}
+          {panelOpen && selection?.kind === 'barangay' && selection.spot && (
+            <CircleMarker
+              center={selection.spot}
+              radius={6}
+              interactive={false}
+              pathOptions={{ color: '#1c2e4a', weight: 2, fillColor: '#ffffff', fillOpacity: 1 }}
+            />
+          )}
 
           {/* Outline being drawn while a hazard is published. Not
               interactive, so taps on it pass through and add corners. */}
@@ -1564,6 +1581,9 @@ export default function PublicMap() {
           open={panelOpen && !!selectedBarangay}
           onClose={() => setPanelOpen(false)}
           onSelectHazard={selectHazard}
+          spot={selection?.kind === 'barangay' ? selection.spot ?? null : null}
+          susceptibilityIndex={susceptibility.index}
+          rivers={susceptibility.rivers}
         />
       </div>
     </div>
