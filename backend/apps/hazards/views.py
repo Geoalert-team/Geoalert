@@ -222,8 +222,11 @@ class HazardZoneListView(APIView):
         if error:
             return error
 
-        serializer = HazardZoneGeoSerializer(zones, many=True, context={'within_ids': within_ids})
-        return map_version.tag(Response(serializer.data), etag)
+        # The first map to refresh after a change builds this; the rest share it
+        def build():
+            return dict(HazardZoneGeoSerializer(zones, many=True, context={'within_ids': within_ids}).data)
+
+        return map_version.tag(Response(map_version.cached_body(etag, build)), etag)
 
 
 class HazardZoneCreateView(APIView):
@@ -1001,12 +1004,15 @@ class HazardUnifiedView(APIView):
         if error:
             return error
 
-        serializer = HazardZoneGeoSerializer(zones, many=True, context={'within_ids': within_ids})
-        return map_version.tag(Response({
-            'type': 'FeatureCollection',
-            'count': zones.count(),
-            'features': serializer.data['features']
-        }), etag)
+        def build():
+            serializer = HazardZoneGeoSerializer(zones, many=True, context={'within_ids': within_ids})
+            return {
+                'type': 'FeatureCollection',
+                'count': zones.count(),
+                'features': serializer.data['features'],
+            }
+
+        return map_version.tag(Response(map_version.cached_body(etag, build)), etag)
 
 
 class HazardLayerListView(APIView):
