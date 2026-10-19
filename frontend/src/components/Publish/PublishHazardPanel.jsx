@@ -85,7 +85,7 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
             <dt>{typeName === 'Fire' ? 'Burning area' : 'Hazard area'}</dt>
             <dd>{preview.area_m2 != null ? formatArea(preview.area_m2) : 'Unknown'}</dd>
             <dt>Cordon</dt>
-            <dd>{preview.cordon_m} m around it, shown one level lower on the map</dd>
+            <dd>{preview.cordon_m} m around it, hatched on the map</dd>
             <dt>Total area</dt>
             <dd>
               <strong>{preview.total_area_m2 != null ? formatArea(preview.total_area_m2) : 'Unknown'}</strong>
@@ -98,7 +98,7 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
         <dt>Shape</dt>
         <dd>
           {preview.cordon_m
-            ? 'The solid green area is the hazard. The dashed ring is the cordon.'
+            ? 'The solid green area is the hazard. The hatched ring is the cordon.'
             : 'The green area on the map is what will be saved.'}
         </dd>
         <dt>Notifies</dt>
@@ -436,15 +436,22 @@ export default function PublishHazardPanel({
   }
 
   // Show the map what will really be saved, cut at the city boundary. With
-  // a cordon, the ring goes first so the hazard draws on top of it.
+  // a cordon, the ring goes first so the hazard draws on top of it. The ring
+  // is hatched as residents will see it; a server without cordon_ring sends
+  // only the whole cordon, which gets just its edge.
   useEffect(() => {
     if (!preview?.geometry) {
       onPreviewShape?.(null);
       return;
     }
     const features = [];
-    if (preview.cordon_geometry) {
-      features.push({ type: 'Feature', properties: { part: 'cordon' }, geometry: preview.cordon_geometry });
+    const ring = preview.cordon_ring || preview.cordon_geometry;
+    if (ring) {
+      features.push({
+        type: 'Feature',
+        properties: { part: 'cordon', ring: Boolean(preview.cordon_ring) },
+        geometry: ring,
+      });
     }
     features.push({ type: 'Feature', properties: { part: 'hazard' }, geometry: preview.geometry });
     onPreviewShape?.({ type: 'FeatureCollection', features });
