@@ -210,3 +210,24 @@ def with_cordon(geometry, cordon_m, city=None):
         # everyone it should, plus perhaps a neighbour, which is the safer
         # mistake.
         return repair(grown)
+
+
+def cordon_ring(geometry, reach):
+    """
+    The cordon on its own: `reach` (from with_cordon) less the hazard, as a
+    MultiPolygon, or None when the zone has no cordon.
+
+    The map hatches this ring and leaves the hazard to its own shading, so
+    the place where it is happening and the place people are told to keep
+    clear of never look alike. Routing still uses the whole of `reach`;
+    this shape is for drawing only.
+    """
+    if geometry is None or reach is None or reach is geometry:
+        return None
+    try:
+        parts = _polygons_only(repair(reach).difference(repair(geometry)))
+    except Exception:
+        return None
+    if not parts:
+        return None
+    return MultiPolygon(parts, srid=reach.srid or geometry.srid or 4326)

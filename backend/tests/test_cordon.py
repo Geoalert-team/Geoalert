@@ -8,8 +8,9 @@ import math
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.test import SimpleTestCase
 
-from apps.hazards.geometry import CORDON_MAX_M, CORDON_MIN_M, with_cordon
-from apps.hazards.serializers import HazardZoneCreateSerializer
+from apps.hazards.geometry import CORDON_MAX_M, CORDON_MIN_M, cordon_ring, with_cordon
+from apps.hazards.models import HazardZone
+from apps.hazards.serializers import HazardZoneCreateSerializer, HazardZoneGeoSerializer
 
 # Talisay's latitude, so a meter is about what it is on the real map
 LAT, LNG = 10.74, 122.97
@@ -54,6 +55,57 @@ class WithCordonTests(SimpleTestCase):
 
     def test_keeps_srid(self):
         self.assertEqual(with_cordon(BLOCK, 20, CITY).srid, 4326)
+
+
+class CordonRingTests(SimpleTestCase):
+    """
+    The ring is the cordon without the hazard in it, so the map can hatch
+    the ring alone and leave the hazard's own shading uncovered.
+    """
+
+    def test_ring_does_not_cover_the_block(self):
+        ring = cordon_ring(BLOCK, with_cordon(BLOCK, 30, CITY))
+        self.assertIsInstance(ring, MultiPolygon)
+        self.assertLess(ring.intersection(BLOCK).area, BLOCK.area * 1e-6)
+
+    def test_ring_and_block_make_the_whole_cordon(self):
+        reach = with_cordon(BLOCK, 30, CITY)
+        ring = cordon_ring(BLOCK, reach)
+        self.assertAlmostEqual((ring.area + BLOCK.area) / reach.area, 1, places=6)
+
+    def test_ring_stays_inside_the_city(self):
+        edge_city = MultiPolygon(box(-1000, -1000, 50, 1000), srid=4326)
+        ring = cordon_ring(BLOCK, with_cordon(BLOCK, 30, edge_city))
+        self.assertTrue(edge_city.buffer(1e-9).covers(ring))
+
+    def test_no_cordon_no_ring(self):
+        self.assertIsNone(cordon_ring(BLOCK, with_cordon(BLOCK, None, CITY)))
+        self.assertIsNone(cordon_ring(BLOCK, None))
+        self.assertIsNone(cordon_ring(None, None))
+
+    def test_keeps_srid(self):
+        self.assertEqual(cordon_ring(BLOCK, with_cordon(BLOCK, 20, CITY)).srid, 4326)
+
+
+class CordonSerializerTests(SimpleTestCase):
+    def zone(self, cordon_m):
+        return HazardZone(geometry=BLOCK, cordon_m=cordon_m, severity='Red', status='Active')
+
+    def test_zone_with_a_cordon_sends_both_shapes(self):
+        s = HazardZoneGeoSerializer(context={'city': CITY})
+        zone = self.zone(30)
+        cordon = s.get_cordon(zone)
+        ring = s.get_cordon_ring(zone)
+        self.assertEqual(cordon['type'], 'MultiPolygon')
+        self.assertEqual(ring['type'], 'MultiPolygon')
+        # The ring is the routed cordon with a hole where the block is
+        self.assertGreater(len(ring['coordinates'][0]), 1)
+
+    def test_zone_without_a_cordon_sends_neither(self):
+        s = HazardZoneGeoSerializer(context={'city': CITY})
+        zone = self.zone(None)
+        self.assertIsNone(s.get_cordon(zone))
+        self.assertIsNone(s.get_cordon_ring(zone))
 
 
 class CordonPayloadTests(SimpleTestCase):

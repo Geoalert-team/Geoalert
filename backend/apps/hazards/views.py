@@ -15,7 +15,7 @@ from apps.accounts.models import User
 from apps.barangays.models import Barangay
 from apps.history.models import HistoricalRecord
 
-from apps.hazards.geometry import main_barangay, overlap_shares, with_cordon
+from apps.hazards.geometry import cordon_ring, main_barangay, overlap_shares, with_cordon
 from apps.hazards.models import HazardType, HazardZone, HazardAlert, HazardVerification
 from apps.hazards.serializers import (
     clean_zone_geometry,
@@ -1088,6 +1088,7 @@ class HazardZonePreviewView(APIView):
 
         duplicates = find_duplicates(geometry, data.get('hazard_type'))
         reach = with_cordon(geometry, cordon_m) if cordon_m else None
+        ring = cordon_ring(geometry, reach)
 
         # Measured by PostGIS on the spheroid rather than by reprojecting
         # here: GDAL needs PROJ's data files, which aren't set up on every
@@ -1116,6 +1117,8 @@ class HazardZonePreviewView(APIView):
             # times the hazard itself, so the officer sees both figures.
             'cordon_m': cordon_m,
             'cordon_geometry': json.loads(reach.geojson) if reach is not None else None,
+            # The ring alone, drawn hatched like it will be on the public map
+            'cordon_ring': json.loads(ring.geojson) if ring is not None else None,
             'total_area_m2': round(total) if total is not None else None,
             'barangay': {'id': home.id, 'name': home.name} if home else None,
             'affected_barangays': [b.name for b in barangays],
