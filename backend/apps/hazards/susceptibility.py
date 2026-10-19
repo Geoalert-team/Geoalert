@@ -138,6 +138,8 @@ def make_session():
 COPERNICUS_URL = 'https://copernicus-dem-30m.s3.amazonaws.com/{name}/{name}.tif'
 COG_HEADER_MAX = 1 << 20  # stop growing the header read here
 VOID_M = -1000            # Copernicus voids (-32767) and anything this low read as 0
+NO_HEIGHT = ('No ground above sea level in the elevation data for this area; '
+             'the elevation download is probably missing or was refused')
 
 
 def copernicus_tile_name(lat0, lng0):
@@ -150,8 +152,8 @@ def copernicus_tile_name(lat0, lng0):
 def http_range_fetcher(session, retries=3, backoff_s=2.0):
     """
     fetch(url, start, length) -> those bytes, or None when the file does not
-    exist (S3 answers 403 or 404; for Copernicus that is open sea). Other
-    failures are retried, then raise.
+    exist (404; for Copernicus that is open sea). Anything else, including
+    403 (access refused, not a missing tile), is retried, then raises.
     """
     def fetch(url, start, length):
         for attempt in range(1, retries + 1):
@@ -161,7 +163,7 @@ def http_range_fetcher(session, retries=3, backoff_s=2.0):
                     return r.content
                 if r.status_code == 200:  # the server ignored the range
                     return r.content[start:start + length]
-                if r.status_code in (403, 404):
+                if r.status_code == 404:
                     return None
             except requests.RequestException:
                 pass
@@ -711,6 +713,8 @@ def build(barangay_polygons, barangay_names, extent, out_dir, zoom=14, pad_m=500
         else:
             log('  Downloading Copernicus GLO-30 elevation...')
             dem = fetch_copernicus(grid, http_range_fetcher(session), log)
+            if not (dem > 0).any():
+                raise RuntimeError(NO_HEIGHT)  # never cache a download that came back flat
             if dem_file:
                 np.save(dem_file, dem)
     if osm is None:
@@ -735,6 +739,10 @@ def build(barangay_polygons, barangay_names, extent, out_dir, zoom=14, pad_m=500
 
     labels = draw_polygons(grid, barangay_polygons)
     city_mask = labels > 0
+    # A city with no ground above sea level means the elevation data is
+    # missing, not that the city is under water: stop before writing anything
+    if not (dem[city_mask] > 0).any():
+        raise RuntimeError(NO_HEIGHT)
 
     factors = compute_factors(grid, dem, osm, city_mask, log)
 

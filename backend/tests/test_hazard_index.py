@@ -3,6 +3,7 @@ import json
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 import numpy as np
 import tifffile
@@ -162,6 +163,13 @@ class CopernicusReaderTests(SimpleTestCase):
             susc.http_range_fetcher(bad, retries=3, backoff_s=0)('u', 0, 1)
         self.assertEqual(len(bad.headers), 3)
 
+    def test_range_fetcher_treats_refused_access_as_a_failure(self):
+        # The bucket answers 404 for a tile that does not exist; 403 means access was refused
+        refused = FakeSession(status=403)
+        with self.assertRaises(RuntimeError):
+            susc.http_range_fetcher(refused, retries=3, backoff_s=0)('u', 0, 1)
+        self.assertEqual(len(refused.headers), 3)
+
 
 class BuildTests(SimpleTestCase):
     """build() on a tiny city: a 0 m strip of sea to the west, one river, ground rising east."""
@@ -212,3 +220,18 @@ class BuildTests(SimpleTestCase):
         x, y = susc.Grid(10.300, 123.800, 10.310, 123.810, 14).to_cell(123.8045, 10.305)
         blue = np.asarray(Image.open(self.out / 'terrain.png'))[..., 2]
         self.assertEqual(blue[int(y), int(x)], susc.TERRAIN_B_SEA)
+
+    def test_build_refuses_a_city_with_no_height_and_writes_nothing(self):
+        self.dem[:] = 0
+        with self.assertRaises(RuntimeError):
+            self.build()
+        self.assertEqual(list(self.out.iterdir()), [])
+
+    def test_a_flat_download_is_never_cached(self):
+        cache = self.out / 'cache'
+        flat = np.zeros_like(self.dem)
+        with mock.patch.object(susc, 'fetch_copernicus', return_value=flat), self.assertRaises(RuntimeError):
+            susc.build(self.CITY, {1: 'Test'}, self.EXTENT, self.out / 'index', pad_m=0,
+                       osm=self.osm, log=quiet, cache_dir=cache)
+        self.assertEqual(list(cache.glob('dem_*.npy')), [])
+        self.assertFalse((self.out / 'index').exists())
