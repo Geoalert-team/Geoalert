@@ -1,6 +1,7 @@
 import heapq
 import io
 import json
+import logging
 import math
 import time
 from datetime import datetime, timezone
@@ -8,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import requests
+import tifffile
 from PIL import Image, ImageDraw
 from scipy import ndimage
 
@@ -152,6 +154,135 @@ def fetch_dem(grid, session, log):
             mosaic[oy:oy + TILE, ox:ox + TILE] = elev
     ox, oy = grid.px0 - tx0 * TILE, grid.py0 - ty0 * TILE
     return mosaic[oy:oy + grid.height, ox:ox + grid.width].copy()
+
+
+COPERNICUS_URL = 'https://copernicus-dem-30m.s3.amazonaws.com/{name}/{name}.tif'
+COG_HEADER_MAX = 1 << 20  # stop growing the header read here
+VOID_M = -1000            # Copernicus voids (-32767) and anything this low read as 0
+
+
+def copernicus_tile_name(lat0, lng0):
+    """Copernicus GLO-30 tile whose south-west corner is (lat0, lng0)."""
+    ns = 'N' if lat0 >= 0 else 'S'
+    ew = 'E' if lng0 >= 0 else 'W'
+    return f'Copernicus_DSM_COG_10_{ns}{abs(lat0):02d}_00_{ew}{abs(lng0):03d}_00_DEM'
+
+
+def http_range_fetcher(session, retries=3, backoff_s=2.0):
+    """
+    fetch(url, start, length) -> those bytes, or None when the file does not
+    exist (S3 answers 403 or 404; for Copernicus that is open sea). Other
+    failures are retried, then raise.
+    """
+    def fetch(url, start, length):
+        for attempt in range(1, retries + 1):
+            try:
+                r = session.get(url, headers={'Range': f'bytes={start}-{start + length - 1}'}, timeout=120)
+                if r.status_code == 206:
+                    return r.content
+                if r.status_code == 200:  # the server ignored the range
+                    return r.content[start:start + length]
+                if r.status_code in (403, 404):
+                    return None
+            except requests.RequestException:
+                pass
+            if attempt < retries:
+                time.sleep(backoff_s * attempt)
+        raise RuntimeError(f'Elevation download failed: {url}')
+    return fetch
+
+
+def _open_cog(fetch, url, header_bytes):
+    """
+    (TiffFile, first page, georeferencing) of a Cloud-Optimized GeoTIFF read
+    from its leading bytes only, or None when the file does not exist. A
+    header cut short fails while parsing, so the read doubles until it fits.
+    """
+    size = header_bytes
+    while True:
+        head = fetch(url, 0, size)
+        if head is None:
+            return None
+        # A short read is expected to break tags; tifffile would log each one
+        tiff_log = logging.getLogger('tifffile')
+        level = tiff_log.level
+        tiff_log.setLevel(logging.CRITICAL)
+        try:
+            tf = tifffile.TiffFile(io.BytesIO(head))
+            page = tf.pages[0]
+            if len(page.dataoffsets) != len(page.databytecounts) or not page.dataoffsets:
+                raise ValueError('incomplete tile index')
+            dx, dy = page.tags['ModelPixelScaleTag'].value[:2]
+            tie = page.tags['ModelTiepointTag'].value
+            is_point = int(tf.geotiff_metadata.get('GTRasterTypeGeoKey', 1)) == 2
+            return tf, page, (tie[3], tie[4], dx, dy, is_point)
+        except Exception:
+            if len(head) < size or size >= COG_HEADER_MAX:  # nothing more to read
+                raise
+            size *= 2
+        finally:
+            tiff_log.setLevel(level)
+
+
+def fetch_copernicus(grid, fetch, log, header_bytes=65536):
+    """
+    Copernicus GLO-30 heights in metres at the grid's cell centres. Only the
+    internal blocks of each 1-degree tile that the grid needs are downloaded.
+    """
+    dem = np.zeros(grid.shape, np.float32)
+    lngs = np.array([px_to_lnglat(grid.px0 + c + 0.5, grid.py0, grid.zoom)[0] for c in range(grid.width)])
+    lats = np.array([px_to_lnglat(grid.px0, grid.py0 + r + 0.5, grid.zoom)[1] for r in range(grid.height)])
+    (south, west), (north, east) = grid.bounds()
+
+    for lat0 in range(math.floor(south), math.floor(north) + 1):
+        for lng0 in range(math.floor(west), math.floor(east) + 1):
+            rsel = (lats >= lat0) & (lats < lat0 + 1)
+            csel = (lngs >= lng0) & (lngs < lng0 + 1)
+            if not rsel.any() or not csel.any():
+                continue
+            name = copernicus_tile_name(lat0, lng0)
+            url = COPERNICUS_URL.format(name=name)
+            opened = _open_cog(fetch, url, header_bytes)
+            if opened is None:
+                log(f'  Elevation: {name} not found, treated as sea')
+                continue
+            tf, page, (lng_tie, lat_tie, dx, dy, is_point) = opened
+
+            # Fractional pixel coordinates of the cell centres in this tile
+            half = 0 if is_point else 0.5
+            pr = (lat_tie - lats[rsel]) / dy - half
+            pc = (lngs[csel] - lng_tie) / dx - half
+            r0 = max(0, math.floor(pr.min()) - 1)
+            r1 = min(page.imagelength - 1, math.ceil(pr.max()) + 1)
+            c0 = max(0, math.floor(pc.min()) - 1)
+            c1 = min(page.imagewidth - 1, math.ceil(pc.max()) + 1)
+
+            th, tw = page.tilelength, page.tilewidth
+            across = -(-page.imagewidth // tw)
+            window = np.zeros((r1 - r0 + 1, c1 - c0 + 1), np.float32)
+            blocks = 0
+            for tr in range(r0 // th, r1 // th + 1):
+                for tc in range(c0 // tw, c1 // tw + 1):
+                    i = tr * across + tc
+                    raw = fetch(url, page.dataoffsets[i], page.databytecounts[i])
+                    if raw is None:
+                        raise RuntimeError(f'Elevation download failed: {url} (block {i})')
+                    data, _, shape = page.decode(raw, i)
+                    block = np.asarray(data, np.float32).reshape(shape[-3], shape[-2])
+                    br, bc = tr * th, tc * tw
+                    ra, rb = max(r0, br), min(r1, br + th - 1)
+                    ca, cb = max(c0, bc), min(c1, bc + tw - 1)
+                    window[ra - r0:rb - r0 + 1, ca - c0:cb - c0 + 1] = block[ra - br:rb - br + 1, ca - bc:cb - bc + 1]
+                    blocks += 1
+            tf.close()
+            window[~np.isfinite(window) | (window <= VOID_M)] = 0
+
+            # Bilinear. A cell within half a pixel of a tile seam takes the
+            # nearest pixel of its own tile rather than blending across tiles.
+            rr, cc = np.meshgrid(pr - r0, pc - c0, indexing='ij')
+            dem[np.ix_(rsel, csel)] = ndimage.map_coordinates(window, [rr, cc], order=1, mode='nearest')
+            log(f'  Elevation: {name}, {blocks} blocks')
+    return dem
 
 
 def overpass(query, session, log):

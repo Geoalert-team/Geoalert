@@ -1,11 +1,64 @@
+import io
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
+import tifffile
 from django.test import SimpleTestCase
 from PIL import Image
 
 from apps.hazards import susceptibility as susc
+
+STEP = 1 / 64  # synthetic tiles: 1 degree in 64 x 64 pixels
+
+
+def make_cog(data, lat_top, lng_left, step, tile=16):
+    """A tiled, deflate + floating-point-predictor GeoTIFF like Copernicus GLO-30 (PixelIsPoint)."""
+    buf = io.BytesIO()
+    tifffile.imwrite(
+        buf, data.astype(np.float32), tile=(tile, tile), compression='zlib', predictor=3,
+        photometric='minisblack',
+        extratags=[
+            (33550, 'd', 3, (step, step, 0.0), True),
+            (33922, 'd', 6, (0, 0, 0, lng_left, lat_top, 0), True),
+            (34735, 'H', 16, (1, 1, 0, 3, 1024, 0, 1, 2, 1025, 0, 1, 2, 2048, 0, 1, 4326), True),
+        ],
+    )
+    return buf.getvalue()
+
+
+def planar_tile():
+    """data[r, c] = 100 + r + 0.5 c, so bilinear sampling is exact."""
+    r, c = np.mgrid[0:64, 0:64]
+    return (100 + r + 0.5 * c).astype(np.float32)
+
+
+class FakeFetch:
+    """Serves byte ranges of in-memory tiles by name; None for a tile that does not exist."""
+
+    def __init__(self, tiles):
+        self.tiles, self.calls = tiles, []
+
+    def __call__(self, url, start, length):
+        self.calls.append((url, start, length))
+        for name, blob in self.tiles.items():
+            if name in url:
+                return blob[start:start + length]
+        return None
+
+
+class FakeSession:
+    def __init__(self, status, body=b''):
+        self.status, self.body, self.headers = status, body, []
+
+    def get(self, url, headers=None, timeout=None):
+        self.headers.append(headers)
+        return SimpleNamespace(status_code=self.status, content=self.body)
+
+
+def quiet(*_):
+    pass
 
 
 def packed(path):
@@ -51,3 +104,59 @@ class RasterOutputTests(SimpleTestCase):
         self.assertIn(susc.COPERNICUS_NOTICE, elevation['source'])
         self.assertIn(susc.COPERNICUS_NOTICE, susc.terrain_meta(grid)['source'])
         self.assertIn('200', susc.terrain_meta(grid)['encoding'])
+
+
+class CopernicusReaderTests(SimpleTestCase):
+    N10_E123 = 'Copernicus_DSM_COG_10_N10_00_E123_00_DEM'
+
+    def setUp(self):
+        self.grid = susc.Grid(10.30, 123.80, 10.32, 123.82, 14)
+        g = self.grid
+        expected = np.zeros(g.shape, np.float64)
+        for r in range(g.height):
+            for c in range(g.width):
+                lng, lat = susc.px_to_lnglat(g.px0 + c + 0.5, g.py0 + r + 0.5, g.zoom)
+                expected[r, c] = 100 + (11 - lat) * 64 + 0.5 * (lng - 123) * 64
+        self.expected = expected
+
+    def fake(self, data=None):
+        data = planar_tile() if data is None else data
+        return FakeFetch({self.N10_E123: make_cog(data, 11.0, 123.0, STEP)})
+
+    def test_tile_names(self):
+        self.assertEqual(susc.copernicus_tile_name(10, 123), 'Copernicus_DSM_COG_10_N10_00_E123_00_DEM')
+        self.assertEqual(susc.copernicus_tile_name(-1, -75), 'Copernicus_DSM_COG_10_S01_00_W075_00_DEM')
+
+    def test_reads_only_needed_blocks_and_places_values(self):
+        fake = self.fake()
+        dem = susc.fetch_copernicus(self.grid, fake, quiet)
+        self.assertEqual(dem.shape, self.grid.shape)
+        np.testing.assert_allclose(dem, self.expected, atol=1e-3)
+        self.assertEqual(fake.calls[0][0], susc.COPERNICUS_URL.format(name=self.N10_E123))
+        block_reads = [c for c in fake.calls if c[1] != 0]
+        self.assertTrue(0 < len(block_reads) < 16)  # 64 x 64 tile in 16 blocks; the grid needs only a few
+
+    def test_missing_tile_reads_as_zero(self):
+        dem = susc.fetch_copernicus(self.grid, FakeFetch({}), quiet)
+        self.assertEqual(dem.shape, self.grid.shape)
+        self.assertFalse(dem.any())
+
+    def test_voids_read_as_zero(self):
+        data = np.full((64, 64), -32767.0, np.float32)
+        data[0, 0] = np.nan
+        dem = susc.fetch_copernicus(self.grid, self.fake(data), quiet)
+        self.assertGreaterEqual(dem.min(), 0)
+
+    def test_small_first_header_read_still_parses(self):
+        dem = susc.fetch_copernicus(self.grid, self.fake(), quiet, header_bytes=64)
+        np.testing.assert_allclose(dem, self.expected, atol=1e-3)
+
+    def test_range_fetcher(self):
+        ok = FakeSession(status=206, body=b'x' * 10)
+        self.assertEqual(susc.http_range_fetcher(ok)('u', 10, 10), b'x' * 10)
+        self.assertEqual(ok.headers[-1]['Range'], 'bytes=10-19')
+        self.assertIsNone(susc.http_range_fetcher(FakeSession(status=404))('u', 0, 1))
+        bad = FakeSession(status=500)
+        with self.assertRaises(RuntimeError):
+            susc.http_range_fetcher(bad, retries=3, backoff_s=0)('u', 0, 1)
+        self.assertEqual(len(bad.headers), 3)
