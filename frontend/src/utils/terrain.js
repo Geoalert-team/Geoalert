@@ -16,13 +16,16 @@
  * A cell floods when  rise above the spot + SURFACE_SLOPE x path distance
  * is less than the observed depth. So knee-deep water (0.5 m) reaches at
  * most about 125 m on flat ground, waist-deep about 250 m, and less where
- * the ground rises. Measured on the city's terrain that is roughly 2-4 ha
- * for knee-deep water, in line with street flooding.
+ * the ground rises. Measured at 12 spots on the low plain (2026-10-19,
+ * src/utils/floodReach.check.test.js) knee-deep water covers a median of
+ * about 1.3 ha, mostly 1-3 ha, but only 0.1-0.6 ha in some dense built-up
+ * blocks, where the elevation data partly reads rooftops as ground.
  *
  * Rule-based terrain arithmetic, no AI. Accuracy is limited by the
- * elevation data (SRTM, about 30 m, a few metres off on flat ground) and by
- * the surface-slope assumption, so the result is a starting shape the
- * officer checks and edits, never a survey.
+ * elevation data (Copernicus GLO-30, about 30 m, about 1 m off on flat
+ * ground and more among buildings) and by the surface-slope assumption, so
+ * the result is a starting shape the officer checks and edits, never a
+ * survey.
  *
  * Data: hazard-index/terrain.png and elevation.png, written by
  *   manage.py build_hazard_index --terrain-only
