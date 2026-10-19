@@ -226,6 +226,10 @@
 .pub-depth-label { display: block; font-size: .78rem; font-weight: 600; color: var(--db-heading); }
 .pub-depth-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
 .pub-depth-custom { display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; color: var(--db-soft); }
+/* What the ground is like where the officer tapped (same words as the public map) */
+.pub-spot { margin: 8px 0 0; font-size: .8rem; line-height: 1.35; color: var(--db-heading); }
+.pub-spot strong, .pub-spot span { display: block; }
+.pub-spot strong { font-size: .78rem; font-weight: 600; }
 .pub-depth-custom input {
   width: 64px; padding: 4px 6px;
   border: 1px solid var(--db-line, #cfd6e1); border-radius: 6px; font: inherit; font-size: .8rem;

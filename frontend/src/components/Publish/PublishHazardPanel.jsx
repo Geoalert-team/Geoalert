@@ -7,7 +7,8 @@ import {
   defaultMethodFor, methodByKey, methodsFor, runMethod,
 } from './shapeMethods';
 import { reportsApi } from '../../api/reportApi';
-import { loadTerrain } from '../../utils/terrain';
+import { loadElevation, loadTerrain, readSpot } from '../../utils/terrain';
+import { describeSpot } from '../../utils/spotText';
 import { checkZone } from '../../utils/zoneCheck';
 import './css/PublishHazard.css';
 
@@ -262,6 +263,7 @@ export default function PublishHazardPanel({
   // to flood it over, reports pinned on the map, past zones near the tap.
   const [depthM, setDepthM] = useState(0.5);
   const [terrain, setTerrain] = useState(null);
+  const [elevation, setElevation] = useState(null);
   const [reports, setReports] = useState([]);
   const [pastZones, setPastZones] = useState(null);
   const [pastPick, setPastPick] = useState(0);
@@ -290,6 +292,19 @@ export default function PublishHazardPanel({
     loadTerrain(susceptibilityIndex).then((t) => { if (!cancelled) setTerrain(t); });
     return () => { cancelled = true; };
   }, [method, susceptibilityIndex, terrain]);
+
+  // Ground height for the "Where you tapped" reading, fetched alongside it
+  useEffect(() => {
+    if (method !== FLOOD_DEPTH || elevation) return undefined;
+    let cancelled = false;
+    loadElevation(susceptibilityIndex).then((e) => { if (!cancelled) setElevation(e); });
+    return () => { cancelled = true; };
+  }, [method, susceptibilityIndex, elevation]);
+
+  // The same words the public map's "This spot" uses, for the officer's tap
+  const seedReading = method === FLOOD_DEPTH && seed ? readSpot(terrain, elevation, seed[0], seed[1]) : null;
+  const seedText = seedReading?.inCity ? describeSpot(seedReading) : null;
+  const seedLines = seedText ? [seedText.ground && `Ground: ${seedText.ground}`, seedText.waterway].filter(Boolean) : [];
 
   // Reports of this hazard type pinned on the map in the last three days
   useEffect(() => {
@@ -541,9 +556,15 @@ export default function PublishHazardPanel({
                   m
                 </label>
               </div>
+              {seedLines.length > 0 && (
+                <p className="pub-spot">
+                  <strong>Where you tapped</strong>
+                  {seedLines.map((line) => <span key={line}>{line}</span>)}
+                </p>
+              )}
               <small className="pub-size-hint">
-                Estimated from elevation data (about 30 m detail, can be a few metres off on flat ground).
-                Check the edge against what you see.
+                Estimated from Copernicus elevation data (about 30 m detail). Heights can be off by about 1 m,
+                more among buildings. Check the edge against what you see.
               </small>
             </div>
           )}
