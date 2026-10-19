@@ -466,35 +466,74 @@ def write_png(path, classes):
 
 
 TERRAIN_FILE = 'terrain.png'
+ELEVATION_FILE = 'elevation.png'
+
+# Blue channel of terrain.png inside the city: what the height is measured against
+TERRAIN_B_WATERWAY = 255
+TERRAIN_B_SEA = 200
+
+# Required by the Copernicus WorldDEM-30 licence (Article 6 b and c), verbatim
+COPERNICUS_NOTICE = ('produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and '
+                     'Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; '
+                     'all rights reserved')
+COPERNICUS_LIABILITY = ('The organisations in charge of the Copernicus programme by law or by delegation '
+                        'do not incur any liability for any use of the Copernicus WorldDEM-30')
 
 
-def write_terrain_png(path, hand, city_mask):
-    """
-    Height above the nearest drainage (HAND), for drawing a flood from an
-    observed water depth on the map. Packed into an ordinary RGB PNG so the
-    browser can read it back exactly through a canvas:
-
-        HAND in centimetres = R * 256 + G      (0 to 655.35 m)
-        B = 255 inside the city, 0 outside
+def _write_packed_png(path, values, blue):
+    """16-bit values as R * 256 + G, plus a blue channel, in an ordinary RGB PNG.
 
     No alpha channel on purpose: browsers premultiply alpha when reading a
     canvas, which would corrupt the packed values.
     """
-    cm = np.clip(np.round(hand * 100), 0, 65535).astype(np.uint16)
-    rgb = np.zeros((*cm.shape, 3), np.uint8)
-    rgb[..., 0] = cm >> 8
-    rgb[..., 1] = cm & 255
-    rgb[..., 2] = np.where(city_mask, 255, 0)
+    v = np.clip(np.round(values), 0, 65535).astype(np.uint16)
+    rgb = np.zeros((*v.shape, 3), np.uint8)
+    rgb[..., 0] = v >> 8
+    rgb[..., 1] = v & 255
+    rgb[..., 2] = blue
     Image.fromarray(rgb, 'RGB').save(path, optimize=True)
+
+
+def write_terrain_png(path, hand, city_mask, drains_to_sea):
+    """
+    Height above the nearest drainage (HAND), for drawing a flood from an
+    observed water depth on the map, read back exactly in the browser:
+
+        HAND in centimetres = R * 256 + G      (0 to 655.35 m)
+        B = 0 outside the city; inside, 255 when the height is measured against a
+        waterway or elevation-derived channel, 200 when against the sea
+    """
+    blue = np.where(city_mask, np.where(drains_to_sea, TERRAIN_B_SEA, TERRAIN_B_WATERWAY), 0)
+    _write_packed_png(path, hand * 100, blue)
+
+
+def write_elevation_png(path, dem, city_mask):
+    """
+    Ground height above sea level, for the "This spot" reading on the map:
+
+        height in decimetres = R * 256 + G     (negative heights read as 0)
+        B = 255 inside the city, 0 outside
+    """
+    _write_packed_png(path, dem * 10, np.where(city_mask, 255, 0))
 
 
 def terrain_meta(grid):
     return {
         'file': TERRAIN_FILE,
         'bounds': grid.bounds(),
-        'encoding': 'Height above nearest drainage in cm = R*256 + G; B = 255 inside the city',
-        'source': 'SRTM (~30 m) via AWS Terrain Tiles; drainage from OpenStreetMap waterways, '
-                  'elevation-derived channels and the coast',
+        'encoding': 'Height above nearest drainage in cm = R*256 + G; B = 0 outside the city, '
+                    '255 inside when measured against a waterway, 200 when measured against the sea',
+        'source': f'Copernicus GLO-30 (~30 m), {COPERNICUS_NOTICE}; drainage from OpenStreetMap '
+                  'waterways, elevation-derived channels and the coast',
+    }
+
+
+def elevation_meta(grid):
+    return {
+        'file': ELEVATION_FILE,
+        'bounds': grid.bounds(),
+        'encoding': 'Height above sea level in dm = R*256 + G; B = 255 inside the city, 0 outside',
+        'source': f'Copernicus GLO-30 (~30 m), {COPERNICUS_NOTICE}',
     }
 
 
@@ -586,7 +625,7 @@ def build(barangay_polygons, barangay_names, extent, out_dir, zoom=14, pad_m=500
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    write_terrain_png(out_dir / TERRAIN_FILE, factors['hand'], city_mask)
+    write_terrain_png(out_dir / TERRAIN_FILE, factors['hand'], city_mask, np.zeros_like(city_mask))
 
     if terrain_only:
         index_file = out_dir / 'index.json'
