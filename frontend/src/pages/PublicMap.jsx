@@ -58,7 +58,8 @@ const BASEMAPS = {
     label: 'Terrain',
     base: 'https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}',
     labels: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Hillshade &copy; Esri, USGS, NASA and contributors · Heights: Copernicus WorldDEM-30',
+    // The place names on top come from the same Esri service as the Map style
+    attribution: `${ESRI_ATTRIBUTION} · Hillshade: Esri, USGS, NASA and contributors · Heights: Copernicus WorldDEM-30`,
     nativeZoom: 16,
     layerOpacity: 0.7,
   },
