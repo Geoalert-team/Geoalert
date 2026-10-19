@@ -26,6 +26,10 @@ export const hazardsApi = {
   marks: (id) => client.get(`/api/hazards/${id}/marks/`).then((r) => r.data),
   addMark: (id, { kind, latitude, longitude, note }) =>
     client.post(`/api/hazards/${id}/marks/`, { kind, latitude, longitude, note }).then((r) => r.data),
+  // Take back a mark dropped by mistake. Answers with the same shape as
+  // marks(), so the panel can re-render from one call instead of two.
+  removeMark: (id, markId) =>
+    client.delete(`/api/hazards/${id}/marks/${markId}/`).then((r) => r.data),
   preview: (payload) => client.post('/api/hazards/preview/', payload).then((r) => r.data),
 
   // Extreme alerts waiting for a second officer, and approving one (sends it).

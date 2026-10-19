@@ -18,11 +18,15 @@ from apps.hazards.views import (
     HazardUnifiedView,
     HazardLayerListView,
 )
-from apps.hazards.field_views import PastZonesNearView, ZoneFieldMarksView
+from apps.hazards.field_views import (
+    PastZonesNearView, ZoneFieldMarkDetailView, ZoneFieldMarksView,
+)
 
 urlpatterns = [
     path('past-zones/',       PastZonesNearView.as_view(),          name='hazard-past-zones'),
     path('<uuid:pk>/marks/',  ZoneFieldMarksView.as_view(),         name='hazard-marks'),
+    path('<uuid:pk>/marks/<uuid:mark_id>/', ZoneFieldMarkDetailView.as_view(),
+         name='hazard-mark-detail'),
     path('',                  HazardZoneListView.as_view(),         name='hazard-list'),
     path('preview/',          HazardZonePreviewView.as_view(),      name='hazard-preview'),
     path('awaiting/',         HazardZoneAwaitingListView.as_view(), name='hazard-awaiting'),

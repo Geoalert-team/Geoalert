@@ -120,7 +120,25 @@ class PastZonesNearView(APIView):
         return Response({'results': results, 'radius_m': radius})
 
 
-def mark_row(mark):
+def can_remove(mark, viewer):
+    """
+    Whoever left the mark, or the officer who published the zone. Worked
+    out here and sent with each row so the rule lives in one place: the
+    client shows a Remove button from this, and DELETE enforces the same
+    thing. A display name is not an identity, so the client could not
+    decide this for itself anyway.
+    """
+    if viewer is None or not getattr(viewer, 'is_authenticated', False):
+        return False
+    if mark.zone.status != 'Active':
+        return False
+    return (
+        (mark.created_by_id is not None and mark.created_by_id == viewer.id)
+        or mark.zone.published_by_id == viewer.id
+    )
+
+
+def mark_row(mark, viewer=None):
     return {
         'id': str(mark.id),
         'kind': mark.kind,
@@ -131,6 +149,7 @@ def mark_row(mark):
         'created_at': mark.created_at,
         'inside_zone': mark.inside_zone,
         'disagrees': mark.disagrees,
+        'can_remove': can_remove(mark, viewer),
     }
 
 
@@ -149,7 +168,8 @@ class ZoneFieldMarksView(APIView):
         zone = HazardZone.objects.filter(pk=pk).first()
         if zone is None:
             return Response({'error': 'Hazard zone not found.'}, status=status.HTTP_404_NOT_FOUND)
-        rows = [mark_row(m) for m in zone.field_marks.select_related('created_by', 'zone')]
+        rows = [mark_row(m, request.user)
+                for m in zone.field_marks.select_related('created_by', 'zone')]
         return Response({
             'results': rows,
             'disagreeing': sum(1 for r in rows if r['disagrees']),
@@ -185,7 +205,7 @@ class ZoneFieldMarksView(APIView):
             note=(request.data.get('note') or '').strip()[:300],
             created_by=request.user,
         )
-        row = mark_row(mark)
+        row = mark_row(mark, request.user)
 
         if mark.disagrees and zone.published_by and zone.published_by_id != request.user.id:
             where = 'outside' if kind == 'Affected' else 'inside'
@@ -203,3 +223,90 @@ class ZoneFieldMarksView(APIView):
             + (' (disagrees with the outline).' if row['disagrees'] else '.'),
         )
         return Response(row, status=status.HTTP_201_CREATED)
+
+
+def marks_summary(zone, viewer, extra=None):
+    """The same shape GET returns, so a client can reuse one reducer."""
+    rows = [mark_row(m, viewer) for m in zone.field_marks.select_related('created_by', 'zone')]
+    body = {'results': rows, 'disagreeing': sum(1 for r in rows if r['disagrees'])}
+    body.update(extra or {})
+    return body
+
+
+class ZoneFieldMarkDetailView(APIView):
+    """
+    DELETE /api/hazards/<id>/marks/<mark_id>/   take back a mark
+
+    Dropping a pin on a phone in the field is the easiest thing here to get
+    wrong, and a stray mark is not cosmetic: a mark that disagrees with the
+    outline notifies the officer who published the zone and nudges them to
+    reshape a live hazard. A wrong one has to be removable.
+
+    Deleted rather than withdrawn, unlike a hazard zone. A zone is kept
+    after retraction because people were alerted and that has to stay on
+    record; a field mark notifies one officer and broadcasts nothing, so
+    there is no warning to preserve.
+
+    Who may: whoever left it, or the officer who published the zone, since
+    they are the one acting on it. Not anyone else — a mark is evidence,
+    and several people contribute marks to the same zone. Only while the
+    zone is live, which is the same condition as leaving one.
+    """
+    permission_classes = [IsAuthenticated, IsBarangayPersonnel]
+
+    def delete(self, request, pk, mark_id):
+        mark = (
+            ZoneFieldMark.objects
+            .select_related('zone', 'zone__published_by', 'zone__hazard_type',
+                            'zone__barangay', 'created_by')
+            .filter(pk=mark_id, zone_id=pk)
+            .first()
+        )
+        if mark is None:
+            return Response({'error': 'Field mark not found on this zone.'},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        zone = mark.zone
+        if zone.status != 'Active':
+            return Response(
+                {'error': 'This zone is no longer live, so its marks are part of the record.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        own = mark.created_by_id is not None and mark.created_by_id == request.user.id
+        published_this = zone.published_by_id == request.user.id
+        if not (own or published_this):
+            return Response(
+                {'error': 'Only the person who left this mark, or the officer who '
+                          'published the zone, can remove it.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Read before deleting: `disagrees` is worked out from the zone's
+        # geometry and the mark's own location.
+        disagreed = mark.disagrees
+        kind = mark.kind
+        lat = round(mark.location.y, 6)
+        lng = round(mark.location.x, 6)
+        left_by = mark.created_by.full_name if mark.created_by else 'someone since removed'
+        mark.delete()
+
+        # The officer was told about this disagreement and would otherwise
+        # open the zone looking for something that is no longer there.
+        if disagreed and zone.published_by and zone.published_by_id != request.user.id:
+            label = 'Affected here' if kind == 'Affected' else 'Clear here'
+            place = f' in {zone.barangay.name}' if zone.barangay else ''
+            notify(
+                [zone.published_by],
+                f'A "{label}" field check on your {type_name(zone)} zone{place} was '
+                f'taken back by {request.user.full_name}. The outline may no longer '
+                f'need changing there.',
+                zone,
+            )
+
+        log_event(
+            request, 'UNMARK_HAZARD_ZONE', 'hazard_zone', zone.id,
+            f'Removed a {kind} mark at {lat}, {lng} left by {left_by}'
+            + (' (it disagreed with the outline).' if disagreed else '.'),
+        )
+        return Response(marks_summary(zone, request.user, {'removed': str(mark_id)}))

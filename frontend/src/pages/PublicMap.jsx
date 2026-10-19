@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, Polygon, Polyline, ZoomControl, ScaleControl, Pane, ImageOverlay, CircleMarker, Tooltip, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, Polygon, Polyline, ZoomControl, ScaleControl, Pane, ImageOverlay, CircleMarker, Tooltip, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import { useSearchParams } from 'react-router-dom';
@@ -882,6 +882,23 @@ export default function PublicMap() {
   useEffect(() => { loadMarks(marksZoneId); }, [marksZoneId, loadMarks]);
   const visibleMarks = zoneMarks.zoneId && zoneMarks.zoneId === marksZoneId ? zoneMarks.results : [];
 
+  // Taking back a mark dropped on the wrong spot. The server answers with
+  // the whole list again, so the counts and the "disagrees" warning settle
+  // from the same reply rather than a second fetch out in the field.
+  const [removingMark, setRemovingMark] = useState(null);
+  async function removeMark(zoneId, mark) {
+    setRemovingMark(mark.id);
+    try {
+      const fresh = await hazardsApi.removeMark(zoneId, mark.id);
+      setZoneMarks({ zoneId, results: fresh?.results || [] });
+      setPublishNotice(`${MARK_STYLE[mark.kind]?.label || 'Mark'} removed.`);
+    } catch (err) {
+      setPublishNotice(err?.message || 'Could not remove that mark.');
+    } finally {
+      setRemovingMark(null);
+    }
+  }
+
   async function placeMark(latlng) {
     const { zoneId, kind } = marking;
     setMarking(null);
@@ -1114,6 +1131,24 @@ export default function PublicMap() {
                 {m.note ? ` · "${m.note}"` : ''}
                 {m.disagrees ? ' · disagrees with the outline' : ''}
               </Tooltip>
+              {/* Only on marks this person may take back; the server decides
+                  that, and enforces the same rule on the request itself. */}
+              {m.can_remove && (
+                <Popup>
+                  <p className="pm-mark-pop">
+                    <strong>{MARK_STYLE[m.kind]?.label || m.kind}</strong>
+                    {m.by ? <> · {m.by}</> : null}
+                  </p>
+                  <button
+                    type="button"
+                    className="db-btn db-btn-outline db-btn-sm"
+                    disabled={removingMark === m.id}
+                    onClick={() => removeMark(marksZoneId, m)}
+                  >
+                    {removingMark === m.id ? 'Removing…' : 'Remove this mark'}
+                  </button>
+                </Popup>
+              )}
             </CircleMarker>
           ))}
 
