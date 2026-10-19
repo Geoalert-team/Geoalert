@@ -9,6 +9,10 @@ version number kept in the cache, and the zone endpoints send an ETag made
 from it. A browser that already has the current version gets 304 Not
 Modified without a single database query.
 
+A browser that is behind still needs the new body, and right after a change
+that is every open map at once. cached_body() keeps the body built for a
+tag, so only the first of them pays for building it.
+
 The version is bumped after the transaction commits, so a refresh can't
 store the old data under the new version. The ETag also changes every five
 minutes on its own, so anything that slips past the signals (a name change
@@ -61,6 +65,33 @@ def is_fresh(request, etag):
     """True when the browser already holds this exact version."""
     sent = request.META.get('HTTP_IF_NONE_MATCH', '')
     return etag in [t.strip().removeprefix('W/') for t in sent.split(',') if t.strip()]
+
+
+def cached_body(etag, build):
+    """
+    The response body for this exact tag, built at most once.
+
+    A 304 only helps a browser that already has the current version. Right
+    after a change every open map has the old one, so each would rebuild the
+    same GeoJSON, cordon buffers and all, at its next refresh. Keyed on the
+    tag, which already covers the version, the five-minute bucket and the
+    full query, so the first map rebuilds and the rest are handed its copy.
+
+    `build` returns a plain dict. Use only on endpoints that answer every
+    caller the same way.
+    """
+    key = f'geoalert:map-body:{etag}'
+    try:
+        body = cache.get(key)
+    except Exception:
+        body = None
+    if body is None:
+        body = build()
+        try:
+            cache.set(key, body, REFRESH_EVERY)
+        except Exception:
+            pass  # no cache: built every time, as before
+    return body
 
 
 def tag(response, etag):

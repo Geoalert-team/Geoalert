@@ -6,7 +6,7 @@ from rest_framework_gis.fields import GeometryField
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from apps.barangays.models import Barangay
 from apps.hazards.geometry import (
-    CORDON_MAX_M, CORDON_MIN_M, city_outline, clip_to_city, main_barangay, with_cordon,
+    CORDON_MAX_M, CORDON_MIN_M, city_outline, clip_to_city, cordon_ring, main_barangay, with_cordon,
 )
 from apps.hazards.models import HazardType, HazardZone, HazardAlert, HazardVerification
 from apps.accounts.serializers import UserSerializer
@@ -58,18 +58,33 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
     # has none. The same shape the alert was routed on, so the ring the map
     # draws is exactly the area whose barangays were told.
     cordon = serializers.SerializerMethodField()
+    # The same cordon without the hazard inside it, for drawing: the map
+    # hatches this ring so it never looks like a hazard level of its own.
+    cordon_ring = serializers.SerializerMethodField()
 
-    def get_cordon(self, obj):
+    def _reach(self, obj):
+        """The zone grown by its cordon, buffered once per zone per response."""
         if not obj.cordon_m or obj.geometry is None:
             return None
-        city = self.context.get('city')
-        if city is None and 'city' not in self.context:
-            # Looked up once per response, not once per zone
-            city = self.context['city'] = city_outline()
-        try:
-            return json.loads(with_cordon(obj.geometry, obj.cordon_m, city).geojson)
-        except Exception:
-            return None
+        memo = self.context.setdefault('reach', {})
+        if obj.pk not in memo:
+            city = self.context.get('city')
+            if city is None and 'city' not in self.context:
+                # Looked up once per response, not once per zone
+                city = self.context['city'] = city_outline()
+            try:
+                memo[obj.pk] = with_cordon(obj.geometry, obj.cordon_m, city)
+            except Exception:
+                memo[obj.pk] = None
+        return memo[obj.pk]
+
+    def get_cordon(self, obj):
+        reach = self._reach(obj)
+        return json.loads(reach.geojson) if reach is not None else None
+
+    def get_cordon_ring(self, obj):
+        ring = cordon_ring(obj.geometry, self._reach(obj))
+        return json.loads(ring.geojson) if ring is not None else None
 
     def get_in_view(self, obj):
         within = self.context.get('within_ids')
@@ -97,8 +112,9 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
             # A raise to Extreme waiting for a second officer
             'pending_severity', 'pending_at',
             'in_view',
-            # Safety cordon: its width, and the area it reaches
-            'cordon_m', 'cordon',
+            # Safety cordon: its width, the area it reaches, and that area
+            # less the hazard
+            'cordon_m', 'cordon', 'cordon_ring',
         ]
 
 
