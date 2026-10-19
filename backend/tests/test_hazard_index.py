@@ -1,4 +1,5 @@
 import io
+import json
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
@@ -160,3 +161,45 @@ class CopernicusReaderTests(SimpleTestCase):
         with self.assertRaises(RuntimeError):
             susc.http_range_fetcher(bad, retries=3, backoff_s=0)('u', 0, 1)
         self.assertEqual(len(bad.headers), 3)
+
+
+class BuildTests(SimpleTestCase):
+    """build() on a tiny city: a 0 m strip of sea to the west, one river, ground rising east."""
+
+    EXTENT = (123.800, 10.300, 123.810, 10.310)  # west, south, east, north
+    CITY = [(1, [[(123.803, 10.300), (123.810, 10.300), (123.810, 10.310), (123.803, 10.310), (123.803, 10.300)]])]
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.out = Path(self._tmp.name)
+        height, width = susc.Grid(10.300, 123.800, 10.310, 123.810, 14).shape
+        self.dem = np.tile(np.maximum(0, np.linspace(-2, 20, width)), (height, 1)).astype(np.float32)
+        self.osm = {
+            'waterways': [{'kind': 'river', 'name': 'Test River', 'coords': [(123.807, 10.300), (123.807, 10.310)]}],
+            'coastline': [], 'roads': [], 'main_roads': [], 'landuse': [], 'buildings': [], 'fire_stations': [],
+        }
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def build(self, **kwargs):
+        susc.build(self.CITY, {1: 'Test'}, self.EXTENT, self.out, pad_m=0,
+                   dem=self.dem, osm=self.osm, log=quiet, **kwargs)
+        return json.loads((self.out / 'index.json').read_text())
+
+    def test_build_writes_elevation_and_notice(self):
+        index = self.build()
+        self.assertTrue((self.out / 'elevation.png').exists())
+        self.assertEqual(index['elevation']['file'], 'elevation.png')
+        self.assertIn(susc.COPERNICUS_NOTICE, index['sources'][0])
+        self.assertIn(susc.COPERNICUS_LIABILITY, index['sources'])
+        blue = np.asarray(Image.open(self.out / 'terrain.png'))[..., 2]
+        self.assertTrue((blue == 200).any())  # city ground measured against the sea
+        self.assertTrue((blue == 255).any())  # city ground measured against the river
+
+    def test_terrain_only_keeps_layers_and_adds_elevation(self):
+        (self.out / 'index.json').write_text(json.dumps({'layers': {'flood': 'flood.png'}}))
+        index = self.build(terrain_only=True)
+        self.assertEqual(index['layers'], {'flood': 'flood.png'})
+        self.assertTrue({'terrain', 'elevation'} <= index.keys())
+        self.assertTrue((self.out / 'elevation.png').exists())

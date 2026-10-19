@@ -10,7 +10,7 @@ from apps.hazards import susceptibility
 class Command(BaseCommand):
     help = (
         'Build the flood, landslide and fire susceptibility maps shown on the public map, '
-        'from elevation data and OpenStreetMap, clipped to the barangay boundaries.'
+        'from Copernicus elevation data and OpenStreetMap, clipped to the barangay boundaries.'
     )
 
     def add_arguments(self, parser):
@@ -23,8 +23,9 @@ class Command(BaseCommand):
         parser.add_argument('--refresh', action='store_true',
                             help='Download elevation and OpenStreetMap data again instead of reusing saved copies.')
         parser.add_argument('--terrain-only', action='store_true',
-                            help='Only write terrain.png (height above drainage, for drawing floods from a '
-                                 'water depth); leave the published susceptibility layers untouched.')
+                            help='Only write terrain.png and elevation.png (heights for the map and for '
+                                 'drawing floods from a water depth); leave the published susceptibility '
+                                 'layers untouched.')
 
     def handle(self, *args, **options):
         barangays = list(Barangay.objects.exclude(boundary__isnull=True))

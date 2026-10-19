@@ -13,7 +13,6 @@ import tifffile
 from PIL import Image, ImageDraw
 from scipy import ndimage
 
-TERRAIN_URL = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
 OVERPASS_URLS = [
     'https://overpass-api.de/api/interpreter',
     'https://overpass.private.coffee/api/interpreter',
@@ -81,7 +80,7 @@ NEIGHBORS = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1
 
 
 # ---------------------------------------------------------------------------
-# Web Mercator grid (one cell = one terrain-tile pixel at the chosen zoom)
+# Web Mercator grid (one cell = one 256-px map-tile pixel at the chosen zoom)
 # ---------------------------------------------------------------------------
 
 def lnglat_to_px(lng, lat, zoom):
@@ -134,26 +133,6 @@ def make_session():
     s = requests.Session()
     s.headers['User-Agent'] = USER_AGENT
     return s
-
-
-def fetch_dem(grid, session, log):
-    tx0, ty0 = grid.px0 // TILE, grid.py0 // TILE
-    tx1 = (grid.px0 + grid.width - 1) // TILE
-    ty1 = (grid.py0 + grid.height - 1) // TILE
-    mosaic = np.zeros(((ty1 - ty0 + 1) * TILE, (tx1 - tx0 + 1) * TILE), np.float32)
-    total = (tx1 - tx0 + 1) * (ty1 - ty0 + 1)
-    log(f'  Downloading {total} elevation tiles (zoom {grid.zoom})...')
-    for tx in range(tx0, tx1 + 1):
-        for ty in range(ty0, ty1 + 1):
-            url = TERRAIN_URL.format(z=grid.zoom, x=tx, y=ty)
-            r = session.get(url, timeout=60)
-            r.raise_for_status()
-            rgb = np.asarray(Image.open(io.BytesIO(r.content)).convert('RGB'), np.float32)
-            elev = rgb[..., 0] * 256 + rgb[..., 1] + rgb[..., 2] / 256 - 32768
-            oy, ox = (ty - ty0) * TILE, (tx - tx0) * TILE
-            mosaic[oy:oy + TILE, ox:ox + TILE] = elev
-    ox, oy = grid.px0 - tx0 * TILE, grid.py0 - ty0 * TILE
-    return mosaic[oy:oy + grid.height, ox:ox + grid.width].copy()
 
 
 COPERNICUS_URL = 'https://copernicus-dem-30m.s3.amazonaws.com/{name}/{name}.tif'
@@ -558,6 +537,7 @@ def compute_factors(grid, dem, osm, city_mask, log):
         'slope': slope,
         'relief': relief,
         'hand': hand,
+        'drains_to_sea': sea[ri, ci],  # HAND above is measured against the sea, not a waterway
         'dist_water': distance_to(water_lines | dem_streams, res),
         'dist_coast': distance_to(coast, res),
         'dist_road': distance_to(roads, res),
@@ -721,12 +701,14 @@ def build(barangay_polygons, barangay_names, extent, out_dir, zoom=14, pad_m=500
     tag = f'z{zoom}_{grid.px0}_{grid.py0}_{grid.width}x{grid.height}'
 
     if dem is None:
-        dem_file = cache / f'dem_{tag}.npy' if cache else None
+        # Named for its source, so an older SRTM download is never picked up by mistake
+        dem_file = cache / f'dem_cop30_{tag}.npy' if cache else None
         if dem_file and dem_file.exists() and not refresh:
             log('  Using saved elevation data')
             dem = np.load(dem_file)
         else:
-            dem = fetch_dem(grid, session, log)
+            log('  Downloading Copernicus GLO-30 elevation...')
+            dem = fetch_copernicus(grid, http_range_fetcher(session), log)
             if dem_file:
                 np.save(dem_file, dem)
     if osm is None:
@@ -756,7 +738,8 @@ def build(barangay_polygons, barangay_names, extent, out_dir, zoom=14, pad_m=500
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    write_terrain_png(out_dir / TERRAIN_FILE, factors['hand'], city_mask, np.zeros_like(city_mask))
+    write_terrain_png(out_dir / TERRAIN_FILE, factors['hand'], city_mask, factors['drains_to_sea'])
+    write_elevation_png(out_dir / ELEVATION_FILE, factors['elevation'], city_mask)
 
     if terrain_only:
         index_file = out_dir / 'index.json'
@@ -765,8 +748,9 @@ def build(barangay_polygons, barangay_names, extent, out_dir, zoom=14, pad_m=500
         if old_bounds and any(abs(a - b) > 1e-9 for pa, pb in zip(old_bounds, grid.bounds()) for a, b in zip(pa, pb)):
             log('  Warning: the grid differs from the published layers; terrain.png carries its own bounds.')
         index['terrain'] = terrain_meta(grid)
+        index['elevation'] = elevation_meta(grid)
         index_file.write_text(json.dumps(index, indent=1))
-        log(f'Wrote {TERRAIN_FILE} to {out_dir}')
+        log(f'Wrote {TERRAIN_FILE} and {ELEVATION_FILE} to {out_dir}')
         return
 
     layers = build_layers(factors, city_mask)
@@ -784,11 +768,13 @@ def build(barangay_polygons, barangay_names, extent, out_dir, zoom=14, pad_m=500
         'layers': files,
         'rivers': 'rivers.geojson',
         'terrain': terrain_meta(grid),
+        'elevation': elevation_meta(grid),
         'method': 'Weighted overlay of reclassified factors, five equal-interval classes',
         'factors': {h: [{'factor': f, 'breaks': b, 'direction': d, 'weight': w} for f, b, d, w in fs]
                     for h, fs in FACTORS.items()},
         'sources': [
-            'Elevation: AWS Terrain Tiles (SRTM, ~30 m)',
+            'Elevation: ' + COPERNICUS_NOTICE,
+            COPERNICUS_LIABILITY,
             'Rivers, coastline, roads, buildings, land use, fire stations: (c) OpenStreetMap contributors',
         ],
         'osmCounts': {k: len(v) for k, v in osm.items()},
