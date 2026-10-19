@@ -53,6 +53,10 @@
   .pm-basemap.is-hidden-mobile { display: none; }
 }
 
+/* Terrain style: hazard colours multiply over the hillshade, so slopes show through */
+.pm-stage.is-terrain .leaflet-hazard-levels-pane { mix-blend-mode: multiply; }
+.pm-legend-source { font-size: .7rem; }
+
 /* ---------- Barangay outlines ---------- */
 .pm .leaflet-interactive.pm-brgy {
   transition: stroke-width .15s ease, fill-opacity .15s ease;

@@ -51,6 +51,17 @@ const BASEMAPS = {
     nativeZoom: 19,
     layerOpacity: 0.6,
   },
+  // Hills and valleys. The hazard colours are blended over it (is-terrain in
+  // PublicMapGis.css) so the relief shows through them. Real detail over
+  // Talisay stops at zoom 16; Leaflet stretches it beyond.
+  terrain: {
+    label: 'Terrain',
+    base: 'https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}',
+    labels: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Hillshade &copy; Esri, USGS, NASA and contributors · Heights: Copernicus WorldDEM-30',
+    nativeZoom: 16,
+    layerOpacity: 0.7,
+  },
 };
 
 // Size limits for a drawn zone's core (a kitchen fire up to a river overflow)
@@ -991,6 +1002,7 @@ export default function PublicMap() {
           publishMode !== 'off' ? 'is-placing' : '',
           // The drawing card sits bottom-right, where the zoom buttons are
           publishMode === 'editing' || publishMode === 'reshaping' ? 'has-pub-panel' : '',
+          basemap === 'terrain' ? 'is-terrain' : '',
         ].filter(Boolean).join(' ')}
       >
         {/* ============ MAP ============ */}
@@ -1412,6 +1424,13 @@ export default function PublicMap() {
                 {new Date(susceptibility.index.generated).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' })}.
               </p>
             )}
+            {basemap === 'terrain' && (
+              <p className="pm-legend-note">Shading shows hills and valleys. Tap any spot for its height.</p>
+            )}
+            {/* Data credits the elevation licence requires wherever the layers are shown */}
+            {(susceptibility.index?.sources || []).map((source) => (
+              <p key={source} className="pm-legend-note pm-legend-source">{source}</p>
+            ))}
             </>
           )}
 
