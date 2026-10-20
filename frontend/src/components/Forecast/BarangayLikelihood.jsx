@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { historyApi } from '../../api/historyApi';
 import {
   FORECAST_DISCLAIMER, MONTHS, SEVERITY_WORD, likelihoodInfo, nextMonth, yearsText,
@@ -120,14 +121,18 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
       )}
 
       {compact && rows.length > shown.length && (
-        <p className="fc-more">{rows.length - shown.length} more on the Historical Data page.</p>
+        <p className="fc-more">
+          <Link to="/app/reports?tab=analytics">{rows.length - shown.length} more in Reports › Analytics</Link>
+        </p>
       )}
 
       {!compact && data?.profile && (
         <div className="fc-profile">
           <h3>
             Through the year: {barangay ? barangay.name : 'all of Talisay City'}
-            {hazard ? `, ${hazard.toLowerCase()}` : ''}
+            {/* The type these figures were counted for, not the one just picked:
+                until the new figures arrive, the old ones keep their own label */}
+            {data.hazard_type ? `, ${data.hazard_type.toLowerCase()}` : ''}
           </h3>
           {!barangay && (
             <p className="fc-sub">Pick a barangay in the table to see its own year.</p>
@@ -173,7 +178,8 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
             counts half as much for every three years back, so recent seasons matter more. At least
             60% of years, or two or more events expected in the month, is High; at least 30% is
             Moderate; anything less that still happened is Low. It is plain counting, with no AI or
-            machine learning, and every figure can be checked against the records below.
+            machine learning, and every figure can be checked against the archived records on the
+            History page.
           </p>
         </details>
       )}

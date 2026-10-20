@@ -13,7 +13,7 @@ import { SEVERITY_LABEL, inSeverityOrder } from '../utils/severity';
 import { reportsApi } from '../api/reportApi';
 import { hazardsApi } from '../api/hazardsApi';
 import { downloadCsv, csvFilename } from '../utils/csv';
-import { analyticsCsv } from '../utils/analyticsCsv';
+import { analyticsCsv, analyticsCriteria } from '../utils/analyticsCsv';
 import './css/Dashboard.css';
 import './css/Analytics.css';
 
@@ -80,10 +80,7 @@ export default function AnalyticsPanel() {
   const pickedName = hazardTypes.find((t) => String(t.id) === hazardTypeId)?.name || null;
 
   async function exportAs(via) {
-    const criteria = `months=${months}`
-      + `${data.hazard_type ? ` hazard_type=${data.hazard_type.name}` : ''}`
-      + `${includeSamples ? ' samples=included' : ''}`;
-    try { await reportsApi.printed('analytics', criteria, via); } catch { /* export anyway */ }
+    try { await reportsApi.printed('analytics', analyticsCriteria(data), via); } catch { /* export anyway */ }
     if (via === 'csv') downloadCsv(csvFilename('analytics'), analyticsCsv(data));
     else window.print();
   }
@@ -127,8 +124,9 @@ export default function AnalyticsPanel() {
       {error && <div className="db-card"><p className="db-error" role="alert">{error}</p></div>}
       {!data && !error && <div className="db-card"><p className="db-empty">Loading analytics…</p></div>}
 
+      <div ref={bodyRef} className="an-body">
       {data && (
-        <div ref={bodyRef} className={`an-body ${busy ? 'is-busy' : ''}`}>
+        <div className={`an-figures ${busy ? 'is-busy' : ''}`}>
           <p className="an-period">
             Last {data.months} months, from {new Date(data.since).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
             {data.hazard_type && <> · {data.hazard_type.name}</>}
@@ -143,19 +141,25 @@ export default function AnalyticsPanel() {
           <ActivityBand kpis={k} monthly={data.monthly} />
           <ResponseBand kpis={k} />
           <MonthlyMultiples monthly={data.monthly} />
+        </div>
+      )}
 
-          <div className="db-card">
-            <SeasonalOutlook hazardTypeId={hazardTypeId} hazardName={pickedName} includeSamples={includeSamples} />
-          </div>
+      {/* Drawn from the whole archive through their own endpoints: they load
+          alongside the figures and fail on their own, never waiting on them */}
+      <div className="db-card">
+        <SeasonalOutlook hazardTypeId={hazardTypeId} hazardName={pickedName} includeSamples={includeSamples} />
+      </div>
 
-          <div className="db-card">
-            <h2>Likelihood by barangay</h2>
-            <p className="db-card-sub">
-              Which barangays a month has tended to hit, from the same month in past years
-            </p>
-            <BarangayLikelihood hazard={pickedName || ''} excludeSamples={!includeSamples} />
-          </div>
+      <div className="db-card">
+        <h2>Likelihood by barangay</h2>
+        <p className="db-card-sub">
+          Which barangays a month has tended to hit, from the same month in past years
+        </p>
+        <BarangayLikelihood hazard={pickedName || ''} excludeSamples={!includeSamples} />
+      </div>
 
+      {data && (
+        <div className={`an-figures ${busy ? 'is-busy' : ''}`}>
           <div className={`an-grid ${data.hazard_type ? 'is-single' : ''}`}>
             {!data.hazard_type && (
               <div className="db-card">
@@ -189,6 +193,7 @@ export default function AnalyticsPanel() {
           </div>
         </div>
       )}
+      </div>
     </>
   );
 }

@@ -24,6 +24,9 @@ export default function SeasonalOutlook({ hazardTypeId = '', hazardName = null, 
   useEffect(() => {
     let cancelled = false;
     setError('');
+    // Clear the last type's records, so its figures never sit under the new
+    // type's sub line while the (slow, whole-archive) list loads
+    setRecords(null);
     historyApi.list(hazardTypeId ? { hazard_type: hazardTypeId } : {})
       .then((list) => { if (!cancelled) setRecords(Array.isArray(list) ? list : (list?.results || [])); })
       .catch(() => { if (!cancelled) setError('The seasonal outlook could not be loaded right now.'); });

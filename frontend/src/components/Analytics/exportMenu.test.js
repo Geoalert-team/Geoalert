@@ -32,3 +32,15 @@ test('Escape closes the menu', () => {
 test('disabled while busy', () => {
   expect(button(mount({ disabled: true }), 'Export').disabled).toBe(true);
 });
+
+test('a menu hidden while busy does not reopen by itself', () => {
+  const el = document.createElement('div');
+  document.body.appendChild(el);
+  const root = createRoot(el);
+  act(() => { root.render(<ExportMenu onExport={() => {}} />); });
+  act(() => { button(el, 'Export').click(); });
+  act(() => { root.render(<ExportMenu onExport={() => {}} disabled />); });
+  act(() => { root.render(<ExportMenu onExport={() => {}} />); });
+  expect(button(el, 'Print')).toBeUndefined();
+  expect(button(el, 'Export').getAttribute('aria-expanded')).toBe('false');
+});

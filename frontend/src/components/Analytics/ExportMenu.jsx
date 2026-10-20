@@ -20,6 +20,12 @@ export default function ExportMenu({ onExport, disabled = false }) {
   const ref = useRef(null);
   const shown = open && !disabled;
 
+  // Disabling closes the menu for good, so it does not pop back open by
+  // itself when the reload that disabled it finishes
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
   useEffect(() => {
     if (!shown) return undefined;
     function onKey(e) { if (e.key === 'Escape') setOpen(false); }

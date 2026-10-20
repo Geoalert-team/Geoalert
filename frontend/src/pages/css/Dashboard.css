@@ -269,7 +269,7 @@
 .db-resolve .db-field-row .db-field { margin-bottom: 0; }
 .db-resolve .db-field-row { margin-bottom: 12px; }
 
-/* ---- Seasonal risk outlook (History page) ---- */
+/* ---- Seasonal risk outlook (Reports › Analytics) ---- */
 .db-outlook-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px; margin-bottom: 16px;

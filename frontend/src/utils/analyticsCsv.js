@@ -3,6 +3,18 @@ import { SEVERITY_LABEL, inSeverityOrder } from './severity';
 import { MEASURES } from '../components/Analytics/measures';
 
 /**
+ * The filters behind a set of analytics figures, for the audit log line of
+ * an export. Read from the response rather than the on-screen controls: if a
+ * reload failed, the controls already show the new choice while the figures
+ * being exported are still the old ones.
+ */
+export function analyticsCriteria(d) {
+  return `months=${d.months}`
+    + `${d.hazard_type ? ` hazard_type=${d.hazard_type.name}` : ''}`
+    + `${d.includes_samples ? ' samples=included' : ''}`;
+}
+
+/**
  * The Analytics tab as CSV sections, one table per part of the screen, so the
  * file matches what the officer was looking at. The seasonal outlook and the
  * barangay likelihood are left out: they are drawn from the whole archive,

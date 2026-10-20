@@ -1,4 +1,4 @@
-/* Seasonal likelihood by barangay (History page, dashboard card) */
+/* Seasonal likelihood by barangay (Reports › Analytics, dashboard card) */
 .fc { display: flex; flex-direction: column; gap: 12px; }
 .fc-controls { display: flex; flex-wrap: wrap; gap: 12px; }
 .fc-field { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; font-weight: 600; color: var(--db-heading, #1c2e4a); }

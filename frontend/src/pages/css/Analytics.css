@@ -31,7 +31,7 @@
 .an-export-menu button:hover, .an-export-menu button:focus-visible { background: var(--db-mist); outline: none; }
 
 /* ---------- Period line and sample notice ---------- */
-.an-body.is-busy { opacity: .55; transition: opacity .15s; }
+.an-figures.is-busy { opacity: .55; transition: opacity .15s; }
 .an-period { margin: 0 0 16px; color: var(--db-soft); font-size: .9rem; }
 .an-notice {
   margin: 0 0 20px; padding: 10px 14px; border-left: 3px solid var(--db-medium); border-radius: 10px;
@@ -113,7 +113,7 @@
 }
 
 @media print {
-  .an-body.is-busy { opacity: 1; }
+  .an-figures.is-busy { opacity: 1; }
   .an-table-wrap > summary { display: none; }
   .an-tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .an-multiples, .an-meters { grid-template-columns: repeat(2, minmax(0, 1fr)); }

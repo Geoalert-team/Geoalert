@@ -1,4 +1,4 @@
-import { analyticsCsv } from './analyticsCsv';
+import { analyticsCsv, analyticsCriteria } from './analyticsCsv';
 import { inSeverityOrder } from './severity';
 
 const base = {
@@ -30,4 +30,9 @@ test('severity rows run Extreme, Moderate, Low with zeros', () => {
 
 test('inSeverityOrder keeps unknown codes at the end', () => {
   expect(inSeverityOrder([{ severity: 'Blue', count: 1 }]).map((r) => r.severity)).toEqual(['Red', 'Orange', 'Green', 'Blue']);
+});
+
+test('audit criteria describe the figures being exported, not the controls', () => {
+  expect(analyticsCriteria({ ...base, months: 6, includes_samples: true })).toBe('months=6 hazard_type=Flood samples=included');
+  expect(analyticsCriteria({ ...base, hazard_type: null })).toBe('months=12');
 });
