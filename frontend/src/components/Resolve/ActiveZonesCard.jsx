@@ -9,9 +9,13 @@ const PAGE_SIZE = 5;
 const CHIP = { Red: 'db-chip-danger', Orange: 'db-chip-warn', Green: 'db-chip-ok' };
 
 function zoneLabel(props) {
-  const type = props.hazard_type_name || props.hazard_type_details?.name || props.hazard_type_detail?.name || 'Hazard';
+  const type = zoneType(props);
   const where = props.barangay_name || props.barangay_details?.name || props.barangay_detail?.name || 'Talisay City';
   return `${type} · ${where}`;
+}
+
+function zoneType(props) {
+  return props.hazard_type_name || props.hazard_type_details?.name || props.hazard_type_detail?.name || 'Hazard';
 }
 
 /**
@@ -33,6 +37,8 @@ export default function ActiveZonesCard({ onResolved }) {
   // (it happened and is over) or 'retract' (it should never have gone out)
   const [target, setTarget] = useState(null);
   const [page, setPage] = useState(1);
+  const [filter, setFilter] = useState('');
+  const [hazardFilter, setHazardFilter] = useState('all');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -88,13 +94,20 @@ export default function ActiveZonesCard({ onResolved }) {
     onResolved?.();
   }
 
-  // Resolving the last zone on a page shrinks the list, so clamp
-  const pages = Math.max(1, Math.ceil(zones.length / PAGE_SIZE));
+  const query = filter.trim().toLocaleLowerCase();
+  const filteredZones = zones.filter((z) => {
+    const matchesType = hazardFilter === 'all' || zoneType(z).toLocaleLowerCase().includes(hazardFilter);
+    const matchesSearch = !query || `${zoneLabel(z)} ${z.severity || ''}`.toLocaleLowerCase().includes(query);
+    return matchesType && matchesSearch;
+  });
+
+  // Resolving the last zone on a page or narrowing the filter shrinks the list, so clamp.
+  const pages = Math.max(1, Math.ceil(filteredZones.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages);
-  const pageZones = zones.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pageZones = filteredZones.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
-    <div className="db-card">
+    <div className="db-card db-active-zones">
       <h2>Active hazard zones</h2>
       <p className="db-card-sub">
         {loading
@@ -106,8 +119,43 @@ export default function ActiveZonesCard({ onResolved }) {
             ].filter(Boolean).join(' · ')}
       </p>
 
+      {!loading && zones.length > 0 && (
+        <div className="db-active-zones-filter">
+          <div className="db-active-zone-types" role="group" aria-label="Filter active zones by hazard type">
+            {['all', 'flood', 'fire', 'landslide'].map((type) => (
+              <button
+                key={type}
+                type="button"
+                className={`db-active-zone-type${hazardFilter === type ? ' is-active' : ''}`}
+                aria-pressed={hazardFilter === type}
+                onClick={() => { setHazardFilter(type); setPage(1); }}
+              >
+                {type === 'all' ? 'All types' : `${type[0].toUpperCase()}${type.slice(1)}`}
+              </button>
+            ))}
+          </div>
+          <div className="db-active-zones-search-row">
+            <label className="db-field">
+              Search active zones
+              <input
+                type="search"
+                value={filter}
+                onChange={(e) => { setFilter(e.target.value); setPage(1); }}
+                placeholder="Barangay or severity"
+                aria-label="Search active hazard zones by barangay or severity"
+              />
+            </label>
+            <span className="db-active-zones-count">
+              {filteredZones.length} of {zones.length} active zone{zones.length === 1 ? '' : 's'}
+            </span>
+          </div>
+        </div>
+      )}
+
       {!loading && zones.length === 0 ? (
         <p className="db-empty">No hazard zones are active right now.</p>
+      ) : !loading && filteredZones.length === 0 ? (
+        <p className="db-empty">No active zones match the selected filters. Try another type or search.</p>
       ) : (
         <div className="db-list">
           {pageZones.map((z) => (

@@ -125,3 +125,136 @@
   .an-body canvas { max-width: 100% !important; height: auto !important; }
   .an-band, .an-multiple, .an-meter, .an-stat, .an-grid .db-card { break-inside: avoid; }
 }
+
+/* ---------- Analytics tab visual refresh ---------- */
+.ra-page .an-toolbar {
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+  padding: 20px 22px;
+  border-color: #e0e7f0;
+  border-radius: 18px;
+  box-shadow: 0 7px 20px rgba(28, 46, 74, .045);
+}
+
+.ra-page .an-seg {
+  padding: 4px;
+  border: 1px solid #e1e7ef;
+  border-radius: 12px;
+  background: #f4f7fb;
+}
+.ra-page .an-seg button {
+  min-height: 38px;
+  padding: 8px 15px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #56677d;
+}
+.ra-page .an-seg button.is-active {
+  background: #1c2e4a;
+  color: #fff;
+  box-shadow: 0 3px 8px rgba(28, 46, 74, .15);
+}
+.ra-page .an-hazard { min-width: 170px; font-weight: 700; color: #52647a; }
+.ra-page .an-hazard select { min-height: 42px; border-radius: 10px; }
+.ra-page .an-toolbar-end { gap: 14px; }
+.ra-page .an-secondary { color: #53657b; }
+.ra-page .an-export > .db-btn { min-height: 40px; border-radius: 10px; }
+
+.ra-page .an-period {
+  margin: 0 0 18px;
+  padding: 11px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .72);
+  color: #63738a;
+  font-size: .86rem;
+}
+.ra-page .an-notice { border-radius: 12px; }
+.ra-page .an-band { margin-bottom: 28px; }
+.ra-page .an-band > h2 {
+  position: relative;
+  margin: 0 0 14px;
+  padding-left: 13px;
+  color: #172c45;
+  font-size: 1.24rem;
+  letter-spacing: -.015em;
+}
+.ra-page .an-band > h2::before {
+  position: absolute;
+  inset: 2px auto 2px 0;
+  width: 4px;
+  border-radius: 4px;
+  background: #3f6c9f;
+  content: '';
+}
+.ra-page .an-band > h2 + .db-card-sub { margin: -4px 0 14px; }
+
+.ra-page .an-tiles { gap: 13px; }
+.ra-page .an-stat {
+  min-height: 178px;
+  padding: 18px;
+  border-color: #e0e7f0;
+  border-radius: 16px;
+  box-shadow: 0 5px 16px rgba(28, 46, 74, .045);
+}
+.ra-page .an-stat .db-stat-value { color: #172c45; font-size: 2rem; letter-spacing: -.025em; }
+.ra-page .an-stat .db-stat-label { margin-top: 5px; color: #4d6078; font-size: .84rem; font-weight: 700; }
+.ra-page .an-stat-hint { color: #738198; line-height: 1.4; }
+.ra-page .an-spark { max-width: 150px; padding-top: 16px; }
+
+.ra-page .an-meters { gap: 14px; }
+.ra-page .an-meter {
+  padding: 19px;
+  border-color: #e0e7f0;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 4px 13px rgba(28, 46, 74, .035);
+}
+.ra-page .an-meter-track { height: 9px; border-radius: 999px; }
+.ra-page .an-meter-fill { border-radius: 999px; }
+.ra-page .an-medians { gap: 13px; margin-top: 14px; }
+.ra-page .an-medians .an-stat { min-height: 120px; }
+
+.ra-page .an-body > .db-card,
+.ra-page .an-grid > .db-card {
+  margin-bottom: 22px;
+  padding: 22px;
+  border-color: #e0e7f0;
+  border-radius: 18px;
+  box-shadow: 0 7px 20px rgba(28, 46, 74, .045);
+}
+.ra-page .an-body > .db-card h2,
+.ra-page .an-grid > .db-card h2 { color: #172c45; font-size: 1.12rem; }
+.ra-page .an-body > .db-card > .db-card-sub { margin-top: 5px; }
+.ra-page .an-multiples { gap: 13px; }
+.ra-page .an-multiple {
+  padding: 15px 16px 10px;
+  border-color: #e5eaf1;
+  border-radius: 13px;
+  background: #fbfcfe;
+}
+.ra-page .an-multiple-head h3 { color: #31465f; }
+.ra-page .an-multiple-total { color: #172c45; }
+.ra-page .an-table-wrap { margin-top: 16px; padding-top: 12px; border-top: 1px solid #e8edf3; }
+.ra-page .an-outlook-summary { line-height: 1.55; }
+.ra-page .an-grid { gap: 18px; }
+
+@media (max-width: 900px) {
+  .ra-page .an-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .ra-page .an-toolbar { padding: 16px; }
+  .ra-page .an-hazard { width: 100%; }
+  .ra-page .an-stat { min-height: 158px; padding: 15px; }
+  .ra-page .an-stat .db-stat-value { font-size: 1.75rem; }
+  .ra-page .an-medians .an-stat { min-height: 110px; }
+  .ra-page .an-body > .db-card,
+  .ra-page .an-grid > .db-card { padding: 17px; border-radius: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ra-page .an-figures.is-busy { transition: none; }
+}

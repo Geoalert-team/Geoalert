@@ -67,7 +67,7 @@ export default function ReportingAnalytics() {
   }
 
   return (
-    <div className="db">
+    <div className="db ra-page">
       <PublicNavbar />
       <div className="db-wrap">
         <div className="db-header">

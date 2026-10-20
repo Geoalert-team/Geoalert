@@ -113,3 +113,117 @@
   .drm-dl { grid-template-columns: 1fr; gap: 2px; }
   .drm-dl dd { margin-bottom: 8px; }
 }
+
+/* ---------- DRRMO dashboard visual refresh ---------- */
+.drm {
+  background:
+    radial-gradient(ellipse at 88% 0%, rgba(253, 240, 227, .68), transparent 32rem),
+    #f3f6fa;
+}
+
+.drm .adm-wrap { max-width: 1280px; padding-top: 36px; }
+
+.drm .adm-header {
+  position: relative;
+  align-items: center;
+  margin-bottom: 22px;
+  padding: 26px 30px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: linear-gradient(112deg, #fff 0%, #fff 60%, #fff7ed 100%);
+  box-shadow: 0 10px 26px rgba(28, 46, 74, .06);
+}
+
+.drm .adm-header::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: #c66a20;
+  content: '';
+}
+
+.drm .adm-header h1 { color: #172c45; font-size: clamp(1.9rem, 3.2vw, 2.55rem); letter-spacing: -.035em; }
+.drm .adm-eyebrow { color: #a45719; }
+.drm .adm-lede { max-width: 680px; line-height: 1.55; }
+.drm .adm-header-side { position: relative; z-index: 1; }
+.drm .drm-map-link { background: #1c2e4a; color: #fff; }
+.drm .drm-map-link:hover { background: #2a4268; }
+
+.drm .adm-metrics { gap: 14px; margin-bottom: 22px; }
+.drm .adm-metric {
+  position: relative;
+  min-height: 126px;
+  gap: 13px;
+  padding: 19px;
+  overflow: hidden;
+  border-color: #e1e7ef;
+  border-radius: 16px;
+  box-shadow: 0 5px 16px rgba(28, 46, 74, .045);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.drm .adm-metric:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(28, 46, 74, .09); }
+.drm .adm-metric-icon { width: 44px; height: 44px; border-radius: 13px; }
+.drm .adm-metric-label { color: #596a80; }
+.drm .adm-metric-value { color: #172c45; font-size: 2rem; }
+.drm .adm-metric-note { line-height: 1.4; }
+
+.drm .adm-wrap > .db-card,
+.drm .adm-wrap > .adm-card {
+  margin-bottom: 22px;
+  border-color: #e0e6ee;
+  border-radius: 18px;
+  box-shadow: 0 7px 20px rgba(28, 46, 74, .05);
+}
+
+.drm .adm-wrap > .db-card { padding: 22px; }
+.drm .adm-wrap > .db-card > h2 { color: #172c45; font-size: 1.16rem; }
+.drm .adm-wrap > .db-card > .db-card-sub { margin-top: 4px; }
+.drm .adm-card-flush { padding: 0 !important; }
+
+.drm .drm-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px 16px;
+}
+.drm .drm-section-head h2 { color: #172c45; font-size: 1.18rem; }
+.drm .drm-section-head p { margin-top: 5px; line-height: 1.5; }
+.drm .drm-section-head a { color: #1d4f91; font-weight: 700; text-underline-offset: 3px; }
+
+.drm .drm-status-tabs { margin-top: 0; padding: 0 18px; }
+.drm .drm-status-tabs .adm-tab.is-active { color: #172c45; }
+.drm .drm-status-tabs .adm-tab.is-active::after { background: #b85b16; }
+.drm .drm-report { padding: 19px 22px; }
+.drm .drm-report:hover { background: #f8fafc; }
+.drm .drm-report-title { color: #172c45; }
+.drm .drm-report-actions .adm-btn { border-radius: 9px; }
+.drm .adm-toolbar { gap: 10px; padding: 16px 20px; background: #fff; }
+.drm .adm-toolbar .adm-select { min-height: 40px; border-radius: 10px; }
+.drm .adm-table-meta { min-height: 42px; background: #f8fafc; }
+
+@media (max-width: 760px) {
+  .drm .adm-wrap { padding: 22px 16px 48px; }
+  .drm .adm-header { align-items: flex-start; padding: 22px 20px 22px 24px; }
+  .drm .adm-header-side { width: 100%; }
+  .drm .adm-header-side .adm-btn { flex: 1; }
+  .drm .adm-metrics { gap: 11px; }
+  .drm .adm-metric { min-height: 116px; }
+  .drm .adm-wrap > .db-card { padding: 18px; }
+  .drm .drm-section-head { padding: 18px 18px 14px; }
+  .drm .drm-report { padding: 16px; }
+}
+
+@media (max-width: 480px) {
+  .drm .adm-metrics { grid-template-columns: 1fr 1fr; }
+  .drm .adm-metric { flex-direction: column; gap: 9px; padding: 14px; }
+  .drm .adm-metric-value { font-size: 1.65rem; }
+  .drm .drm-section-head { align-items: flex-start; }
+  .drm .adm-toolbar .adm-select { flex: 1 1 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drm .adm-metric { transition: none; }
+  .drm .adm-metric:hover { transform: none; }
+}

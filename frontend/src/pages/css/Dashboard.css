@@ -365,6 +365,33 @@
 .db-report .db-grid-2 { grid-template-columns: 1fr 1fr; gap: 28px; }
 @media (max-width: 900px) { .db-report .db-grid-2 { grid-template-columns: 1fr; } }
 
+/* ---- Active hazard zone search (DRRMO dashboard) ---- */
+.db-active-zones .db-active-zones-filter {
+  display: flex; flex-direction: column; align-items: stretch; gap: 12px;
+  margin: 4px 0 16px; padding: 14px; border: 1px solid var(--db-line);
+  border-radius: 12px; background: var(--db-mist);
+}
+.db-active-zone-types { display: flex; flex-wrap: wrap; gap: 8px; }
+.db-active-zones .db-active-zone-type {
+  min-height: 36px; padding: 0 15px; border: 1px solid var(--db-line);
+  border-radius: var(--db-pill); background: var(--db-white); color: var(--db-body);
+  font: inherit; font-size: .84rem; font-weight: 700; cursor: pointer;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease;
+}
+.db-active-zones .db-active-zone-type:hover { border-color: var(--db-navy); color: var(--db-navy); }
+.db-active-zones .db-active-zone-type.is-active { border-color: var(--db-navy); background: var(--db-navy); color: var(--db-white); }
+.db-active-zones .db-active-zones-search-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; }
+.db-active-zones .db-active-zones-search-row .db-field { flex: 1; max-width: 460px; }
+.db-active-zones .db-active-zones-filter input {
+  min-height: 40px; border-radius: 10px; background: var(--db-white);
+}
+.db-active-zones .db-active-zones-count { padding-bottom: 9px; color: var(--db-soft); font-size: .82rem; white-space: nowrap; }
+@media (max-width: 560px) {
+  .db-active-zones .db-active-zones-search-row { align-items: stretch; flex-direction: column; gap: 8px; }
+  .db-active-zones .db-active-zones-search-row .db-field { max-width: none; }
+  .db-active-zones .db-active-zones-count { padding: 0; }
+}
+
 /* Printing a report should give a clean sheet, not the whole app */
 @media print {
   .db { background: #fff; }
