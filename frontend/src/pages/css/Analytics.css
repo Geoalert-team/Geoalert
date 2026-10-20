@@ -1,39 +1,127 @@
-/* F7 Analytics dashboard. Builds on Dashboard.css (db-*). */
-.an-toolbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.an-exports { margin-left: auto; }
+/* F7 Analytics. Builds on Dashboard.css (db-*). Prefixes: an- (the tab),
+   ba- (barangay activity table). Lines, sparklines and meters are navy only;
+   hazard and severity colours appear in the two breakdown charts alone. */
 
-.an-seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--db-line); border-radius: 10px; overflow: hidden; }
+/* ---------- Filter row ---------- */
+.an-toolbar { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.an-toolbar-end { display: flex; align-items: center; gap: 16px; margin-left: auto; flex-wrap: wrap; }
+.an-hazard select { min-height: 38px; }
+.an-secondary { font-size: .84rem; color: var(--db-soft); }
+
+.an-seg { display: inline-flex; border: 1px solid var(--db-line); border-radius: 10px; overflow: hidden; }
 .an-seg button {
   border: 0; border-right: 1px solid var(--db-line); background: var(--db-white); color: var(--db-body);
-  padding: 8px 14px; font: inherit; font-size: .86rem; font-weight: 700; cursor: pointer;
+  padding: 8px 14px; font: inherit; font-size: .86rem; font-weight: 700; cursor: pointer; white-space: nowrap;
 }
 .an-seg button:last-child { border-right: 0; }
 .an-seg button.is-active { background: var(--db-navy); color: #fff; }
 .an-seg button:disabled { cursor: default; }
-.an-seg-sm button { padding: 6px 10px; font-size: .78rem; }
 
+.an-export { position: relative; }
+.an-export-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 190px;
+  display: flex; flex-direction: column; padding: 6px;
+  background: var(--db-white); border: 1px solid var(--db-line); border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(28, 46, 74, .14);
+}
+.an-export-menu button {
+  border: 0; background: none; text-align: left; padding: 9px 12px; border-radius: 8px;
+  font: inherit; font-size: .88rem; color: var(--db-body); cursor: pointer;
+}
+.an-export-menu button:hover, .an-export-menu button:focus-visible { background: var(--db-mist); outline: none; }
+
+/* ---------- Period line and sample notice ---------- */
 .an-body.is-busy { opacity: .55; transition: opacity .15s; }
 .an-period { margin: 0 0 16px; color: var(--db-soft); font-size: .9rem; }
+.an-notice {
+  margin: 0 0 20px; padding: 10px 14px; border-left: 3px solid var(--db-medium); border-radius: 10px;
+  background: var(--db-medium-tint); color: var(--db-heading); font-size: .9rem;
+}
+
+/* ---------- Bands ---------- */
+.an-band { margin-bottom: 32px; }
+.an-band > h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 12px; }
+.an-band > h2 + .db-card-sub { margin-top: -6px; }
+
+.an-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
+.an-stat { display: flex; flex-direction: column; }
+.an-stat .db-stat-label { text-transform: none; }
 .an-stat-hint { margin-top: 4px; font-size: .78rem; color: var(--db-soft); }
+.an-spark { display: block; width: 100%; max-width: 140px; height: auto; margin-top: auto; padding-top: 12px; }
 
-.an-response { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-top: 8px; }
-.an-response > div { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: 10px; background: #f5f7fa; }
-.an-big { font-family: var(--db-font-head); font-size: 1.5rem; font-weight: 800; color: var(--db-heading); }
-.an-response span:not(.an-big) { color: var(--db-body); font-size: .88rem; font-weight: 600; }
-.an-response small { color: var(--db-soft); font-size: .78rem; }
+.an-big { font-family: var(--db-font-head); font-size: 1.8rem; font-weight: 800; color: var(--db-heading); line-height: 1.1; }
+.an-meters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.an-meter { padding: 20px; border: 1px solid var(--db-line); border-radius: var(--db-radius); background: var(--db-white); }
+.an-meter-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.an-meter-label { font-weight: 700; color: var(--db-body); font-size: .92rem; }
+.an-meter-track { height: 8px; margin: 12px 0 8px; border-radius: 4px; background: var(--db-mist); overflow: hidden; }
+.an-meter-fill { height: 100%; border-radius: 4px; background: var(--db-navy); }
+.an-meter small { color: var(--db-soft); font-size: .8rem; }
+.an-medians { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
 
-.an-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
-.an-grid { grid-template-columns: 1fr 1fr; }
-@media (max-width: 900px) { .an-grid { grid-template-columns: 1fr; } .an-exports { margin-left: 0; } }
+/* ---------- Month by month ---------- */
+.an-multiples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.an-multiple { padding: 14px 16px 8px; border: 1px solid var(--db-line); border-radius: 12px; }
+.an-multiple-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.db-card .an-multiple-head h3 { margin: 0; font-size: .95rem; }
+.an-multiple-total { font-family: var(--db-font-head); font-size: 1.1rem; font-weight: 800; color: var(--db-heading); white-space: nowrap; }
+.an-multiple-total small { font-family: var(--db-font-body); font-size: .75rem; font-weight: 400; color: var(--db-soft); }
 
-.an-table-wrap { margin-top: 14px; }
+.an-table-wrap { margin-top: 14px; overflow-x: auto; }
 .an-table-wrap summary { cursor: pointer; font-weight: 700; color: var(--db-heading); font-size: .88rem; }
 .an-table-wrap .db-table { margin-top: 10px; }
-@media (max-width: 640px) { .an-table-wrap { overflow-x: auto; } }
+.an-body .db-table td { font-variant-numeric: tabular-nums; }
+
+/* ---------- Outlook ---------- */
+.an-outlook-summary { margin: 0 0 12px; color: var(--db-body); }
+
+/* ---------- Breakdowns ---------- */
+.an-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
+.an-grid.is-single { grid-template-columns: minmax(0, 1fr); }
+
+.ba-wrap { overflow-x: auto; }
+.ba-table th { white-space: nowrap; }
+.ba-sort {
+  border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: inherit; cursor: pointer;
+}
+.ba-sort:hover { color: var(--db-heading); }
+.ba-sort:focus-visible { outline: 2px solid var(--db-navy); outline-offset: 2px; border-radius: 4px; }
+.ba-count { white-space: nowrap; }
+.ba-num { display: inline-block; min-width: 2.5em; text-align: right; font-weight: 700; color: var(--db-heading); }
+.ba-track { display: inline-block; width: 120px; margin-left: 10px; vertical-align: middle; }
+.ba-bar { display: block; height: 6px; border-radius: 3px; background: var(--db-navy); opacity: .7; }
+.ba-table:not(.is-expanded) .ba-more { display: none; }
+.ba-toggle { margin-top: 12px; }
+
+/* Grid children may shrink below their content (a Chart.js canvas holds
+   its last width), so narrowing the window never scrolls sideways */
+.an-tiles > *, .an-meters > *, .an-medians > *, .an-multiples > *, .an-grid > * { min-width: 0; }
+
+@media (max-width: 900px) {
+  .an-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .an-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .an-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .an-meters, .an-medians, .an-multiples { grid-template-columns: minmax(0, 1fr); }
+  /* The four periods stay on one line instead of orphaning a button */
+  .an-seg { display: flex; width: 100%; }
+  .an-seg button { flex: 1; padding: 8px 6px; }
+  .an-toolbar-end { margin-left: 0; width: 100%; justify-content: space-between; }
+  .ba-track { width: 56px; margin-left: 6px; }
+}
 
 @media print {
-  .an-table-wrap { display: block; }
-  .an-table-wrap > summary { display: none; }
   .an-body.is-busy { opacity: 1; }
-  .an-grid .db-card, .an-response > div { break-inside: avoid; }
+  .an-table-wrap > summary { display: none; }
+  .an-tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .an-multiples, .an-meters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Same selector as the screen rule that hides them, so this one wins */
+  .ba-table:not(.is-expanded) .ba-more { display: table-row; }
+  .ba-bar, .an-meter-fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  /* Chrome lays out the print page after beforeprint, so a chart keeps its
+     screen-width bitmap; scaling the canvas to its box keeps it inside */
+  .an-body canvas { max-width: 100% !important; height: auto !important; }
+  .an-band, .an-multiple, .an-meter, .an-stat, .an-grid .db-card { break-inside: avoid; }
 }

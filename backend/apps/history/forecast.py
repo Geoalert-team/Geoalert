@@ -42,6 +42,11 @@ MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
                'August', 'September', 'October', 'November', 'December']
 
 
+def drop_samples(events, exclude):
+    """The events without seeded sample rows when `exclude`, else unchanged."""
+    return [e for e in events if not e['is_sample']] if exclude else events
+
+
 def years_for_month(month, now, first_event, max_years=MAX_YEARS):
     """
     The past years whose `month` is fully in the record, newest first.

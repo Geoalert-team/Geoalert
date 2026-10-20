@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Line } from 'react-chartjs-2';
 import ChartFrame from './ChartFrame';
 import { BASE_OPTIONS, INK, axisScales, crosshair } from './chartTheme';
+import { withAlpha } from '../../utils/color';
 
 /**
  * Events over time. One series, so no legend — the card's heading names it.
@@ -14,13 +15,19 @@ import { BASE_OPTIONS, INK, axisScales, crosshair } from './chartTheme';
  * Props:
  *   points   [{ label, value }] in time order
  *   height   px
- *   color    line colour, default navy
+ *   color    line colour (hex), default navy; the fill under it follows
+ *   unit     { one, many } naming what is counted, for the tooltip
+ *   table    false when the caller shows the numbers in its own table
  *   empty    message when there is nothing to draw
  */
+const EVENTS = { one: 'event', many: 'events' };
+
 export default function TrendLine({
   points = [],
   height = 280,
   color = INK.navy,
+  unit = EVENTS,
+  table = true,
   empty = 'No data for this filter.',
 }) {
   const dense = points.length > 24;
@@ -33,13 +40,15 @@ export default function TrendLine({
       borderColor: color,
       borderWidth: 2,
       tension: 0.25,
+      // Monotone: the curve never bends above or below the counts it joins
+      cubicInterpolationMode: 'monotone',
       fill: true,
       backgroundColor: (ctx) => {
         const { chartArea, ctx: c } = ctx.chart;
         if (!chartArea) return 'transparent';
         const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-        g.addColorStop(0, 'rgba(28,46,74,0.14)');
-        g.addColorStop(1, 'rgba(28,46,74,0)');
+        g.addColorStop(0, withAlpha(color, 0.14));
+        g.addColorStop(1, withAlpha(color, 0));
         return g;
       },
       pointRadius: dense ? 0 : 4,
@@ -64,15 +73,17 @@ export default function TrendLine({
         callbacks: {
           label: (item) => {
             const n = item.parsed.y;
-            return ` ${n} event${n === 1 ? '' : 's'}`;
+            return ` ${n} ${n === 1 ? unit.one : unit.many}`;
           },
         },
       },
     },
-  }), [dense]);
+  }), [dense, unit]);
+
+  const valueHead = unit.many.charAt(0).toUpperCase() + unit.many.slice(1);
 
   return (
-    <ChartFrame height={height} rows={points} empty={empty}>
+    <ChartFrame height={height} rows={points} valueHead={valueHead} table={table} empty={empty}>
       <Line data={data} options={options} plugins={[crosshair]} />
     </ChartFrame>
   );

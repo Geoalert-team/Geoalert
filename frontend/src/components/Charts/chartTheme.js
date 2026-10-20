@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { installPrintResize } from './printResize';
 
 /**
  * One place for every chart in GeoAlert: palette, type scale, axis styling
@@ -29,6 +30,9 @@ ChartJS.register(
   Tooltip,
   Legend,
 );
+
+// Printed and PDF copies get charts drawn for the print layout
+installPrintResize(ChartJS);
 
 /* ---------- Ink: text and furniture, never series identity ---------- */
 export const INK = {
@@ -71,15 +75,18 @@ export const SEVERITY_SERIES = {
   Green:  '#1f9d55', // --db-low
 };
 
-export const SEVERITY_LABEL = { Red: 'Extreme', Orange: 'Moderate', Green: 'Low' };
+// Defined with the severity order in utils/severity.js, which tests can load
+export { SEVERITY_LABEL } from '../../utils/severity';
 
 export function severitySeriesColor(code) {
   return SEVERITY_SERIES[code] || INK.soft;
 }
 
 /* ---------- Shared type scale ---------- */
+// The page's body face (loaded by the navbar stylesheet), so axis text
+// matches the text around the chart
 const FONT = {
-  family: "'Segoe UI', system-ui, -apple-system, sans-serif",
+  family: "'Atkinson Hyperlegible', 'Segoe UI', system-ui, -apple-system, sans-serif",
   size: 12,
 };
 
@@ -193,6 +200,9 @@ export const BASE_OPTIONS = {
   responsive: true,
   maintainAspectRatio: false,
   animation: { duration: 220 },
+  // A resize redraws at once: the root duration above would otherwise
+  // animate it, and a print snapshot taken mid-way shows squeezed lines
+  transitions: { resize: { animation: { duration: 0 } } },
   plugins: {
     legend: { display: false },
     tooltip: TOOLTIP,

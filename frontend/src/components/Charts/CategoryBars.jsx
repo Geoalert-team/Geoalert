@@ -19,6 +19,7 @@ import { BASE_OPTIONS, INK, axisScales, barValues } from './chartTheme';
  *   height      px; omit to size from the row count
  *   valueHead   table heading for the value column
  *   empty       message when there is nothing to draw
+ *   thin        slimmer bars, for compact cards
  */
 export default function CategoryBars({
   rows = [],
@@ -26,6 +27,7 @@ export default function CategoryBars({
   height,
   valueHead = 'Events',
   empty = 'No data for this filter.',
+  thin = false,
 }) {
   const resolved = height || Math.max(160, rows.length * (horizontal ? 38 : 46) + 60);
 
@@ -40,10 +42,10 @@ export default function CategoryBars({
       borderWidth: 2,
       borderRadius: 4,
       borderSkipped: false,
-      barPercentage: 0.75,
+      barPercentage: thin ? 0.6 : 0.75,
       categoryPercentage: 0.82,
     }],
-  }), [rows, valueHead]);
+  }), [rows, valueHead, thin]);
 
   const options = useMemo(() => {
     const scales = axisScales({ horizontal });

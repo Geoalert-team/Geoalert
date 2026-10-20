@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.hazards.models import HazardAlert, HazardZone
+from apps.hazards.models import HazardAlert, HazardType, HazardZone
 from apps.history.models import HistoricalRecord
 from apps.notifications.models import Notification
 from apps.reports.models import IncidentReport
@@ -60,11 +60,38 @@ def share(part, whole):
     return round(part / whole, 3) if whole else None
 
 
+def hazard_type_param(raw):
+    """A hazard type id from the query string, or None for all types."""
+    # isascii: isdigit() alone accepts '²', which int() then rejects
+    if isinstance(raw, str) and raw.isascii() and raw.isdigit() and int(raw) > 0:
+        return int(raw)
+    return None
+
+
+def barangay_activity(zone_rows, incident_rows):
+    """
+    One row per barangay with both counts, from two {'barangay__name', 'count'}
+    lists. A barangay in only one list gets 0 for the other, so the table
+    never implies a count it was not given. Most zones first, then most
+    incident reports, then by name.
+    """
+    rows = {}
+    for key, source in (('zones', zone_rows), ('incidents', incident_rows)):
+        for r in source:
+            name = r['barangay__name'] or 'Unspecified'
+            row = rows.setdefault(name, {'barangay': name, 'zones': 0, 'incidents': 0})
+            row[key] += r['count']
+    return sorted(rows.values(), key=lambda r: (-r['zones'], -r['incidents'], r['barangay']))
+
+
 class AnalyticsView(APIView):
     """
     GET /api/reports/analytics/?months=12
 
     months: 3, 6, 12 or 24 (default 12), counted back from this month.
+    hazard_type: a hazard type id; every figure then counts that type only.
+                 Anything else counts all types, and the response's
+                 hazard_type is null so the screen labels itself correctly.
     include_samples=true counts seeded test rows too.
     """
     permission_classes = [IsAuthenticated, IsDRRMOOfficer]
@@ -89,6 +116,17 @@ class AnalyticsView(APIView):
         notices = Notification.objects.filter(hazard_alert__in=alerts)
         incidents = IncidentReport.objects.filter(submitted_at__gte=since)
         events = without_samples(HistoricalRecord.objects.filter(occurred_at__gte=since), request)
+
+        type_id = hazard_type_param(request.query_params.get('hazard_type'))
+        htype = HazardType.objects.filter(pk=type_id).first() if type_id else None
+        if htype:
+            zones_all = zones_all.filter(hazard_type=htype)
+            zones = zones.filter(hazard_type=htype)
+            published = published.filter(hazard_type=htype)
+            alerts = alerts.filter(hazard_zone__hazard_type=htype)
+            notices = Notification.objects.filter(hazard_alert__in=alerts)
+            incidents = incidents.filter(hazard_type=htype)
+            events = events.filter(hazard_type=htype)
 
         # Month by month, every month present even when nothing happened
         series = {
@@ -122,6 +160,7 @@ class AnalyticsView(APIView):
             'generated_at': now,
             'generated_by': request.user.full_name,
             'includes_samples': include_samples(request),
+            'hazard_type': {'id': htype.id, 'name': htype.name} if htype else None,
             'kpis': {
                 'active_zones_now': zones_all.filter(status='Active').count(),
                 'zones_published': published.count(),
@@ -144,10 +183,15 @@ class AnalyticsView(APIView):
             'monthly': monthly,
             'zones_by_type': list(published.values('hazard_type__name').annotate(count=Count('pk')).order_by('-count')),
             'zones_by_severity': list(published.values('severity').annotate(count=Count('pk')).order_by('-count')),
-            'zones_by_barangay': list(published.values('barangay__name').annotate(count=Count('pk')).order_by('-count')[:10]),
-            'incidents_by_barangay': list(incidents.values('barangay__name').annotate(count=Count('pk')).order_by('-count')[:10]),
+            # Every barangay with any activity, both counts in one row, so a
+            # barangay's zones and its reports can be read side by side
+            'barangays': barangay_activity(
+                published.values('barangay__name').annotate(count=Count('pk')).order_by(),
+                incidents.values('barangay__name').annotate(count=Count('pk')).order_by(),
+            ),
         }
 
         log_event(request, 'GENERATE_REPORT', 'hazard_zone', '',
-                  f'Analytics — last {months} month(s).{" Samples included." if data["includes_samples"] else ""}')
+                  f'Analytics — last {months} month(s){f", {htype.name}" if htype else ""}.'
+                  f'{" Samples included." if data["includes_samples"] else ""}')
         return Response(data)

@@ -6,20 +6,23 @@ import {
 import './forecast.css';
 
 /**
- * Which barangays a month has tended to hit, and with what. Pick a month
- * and a hazard type; pick a barangay row to see its whole year.
+ * Which barangays a month has tended to hit, and with what. Pick a month;
+ * pick a barangay row to see its whole year.
  *
  * Rule-based seasonal statistics from the archive (backend
  * apps/history/forecast.py), not AI and not a weather forecast.
  *
  * Props:
- *   compact      dashboard card: top rows only, no month profile
- *   limit        rows shown when compact (default 5)
- *   hazardTypes  [{ id, name }] for the type picker; omitted = no picker
+ *   compact         dashboard card: top rows only, no month profile
+ *   limit           rows shown when compact (default 5)
+ *   hazard          hazard type name to narrow to, '' for all. Set by the
+ *                   page's own filter (Reports › Analytics), so there is
+ *                   no second hazard picker in here.
+ *   excludeSamples  leave seeded sample records out (Analytics does unless
+ *                   asked; the dashboard card labels them instead)
  */
-export default function BarangayLikelihood({ compact = false, limit = 5, hazardTypes = [] }) {
+export default function BarangayLikelihood({ compact = false, limit = 5, hazard = '', excludeSamples = false }) {
   const [month, setMonth] = useState(nextMonth());
-  const [hazard, setHazard] = useState('');
   const [barangay, setBarangay] = useState(null); // { id, name } for the profile
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -31,11 +34,12 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazardT
       month,
       ...(hazard ? { hazard_type_name: hazard } : {}),
       ...(barangay ? { barangay: barangay.id } : {}),
+      ...(excludeSamples ? { exclude_samples: 'true' } : {}),
     })
       .then((d) => { if (!cancelled) setData(d); })
       .catch(() => { if (!cancelled) setError('Could not load the seasonal likelihood.'); });
     return () => { cancelled = true; };
-  }, [month, hazard, barangay]);
+  }, [month, hazard, barangay, excludeSamples]);
 
   const monthName = MONTHS[month - 1];
   const rows = data?.results || [];
@@ -50,15 +54,6 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazardT
             {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
           </select>
         </label>
-        {hazardTypes.length > 0 && (
-          <label className="fc-field">
-            Hazard
-            <select value={hazard} onChange={(e) => setHazard(e.target.value)}>
-              <option value="">All types</option>
-              {hazardTypes.map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}
-            </select>
-          </label>
-        )}
       </div>
 
       {error && <p className="db-error" role="alert">{error}</p>}

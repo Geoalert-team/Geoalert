@@ -10,6 +10,7 @@ from django.db.models.functions import TruncMonth
 
 from apps.history.models import HistoricalRecord
 from apps.history.serializers import HistoricalRecordSerializer
+from utils.sampling import TRUTHY
 
 
 class HistoricalRecordListView(APIView):
@@ -242,6 +243,9 @@ class HistoricalForecastView(APIView):
       ?hazard_type_name=Flood
       ?barangay=7            also returns that barangay's 12-month profile
       ?years=10              how many past years to read (1-10)
+      ?exclude_samples=true  leave seeded sample records out. Off by default:
+                             the public map and the dashboard label sample
+                             data instead; Reports › Analytics leaves it out.
 
     Without ?barangay the profile is for the whole city.
     """
@@ -249,7 +253,7 @@ class HistoricalForecastView(APIView):
 
     def get(self, request):
         from apps.history.forecast import (
-            MAX_YEARS, as_local, seasonal_forecast, seasonal_profile,
+            MAX_YEARS, as_local, drop_samples, seasonal_forecast, seasonal_profile,
         )
 
         now = timezone.localtime()
@@ -287,6 +291,9 @@ class HistoricalForecastView(APIView):
             }
             for r in records
         ]
+        events = drop_samples(
+            events, (request.query_params.get('exclude_samples') or '').strip().lower() in TRUTHY,
+        )
         picked = [e for e in events if not hazard or (e['hazard'] or '').lower() == hazard.lower()]
 
         result = seasonal_forecast(picked, month, now, max_years=years)

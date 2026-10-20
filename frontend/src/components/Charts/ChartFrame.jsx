@@ -1,4 +1,5 @@
 import React from 'react';
+import useFontsReady from './useFontsReady';
 
 /**
  * Wraps a chart in a fixed-height box and carries the table fallback.
@@ -13,6 +14,8 @@ import React from 'react';
  *   rows       [{ label, value }] for the table; omit to skip the fallback
  *   valueHead  column heading for the value, default 'Events'
  *   empty      message when there is nothing to draw
+ *   table      false to leave the fallback out, when the caller shows the
+ *              same numbers in a table of its own
  *   children   the chart itself
  */
 export default function ChartFrame({
@@ -20,16 +23,21 @@ export default function ChartFrame({
   rows = [],
   valueHead = 'Events',
   empty = 'No data for this filter.',
+  table = true,
   children,
 }) {
+  const fontsReady = useFontsReady();
+
   if (!rows.length) {
     return <p className="db-empty">{empty}</p>;
   }
 
   return (
     <>
-      <div style={{ height, position: 'relative' }}>{children}</div>
+      {/* Remounted once web fonts load, so axis text redraws in the page font */}
+      <div key={fontsReady ? 'fonts' : 'fallback'} style={{ height, position: 'relative' }}>{children}</div>
 
+      {table && (
       <details style={{ marginTop: 12 }}>
         <summary
           style={{
@@ -62,6 +70,7 @@ export default function ChartFrame({
           </tbody>
         </table>
       </details>
+      )}
     </>
   );
 }

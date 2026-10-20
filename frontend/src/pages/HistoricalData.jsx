@@ -1,17 +1,9 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import { historyApi } from '../api/historyApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { hazardsApi } from '../api/hazardsApi';
-import { buildRiskOutlook } from '../utils/riskOutlook';
-import TrendLine from '../components/Charts/TrendLine';
-import CategoryBars from '../components/Charts/CategoryBars';
-import BarangayLikelihood from '../components/Forecast/BarangayLikelihood';
-import {
-  SEVERITY_LABEL,
-  hazardSeriesColor,
-  severitySeriesColor,
-} from '../components/Charts/chartTheme';
 import './css/Dashboard.css';
 
 const SEVERITY = {
@@ -34,21 +26,16 @@ function nestedName(detail) {
   return detail?.name || detail?.properties?.name || null;
 }
 
-// Trend rows arrive from the API keyed by whatever the GROUP BY produced;
-// the charts want a plain { label, value, color }.
-function toRows(rows = [], labelKey, colorFor) {
-  return rows.map((r) => ({
-    label: r.display || r[labelKey] || 'Unspecified',
-    value: r.count,
-    color: colorFor ? colorFor(r) : undefined,
-  }));
-}
-
 const PAGE_SIZE = 10;
 
+/**
+ * The archive of resolved hazards, one record at a time, filterable by
+ * hazard type, barangay and date. The trends, seasonal outlook and barangay
+ * likelihood that used to sit here are in Reports › Analytics, which reads
+ * the same records.
+ */
 export default function HistoricalData() {
   const [records, setRecords] = useState([]);
-  const [trends, setTrends] = useState(null);
   const [barangays, setBarangays] = useState([]);
   const [hazardTypes, setHazardTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,56 +72,30 @@ export default function HistoricalData() {
     setLoading(true);
     setError('');
     setPage(1);
-    Promise.all([historyApi.list(params), historyApi.trends(params)])
-      .then(([list, t]) => {
-        if (cancelled) return;
-        setRecords(Array.isArray(list) ? list : (list?.results || []));
-        setTrends(t);
-      })
+    historyApi.list(params)
+      .then((list) => { if (!cancelled) setRecords(Array.isArray(list) ? list : (list?.results || [])); })
       .catch(() => { if (!cancelled) setError('Could not load historical records. Please try again.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
   }, [hazardId, barangayId, dateFrom, dateTo]);
 
-  const outlook = useMemo(() => buildRiskOutlook(records), [records]);
   const sampleCount = records.filter((r) => r.is_sample).length;
   const pageCount = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
   const pageRecords = records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const hazardTabs = [{ id: '', name: 'All types' }, ...hazardTypes.map((t) => ({ id: t.id, name: t.name }))];
 
-  const monthPoints = (trends?.by_month || []).map((m) => ({
-    label: new Date(m.month).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }),
-    value: m.count,
-  }));
-
-  const typeRows = toRows(
-    trends?.by_hazard_type, 'hazard_type__name',
-    (r) => hazardSeriesColor(r.hazard_type__name),
-  );
-
-  const severityRows = toRows(
-    (trends?.by_severity || []).map((s) => ({
-      ...s, display: SEVERITY_LABEL[s.severity_level] || s.severity_level,
-    })),
-    'severity_level',
-    (r) => severitySeriesColor(r.severity_level),
-  );
-
-  const barangayRows = toRows(trends?.by_barangay, 'barangay__name');
-
-  const scopeLabel = hazardId
-    ? (hazardTypes.find((t) => String(t.id) === String(hazardId))?.name || 'this hazard type')
-    : 'all hazard types';
-
   return (
     <div className="db">
       <PublicNavbar />
       <div className="db-wrap">
         <div className="db-header">
-          <h1>Historical data and trends</h1>
-          <p>Archived hazard events in Talisay City, with a rule-based seasonal outlook.</p>
+          <h1>Historical records</h1>
+          <p>
+            Archived hazard events in Talisay City.{' '}
+            <Link to="/app/reports?tab=analytics">Trends and the seasonal outlook are in Reports › Analytics</Link>
+          </p>
         </div>
 
         <div className="db-tabs" role="tablist">
@@ -169,212 +130,63 @@ export default function HistoricalData() {
         {!error && sampleCount > 0 && (
           <p className="db-note">
             {sampleCount === records.length ? 'All' : `${sampleCount} of ${records.length}`} records shown are
-            sample data generated for testing, not real events. Trends and the outlook below include them.
+            sample data generated for testing, not real events.
           </p>
         )}
 
         {!error && (
-          <>
-            <div className="db-stats">
-              <div className="db-stat">
-                <div className="db-stat-value">{trends?.total_records ?? 0}</div>
-                <div className="db-stat-label">Events on record</div>
-              </div>
-              <div className="db-stat">
-                <div className="db-stat-value">{outlook ? `${outlook.redShare}%` : '-'}</div>
-                <div className="db-stat-label">Extreme severity share</div>
-              </div>
-              <div className="db-stat">
-                <div className="db-stat-value">{outlook ? outlook.focus.level : '-'}</div>
-                <div className="db-stat-label">Outlook, {outlook ? outlook.focus.name : 'this month'}</div>
-              </div>
-            </div>
-
-            {/* ---------- Forward-looking outlook ---------- */}
-            <div className="db-card">
-              <h2>Seasonal risk outlook</h2>
-              <p className="db-card-sub">
-                What the next three months have historically brought, for {scopeLabel}
-              </p>
-
-              {outlook ? (
-                <>
-                  <span className="db-badge" data-level={outlook.confidence.level}>
-                    <span className="db-badge-dot" />
-                    {outlook.confidence.level}
-                  </span>
-
-                  <div className="db-outlook-grid">
-                    {outlook.lookahead.map((m) => (
-                      <div key={m.key} className="db-outlook-card" data-level={m.level}>
-                        <div className="db-outlook-month">{m.label}{m.isCurrent ? ' · now' : ''}</div>
-                        <div className="db-outlook-level">{m.level}</div>
-                        <div className="db-outlook-detail">
-                          {m.yearsObserved > 0 ? (
-                            <>
-                              {m.expected} event{m.expected === 1 ? '' : 's'} expected
-                              <br />
-                              {m.pastEvents} recorded over {m.yearsObserved} {m.name}
-                              {m.yearsObserved === 1 ? '' : 's'} observed
-                            </>
-                          ) : (
-                            <>No {m.name} on record yet</>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <ul className="db-outlook">
-                    <li>
-                      <strong>Watch in {outlook.focus.name}:</strong>{' '}
-                      {outlook.watchlist.length
-                        ? outlook.watchlist.map((b) => `${b.name} (${b.count})`).join(', ')
-                        : `no ${outlook.focus.name} events on record yet`}
-                    </li>
-                    <li>
-                      <strong>Most likely type:</strong>{' '}
-                      {outlook.likelyHazards.length
-                        ? outlook.likelyHazards.map((h) => `${h.name} (${h.count})`).join(', ')
-                        : 'nothing recorded for this month'}
-                    </li>
-                    <li>
-                      <strong>Peak season:</strong>{' '}
-                      {outlook.peakMonths.length ? outlook.peakMonths.join(', ') : 'not yet identifiable'}
-                    </li>
-                    <li>
-                      <strong>Direction:</strong> {outlook.trend.direction}
-                      {outlook.trend.recent !== null && (
-                        <> ({outlook.trend.recent} in the last 12 months vs {outlook.trend.previous} in the 12 before)</>
-                      )}
-                    </li>
-                    <li>
-                      <strong>Overall rate:</strong> {outlook.baselineRate} events per month across{' '}
-                      {outlook.spanMonths} month{outlook.spanMonths === 1 ? '' : 's'} of records
-                    </li>
-                  </ul>
-
-                  <p className="db-note">
-                    {outlook.confidence.note} This is a statistical pattern drawn from archived
-                    records — not a weather forecast and not an AI prediction. It says what this
-                    month has tended to bring, not what will happen.
-                  </p>
-
-                  <details className="db-method">
-                    <summary>How this is calculated</summary>
-                    <p>
-                      For each calendar month, the system counts the archived events that occurred
-                      in that month and divides by the number of times that month has been observed
-                      since the first record, giving the events expected per occurrence of that
-                      month. That figure is compared against the overall average of{' '}
-                      {outlook.baselineRate} events per month. A month at 1.5&times; the average or
-                      above is marked Elevated, 0.75&times; to 1.5&times; is Typical, and below
-                      0.75&times; is Lower. The observation window runs from the earliest record up
-                      to today, so quiet stretches count as evidence of quiet.
-                    </p>
-                  </details>
-                </>
-              ) : (
-                <p className="db-empty">
-                  No archived events match these filters yet, so there is nothing to project from.
-                  Records appear here once DRRMO resolves a hazard zone.
-                </p>
-              )}
-            </div>
-
-            {/* ---------- Likelihood by barangay and month ---------- */}
-            <div className="db-card">
-              <h2>Likelihood by barangay</h2>
-              <p className="db-card-sub">
-                Which barangays a month has tended to hit, from the same month in past years
-              </p>
-              <BarangayLikelihood hazardTypes={hazardTypes} />
-            </div>
-
-            {/* ---------- Trend over time ---------- */}
-            <div className="db-card">
-              <h2>Events over time</h2>
-              <p className="db-card-sub">
-                Recorded hazard events by month, for {scopeLabel}
-              </p>
-              <TrendLine points={monthPoints} />
-            </div>
-
-            <div className="db-grid-2">
-              <div className="db-card">
-                <h2>By hazard type</h2>
-                <p className="db-card-sub">Which hazards Talisay City records most</p>
-                <CategoryBars rows={typeRows} />
-              </div>
-              <div className="db-card">
-                <h2>Most affected barangays</h2>
-                <p className="db-card-sub">Top barangays by recorded events</p>
-                <CategoryBars rows={barangayRows} />
-              </div>
-            </div>
-
-            <div className="db-card">
-              <h2>Severity distribution</h2>
-              <p className="db-card-sub">Share of events by severity level</p>
-              <CategoryBars rows={severityRows} />
-            </div>
-
-            <div className="db-card">
-              <h2>Records</h2>
-              <p className="db-card-sub">
-                {records.length} historical record{records.length === 1 ? '' : 's'}
-              </p>
-              {loading ? (
-                <p style={{ color: 'var(--db-soft)' }}>Loading...</p>
-              ) : records.length === 0 ? (
-                <p className="db-empty">No records match these filters.</p>
-              ) : (
-                <>
-                <div className="db-list">
-                  {pageRecords.map((r) => (
-                    <div key={r.id} className="db-item">
-                      <div className="db-item-head">
-                        <span className="db-item-title">
-                          {nestedName(r.hazard_type_detail) || 'Hazard'}
-                          {' - '}
-                          {nestedName(r.barangay_detail) || 'Unspecified barangay'}
-                          {r.is_sample && <span className="db-badge" style={{ marginLeft: 8 }}>Sample</span>}
-                        </span>
-                        <span
-                          className="db-item-meta"
-                          style={{ color: SEVERITY[r.severity_level]?.color, fontWeight: 600 }}
-                        >
-                          {SEVERITY[r.severity_level]?.label || r.severity_level}
-                        </span>
-                      </div>
-                      <div className="db-item-meta">{r.description}</div>
-                      <div className="db-item-meta">
-                        {new Date(r.occurred_at).toLocaleDateString()}
-                        {' · '}{countText('Casualties', r.total_casualties)}
-                        {' · '}{countText('Displaced', r.total_displaced)}
-                      </div>
+          <div className="db-card">
+            <h2>{loading ? 'Records' : `${records.length} record${records.length === 1 ? '' : 's'}`}</h2>
+            {loading ? (
+              <p style={{ color: 'var(--db-soft)' }}>Loading...</p>
+            ) : records.length === 0 ? (
+              <p className="db-empty">No records match these filters.</p>
+            ) : (
+              <>
+              <div className="db-list">
+                {pageRecords.map((r) => (
+                  <div key={r.id} className="db-item">
+                    <div className="db-item-head">
+                      <span className="db-item-title">
+                        {nestedName(r.hazard_type_detail) || 'Hazard'}
+                        {' - '}
+                        {nestedName(r.barangay_detail) || 'Unspecified barangay'}
+                        {r.is_sample && <span className="db-badge" style={{ marginLeft: 8 }}>Sample</span>}
+                      </span>
+                      <span
+                        className="db-item-meta"
+                        style={{ color: SEVERITY[r.severity_level]?.color, fontWeight: 600 }}
+                      >
+                        {SEVERITY[r.severity_level]?.label || r.severity_level}
+                      </span>
                     </div>
-                  ))}
-                </div>
-
-                {pageCount > 1 && (
-                  <div className="db-pager">
-                    <button type="button" className="db-btn db-btn-outline db-btn-sm" onClick={() => setPage(page - 1)} disabled={page === 1}>
-                      Previous
-                    </button>
-                    <span>
-                      Page {page} of {pageCount}
-                      {' · '}{(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, records.length)} of {records.length}
-                    </span>
-                    <button type="button" className="db-btn db-btn-outline db-btn-sm" onClick={() => setPage(page + 1)} disabled={page === pageCount}>
-                      Next
-                    </button>
+                    <div className="db-item-meta">{r.description}</div>
+                    <div className="db-item-meta">
+                      {new Date(r.occurred_at).toLocaleDateString()}
+                      {' · '}{countText('Casualties', r.total_casualties)}
+                      {' · '}{countText('Displaced', r.total_displaced)}
+                    </div>
                   </div>
-                )}
-                </>
+                ))}
+              </div>
+
+              {pageCount > 1 && (
+                <div className="db-pager">
+                  <button type="button" className="db-btn db-btn-outline db-btn-sm" onClick={() => setPage(page - 1)} disabled={page === 1}>
+                    Previous
+                  </button>
+                  <span>
+                    Page {page} of {pageCount}
+                    {' · '}{(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, records.length)} of {records.length}
+                  </span>
+                  <button type="button" className="db-btn db-btn-outline db-btn-sm" onClick={() => setPage(page + 1)} disabled={page === pageCount}>
+                    Next
+                  </button>
+                </div>
               )}
-            </div>
-          </>
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>

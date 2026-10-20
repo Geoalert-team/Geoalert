@@ -4,7 +4,8 @@ from datetime import datetime, timezone
 from django.test import SimpleTestCase
 
 from apps.history.forecast import (
-    level_for, likelihood, seasonal_forecast, seasonal_profile, year_weights, years_for_month,
+    drop_samples, level_for, likelihood, seasonal_forecast, seasonal_profile, year_weights,
+    years_for_month,
 )
 
 TZ = timezone.utc
@@ -97,3 +98,13 @@ class ForecastTests(SimpleTestCase):
         self.assertEqual(len(months), 12)
         self.assertEqual(max(months, key=lambda m: m['probability'])['month'], 11)
         self.assertEqual(months[5]['level'], 'None')
+
+
+class DropSamplesTests(SimpleTestCase):
+    events = [{'barangay': 'A', 'is_sample': True}, {'barangay': 'B', 'is_sample': False}]
+
+    def test_keeps_everything_unless_asked(self):
+        self.assertEqual(drop_samples(self.events, False), self.events)
+
+    def test_drops_sample_rows_when_asked(self):
+        self.assertEqual(drop_samples(self.events, True), [{'barangay': 'B', 'is_sample': False}])

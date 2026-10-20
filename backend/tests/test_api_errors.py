@@ -3,7 +3,7 @@ import json
 from django.db import IntegrityError, OperationalError
 from django.test import RequestFactory, SimpleTestCase
 
-from utils.errors import ApiErrorMiddleware
+from utils.errors import ApiErrorMiddleware 
 
 
 class ApiErrorMiddlewareTests(SimpleTestCase):

@@ -437,7 +437,7 @@ export default function DRRMODashboard() {
               <h2>Likely next month</h2>
               <p>
                 Barangays this month has tended to hit in past years.{' '}
-                <Link to="/app/history">See every barangay and month</Link>
+                <Link to="/app/reports?tab=analytics">See every barangay and month</Link>
               </p>
             </div>
           </div>
