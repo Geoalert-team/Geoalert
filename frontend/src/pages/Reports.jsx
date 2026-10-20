@@ -404,7 +404,6 @@ export default function ReportsPanel() {
                 <div className="db-stats" style={{ marginTop: 18 }}>
                   <Stat value={report.active_hazards} label="Active hazards" />
                   <Stat value={report.resolved_hazards} label="Resolved hazards" />
-                  <Stat value={report.archived_hazards} label="Archived hazards" />
                   <Stat value={report.total_hazard_events} label="Total hazard events" />
                   <Stat value={report.total_alerts_issued} label="Alerts issued" />
                 </div>

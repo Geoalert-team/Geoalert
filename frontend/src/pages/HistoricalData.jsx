@@ -5,6 +5,7 @@ import { historyApi } from '../api/historyApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { hazardsApi } from '../api/hazardsApi';
 import './css/Dashboard.css';
+import './css/HistoricalData.css';
 
 const SEVERITY = {
   Red:    { label: 'Extreme',  color: 'var(--db-high)' },
@@ -87,7 +88,7 @@ export default function HistoricalData() {
   const hazardTabs = [{ id: '', name: 'All types' }, ...hazardTypes.map((t) => ({ id: t.id, name: t.name }))];
 
   return (
-    <div className="db">
+    <div className="db db-history">
       <PublicNavbar />
       <div className="db-wrap">
         <div className="db-header">

@@ -1,0 +1,244 @@
+/* Historical records page. All rules are scoped so shared dashboard pages
+   keep their existing appearance. */
+.db-history {
+  --history-ink: #142943;
+  --history-muted: #66758a;
+  --history-border: #e2e8f0;
+  --history-blue: #2563a6;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(219, 234, 254, .62), transparent 34rem),
+    #f4f7fb;
+}
+
+.db-history .db-wrap {
+  max-width: 1180px;
+  padding-top: 48px;
+}
+
+.db-history .db-header {
+  position: relative;
+  margin-bottom: 28px;
+  padding: 30px 34px;
+  overflow: hidden;
+  border: 1px solid rgba(211, 224, 239, .9);
+  border-radius: 22px;
+  background: linear-gradient(115deg, #fff 0%, #f4f8fd 68%, #eaf2fc 100%);
+  box-shadow: 0 12px 30px rgba(34, 58, 89, .06);
+}
+
+.db-history .db-header::after {
+  position: absolute;
+  top: -76px;
+  right: -40px;
+  width: 250px;
+  height: 250px;
+  border: 1px solid rgba(37, 99, 166, .12);
+  border-radius: 50%;
+  box-shadow: 0 0 0 30px rgba(37, 99, 166, .035), 0 0 0 62px rgba(37, 99, 166, .025);
+  content: '';
+  pointer-events: none;
+}
+
+.db-history .db-header h1 {
+  position: relative;
+  z-index: 1;
+  color: var(--history-ink);
+  font-size: clamp(1.8rem, 3vw, 2.45rem);
+  letter-spacing: -.035em;
+}
+
+.db-history .db-header p {
+  position: relative;
+  z-index: 1;
+  max-width: 700px;
+  margin-top: 10px;
+  color: var(--history-muted);
+  font-size: 1rem;
+}
+
+.db-history .db-header a {
+  color: var(--history-blue);
+  font-weight: 700;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.db-history .db-tabs {
+  width: 100%;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px;
+  border: 1px solid var(--history-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .72);
+}
+
+.db-history .db-tab {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  color: #5c6b80;
+  transition: color .18s ease, background-color .18s ease, box-shadow .18s ease;
+}
+
+.db-history .db-tab:hover { color: var(--history-ink); background: #f1f5f9; }
+.db-history .db-tab.is-active {
+  border-color: #dce7f4;
+  color: #fff;
+  background: #1d3c61;
+  box-shadow: 0 4px 10px rgba(29, 60, 97, .16);
+}
+
+.db-history .db-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) repeat(2, minmax(170px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+  padding: 18px;
+  border: 1px solid var(--history-border);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(34, 58, 89, .04);
+}
+
+.db-history .db-field {
+  gap: 7px;
+  color: #52647a;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.db-history .db-field select,
+.db-history .db-field input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #dce4ee;
+  border-radius: 10px;
+  background-color: #fbfcfe;
+  color: #24364c;
+  font-size: .92rem;
+  letter-spacing: normal;
+  text-transform: none;
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+
+.db-history .db-field select:focus,
+.db-history .db-field input:focus {
+  border-color: #6b9bd0;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 166, .12);
+}
+
+.db-history .db-note {
+  margin: 0 0 18px;
+  padding: 12px 15px;
+  border: 1px solid #f1d79a;
+  border-radius: 12px;
+  background: #fff9e9;
+  color: #795a16;
+  line-height: 1.5;
+}
+
+.db-history .db-empty {
+  border: 1px dashed #ccd7e4;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.db-history > .db-wrap > .db-card {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #dce4ee;
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(34, 58, 89, .06);
+}
+
+.db-history > .db-wrap > .db-card > h2 {
+  padding: 22px 26px;
+  border-bottom: 1px solid #e8edf3;
+  background: linear-gradient(90deg, #fff, #f8fafd);
+  color: var(--history-ink);
+  font-size: 1.1rem;
+}
+
+.db-history .db-list { gap: 0; padding: 8px 18px; }
+
+.db-history .db-item {
+  position: relative;
+  margin: 10px 0;
+  padding: 18px 20px 18px 24px;
+  border: 1px solid #e5eaf1;
+  border-radius: 14px;
+  background: #fff;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.db-history .db-item::before {
+  position: absolute;
+  inset: 14px auto 14px 0;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: #8aa9ca;
+  content: '';
+}
+
+.db-history .db-item:hover {
+  transform: translateY(-1px);
+  border-color: #cbd8e7;
+  box-shadow: 0 8px 18px rgba(34, 58, 89, .07);
+}
+
+.db-history .db-item-title { color: #1a304a; font-size: .98rem; }
+.db-history .db-item-meta { color: #6d7b8e; line-height: 1.55; }
+.db-history .db-item-head .db-item-meta { font-size: .8rem; }
+
+.db-history .db-badge {
+  padding: 4px 10px;
+  background: #eef3f8;
+  color: #435a73;
+  font-size: .72rem;
+  letter-spacing: .02em;
+}
+
+.db-history .db-pager {
+  margin: 0;
+  padding: 16px 24px;
+  border-top: 1px solid #e8edf3;
+  background: #f9fbfd;
+}
+
+.db-history .db-btn-outline {
+  border-color: #cbd7e5;
+  background: #fff;
+  color: #294867;
+}
+
+.db-history .db-btn-outline:hover:not(:disabled) {
+  border-color: #294867;
+  background: #294867;
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .db-history .db-wrap { padding: 24px 14px 40px; }
+  .db-history .db-header { padding: 24px 20px; border-radius: 17px; }
+  .db-history .db-header::after { right: -120px; opacity: .6; }
+  .db-history .db-tabs { border-radius: 14px; }
+  .db-history .db-tab { padding: 0 13px; }
+  .db-history .db-filters { grid-template-columns: 1fr; padding: 14px; }
+  .db-history > .db-wrap > .db-card { border-radius: 16px; }
+  .db-history > .db-wrap > .db-card > h2 { padding: 18px; }
+  .db-history .db-list { padding: 6px 10px; }
+  .db-history .db-item { padding: 16px 14px 16px 19px; }
+  .db-history .db-pager { flex-wrap: wrap; justify-content: center; padding: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .db-history .db-tab,
+  .db-history .db-field select,
+  .db-history .db-field input,
+  .db-history .db-item { transition: none; }
+  .db-history .db-item:hover { transform: none; }
+}
