@@ -101,3 +101,9 @@ test('the outlook shows loading, not the last type\'s figures, while a new type 
   expect(el.textContent).toContain('Loading the outlook…');
   expect(el.textContent).not.toContain('No archived events match');
 });
+
+test('the likelihood table scrolls inside its card on a narrow phone, not the page', async () => {
+  historyApi.forecast.mockResolvedValue(forecast(''));
+  const el = await render(<BarangayLikelihood />);
+  expect(el.querySelector('.fc-table').parentElement.classList.contains('fc-table-wrap')).toBe(true);
+});

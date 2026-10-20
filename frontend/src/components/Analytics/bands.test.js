@@ -54,3 +54,8 @@ test('response: nothing sent or submitted shows dashes and says why', () => {
   expect(el.textContent).toContain('None submitted in this period');
   expect(el.textContent).not.toContain('NaN');
 });
+
+test('the zones trend is named like its tile and chart: "Zones published"', () => {
+  const el = render(<ActivityBand kpis={kpis} monthly={monthly} />);
+  expect(el.querySelector('svg.an-spark title').textContent).toMatch(/^Zones published: /);
+});

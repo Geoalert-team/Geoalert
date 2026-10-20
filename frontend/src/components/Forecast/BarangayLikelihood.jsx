@@ -73,6 +73,8 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
       )}
 
       {shown.length > 0 && (
+        // On a narrow phone the table scrolls inside the card, never the page
+        <div className="fc-table-wrap">
         <table className="fc-table">
           <thead>
             <tr>
@@ -118,6 +120,7 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
             })}
           </tbody>
         </table>
+        </div>
       )}
 
       {compact && rows.length > shown.length && (

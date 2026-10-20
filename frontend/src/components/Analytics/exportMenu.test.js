@@ -44,3 +44,15 @@ test('a menu hidden while busy does not reopen by itself', () => {
   expect(button(el, 'Print')).toBeUndefined();
   expect(button(el, 'Export').getAttribute('aria-expanded')).toBe('false');
 });
+
+test('closing the menu puts keyboard focus back on Export', () => {
+  const el = mount({});
+  act(() => { button(el, 'Export').click(); });
+  act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
+  expect(document.activeElement).toBe(button(el, 'Export'));
+
+  act(() => { button(el, 'Export').click(); });
+  act(() => { button(el, 'Download CSV').focus(); });
+  act(() => { button(el, 'Download CSV').click(); });
+  expect(document.activeElement).toBe(button(el, 'Export'));
+});
