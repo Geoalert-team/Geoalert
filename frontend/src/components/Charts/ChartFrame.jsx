@@ -38,38 +38,38 @@ export default function ChartFrame({
       <div key={fontsReady ? 'fonts' : 'fallback'} style={{ height, position: 'relative' }}>{children}</div>
 
       {table && (
-      <details style={{ marginTop: 12 }}>
-        <summary
-          style={{
-            cursor: 'pointer',
-            fontSize: '.84rem',
-            color: 'var(--db-soft)',
-            fontWeight: 600,
-          }}
-        >
-          Show the figures
-        </summary>
-        <table className="db-table" style={{ marginTop: 8 }}>
-          <thead>
-            <tr>
-              <th>Label</th>
-              <th style={{ textAlign: 'right' }}>{valueHead}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.label}>
-                <td>{r.label}</td>
-                <td style={{ textAlign: 'right' }}>
-                  {r.value === null || r.value === undefined
-                    ? '—'
-                    : Number(r.value).toLocaleString()}
-                </td>
+        <details style={{ marginTop: 12 }}>
+          <summary
+            style={{
+              cursor: 'pointer',
+              fontSize: '.84rem',
+              color: 'var(--db-soft)',
+              fontWeight: 600,
+            }}
+          >
+            Show the figures
+          </summary>
+          <table className="db-table" style={{ marginTop: 8 }}>
+            <thead>
+              <tr>
+                <th>Label</th>
+                <th style={{ textAlign: 'right' }}>{valueHead}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </details>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.label}>
+                  <td>{r.label}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    {r.value === null || r.value === undefined
+                      ? '—'
+                      : Number(r.value).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
       )}
     </>
   );

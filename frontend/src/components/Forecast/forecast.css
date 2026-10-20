@@ -8,6 +8,7 @@
   font: inherit; font-weight: 400; background: var(--db-white, #fff);
 }
 
+.fc-table-wrap { overflow-x: auto; }
 .fc-table { width: 100%; border-collapse: collapse; font-size: .86rem; }
 .fc-table th { text-align: left; padding: 6px 8px; color: var(--db-soft, #5b6577); font-weight: 600; border-bottom: 1px solid var(--db-line, #e3e7ee); }
 .fc-table td { padding: 7px 8px; border-bottom: 1px dashed var(--db-line, #e3e7ee); color: var(--db-body, #2b3445); }

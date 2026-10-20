@@ -2,7 +2,7 @@
 // helpers its sections share. No Chart.js here, so tests can import it.
 
 export const MEASURES = [
-  { key: 'zones', label: 'Hazard zones published', unit: { one: 'zone', many: 'zones' } },
+  { key: 'zones', label: 'Zones published', unit: { one: 'zone', many: 'zones' } },
   { key: 'alerts', label: 'Alerts issued', unit: { one: 'alert', many: 'alerts' } },
   { key: 'incidents', label: 'Incident reports', unit: { one: 'report', many: 'reports' } },
   { key: 'events', label: 'Recorded hazard events', unit: { one: 'event', many: 'events' } },
@@ -27,5 +27,3 @@ export function duration(minutes) {
   }
   return `${(minutes / 1440).toFixed(1)} days`;
 }
-
-export const percent = (x) => (x === null || x === undefined ? '—' : `${Math.round(x * 100)}%`);
