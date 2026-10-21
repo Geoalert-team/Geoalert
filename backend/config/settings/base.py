@@ -267,6 +267,13 @@ EMAIL_PORT = env.int('EMAIL_PORT', default=587)
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='GeoAlert <no-reply@geoalert.local>')
+
+# Forgot password: a reset link works for 1 hour (and only once, since it
+# stops working when the password changes). FRONTEND_URL is where the
+# emailed link points: the React app's /reset-password page.
+PASSWORD_RESET_TIMEOUT = 3600
+FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
 
 
 GDAL_LIBRARY_PATH = env('GDAL_LIBRARY_PATH', default=str(

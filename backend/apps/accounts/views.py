@@ -23,9 +23,15 @@ from django.views.decorators.csrf import csrf_exempt
 from datetime import timedelta
 
 
+from django.contrib.auth.tokens import default_token_generator
+
 from apps.accounts.models import User
+from apps.accounts.password_reset import (
+    BAD_LINK, DONE_REPLY, GENERIC_REPLY, LIMIT_REPLY,
+    find_active_user, send_reset_email, user_from_uid,
+)
 from apps.accounts.serializers import LoginSerializer, UserSerializer, TwoFactorCodeSerializer
-from utils import login_throttle
+from utils import login_throttle, reset_throttle
 from utils.audit import log_event
 from utils.session_limits import start_session_clock
 from utils.system_settings import get_setting
@@ -463,3 +469,131 @@ class MeView(APIView):
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+# ---------- Forgot password ----------
+# Rate limits (see utils/reset_throttle.py). Failed checks and failed
+# confirms share one counter per address, so a token can't be guessed
+# through either endpoint.
+REQUESTS_PER_ADDRESS = (10, 15 * 60)
+EMAILS_PER_ACCOUNT = (3, 60 * 60)
+FAILURES_PER_ADDRESS = (20, 15 * 60)
+
+
+def _link_user(request):
+    """The account a reset link is for, if its uid and token are both good."""
+    user = user_from_uid(request.data.get('uid'))
+    token = request.data.get('token')
+    ok = bool(user and isinstance(token, str) and default_token_generator.check_token(user, token))
+    return user, ok
+
+
+def _failures_key(request):
+    return f'fail:{login_throttle.throttle_ip(request)}'
+
+
+def _too_many_failures(request):
+    return reset_throttle.blocked(_failures_key(request), FAILURES_PER_ADDRESS[0])
+
+
+def _count_failure(request):
+    reset_throttle.allow(_failures_key(request), *FAILURES_PER_ADDRESS)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PasswordResetRequestView(APIView):
+    """
+    POST /api/auth/password-reset/   Body: { email }
+    Emails a one-time, 1-hour reset link to the active account with that
+    email. The answer is the same whether or not there is one, so the page
+    can't be used to find out which emails have accounts.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        ip = login_throttle.throttle_ip(request)
+        if not reset_throttle.allow(f'ip:{ip}', *REQUESTS_PER_ADDRESS):
+            return Response({'error': LIMIT_REPLY}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        generic = Response({'message': GENERIC_REPLY})
+        email = request.data.get('email')
+        email = email.strip() if isinstance(email, str) else ''
+        if not email:
+            return generic
+
+        user = find_active_user(email)
+        # Unknown and deactivated accounts get the same answer, unlogged, so
+        # the audit log can't be filled with made-up addresses
+        if user is None or not reset_throttle.allow(f'acct:{user.pk}', *EMAILS_PER_ACCOUNT):
+            return generic
+
+        try:
+            send_reset_email(user)
+        except Exception as exc:  # SMTP down, wrong app password, ...
+            log_event(request, 'PASSWORD_RESET_EMAIL_FAILED', 'app_user', user.id,
+                      f'{user.email}: {type(exc).__name__}', user=user)
+            return generic
+        log_event(request, 'PASSWORD_RESET_REQUESTED', 'app_user', user.id, user.email, user=user)
+        return generic
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PasswordResetCheckView(APIView):
+    """
+    POST /api/auth/password-reset/check/   Body: { uid, token }
+    Whether a reset link still works, so the page can say so before the
+    person types a new password.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        if _too_many_failures(request):
+            return Response({'error': LIMIT_REPLY}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        _, ok = _link_user(request)
+        if not ok:
+            _count_failure(request)
+        return Response({'valid': ok})
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PasswordResetConfirmView(APIView):
+    """
+    POST /api/auth/password-reset/confirm/   Body: { uid, token, new_password }
+    Sets the new password under the same rules as change-password. Also
+    clears the admin-set-password flag and any lockout. Changing the hash
+    ends the account's other sessions and makes this link unusable. Nobody
+    is signed in: they sign in normally next, 2FA included.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        if _too_many_failures(request):
+            return Response({'error': LIMIT_REPLY}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        user, ok = _link_user(request)
+        if not ok:
+            _count_failure(request)
+            if user is not None:
+                log_event(request, 'PASSWORD_RESET_FAILED', 'app_user', user.id,
+                          f'{user.email}: expired or already used link', user=user)
+            return Response({'error': BAD_LINK}, status=status.HTTP_400_BAD_REQUEST)
+
+        new_password = request.data.get('new_password')
+        new_password = new_password if isinstance(new_password, str) else ''
+        try:
+            validate_password(new_password, user=user)
+        except ValidationError as exc:
+            _count_failure(request)
+            log_event(request, 'PASSWORD_RESET_FAILED', 'app_user', user.id,
+                      f'{user.email}: new password rejected', user=user)
+            return Response({'error': ' '.join(exc.messages)}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.must_change_password = False
+        user.failed_login_count = 0
+        user.locked_until = None
+        user.save()
+        log_event(request, 'PASSWORD_RESET_DONE', 'app_user', user.id, user.email, user=user)
+        return Response({'message': DONE_REPLY})

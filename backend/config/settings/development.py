@@ -35,3 +35,8 @@ CSRF_COOKIE_SECURE = False
 # (EMAXCONNSESSION). Gunicorn in production reuses its threads, so the
 # setting stays on there.
 DATABASES['default']['CONN_MAX_AGE'] = 0
+
+# Emails (the forgot-password link) print in the runserver terminal instead
+# of being sent, until real Gmail details are in .env and EMAIL_BACKEND is
+# set to django.core.mail.backends.smtp.EmailBackend.
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')

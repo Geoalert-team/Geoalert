@@ -12,4 +12,12 @@ export const authApi = {
 
   changePassword: ({ current_password, new_password }) =>
     client.post('/api/auth/change-password/', { current_password, new_password }).then((r) => r.data),
+
+  // Forgot password: email a one-time, 1-hour link; check it; set the new password
+  requestPasswordReset: (email) =>
+    client.post('/api/auth/password-reset/', { email }).then((r) => r.data),
+  checkResetLink: (uid, token) =>
+    client.post('/api/auth/password-reset/check/', { uid, token }).then((r) => r.data),
+  confirmPasswordReset: (uid, token, newPassword) =>
+    client.post('/api/auth/password-reset/confirm/', { uid, token, new_password: newPassword }).then((r) => r.data),
 };

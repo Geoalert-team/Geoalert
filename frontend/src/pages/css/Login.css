@@ -225,6 +225,35 @@
   font-size: .95rem;
 }
 
+/* ---------- Forgot / reset password ---------- */
+.lg-forgot {
+  display: block;
+  width: fit-content;
+  margin: 8px 0 0 auto;
+  color: var(--lg-heading);
+  font-size: .86rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* "Send a new link" / "Log in" after a reset: links styled as the main button */
+.lg-submit.lg-submit-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+.lg-done {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-left: 4px solid #1f9d55;
+  border-radius: 10px;
+  background: #e8f6ee;
+  color: #1a5e38;
+  font-size: .95rem;
+}
+
 /* ---------- Buttons ---------- */
 .lg-submit,
 .lg-secondary {

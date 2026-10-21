@@ -138,6 +138,7 @@ export default function Login() {
                   {showPassword ? 'Hide' : 'Show'}
                 </button>
               </div>
+              <Link to="/forgot-password" className="lg-forgot">Forgot password?</Link>
             </div>
 
             {error && <p className="lg-error" role="alert">{error}</p>}

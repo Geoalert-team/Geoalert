@@ -2,6 +2,8 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import PublicHome from "./pages/PublicHome";
 import PublicMap from "./pages/PublicMap";
 import About from "./pages/About";
@@ -37,6 +39,8 @@ function AppRoutes() {
       <Route path="/contact" element={<Contact />} />
       <Route path="/what-to-do" element={<WhatToDo />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
       <Route path="/app/security" element={<Gate><Security /></Gate>} />
 
       {/* Logged-in staff */}
