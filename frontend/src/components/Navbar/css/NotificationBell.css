@@ -97,16 +97,16 @@
   75% { transform: rotate(3deg); }
 }
 
-/* Mobile: the navbar menu is stacked, so the panel sits inline at full width */
-@media (max-width: 860px) {
-  .nb-panel {
-    position: static;
-    width: 100%;
-    max-width: none;
-    max-height: 70vh;
-    margin-top: 8px;
-    box-shadow: none;
-  }
+/* Folded navbar (.is-compact): the bell sits beside the ☰ button near the
+   right edge, so the panel opens from the bar's right edge rather than from
+   the bell, where a 400 px panel would run off the left of a phone */
+.pn-header.is-compact .nb-panel {
+  top: calc(100% - 6px);
+  right: 12px;
+  width: min(400px, calc(100vw - 24px));
+  max-height: 70vh;
+}
+@media (max-width: 560px) {
   .nb-head { padding: 14px 14px 8px; }
   .nb-markall { padding: 6px 4px; }
 }

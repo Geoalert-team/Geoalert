@@ -5,6 +5,9 @@ import { hazardIconPath, DRRMO_HOTLINE } from '../components/Map/hazardInfo';
 import { GUIDES, PHASES, UNIVERSAL_TIPS, VIDEOS } from '../data/safetyGuides';
 import { hazardsApi } from '../api/hazardsApi';
 import { guidanceApi } from '../api/guidanceApi';
+import { useAuth } from '../context/AuthContext';
+import GuidanceEditor from '../components/Guidance/GuidanceEditor';
+import { guidanceError, stepsFrom } from '../utils/guidance';
 import logo from '../assets/images/logo1.png';
 import './css/PublicHome.css';
 import './css/WhatToDo.css';
@@ -24,9 +27,6 @@ const PHASE_TO_API = { before: 'Before', during: 'During', after: 'After' };
 
 const DEFAULT_HAZARD = HAZARDS[0];
 const DEFAULT_PHASE = 'before';
-
-// One line of an article body = one numbered step
-const stepsFrom = (body = '') => body.split('\n').map((s) => s.trim()).filter(Boolean);
 
 // Every word of the search must appear (any order, any case)
 const wordsOf = (q) => q.toLowerCase().split(/\s+/).filter(Boolean);
@@ -172,6 +172,41 @@ export default function WhatToDo() {
 
   const retry = useCallback(() => setReloadKey((k) => k + 1), []);
 
+  // DRRMO Officers and Admins edit the published guidance right here: an
+  // article id being edited, 'new' for the Add form, or null
+  const { canPublish } = useAuth();
+  const [editingId, setEditingId] = useState(null);
+  const [actionError, setActionError] = useState('');
+
+  // A form left open belongs to the hazard and phase it was opened for
+  useEffect(() => {
+    setEditingId(null);
+    setActionError('');
+  }, [hazard, phase]);
+
+  function startEditing(id) {
+    setActionError('');
+    setEditingId(id);
+  }
+
+  function afterSave() {
+    setEditingId(null);
+    retry();
+  }
+
+  // Delete unpublishes: residents stop seeing it, the row stays in the database
+  async function removeArticle(article) {
+    if (!window.confirm('Remove this guidance? Residents will no longer see it.')) return;
+    setActionError('');
+    try {
+      await guidanceApi.remove(article.id);
+      setEditingId(null);
+      retry();
+    } catch (err) {
+      setActionError(guidanceError(err));
+    }
+  }
+
   const sortedVideos = [...VIDEOS].sort(
     (a, b) => Number(b.hazard === hazard) - Number(a.hazard === hazard),
   );
@@ -197,6 +232,9 @@ export default function WhatToDo() {
 
   const hasPublished = liveArticles.length > 0;
   const isFirstAid = currentPhase.key === 'firstaid';
+  // Editing needs the live list (not the fallback shown when it failed to
+  // load) and the hazard's id; First aid is fixed reference content
+  const canEdit = canPublish && !isFirstAid && !loadingArticles && !loadError && Boolean(hazardTypeMap[hazard]);
 
   return (
     <div className="ph">
@@ -336,11 +374,30 @@ export default function WhatToDo() {
 
             <div className="wt-guide-body">
               <div className="wt-steps-card" role="tabpanel">
-                <h3>
-                  {isFirstAid
-                    ? `First aid for ${hazard.toLowerCase()} injuries`
-                    : `${currentPhase.title} a ${hazard.toLowerCase()}`}
-                </h3>
+                <div className="wt-steps-head">
+                  <h3>
+                    {isFirstAid
+                      ? `First aid for ${hazard.toLowerCase()} injuries`
+                      : `${currentPhase.title} a ${hazard.toLowerCase()}`}
+                  </h3>
+                  {/* One form at a time, so switching never throws away unsaved edits */}
+                  {canEdit && editingId === null && (
+                    <button type="button" className="wt-edit-btn" onClick={() => startEditing('new')}>
+                      Add guidance
+                    </button>
+                  )}
+                </div>
+
+                {actionError && <p className="wt-action-error" role="alert">{actionError}</p>}
+
+                {canEdit && editingId === 'new' && (
+                  <GuidanceEditor
+                    hazardTypeId={hazardTypeMap[hazard]}
+                    phase={PHASE_TO_API[phase]}
+                    onSaved={afterSave}
+                    onCancel={() => setEditingId(null)}
+                  />
+                )}
 
                 {isFirstAid ? (
                   /* First aid is always the static reference content */
@@ -368,24 +425,52 @@ export default function WhatToDo() {
                   <div className="wt-articles">
                     {liveArticles.map((article) => (
                       <article key={article.id} id={`article-${article.id}`} className="wt-article">
-                        <div className="wt-article-head">
-                          <h4>
-                            <a href={articleHref(article)}>{article.title}</a>
-                          </h4>
-                          <p className="wt-article-meta">
-                            {article.hazard_type_detail?.name || hazard} · {article.timeline_phase}
-                            {article.updated_at && (
-                              <> · updated {new Date(article.updated_at).toLocaleDateString('en-PH', {
-                                year: 'numeric', month: 'long', day: 'numeric',
-                              })}</>
-                            )}
-                          </p>
-                        </div>
-                        <ol className="wt-steps">
-                          {stepsFrom(article.body).map((step, i) => (
-                            <li key={`${i}-${step}`}>{step}</li>
-                          ))}
-                        </ol>
+                        {canEdit && editingId === article.id ? (
+                          <GuidanceEditor article={article} onSaved={afterSave} onCancel={() => setEditingId(null)} />
+                        ) : (
+                          <>
+                            <div className="wt-article-head">
+                              <div>
+                                <h4>
+                                  <a href={articleHref(article)}>{article.title}</a>
+                                </h4>
+                                <p className="wt-article-meta">
+                                  {article.hazard_type_detail?.name || hazard} · {article.timeline_phase}
+                                  {article.updated_at && (
+                                    <> · updated {new Date(article.updated_at).toLocaleDateString('en-PH', {
+                                      year: 'numeric', month: 'long', day: 'numeric',
+                                    })}</>
+                                  )}
+                                </p>
+                              </div>
+                              {canEdit && editingId === null && (
+                                <div className="wt-article-tools">
+                                  <button
+                                    type="button"
+                                    className="wt-edit-btn"
+                                    aria-label={`Edit "${article.title}"`}
+                                    onClick={() => startEditing(article.id)}
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="wt-edit-btn wt-edit-btn-danger"
+                                    aria-label={`Delete "${article.title}"`}
+                                    onClick={() => removeArticle(article)}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            <ol className="wt-steps">
+                              {stepsFrom(article.body).map((step, i) => (
+                                <li key={`${i}-${step}`}>{step}</li>
+                              ))}
+                            </ol>
+                          </>
+                        )}
                       </article>
                     ))}
                   </div>

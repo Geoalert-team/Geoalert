@@ -1,0 +1,81 @@
+/* Guidance editor on the What to do page (DRRMO Officers and Admins).
+   Uses the page's --ph-* tokens, with fallbacks. Prefix: ge- */
+
+.ge {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--ph-line, #dde3ec);
+  border-radius: var(--ph-radius, 16px);
+  background: var(--ph-mist, #f2f5f9);
+}
+
+.ge-field,
+.ge-label {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  font-size: .86rem;
+  font-weight: 700;
+  color: var(--ph-heading, #1c2e4a);
+}
+
+.ge-field input,
+.ge-step textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--ph-line, #dde3ec);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ph-body, #43516a);
+  font: inherit;
+  font-weight: 400;
+  font-size: .95rem;
+}
+.ge-step textarea { resize: vertical; min-height: 44px; }
+.ge-field input:focus,
+.ge-step textarea:focus {
+  outline: none;
+  border-color: var(--ph-navy, #1c2e4a);
+  box-shadow: 0 0 0 3px rgba(28, 46, 74, .12);
+}
+
+.ge-steps { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ge-step { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; align-items: start; }
+.ge-step-num {
+  display: grid; place-items: center; width: 26px; height: 26px; margin-top: 9px;
+  border-radius: 50%; background: var(--ph-navy, #1c2e4a); color: #fff; font-size: .78rem; font-weight: 700;
+}
+.ge-step-tools { display: flex; gap: 4px; margin-top: 6px; }
+.ge-step-tools button {
+  width: 32px; height: 32px; border: 1px solid var(--ph-line, #dde3ec); border-radius: 8px;
+  background: #fff; color: var(--ph-body, #43516a); font: inherit; cursor: pointer;
+}
+.ge-step-tools button:hover:not(:disabled) { border-color: var(--ph-navy, #1c2e4a); color: var(--ph-navy, #1c2e4a); }
+.ge-step-tools button:disabled { opacity: .4; cursor: default; }
+
+.ge-add,
+.ge-cancel {
+  justify-self: start; padding: 8px 16px; border: 1px solid var(--ph-navy, #1c2e4a); border-radius: var(--ph-pill, 999px);
+  background: transparent; color: var(--ph-navy, #1c2e4a); font: inherit; font-size: .88rem; font-weight: 700; cursor: pointer;
+}
+.ge-save {
+  padding: 9px 20px; border: 0; border-radius: var(--ph-pill, 999px);
+  background: var(--ph-navy, #1c2e4a); color: #fff; font: inherit; font-size: .9rem; font-weight: 700; cursor: pointer;
+}
+.ge-save:hover:not(:disabled) { background: var(--ph-navy-hover, #2a4268); }
+.ge-save:disabled,
+.ge-cancel:disabled { opacity: .6; cursor: default; }
+
+.ge-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.ge-error {
+  margin: 0; padding: 8px 12px; border-radius: 10px;
+  background: var(--ph-high-tint, #fcebeb); color: #a32d2d; font-size: .88rem; font-weight: 700;
+}
+
+@media (max-width: 560px) {
+  .ge { padding: 14px; }
+  .ge-step { grid-template-columns: 26px minmax(0, 1fr); }
+  .ge-step-tools { grid-column: 2; margin-top: 0; }
+}

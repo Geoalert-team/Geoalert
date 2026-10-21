@@ -2,7 +2,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap");
 
 /* =========================================================
-   Public navbar (used on Home, Map, About, Contact, What to do)
+   The navigation bar, on every page and for everyone. Signed-in staff get
+   their role's tools on the right (.pn-staff). Below a width chosen in
+   PublicNavbar.jsx (860 px signed out, 1,200 px for staff) the header gets
+   .is-compact and folds into the ☰ menu.
    All classes start with "pn-" so they don't clash with index.css
    ========================================================= */
 
@@ -86,6 +89,8 @@
   text-decoration: none;
   font-weight: 700;
   font-size: 0.98rem;
+  /* A squeezed bar must never break "What to do" onto two lines */
+  white-space: nowrap;
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
@@ -97,6 +102,51 @@
 .pn-link.is-active {
   color: var(--pn-white);
   background: rgba(255, 255, 255, 0.14);
+}
+
+/* Staff tools: after a thin divider, on the right with the bell and name */
+.pn-staff {
+  display: flex;
+  align-items: center;
+  padding-left: 14px;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+.pn-staff-heading {
+  display: none; /* a heading only in the folded menu */
+}
+
+/* Signed in, the bar carries four more buttons. It spans the whole screen
+   with normal spacing, and the account button shows only the avatar (the
+   name is in its menu). That fits on one line from 1,200 px up; below, the
+   bar folds into the ☰ menu (see PublicNavbar.jsx). */
+.pn-header.is-staff:not(.is-compact) .pn-inner {
+  max-width: none;
+  padding: 0 32px;
+}
+.pn-header.is-staff:not(.is-compact) .pn-menu {
+  gap: 22px;
+}
+.pn-header.is-staff:not(.is-compact) .pn-links {
+  gap: 4px;
+}
+.pn-header.is-staff:not(.is-compact) .pn-link {
+  padding: 8px 13px;
+  font-size: 0.96rem;
+}
+.pn-header.is-staff:not(.is-compact) .pn-staff {
+  padding-left: 22px;
+}
+/* The bell and the avatar sit as a pair */
+.pn-header.is-staff:not(.is-compact) .pn-bell + .pn-user {
+  margin-left: -12px;
+}
+.pn-header.is-staff:not(.is-compact) .pn-user-btn {
+  width: 42px;
+  padding: 0;
+  justify-content: center;
+}
+.pn-header.is-staff:not(.is-compact) .pn-user-name {
+  display: none;
 }
 
 .pn-login {
@@ -164,39 +214,67 @@
   white-space: nowrap;
 }
 
-@media (max-width: 860px) {
-  .pn-toggle {
-    display: flex;
-  }
+/* Bell and ☰ button, side by side; only shown when the bar is folded */
+.pn-compact-actions {
+  display: none;
+}
 
-  .pn-menu {
-    display: none;
-    position: absolute;
-    top: 72px;
-    left: 0;
-    right: 0;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-    padding: 16px 24px 24px;
-    background: var(--pn-navy);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  .pn-menu.is-open {
-    display: flex;
-  }
+/* ---------- Folded bar (.is-compact) ---------- */
+.pn-header.is-compact .pn-compact-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pn-header.is-compact .pn-toggle {
+  display: flex;
+}
 
-  .pn-links {
-    flex-direction: column;
-    gap: 2px;
-  }
-  .pn-link {
-    padding: 12px 14px;
-    border-radius: 10px;
-  }
-  .pn-login {
-    justify-content: center;
-  }
+.pn-header.is-compact .pn-menu {
+  display: none;
+  position: absolute;
+  top: 72px;
+  left: 0;
+  right: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  padding: 16px 24px 24px;
+  background: var(--pn-navy);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.pn-header.is-compact .pn-menu.is-open {
+  display: flex;
+}
+
+.pn-header.is-compact .pn-links {
+  flex-direction: column;
+  gap: 2px;
+}
+.pn-header.is-compact .pn-link {
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.98rem;
+}
+.pn-header.is-compact .pn-login {
+  justify-content: center;
+}
+
+/* The divider becomes a "Staff" heading above the role's tools */
+.pn-header.is-compact .pn-staff {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 12px 0 0;
+  border-left: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.pn-header.is-compact .pn-staff-heading {
+  display: block;
+  padding: 0 14px 6px;
+  color: #9fb0c8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -271,6 +349,29 @@
   z-index: 20;
 }
 
+/* Whose account this is, above Log out (the bar shows only the avatar).
+   The menu grows with the name, from 200 px up to 280 px; a longer name
+   stays on one line and ends in "…" (the full name is its title). */
+.pn-header.is-staff:not(.is-compact) .pn-user-dropdown {
+  width: max-content;
+  min-width: 200px;
+  max-width: 280px;
+}
+.pn-user-menu-name {
+  margin: 0 0 4px;
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid #eef2f7;
+  color: var(--pn-navy);
+  font-weight: 700;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pn-header.is-compact .pn-user-menu-name {
+  display: none; /* the folded menu shows the name on the button itself */
+}
+
 .pn-user-logout {
   width: 100%;
   padding: 10px 12px;
@@ -289,25 +390,26 @@
   background: #eef2f7;
 }
 
-/* Mobile: stacked menu, so the user button/dropdown go full-width instead of floating */
-@media (max-width: 860px) {
-  .pn-user-btn {
-    width: 100%;
-    justify-content: center;
-  }
-  .pn-user-dropdown {
-    position: static;
-    margin-top: 8px;
-    box-shadow: none;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.06);
-  }
-  .pn-user-logout {
-    color: var(--pn-white);
-  }
-  .pn-user-logout:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
+/* Folded bar: stacked menu, so the user button/dropdown go full-width instead of floating */
+.pn-header.is-compact .pn-user-btn {
+  width: 100%;
+  justify-content: center;
+}
+.pn-header.is-compact .pn-user-name {
+  max-width: none;
+}
+.pn-header.is-compact .pn-user-dropdown {
+  position: static;
+  margin-top: 8px;
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+}
+.pn-header.is-compact .pn-user-logout {
+  color: var(--pn-white);
+}
+.pn-header.is-compact .pn-user-logout:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Notification bell (shown to logged-in users, left of the user menu) */
@@ -444,18 +546,8 @@
   font-size: 0.75rem;
 }
 
-/* Mobile: stacked menu, so the bell/dropdown go full-width like the user menu */
-@media (max-width: 860px) {
-  .pn-bell-btn {
-    width: 100%;
-    border-radius: 999px;
-  }
-  .pn-bell-dropdown {
-    position: static;
-    width: 100%;
-    max-width: none;
-    margin-top: 8px;
-    box-shadow: none;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-  }
+/* Folded bar: the bell sits beside the ☰ button. Its panel (.nb-panel in
+   NotificationBell.css) is placed against the bar, not the bell */
+.pn-header.is-compact .pn-bell {
+  position: static;
 }

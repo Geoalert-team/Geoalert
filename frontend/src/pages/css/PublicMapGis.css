@@ -159,85 +159,10 @@
 .pm-phase-tab.is-active { background: var(--pm-navy); border-color: var(--pm-navy); color: var(--pm-white); }
 
 .pm-guide-tools { display: grid; gap: 8px; margin-top: 16px; }
+/* "Edit on What to do" is a link styled as the panel's button */
+.pm-guide-tools a.pm-btn { text-decoration: none; text-align: center; }
 
-.pm-guide-form label {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--pm-heading);
-  font-weight: 700;
-  font-size: .92rem;
-}
-.pm-guide-hint { margin-top: 6px; color: var(--pm-soft); font-size: .86rem; }
-.pm-guide-error { margin-top: 8px; color: #a12f2f; font-weight: 700; font-size: .9rem; }
-.pm-guide-link {
-  justify-self: start;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: #a12f2f;
-  font-family: inherit;
-  font-weight: 700;
-  font-size: .88rem;
-  text-decoration: underline;
-  cursor: pointer;
-}
 
-/* One numbered box per step, instead of one big textarea — this is what
-   actually fixes the "everything merged together" look: each step is its
-   own clearly separated field instead of long sentences wrapping inside
-   a single cramped box. */
-.pm-guide-steps {
-  display: grid;
-  gap: 10px;
-  margin: 14px 0;
-}
-.pm-guide-step {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-.pm-guide-step-num {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  margin-top: 4px;
-  border-radius: 50%;
-  background: var(--pm-navy);
-  color: var(--pm-white);
-  font-weight: 700;
-  font-size: .8rem;
-}
-.pm-guide-step textarea {
-  flex: 1;
-  min-height: 44px;
-  padding: 8px 10px;
-  border: 1px solid var(--pm-line);
-  border-radius: 10px;
-  background: var(--pm-white);
-  color: var(--pm-heading);
-  font: inherit;
-  line-height: 1.4;
-  resize: vertical;
-}
-.pm-guide-step textarea:focus-visible { outline: 3px solid var(--pm-navy); outline-offset: 1px; }
-.pm-guide-remove {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  margin-top: 4px;
-  border: 0;
-  border-radius: 50%;
-  background: var(--pm-mist);
-  color: var(--pm-soft);
-  cursor: pointer;
-}
-.pm-guide-remove:hover { background: #fcebeb; color: #a12f2f; }
-.pm-guide-remove svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
-.pm-guide-add { width: 100%; }
 /* Barangay panel: zones entirely inside vs crossing the border */
 .pm-brgy-group {
   margin: 14px 0 6px;

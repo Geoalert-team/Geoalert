@@ -517,3 +517,41 @@
 .wt-result-list button:hover { border-color: var(--ph-heading, #1c2e4a); }
 .wt-result-list small { color: var(--ph-soft, #5b6577); }
 @media (max-width: 640px) { .wt-search { max-width: none; } }
+
+/* ---------- Editing (DRRMO Officers and Admins only) ---------- */
+.wt-steps-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.wt-steps-head + .ge,
+.wt-steps-head + .wt-action-error { margin-top: 16px; }
+.wt-steps-card > .ge { margin-bottom: 20px; }
+
+.wt-article-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.wt-article-tools { display: flex; gap: 6px; flex-shrink: 0; }
+
+.wt-edit-btn {
+  padding: 7px 14px;
+  border: 1px solid var(--ph-navy, #1c2e4a);
+  border-radius: var(--ph-pill, 999px);
+  background: transparent;
+  color: var(--ph-navy, #1c2e4a);
+  font: inherit;
+  font-size: .84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.wt-edit-btn:hover { background: var(--ph-navy, #1c2e4a); color: #fff; }
+.wt-edit-btn-danger { border-color: var(--ph-high, #d64545); color: #a32d2d; }
+.wt-edit-btn-danger:hover { background: var(--ph-high, #d64545); color: #fff; }
+
+.wt-action-error {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--ph-high-tint, #fcebeb);
+  color: #a32d2d;
+  font-size: .88rem;
+  font-weight: 700;
+}
+
+@media (max-width: 560px) {
+  .wt-article-head { flex-direction: column; }
+}
