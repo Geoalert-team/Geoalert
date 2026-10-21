@@ -32,7 +32,7 @@ class AllowTests(SimpleTestCase):
         self.assertTrue(reset_throttle.allow('b', 3, 60))
 
     def test_a_cache_fault_never_blocks_a_reset(self):
-        with mock.patch.object(reset_throttle.cache, 'add', side_effect=RuntimeError):
+        with mock.patch.object(reset_throttle.cache, 'get', side_effect=RuntimeError):
             self.assertTrue(reset_throttle.allow('k', 1, 60))
         with mock.patch.object(reset_throttle.cache, 'get', side_effect=RuntimeError):
             self.assertFalse(reset_throttle.blocked('k', 1))
@@ -114,6 +114,10 @@ def actions(log):
 
 
 @override_settings(CACHES=LOCMEM)
+# The email is sent on a background thread; run that job inline here so the
+# assertions don't race it (RequestTimingTests checks the ordering itself)
+@mock.patch(V + 'run_in_background', new=lambda job: job())
+@mock.patch(V + 'connection', new=mock.MagicMock())
 @mock.patch(V + 'log_event')
 @mock.patch(V + 'send_reset_email')
 @mock.patch(V + 'find_active_user')
@@ -254,4 +258,116 @@ class CheckSharesTheLimitTests(SimpleTestCase):
         for _ in range(20):
             post(views.PasswordResetCheckView, '/api/auth/password-reset/check/', {'uid': 'u', 'token': 'wrong'})
         res = post(views.PasswordResetCheckView, '/api/auth/password-reset/check/', {'uid': 'u', 'token': 'wrong'})
-        self.assertEqual((res.status_code, res.data['error']), (429, password_reset.LIMIT_REPLY))
+        self.assertEqual((res.status_code, res.data['error']), (429, password_reset.ATTEMPTS_REPLY))
+
+
+
+# ---------- Fixes from the final review ----------
+import tempfile  # noqa: E402
+import time  # noqa: E402
+
+
+class ThrottleWindowOnTheRealCacheTests(SimpleTestCase):
+    """The project runs FileBasedCache with TIMEOUT 300; LocMem hid that incr() reset it."""
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.cfg = override_settings(CACHES={'default': {
+            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache', 'LOCATION': self.dir, 'TIMEOUT': 300}})
+        self.cfg.enable()
+        cache.clear()
+
+    def tearDown(self):
+        self.cfg.disable()
+
+    def test_the_window_outlives_the_cache_default_timeout(self):
+        t0 = time.time()
+        with mock.patch('time.time', return_value=t0):
+            for _ in range(3):
+                reset_throttle.allow('k', 3, 3600)
+        with mock.patch('time.time', return_value=t0 + 400):
+            self.assertTrue(reset_throttle.blocked('k', 3))
+            self.assertFalse(reset_throttle.allow('k', 3, 3600))
+
+    def test_hits_past_the_limit_do_not_extend_the_window(self):
+        t0 = time.time()
+        with mock.patch('time.time', return_value=t0):
+            for _ in range(3):
+                reset_throttle.allow('k', 3, 3600)
+        with mock.patch('time.time', return_value=t0 + 3000):
+            self.assertFalse(reset_throttle.allow('k', 3, 3600))
+        with mock.patch('time.time', return_value=t0 + 3601):
+            self.assertTrue(reset_throttle.allow('k', 3, 3600))
+
+
+@override_settings(CACHES=LOCMEM)
+@mock.patch(V + 'log_event')
+@mock.patch(V + 'send_reset_email')
+@mock.patch(V + 'find_active_user')
+class RequestTimingTests(SimpleTestCase):
+    def setUp(self):
+        cache.clear()
+
+    def test_the_reply_goes_out_before_the_email_is_sent(self, find, send, log):
+        find.return_value = a_user()
+        jobs = []
+        with mock.patch(V + 'run_in_background', side_effect=jobs.append), mock.patch(V + 'connection') as conn:
+            res = post(views.PasswordResetRequestView, '/api/auth/password-reset/', {'email': 'juan@example.com'})
+            self.assertEqual((res.status_code, res.data['message']), (200, password_reset.GENERIC_REPLY))
+            send.assert_not_called()          # nothing slow happened before the reply
+            log.assert_not_called()
+            self.assertEqual(len(jobs), 1)
+            jobs[0]()                         # the background job sends, logs, then frees its connection
+        send.assert_called_once()
+        self.assertEqual(actions(log), ['PASSWORD_RESET_REQUESTED'])
+        conn.close.assert_called_once()
+
+    def test_unknown_emails_count_against_the_same_per_email_limit(self, find, send, log):
+        find.return_value = None
+        for _ in range(3):
+            post(views.PasswordResetRequestView, '/api/auth/password-reset/', {'email': 'Nobody@Example.com'})
+        post(views.PasswordResetRequestView, '/api/auth/password-reset/', {'email': 'nobody@example.com'})
+        self.assertEqual(find.call_count, 3)  # the 4th never reached the database
+
+
+@override_settings(CACHES=LOCMEM)
+@mock.patch.object(User, 'save')
+@mock.patch(V + 'log_event')
+@mock.patch(V + 'user_from_uid')
+class ConfirmFixTests(SimpleTestCase):
+    def setUp(self):
+        cache.clear()
+
+    def confirm(self, user, password):
+        return post(views.PasswordResetConfirmView, '/api/auth/password-reset/confirm/',
+                    {'uid': 'u', 'token': default_token_generator.make_token(user), 'new_password': password})
+
+    def test_the_current_password_is_refused_like_change_password_does(self, from_uid, log, save):
+        user = a_user(must_change_password=True)   # 'Old-pass-2026' is the admin-set password
+        from_uid.return_value = user
+        res = self.confirm(user, 'Old-pass-2026')
+        self.assertEqual((res.status_code, res.data['error']),
+                         (400, 'Choose a password different from your current one.'))
+        self.assertTrue(user.must_change_password)
+        save.assert_not_called()
+
+    def test_rejected_passwords_do_not_count_toward_the_guessing_limit(self, from_uid, log, save):
+        user = a_user()
+        from_uid.return_value = user
+        for _ in range(25):
+            self.assertEqual(self.confirm(user, '12345678').status_code, 400)
+        self.assertEqual(self.confirm(user, 'Fresh-Harbor-2026').status_code, 200)
+
+    def test_too_many_failed_attempts_say_so_in_their_own_words(self, from_uid, log, save):
+        from_uid.return_value = a_user()
+        body = {'uid': 'u', 'token': 'bad', 'new_password': 'x'}
+        for _ in range(20):
+            post(views.PasswordResetConfirmView, '/api/auth/password-reset/confirm/', body)
+        res = post(views.PasswordResetConfirmView, '/api/auth/password-reset/confirm/', body)
+        self.assertEqual((res.status_code, res.data['error']),
+                         (429, 'Too many attempts. Try again in a little while.'))
+
+
+class EmailTimeoutTests(SimpleTestCase):
+    def test_sending_gives_up_after_a_bounded_time(self):
+        self.assertEqual(settings.EMAIL_TIMEOUT, 10)

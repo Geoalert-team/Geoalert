@@ -268,6 +268,10 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='GeoAlert <no-reply@geoalert.local>')
+# Seconds before a mail server that doesn't answer is given up on. Django's
+# default is no limit, so a host that silently drops port 587 would hang
+# the sending thread for minutes.
+EMAIL_TIMEOUT = env.int('EMAIL_TIMEOUT', default=10)
 
 # Forgot password: a reset link works for 1 hour (and only once, since it
 # stops working when the password changes). FRONTEND_URL is where the

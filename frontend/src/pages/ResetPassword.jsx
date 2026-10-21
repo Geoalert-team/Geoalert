@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { authApi } from '../api/authApi';
 import logo from '../assets/images/logo1.png';
 import './css/Login.css';
@@ -12,23 +12,54 @@ const DONE = 'Password changed. Log in with your new password.';
  * (/reset-password/:uid/:token). The link is checked first, so an expired
  * or used one says so before anything is typed. Saving does not sign the
  * person in: they log in next, 2FA included.
+ *
+ * As soon as the page has read the uid and token it moves them out of the
+ * address into the history entry's state (/reset-password), as Django's own
+ * reset view does: a reset abandoned on a shared office computer then
+ * leaves no working link in the address bar or the browser history.
  */
 export default function ResetPassword() {
-  const { uid, token } = useParams();
-  const [stage, setStage] = useState('checking'); // checking | invalid | form | done
+  const params = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const fromUrl = params.uid && params.token ? { uid: params.uid, token: params.token } : null;
+  const link = fromUrl || location.state || null; // { uid, token }
+  const uid = link?.uid;
+  const token = link?.token;
+
+  // checking | invalid | error (couldn't check) | form | done
+  const [stage, setStage] = useState('checking');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    if (fromUrl) navigate('/reset-password', { replace: true, state: fromUrl });
+  }, [fromUrl?.uid, fromUrl?.token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (fromUrl) return undefined; // checked once the token has left the address
+    if (!uid || !token) {
+      setStage('invalid');
+      return undefined;
+    }
     let cancelled = false;
+    setStage('checking');
     authApi.checkResetLink(uid, token)
       .then((d) => { if (!cancelled) setStage(d?.valid ? 'form' : 'invalid'); })
-      .catch(() => { if (!cancelled) setStage('invalid'); }); // a link that can't be checked can't be used
+      .catch((err) => {
+        if (cancelled) return;
+        // Not a verdict on the link: offline, or too many attempts from here
+        setError(err?.message || 'Something went wrong. Please try again.');
+        setStage('error');
+      });
     return () => { cancelled = true; };
-  }, [uid, token]);
+    // Boolean(fromUrl) too: the uid and token are the same before and after
+    // they leave the address, so without it the check would never run
+  }, [uid, token, attempt, Boolean(fromUrl)]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -68,6 +99,18 @@ export default function ResetPassword() {
         </div>
 
         {stage === 'checking' && <p className="lg-note">Checking your link…</p>}
+
+        {stage === 'error' && (
+          <>
+            <p className="lg-error" role="alert">{error}</p>
+            <button
+              type="button"
+              className="lg-submit"
+              onClick={() => { setError(''); setAttempt((a) => a + 1); }}>
+              Try again
+            </button>
+          </>
+        )}
 
         {stage === 'invalid' && (
           <>

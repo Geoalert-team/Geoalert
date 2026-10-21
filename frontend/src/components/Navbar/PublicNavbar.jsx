@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import NotificationBell from "./NotificationBell";
+import RoleMenu from "./RoleMenu";
 import useMediaQuery from "./useMediaQuery";
 import logo from "../../assets/images/logo1.png";
 import "./css/PublicNavbar.css";
@@ -10,9 +11,9 @@ import "./css/PublicNavbar.css";
  * The one navigation bar, on every page and for everyone.
  *
  * Everyone sees the public links. A signed-in staff member also gets the
- * bell, their name (with Log out) and, at the far right, their role's
- * tools; all of it disappears again on logout. Map is a public link, so no
- * role lists it again.
+ * bell, their avatar (name and Log out) and, at the far right, a ☰ staff
+ * menu with their role's pages (RoleMenu.jsx); all of it disappears again
+ * on logout. Map is a public link, so no role lists it again.
  */
 const PUBLIC_LINKS = [
   { to: "/", label: "Home" },
@@ -44,11 +45,10 @@ const STAFF_LINKS = {
   ],
 };
 
-// Below these widths the bar folds into the ☰ menu. Staff fold sooner: their
-// bar carries four more buttons, the bell and their name, which need about
-// 1,110 px laid out in one line against roughly 940 px for the public bar.
-const COMPACT_PUBLIC = "(max-width: 860px)";
-const COMPACT_STAFF = "(max-width: 1199px)";
+// Below this width the bar folds into the ☰ menu, signed in or out. The
+// right-hand slot is the same width either way (so the links never move),
+// and the whole bar needs about 939 px; folding below 960 leaves a margin.
+const COMPACT = "(max-width: 959px)";
 
 export default function PublicNavbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -56,7 +56,7 @@ export default function PublicNavbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const userMenuRef = useRef(null);
-  const compact = useMediaQuery(user ? COMPACT_STAFF : COMPACT_PUBLIC);
+  const compact = useMediaQuery(COMPACT);
 
   // Close the mobile menu after a link is tapped
   const closeMenu = () => setMenuOpen(false);
@@ -114,6 +114,45 @@ export default function PublicNavbar() {
     </div>
   );
 
+  // The account button (name, then Log out in its menu), or Log in
+  const account = user ? (
+    <div className="pn-user" ref={userMenuRef}>
+      <button
+        type="button"
+        className="pn-user-btn"
+        aria-label={`Account: ${displayName}`}
+        title={displayName}
+        aria-expanded={userMenuOpen}
+        onClick={() => setUserMenuOpen((open) => !open)}>
+        <span className="pn-user-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9z" />
+            <path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6" />
+          </svg>
+        </span>
+        {/* A long name ends in "…" on the button; the menu shows it in full */}
+        <span className="pn-user-name">{displayName}</span>
+      </button>
+
+      {userMenuOpen && (
+        <div className="pn-user-dropdown">
+          {/* One line; a very long name ends in "…" and shows in full on hover */}
+          <p className="pn-user-menu-name" title={displayName}>{displayName}</p>
+          <button
+            type="button"
+            className="pn-user-logout"
+            onClick={handleLogout}>
+            Logout
+          </button>
+        </div>
+      )}
+    </div>
+  ) : (
+    <Link to="/login" className="pn-login" onClick={closeMenu}>
+      Log in
+    </Link>
+  );
+
   return (
     <header className={`pn-header ${compact ? "is-compact" : ""} ${user ? "is-staff" : ""}`}>
       <div className="pn-inner">
@@ -148,55 +187,24 @@ export default function PublicNavbar() {
           aria-label="Main">
           {renderLinks(PUBLIC_LINKS, "pn-public-links")}
 
-          {/* Folded menu: the role's tools under a Staff heading, then the
-              name at the bottom. On a wide bar they sit at the far right,
-              after the name (rendered further down), so Tab order always
-              follows what is on screen. */}
-          {compact && staffGroup}
-
-          {/* Notification bell. Only mounted (and polling) while someone is logged in. */}
-          {user && !compact && <NotificationBell />}
-
-          {user ? (
-            <div className="pn-user" ref={userMenuRef}>
-              {/* On a wide bar the button shows only the avatar (the name is
-                  hidden by CSS to save room), so it is named here and the
-                  menu repeats the name */}
-              <button
-                type="button"
-                className="pn-user-btn"
-                aria-label={`Account: ${displayName}`}
-                aria-expanded={userMenuOpen}
-                onClick={() => setUserMenuOpen((open) => !open)}>
-                <span className="pn-user-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9z" />
-                    <path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6" />
-                  </svg>
-                </span>
-                <span className="pn-user-name">{displayName}</span>
-              </button>
-
-              {userMenuOpen && (
-                <div className="pn-user-dropdown">
-                  {/* One line; a very long name ends in "…" and shows in full on hover */}
-                  <p className="pn-user-menu-name" title={displayName}>{displayName}</p>
-                  <button
-                    type="button"
-                    className="pn-user-logout"
-                    onClick={handleLogout}>
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
+          {compact ? (
+            // Folded menu: the role's pages under a Staff heading, then the
+            // name (or Log in) at the bottom
+            <>
+              {staffGroup}
+              {account}
+            </>
           ) : (
-            <Link to="/login" className="pn-login" onClick={closeMenu}>
-              Log in
-            </Link>
+            // One right-hand slot, the same width signed in or out, so the
+            // public links never move: Log in, or the bell, the name and the
+            // ☰ staff menu right of the name
+            <div className="pn-account">
+              {/* Only mounted (and polling) while someone is logged in */}
+              {user && <NotificationBell />}
+              {account}
+              {staffLinks.length > 0 && <RoleMenu links={staffLinks} />}
+            </div>
           )}
-
-          {!compact && staffGroup}
         </nav>
       </div>
     </header>

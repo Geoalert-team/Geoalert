@@ -53,8 +53,18 @@ test('too many requests says so', async () => {
   expect(el.textContent).toContain('Too many reset requests. Try again in a little while.');
 });
 
-test('any other failure still shows the generic reply, so nothing about the account leaks', async () => {
-  authApi.requestPasswordReset.mockRejectedValue(Object.assign(new Error('Network Error'), { status: 0 }));
+test('a server that cannot be reached says so, instead of claiming an email was sent', async () => {
+  const offline = "Can't reach the GeoAlert server. Check your internet connection, or that the backend is running.";
+  authApi.requestPasswordReset.mockRejectedValue(new Error(offline)); // no status: no reply at all
+  const el = await render(<ForgotPassword />);
+  await send(el);
+  expect(el.textContent).toContain(offline);
+  expect(el.textContent).not.toContain(GENERIC);
+  expect(el.querySelector('button[type="submit"]').disabled).toBe(false); // can try again
+});
+
+test('a server error still gets the generic reply, so nothing about the account leaks', async () => {
+  authApi.requestPasswordReset.mockRejectedValue(Object.assign(new Error('Something went wrong'), { status: 500 }));
   const el = await render(<ForgotPassword />);
   await send(el);
   expect(el.textContent).toContain(GENERIC);

@@ -28,7 +28,10 @@ export default function ForgotPassword() {
       setSent(true);
     } catch (err) {
       if (err?.status === 429) setError(LIMIT);
-      else setSent(true); // any other failure: same answer, nothing about the account leaks
+      // No reply at all (offline, server down) can't reveal anything about
+      // the account, and "we've sent a link" would be untrue: say so
+      else if (!err?.status) setError(err?.message || "Can't reach the GeoAlert server.");
+      else setSent(true); // a server error: same answer, nothing about the account leaks
     } finally {
       setBusy(false);
     }

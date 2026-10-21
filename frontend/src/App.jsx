@@ -41,6 +41,8 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
+      {/* Where the page moves itself once it has read the link, so the token leaves the address bar */}
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/app/security" element={<Gate><Security /></Gate>} />
 
       {/* Logged-in staff */}

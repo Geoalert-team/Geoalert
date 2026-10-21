@@ -3,9 +3,10 @@
 
 /* =========================================================
    The navigation bar, on every page and for everyone. Signed-in staff get
-   their role's tools on the right (.pn-staff). Below a width chosen in
-   PublicNavbar.jsx (860 px signed out, 1,200 px for staff) the header gets
-   .is-compact and folds into the ☰ menu.
+   the bell, their avatar and a ☰ staff menu with their role's pages
+   (.pn-role) at the right. Below 960 px (PublicNavbar.jsx) the header gets
+   .is-compact and folds into the main ☰ menu, where the role's pages are
+   listed under a Staff heading (.pn-staff).
    All classes start with "pn-" so they don't clash with index.css
    ========================================================= */
 
@@ -104,49 +105,108 @@
   background: rgba(255, 255, 255, 0.14);
 }
 
-/* Staff tools: after a thin divider, on the right with the bell and name */
-.pn-staff {
-  display: flex;
-  align-items: center;
-  padding-left: 14px;
-  border-left: 1px solid rgba(255, 255, 255, 0.2);
-}
+/* The role's pages under a "Staff" heading: only in the folded menu. On a
+   wide bar they sit behind the ☰ staff menu (.pn-role, below) */
 .pn-staff-heading {
-  display: none; /* a heading only in the folded menu */
+  display: none;
 }
 
-/* Signed in, the bar carries four more buttons. It spans the whole screen
-   with normal spacing, and the account button shows only the avatar (the
-   name is in its menu). That fits on one line from 1,200 px up; below, the
-   bar folds into the ☰ menu (see PublicNavbar.jsx). */
-.pn-header.is-staff:not(.is-compact) .pn-inner {
-  max-width: none;
-  padding: 0 32px;
+/* The right-hand slot, the same width signed in or out, so the public
+   links never move. Signed out it holds Log in at its right end; signed in,
+   the bell, the name button and the ☰ staff menu right of the name, also
+   right-aligned. 264 px = bell 42 + name button up to 160 + ☰ 42 + gaps. */
+.pn-account {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 264px;
+  flex-shrink: 0;
 }
-.pn-header.is-staff:not(.is-compact) .pn-menu {
-  gap: 22px;
+.pn-account .pn-user-name {
+  max-width: 100px; /* longer names end in "…"; the menu shows them in full */
 }
-.pn-header.is-staff:not(.is-compact) .pn-links {
+
+/* ---------- ☰ staff menu (RoleMenu.jsx) ---------- */
+.pn-role {
+  position: relative;
+}
+.pn-role-btn {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--pn-white);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.pn-role-btn:hover,
+.pn-role-btn[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.18);
+}
+/* On a staff page, the icon says you are inside it */
+.pn-role-btn.is-active {
+  background: rgba(255, 255, 255, 0.24);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
+}
+.pn-role-bars {
+  display: grid;
   gap: 4px;
 }
-.pn-header.is-staff:not(.is-compact) .pn-link {
-  padding: 8px 13px;
-  font-size: 0.96rem;
+.pn-role-bars span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
 }
-.pn-header.is-staff:not(.is-compact) .pn-staff {
-  padding-left: 22px;
+
+.pn-role-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  min-width: 200px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 12px;
+  background: var(--pn-white);
+  box-shadow: 0 12px 28px rgba(10, 20, 40, 0.25);
 }
-/* The bell and the avatar sit as a pair */
-.pn-header.is-staff:not(.is-compact) .pn-bell + .pn-user {
-  margin-left: -12px;
+/* An invisible bridge over the 8px gap, so the pointer never leaves the
+   menu's area on its way down from the icon */
+.pn-role-menu::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
 }
-.pn-header.is-staff:not(.is-compact) .pn-user-btn {
-  width: 42px;
-  padding: 0;
-  justify-content: center;
+.pn-role-link {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--pn-navy);
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
 }
-.pn-header.is-staff:not(.is-compact) .pn-user-name {
-  display: none;
+.pn-role-link:hover,
+.pn-role-link:focus-visible {
+  background: #eef2f7;
+}
+.pn-role-link.is-active {
+  background: #eef2f7;
+  box-shadow: inset 3px 0 0 var(--pn-navy);
+}
+.pn-header .pn-role-link:focus-visible {
+  outline-offset: -3px;
 }
 
 .pn-login {

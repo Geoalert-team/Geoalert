@@ -1,5 +1,6 @@
 import base64
 import io
+import threading
 
 import pyotp
 import qrcode
@@ -24,10 +25,11 @@ from datetime import timedelta
 
 
 from django.contrib.auth.tokens import default_token_generator
+from django.db import connection
 
 from apps.accounts.models import User
 from apps.accounts.password_reset import (
-    BAD_LINK, DONE_REPLY, GENERIC_REPLY, LIMIT_REPLY,
+    ATTEMPTS_REPLY, BAD_LINK, DONE_REPLY, GENERIC_REPLY, LIMIT_REPLY, SAME_PASSWORD,
     find_active_user, send_reset_email, user_from_uid,
 )
 from apps.accounts.serializers import LoginSerializer, UserSerializer, TwoFactorCodeSerializer
@@ -475,8 +477,13 @@ class MeView(APIView):
 # confirms share one counter per address, so a token can't be guessed
 # through either endpoint.
 REQUESTS_PER_ADDRESS = (10, 15 * 60)
-EMAILS_PER_ACCOUNT = (3, 60 * 60)
+EMAILS_PER_ADDRESS_TYPED = (3, 60 * 60)
 FAILURES_PER_ADDRESS = (20, 15 * 60)
+
+
+def run_in_background(job):
+    """Run `job` on a daemon thread, so the HTTP reply doesn't wait for it."""
+    threading.Thread(target=job, daemon=True).start()
 
 
 def _link_user(request):
@@ -499,13 +506,19 @@ def _count_failure(request):
     reset_throttle.allow(_failures_key(request), *FAILURES_PER_ADDRESS)
 
 
+def _too_many_attempts():
+    return Response({'error': ATTEMPTS_REPLY}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class PasswordResetRequestView(APIView):
     """
     POST /api/auth/password-reset/   Body: { email }
     Emails a one-time, 1-hour reset link to the active account with that
-    email. The answer is the same whether or not there is one, so the page
-    can't be used to find out which emails have accounts.
+    email. Nothing about the answer depends on whether there is one: the
+    same reply, the same per-email count and lookup either way, and the slow
+    part (sending and logging) happens after the reply has gone, so not
+    even the response time tells.
     """
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -520,21 +533,32 @@ class PasswordResetRequestView(APIView):
         email = email.strip() if isinstance(email, str) else ''
         if not email:
             return generic
+        # Counted by the address typed, known or not, so both paths do the
+        # same work before the reply
+        if not reset_throttle.allow(f'email:{email.lower()}', *EMAILS_PER_ADDRESS_TYPED):
+            return generic
 
         user = find_active_user(email)
         # Unknown and deactivated accounts get the same answer, unlogged, so
         # the audit log can't be filled with made-up addresses
-        if user is None or not reset_throttle.allow(f'acct:{user.pk}', *EMAILS_PER_ACCOUNT):
-            return generic
-
-        try:
-            send_reset_email(user)
-        except Exception as exc:  # SMTP down, wrong app password, ...
-            log_event(request, 'PASSWORD_RESET_EMAIL_FAILED', 'app_user', user.id,
-                      f'{user.email}: {type(exc).__name__}', user=user)
-            return generic
-        log_event(request, 'PASSWORD_RESET_REQUESTED', 'app_user', user.id, user.email, user=user)
+        if user is not None:
+            run_in_background(lambda: self.send(request, user))
         return generic
+
+    @staticmethod
+    def send(request, user):
+        try:
+            try:
+                send_reset_email(user)
+            except Exception as exc:  # SMTP down, wrong app password, timed out, ...
+                log_event(request, 'PASSWORD_RESET_EMAIL_FAILED', 'app_user', user.id,
+                          f'{user.email}: {type(exc).__name__}', user=user)
+            else:
+                log_event(request, 'PASSWORD_RESET_REQUESTED', 'app_user', user.id, user.email, user=user)
+        finally:
+            # This thread opened its own database connection; the team's
+            # pooler allows only a handful, so give it back now
+            connection.close()
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -549,7 +573,7 @@ class PasswordResetCheckView(APIView):
 
     def post(self, request):
         if _too_many_failures(request):
-            return Response({'error': LIMIT_REPLY}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+            return _too_many_attempts()
         _, ok = _link_user(request)
         if not ok:
             _count_failure(request)
@@ -560,21 +584,23 @@ class PasswordResetCheckView(APIView):
 class PasswordResetConfirmView(APIView):
     """
     POST /api/auth/password-reset/confirm/   Body: { uid, token, new_password }
-    Sets the new password under the same rules as change-password. Also
-    clears the admin-set-password flag and any lockout. Changing the hash
-    ends the account's other sessions and makes this link unusable. Nobody
-    is signed in: they sign in normally next, 2FA included.
+    Sets the new password under the same rules as change-password,
+    including not reusing the current one (so an admin-set temporary
+    password can't be kept). Also clears the admin-set-password flag and any
+    lockout. Changing the hash ends the account's other sessions and makes
+    this link unusable. Nobody is signed in: they sign in normally next, 2FA
+    included.
     """
     permission_classes = [AllowAny]
     authentication_classes = []
 
     def post(self, request):
         if _too_many_failures(request):
-            return Response({'error': LIMIT_REPLY}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+            return _too_many_attempts()
 
         user, ok = _link_user(request)
         if not ok:
-            _count_failure(request)
+            _count_failure(request)  # only bad links count: that is what guessing looks like
             if user is not None:
                 log_event(request, 'PASSWORD_RESET_FAILED', 'app_user', user.id,
                           f'{user.email}: expired or already used link', user=user)
@@ -585,10 +611,16 @@ class PasswordResetConfirmView(APIView):
         try:
             validate_password(new_password, user=user)
         except ValidationError as exc:
-            _count_failure(request)
             log_event(request, 'PASSWORD_RESET_FAILED', 'app_user', user.id,
                       f'{user.email}: new password rejected', user=user)
             return Response({'error': ' '.join(exc.messages)}, status=status.HTTP_400_BAD_REQUEST)
+        # hashers.check_password, not user.check_password: on a match the
+        # latter may re-hash and save, which would change the hash and kill
+        # this very link
+        if check_password(new_password, user.password):
+            log_event(request, 'PASSWORD_RESET_FAILED', 'app_user', user.id,
+                      f'{user.email}: new password same as current', user=user)
+            return Response({'error': SAME_PASSWORD}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(new_password)
         user.must_change_password = False

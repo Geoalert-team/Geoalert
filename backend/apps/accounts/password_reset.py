@@ -23,6 +23,8 @@ from apps.accounts.models import User
 GENERIC_REPLY = ("If an account with that email exists, we've sent a link to reset its "
                  "password. It works for 1 hour.")
 LIMIT_REPLY = 'Too many reset requests. Try again in a little while.'
+ATTEMPTS_REPLY = 'Too many attempts. Try again in a little while.'
+SAME_PASSWORD = 'Choose a password different from your current one.'
 BAD_LINK = 'This link has expired or was already used.'
 DONE_REPLY = 'Password changed. Log in with your new password.'
 SUBJECT = 'Reset your GeoAlert password'
