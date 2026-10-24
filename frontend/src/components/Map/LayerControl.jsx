@@ -17,13 +17,36 @@ import { hazardIconPath, hazardColor, SEVERITY } from './hazardInfo';
  *   onRetry()
  *   showOutlines        whether each zone's drawn outline is shown
  *   onToggleOutlines()
+ *   showPuroks          whether the purok outlines inside each barangay are shown
+ *   onTogglePuroks()
+ *   puroksEstimated     true while any purok outline is an estimate
  */
 
 export default function LayerControl({
   types, active, onToggle, onAll, onNone, failed, onRetry, showOutlines, onToggleOutlines,
+  showPuroks, onTogglePuroks, puroksEstimated,
 }) {
   const allOn = types.length > 0 && types.every((t) => active.has(t.name));
   const noneOn = active.size === 0;
+
+  // Not a hazard layer, so it stays even when no hazard layers load
+  const purokToggle = onTogglePuroks && (
+    <div className="pm-layers-display">
+      <input
+        id="pm-layer-puroks"
+        type="checkbox"
+        checked={!!showPuroks}
+        onChange={onTogglePuroks}
+      />
+      <label htmlFor="pm-layer-puroks">
+        Purok outlines
+        <small>
+          Select a barangay to see its puroks
+          {puroksEstimated && '. Estimated until official boundaries arrive'}
+        </small>
+      </label>
+    </div>
+  );
 
   if (types.length === 0) {
     return (
@@ -34,6 +57,7 @@ export default function LayerControl({
             Reload layers
           </button>
         )}
+        {purokToggle}
       </div>
     );
   }
@@ -105,6 +129,7 @@ export default function LayerControl({
           </label>
         </div>
       )}
+      {purokToggle}
       {failed && (
         <button type="button" className="pm-layers-retry" onClick={onRetry}>
           Counts unavailable — reload

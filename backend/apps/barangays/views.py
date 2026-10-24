@@ -6,10 +6,10 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework import status
 
-from apps.barangays.models import Barangay
+from apps.barangays.models import Barangay, Purok
 from apps.hazards.geometry import with_cordon
 from apps.hazards.models import HazardZone
-from apps.barangays.serializers import BarangayGeoSerializer, BarangaySerializer
+from apps.barangays.serializers import BarangayGeoSerializer, BarangaySerializer, PurokGeoSerializer
 
 
 class BarangayListView(APIView):
@@ -24,6 +24,20 @@ class BarangayListView(APIView):
         barangays = Barangay.objects.all()
         serializer = BarangayGeoSerializer(barangays, many=True)
         return Response(serializer.data)
+
+
+class PurokListView(APIView):
+    """
+    GET /api/barangays/puroks/
+    Every purok outline as GeoJSON, for the map's purok layer. Most are
+    estimates until the Barangay Hall's official lines are loaded; `source`
+    says which. Public, like the barangay outlines.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        puroks = Purok.objects.select_related('barangay').order_by('barangay__name', 'name')
+        return Response(PurokGeoSerializer(puroks, many=True).data)
 
 
 class BarangayDetailView(APIView):

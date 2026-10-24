@@ -91,6 +91,21 @@
 }
 .pm .pm-brgy-tip.leaflet-tooltip-top::before { border-top-color: var(--pm-navy); }
 
+/* ---------- Purok name, on hovering a purok of the selected barangay ---------- */
+.pm .pm-purok-tip {
+  padding: 5px 11px;
+  border: 0;
+  border-radius: 10px;
+  background: #4c1d95;
+  box-shadow: var(--pm-shadow);
+  color: var(--pm-white);
+  font-family: inherit;
+  font-size: .78rem;
+  line-height: 1.35;
+}
+.pm .pm-purok-tip strong { font-size: .88rem; }
+.pm .pm-purok-tip.leaflet-tooltip-top::before { border-top-color: #4c1d95; }
+
 /* Barangay rows in the search results: hollow dot = place, filled dot = hazard */
 .pm-results-dot-brgy {
   background: transparent;

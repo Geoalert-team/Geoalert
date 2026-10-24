@@ -13,6 +13,8 @@ import { MARK_STYLE, markPathOptions } from '../components/Map/FieldMarks';
 import { useSusceptibility } from '../components/Map/susceptibility';
 import { HAZARD_LEVELS, useHazardLevelLayer } from '../components/Map/hazardLevels';
 import CordonLayer, { CordonPatterns, DRAFT_COLOR, cordonFill, cordonRingStyle, hasCordon } from '../components/Map/CordonLayer';
+import PurokLayer from '../components/Map/PurokLayer';
+import { hasEstimates, puroksOf } from '../components/Map/purokStyle';
 import { HAZARD_TYPES, SEVERITY, severityInfo, hazardKey, hazardIconPath, hazardColor } from '../components/Map/hazardInfo';
 import { MIN_CORNERS, cornersOfZone, insertCorner, middleOf } from '../utils/drawnZone';
 import { boundaryRings, snapPoint } from '../utils/snap';
@@ -253,6 +255,7 @@ export default function PublicMap() {
   const [map, setMap] = useState(null);
   const [liveHazards, setLiveHazards] = useState([]);
   const [barangayGeo, setBarangayGeo] = useState(null);
+  const [purokGeo, setPurokGeo] = useState(null);
   const [historySpots, setHistorySpots] = useState([]); // past events, for the heat shading
   const [heatMode, setHeatMode] = useState('active'); // 'active' | 'history' | 'likely'
   // Seasonal likelihood for the 'likely' view: which month, and the answer
@@ -396,10 +399,11 @@ export default function PublicMap() {
       .catch(() => setHistorySpots([]));
   }, []);
 
-  // Load hazards and barangay outlines once
+  // Load hazards, barangay and purok outlines once
   useEffect(() => {
     loadHazards().finally(() => setLoading(false));
     barangaysApi.list().then(setBarangayGeo).catch(() => {});
+    barangaysApi.puroks().then(setPurokGeo).catch(() => {});
     loadHeat();
   }, [loadHazards, loadHeat]);
 
@@ -485,6 +489,26 @@ export default function PublicMap() {
     });
   }, []);
 
+  // Whether the purok outlines inside each barangay are drawn. On unless
+  // turned off in this browser.
+  const [showPuroks, setShowPuroks] = useState(() => {
+    try {
+      return localStorage.getItem('geoalert-purok-outlines') !== 'off';
+    } catch {
+      return true;
+    }
+  });
+  const togglePuroks = useCallback(() => {
+    setShowPuroks((on) => {
+      try {
+        localStorage.setItem('geoalert-purok-outlines', on ? 'off' : 'on');
+      } catch {
+        // storage blocked: the choice lasts until the page is closed
+      }
+      return !on;
+    });
+  }, []);
+
   // Outlines of the visible zones, as one GeoJSON layer. Cordons are not
   // part of it: CordonLayer draws them, whatever this setting is.
   const zoneOutlines = useMemo(() => {
@@ -533,6 +557,11 @@ export default function PublicMap() {
 
   const selectedHazardId = selection?.kind === 'hazard' ? selection.id : null;
   const selectedBarangayId = selection?.kind === 'barangay' ? selection.id : null;
+  // Purok lines show only inside the barangay whose panel is open
+  const selectedPuroks = useMemo(
+    () => (showPuroks && panelOpen ? puroksOf(purokGeo, selectedBarangayId) : null),
+    [showPuroks, panelOpen, purokGeo, selectedBarangayId],
+  );
 
   const selectedHazard = hazards.find((h) => h.id === selectedHazardId) || null;
   const stack = useMemo(
@@ -1038,6 +1067,10 @@ export default function PublicMap() {
           {/* Safety cordons, hatched in their hazard's colour. Always shown. */}
           <CordonLayer hazards={visibleHazards} />
 
+          {/* Purok outlines of the selected barangay, under the barangay lines;
+              hovering one names it */}
+          <PurokLayer geo={selectedPuroks} />
+
           {/* Street and place names above the hazard layer */}
           {BASEMAPS[basemap].labels && (
             <Pane name="basemap-labels" style={{ zIndex: 450, pointerEvents: 'none' }}>
@@ -1053,11 +1086,13 @@ export default function PublicMap() {
           {/* Barangay boundaries: hover for the name, click for barangay-specific hazards */}
           {barangayGeo && (
             <GeoJSON
-              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}-${publishMode}-${heatMode}-${likelyMonth}-${likely?.results?.length ?? 0}-${[...activeTypes].join('')}`}
+              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}-${publishMode}-${heatMode}-${likelyMonth}-${likely?.results?.length ?? 0}-${[...activeTypes].join('')}-${!!selectedPuroks}`}
               data={barangayGeo}
               style={barangayStyle}
               bubblingMouseEvents={false}
               onEachFeature={(feature, layer) => {
+                // Inside the selected barangay its puroks name themselves on hover
+                if (selectedPuroks && String(featureId(feature)) === String(selectedBarangayId)) return;
                 const name = feature.properties?.name || 'Barangay';
                 let tip = name;
                 if (heatMode === 'likely') {
@@ -1339,6 +1374,9 @@ export default function PublicMap() {
               onRetry={loadLayers}
               showOutlines={showOutlines}
               onToggleOutlines={toggleOutlines}
+              showPuroks={showPuroks}
+              onTogglePuroks={purokGeo?.features?.length ? togglePuroks : undefined}
+              puroksEstimated={hasEstimates(purokGeo)}
             />
           )}
         </div>

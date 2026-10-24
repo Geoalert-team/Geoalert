@@ -5,19 +5,10 @@ from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from apps.barangays.aliases import ALIASES
 from apps.barangays.models import Barangay
 
 DATA_FILE = Path(__file__).resolve().parents[2] / 'data' / 'talisay_barangays.geojson'
-
-# Other spellings the team may already have in the database
-ALIASES = {
-    'Tabunoc': ['Tabunok'],
-    'Camp IV': ['Camp 4', 'Camp Four'],
-    'Lawaan I': ['Lawaan 1'],
-    'Lawaan II': ['Lawaan 2'],
-    'Lawaan III': ['Lawaan 3'],
-    'Poblacion': ['Poblacion (Talisay)'],
-}
 
 
 class Command(BaseCommand):

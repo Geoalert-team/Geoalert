@@ -680,24 +680,23 @@ def rivers_geojson(osm):
     return {'type': 'FeatureCollection', 'features': features}
 
 
-def build(barangay_polygons, barangay_names, extent, out_dir, zoom=14, pad_m=500, log=print,
-          dem=None, osm=None, cache_dir=None, refresh=False, terrain_only=False):
+def city_grid(extent, zoom=14, pad_m=500):
     """
-    barangay_polygons  list of (barangay_id, [outer_ring, hole, ...]) with (lng, lat) coords
-    barangay_names     {barangay_id: name}
-    extent             (west, south, east, north) of all barangays
-    dem, osm           optional pre-loaded data (used by tests); downloaded when None
-    cache_dir          keeps downloads here so a rerun skips them (refresh=True downloads again)
-    terrain_only       write only terrain.png and its entry in index.json, leaving the
-                       published susceptibility layers exactly as they are
+    The hazard map's grid over the city, with pad_m of context around it, and
+    the padded (south, west, north, east). The purok build uses the same grid
+    so it can share the saved downloads.
     """
     west, south, east, north = extent
     dlat = pad_m / 111320
     dlng = dlat / math.cos(math.radians((south + north) / 2))
     south, west, north, east = south - dlat, west - dlng, north + dlat, east + dlng
-    grid = Grid(south, west, north, east, zoom)
-    log(f'Grid: {grid.width} x {grid.height} cells, {grid.res:.1f} m each')
+    return Grid(south, west, north, east, zoom), (south, west, north, east)
 
+
+def load_inputs(grid, bbox, log, dem=None, osm=None, cache_dir=None, refresh=False):
+    """Elevation and OpenStreetMap data for the grid, from cache_dir when saved there."""
+    south, west, north, east = bbox
+    zoom = grid.zoom
     session = make_session()
     cache = Path(cache_dir) if cache_dir else None
     if cache:
@@ -729,6 +728,23 @@ def build(barangay_polygons, barangay_names, extent, out_dir, zoom=14, pad_m=500
             osm = fetch_osm(south, west, north, east, session, log)
             if osm_file:
                 osm_file.write_text(json.dumps(osm))
+    return dem, osm
+
+
+def build(barangay_polygons, barangay_names, extent, out_dir, zoom=14, pad_m=500, log=print,
+          dem=None, osm=None, cache_dir=None, refresh=False, terrain_only=False):
+    """
+    barangay_polygons  list of (barangay_id, [outer_ring, hole, ...]) with (lng, lat) coords
+    barangay_names     {barangay_id: name}
+    extent             (west, south, east, north) of all barangays
+    dem, osm           optional pre-loaded data (used by tests); downloaded when None
+    cache_dir          keeps downloads here so a rerun skips them (refresh=True downloads again)
+    terrain_only       write only terrain.png and its entry in index.json, leaving the
+                       published susceptibility layers exactly as they are
+    """
+    grid, bbox = city_grid(extent, zoom, pad_m)
+    log(f'Grid: {grid.width} x {grid.height} cells, {grid.res:.1f} m each')
+    dem, osm = load_inputs(grid, bbox, log, dem=dem, osm=osm, cache_dir=cache_dir, refresh=refresh)
     log(f"  OSM: {len(osm['waterways'])} waterways, {len(osm['roads'])} roads, "
         f"{len(osm['buildings'])} buildings, {len(osm['landuse'])} land-use areas, "
         f"{len(osm['fire_stations'])} fire stations")
