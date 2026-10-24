@@ -3,16 +3,24 @@
 
 /* =========================================================
    The navigation bar, on every page and for everyone. Signed-in staff get
-   the bell, their avatar and a ☰ staff menu with their role's pages
-   (.pn-role) at the right. Below 960 px (PublicNavbar.jsx) the header gets
-   .is-compact and folds into the main ☰ menu, where the role's pages are
-   listed under a Staff heading (.pn-staff).
+   the bell and one account button (.pn-acct, AccountMenu.jsx) whose menu
+   holds who they are, their role's pages and Log out. Below 960 px
+   (PublicNavbar.jsx) the header gets .is-compact and folds into the ☰
+   menu, which ends with the same account panel, already open.
    All classes start with "pn-" so they don't clash with index.css
    ========================================================= */
 
 .pn-header {
   --pn-navy: #1c2e4a;
   --pn-white: #ffffff;
+  --pn-mist: #f2f5f9;
+  --pn-line: #e3e8ef;
+  --pn-soft: #6a778d;
+  /* The role colours of the dashboards' avatars (AdminDashboard.css) */
+  --pn-tone-admin: #1c2e4a;  --pn-tone-admin-tint: #e8edf5;
+  --pn-tone-drrmo: #b4520b;  --pn-tone-drrmo-tint: #fdf0e3;
+  --pn-tone-brgy:  #0f766e;  --pn-tone-brgy-tint:  #e2f4f1;
+  --pn-tone-none:  #6a778d;  --pn-tone-none-tint:  #eef1f5;
 
   position: sticky;
   top: 0;
@@ -105,16 +113,10 @@
   background: rgba(255, 255, 255, 0.14);
 }
 
-/* The role's pages under a "Staff" heading: only in the folded menu. On a
-   wide bar they sit behind the ☰ staff menu (.pn-role, below) */
-.pn-staff-heading {
-  display: none;
-}
-
 /* The right-hand slot, the same width signed in or out, so the public
    links never move. Signed out it holds Log in at its right end; signed in,
-   the bell, the name button and the ☰ staff menu right of the name, also
-   right-aligned. 264 px = bell 42 + name button up to 160 + ☰ 42 + gaps. */
+   the bell and the account button, also right-aligned.
+   264 px = bell 42 + gap 10 + account button up to about 200. */
 .pn-account {
   display: flex;
   align-items: center;
@@ -122,91 +124,6 @@
   gap: 10px;
   width: 264px;
   flex-shrink: 0;
-}
-.pn-account .pn-user-name {
-  max-width: 100px; /* longer names end in "…"; the menu shows them in full */
-}
-
-/* ---------- ☰ staff menu (RoleMenu.jsx) ---------- */
-.pn-role {
-  position: relative;
-}
-.pn-role-btn {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--pn-white);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-.pn-role-btn:hover,
-.pn-role-btn[aria-expanded="true"] {
-  background: rgba(255, 255, 255, 0.18);
-}
-/* On a staff page, the icon says you are inside it */
-.pn-role-btn.is-active {
-  background: rgba(255, 255, 255, 0.24);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
-}
-.pn-role-bars {
-  display: grid;
-  gap: 4px;
-}
-.pn-role-bars span {
-  display: block;
-  width: 18px;
-  height: 2px;
-  border-radius: 2px;
-  background: currentColor;
-}
-
-.pn-role-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 20;
-  min-width: 200px;
-  margin: 0;
-  padding: 6px;
-  list-style: none;
-  border-radius: 12px;
-  background: var(--pn-white);
-  box-shadow: 0 12px 28px rgba(10, 20, 40, 0.25);
-}
-/* An invisible bridge over the 8px gap, so the pointer never leaves the
-   menu's area on its way down from the icon */
-.pn-role-menu::before {
-  content: "";
-  position: absolute;
-  top: -10px;
-  left: 0;
-  right: 0;
-  height: 10px;
-}
-.pn-role-link {
-  display: block;
-  padding: 10px 12px;
-  border-radius: 8px;
-  color: var(--pn-navy);
-  font-weight: 700;
-  font-size: 0.95rem;
-  text-decoration: none;
-  transition: background-color 0.2s ease;
-}
-.pn-role-link:hover,
-.pn-role-link:focus-visible {
-  background: #eef2f7;
-}
-.pn-role-link.is-active {
-  background: #eef2f7;
-  box-shadow: inset 3px 0 0 var(--pn-navy);
-}
-.pn-header .pn-role-link:focus-visible {
-  outline-offset: -3px;
 }
 
 .pn-login {
@@ -298,6 +215,9 @@
   flex-direction: column;
   align-items: stretch;
   gap: 16px;
+  /* Signed in, the account panel makes it long: scroll it on a short phone */
+  max-height: calc(100vh - 72px);
+  overflow-y: auto;
   padding: 16px 24px 24px;
   background: var(--pn-navy);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -319,24 +239,6 @@
   justify-content: center;
 }
 
-/* The divider becomes a "Staff" heading above the role's tools */
-.pn-header.is-compact .pn-staff {
-  flex-direction: column;
-  align-items: stretch;
-  padding: 12px 0 0;
-  border-left: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-}
-.pn-header.is-compact .pn-staff-heading {
-  display: block;
-  padding: 0 14px 6px;
-  color: #9fb0c8;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .pn-header *,
   .pn-header *::before,
@@ -345,17 +247,44 @@
   }
 }
 
-/* User menu (shown instead of Log in when logged in) */
-.pn-user {
+/* ---------- Account (AccountMenu.jsx), shown instead of Log in ---------- */
+
+/* Initials in the role's colour, as on the dashboards */
+.pn-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  font-family: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.pn-avatar-sm {
+  width: 32px;
+  height: 32px;
+  font-size: 0.78rem;
+}
+.pn-avatar-lg {
+  width: 44px;
+  height: 44px;
+  font-size: 0.95rem;
+}
+.pn-tone-admin { background: var(--pn-tone-admin-tint); color: var(--pn-tone-admin); }
+.pn-tone-drrmo { background: var(--pn-tone-drrmo-tint); color: var(--pn-tone-drrmo); }
+.pn-tone-brgy  { background: var(--pn-tone-brgy-tint);  color: var(--pn-tone-brgy); }
+.pn-tone-none  { background: var(--pn-tone-none-tint);  color: var(--pn-tone-none); }
+
+.pn-acct {
   position: relative;
 }
 
-.pn-user-btn {
+/* The button: avatar, first name, ▾ */
+.pn-acct-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   min-height: 42px;
-  padding: 4px 16px 4px 6px;
+  padding: 4px 10px 4px 5px;
   border: 0;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.1);
@@ -366,110 +295,190 @@
   font-size: 0.95rem;
   transition: background-color 0.2s ease;
 }
-.pn-user-btn:hover {
+.pn-acct-btn:hover,
+.pn-acct-btn[aria-expanded="true"] {
   background: rgba(255, 255, 255, 0.18);
 }
-
-.pn-user-icon {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--pn-white);
-  color: var(--pn-navy);
+/* On a staff page, the button says you are inside your pages */
+.pn-acct-btn.is-active {
+  background: rgba(255, 255, 255, 0.24);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
 }
-.pn-user-icon svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.pn-user-name {
-  max-width: 160px;
+.pn-acct-first {
+  max-width: 120px; /* longer names end in "…"; the menu shows them in full */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.pn-acct-chevron {
+  flex-shrink: 0;
+  opacity: 0.8;
+  transition: transform 0.2s ease;
+}
+.pn-acct-btn[aria-expanded="true"] .pn-acct-chevron {
+  transform: rotate(180deg);
+}
 
-.pn-user-dropdown {
+/* The dropdown: a white card like the dashboards' panels */
+.pn-acct-menu {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  min-width: 140px;
-  padding: 6px;
-  border-radius: 12px;
-  background: var(--pn-white);
-  box-shadow: 0 12px 28px rgba(10, 20, 40, 0.25);
   z-index: 20;
+  width: 280px;
+  border: 1px solid var(--pn-line);
+  border-radius: 16px;
+  background: var(--pn-white);
+  color: var(--pn-navy);
+  box-shadow: 0 16px 40px rgba(16, 32, 56, 0.16);
+  overflow: hidden;
 }
 
-/* Whose account this is, above Log out (the bar shows only the avatar).
-   The menu grows with the name, from 200 px up to 280 px; a longer name
-   stays on one line and ends in "…" (the full name is its title). */
-.pn-header.is-staff:not(.is-compact) .pn-user-dropdown {
-  width: max-content;
-  min-width: 200px;
-  max-width: 280px;
+/* Who you are */
+.pn-acct-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--pn-line);
 }
-.pn-user-menu-name {
-  margin: 0 0 4px;
-  padding: 8px 12px 10px;
-  border-bottom: 1px solid #eef2f7;
-  color: var(--pn-navy);
-  font-weight: 700;
-  font-size: 0.92rem;
-  white-space: nowrap;
+.pn-acct-who {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+/* One line each; a long name or email ends in "…" (the full text is its title) */
+.pn-acct-name,
+.pn-acct-email {
+  max-width: 100%;
+  margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.pn-header.is-compact .pn-user-menu-name {
-  display: none; /* the folded menu shows the name on the button itself */
+.pn-acct-name {
+  font-weight: 700;
+  font-size: 0.98rem;
+}
+.pn-acct-email {
+  color: var(--pn-soft);
+  font-size: 0.82rem;
+}
+.pn-acct-role {
+  padding: 2px 9px;
+  border-radius: 7px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-.pn-user-logout {
-  width: 100%;
+/* Your pages, then Log out */
+.pn-acct-links {
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-bottom: 1px solid var(--pn-line);
+}
+.pn-acct-link,
+.pn-acct-logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 10px 12px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
+  border-radius: 10px;
   color: var(--pn-navy);
-  text-align: left;
   font-family: inherit;
   font-weight: 700;
   font-size: 0.95rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
 }
-.pn-user-logout:hover {
-  background: #eef2f7;
+.pn-acct-link svg,
+.pn-acct-logout svg {
+  flex-shrink: 0;
+  color: var(--pn-soft);
+}
+.pn-acct-link:hover,
+.pn-acct-logout:hover {
+  background: var(--pn-mist);
+}
+/* The page you are on: tinted, its icon in navy, a dot at the right */
+.pn-acct-link.is-active {
+  background: var(--pn-tone-admin-tint);
+}
+.pn-acct-link.is-active svg {
+  color: var(--pn-navy);
+}
+.pn-acct-link.is-active::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--pn-navy);
+}
+.pn-acct-logout {
+  width: calc(100% - 12px);
+  margin: 6px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.pn-header .pn-acct-link:focus-visible,
+.pn-header .pn-acct-logout:focus-visible {
+  outline-offset: -3px;
 }
 
-/* Folded bar: stacked menu, so the user button/dropdown go full-width instead of floating */
-.pn-header.is-compact .pn-user-btn {
-  width: 100%;
-  justify-content: center;
+/* Folded bar: the same panel, already open at the bottom of the ☰ menu,
+   in the bar's own navy */
+.pn-header.is-compact .pn-acct-panel {
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
-.pn-header.is-compact .pn-user-name {
-  max-width: none;
+.pn-header.is-compact .pn-acct-head {
+  padding: 0 14px 12px;
+  border-bottom: 0;
 }
-.pn-header.is-compact .pn-user-dropdown {
-  position: static;
-  margin-top: 8px;
-  box-shadow: none;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.06);
-}
-.pn-header.is-compact .pn-user-logout {
+.pn-header.is-compact .pn-acct-name {
   color: var(--pn-white);
 }
-.pn-header.is-compact .pn-user-logout:hover {
-  background: rgba(255, 255, 255, 0.1);
+.pn-header.is-compact .pn-acct-email {
+  color: #9fb0c8;
+}
+.pn-header.is-compact .pn-acct-links {
+  padding: 0;
+  border-bottom: 0;
+}
+.pn-header.is-compact .pn-acct-link,
+.pn-header.is-compact .pn-acct-logout {
+  padding: 12px 14px;
+  color: #d6deea;
+}
+.pn-header.is-compact .pn-acct-link svg,
+.pn-header.is-compact .pn-acct-logout svg {
+  color: #9fb0c8;
+}
+.pn-header.is-compact .pn-acct-link:hover,
+.pn-header.is-compact .pn-acct-logout:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--pn-white);
+}
+.pn-header.is-compact .pn-acct-link.is-active {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--pn-white);
+}
+.pn-header.is-compact .pn-acct-link.is-active svg {
+  color: var(--pn-white);
+}
+.pn-header.is-compact .pn-acct-link.is-active::after {
+  background: var(--pn-white);
+}
+.pn-header.is-compact .pn-acct-logout {
+  width: 100%;
+  margin: 2px 0 0;
 }
 
 /* Notification bell (shown to logged-in users, left of the user menu) */
