@@ -10,6 +10,9 @@ import { Icon, Toast, fieldErrors, formatDateTime, timeAgo } from './admin/admin
 import { HazardIcon, ReportPhotos, StatusTag } from './reportShared';
 import ConfirmHazardCard from '../../components/Verify/ConfirmHazardCard';
 import LocationPicker from '../../components/Map/LocationPicker';
+import {
+  NOT_LISTED, isFireType, localNow, placeLabel, purokAtPin, purokOptions, reportPayload, validateReport,
+} from './fireReport';
 import '../css/Dashboard.css';
 import '../css/AdminDashboard.css';
 import '../css/DRRMODashboard.css';
@@ -82,7 +85,12 @@ function emptyForm(user) {
     severity_estimate: '',
     position: user?.position || '',
     agency: '',
-    location: null, // optional map pin [lat, lng]
+    location: null, // map pin [lat, lng]; required for fires
+    // Fire reports only: when it started, and the purok (an id, NOT_LISTED,
+    // or '') with the name typed when it isn't on the list
+    started_at: localNow(),
+    purok: '',
+    purok_other: '',
   };
 }
 
@@ -126,6 +134,8 @@ export default function BarangayDashboard() {
   const [errors, setErrors] = useState({});
   // Barangay outlines by id, so the pin map can centre on the right one
   const [barangayShapes, setBarangayShapes] = useState(new Map());
+  // Purok outlines, so a fire report's pin can name its purok
+  const [purokGeo, setPurokGeo] = useState(null);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -152,6 +162,7 @@ export default function BarangayDashboard() {
         setBarangays(list);
       })
       .catch(() => setBarangays([]));
+    barangaysApi.puroks().then(setPurokGeo).catch(() => setPurokGeo(null));
     hazardsApi.types().then((data) => setHazardTypes(data.results || data)).catch(() => setHazardTypes([]));
     guidanceApi.list().then((data) => setGuidance((data.results || data).filter((g) => g.is_published !== false).slice(0, 4))).catch(() => setGuidance([]));
   }, [refreshReports]);
@@ -241,13 +252,21 @@ export default function BarangayDashboard() {
     }));
   }
 
+  // A fire report asks when and where (the BFP log's columns A-F) instead
+  // of how serious it is
+  const fire = isFireType(hazardTypes, form.hazard_type);
+  const purokChoices = useMemo(() => purokOptions(purokGeo, form.barangay), [purokGeo, form.barangay]);
+  const hasPuroks = purokChoices.length > 0;
+
   function validate() {
-    const e = {};
-    if (!form.barangay) e.barangay = 'Choose the barangay where this is happening.';
-    if (!form.hazard_type) e.hazard_type = 'Choose the type of hazard.';
-    if (form.description.trim().length < 10) e.description = 'Describe what you are seeing in a sentence or two.';
-    if (!form.severity_estimate) e.severity_estimate = 'Choose how serious it looks.';
-    return e;
+    return validateReport(form, { fire, hasPuroks });
+  }
+
+  // A pin also names its purok on a fire report, when it falls in one
+  function setLocation(v) {
+    set('location', v);
+    const purok = fire ? purokAtPin(purokGeo, form.barangay, v) : null;
+    if (purok) set('purok', purok);
   }
 
   async function submit(e) {
@@ -258,16 +277,7 @@ export default function BarangayDashboard() {
 
     setBusy(true);
     try {
-      await reportsApi.submit({
-        barangay: Number(form.barangay),
-        hazard_type: Number(form.hazard_type),
-        description: form.description.trim(),
-        severity_estimate: form.severity_estimate,
-        position: form.position,
-        agency: form.agency,
-        photos: photos.map((p) => p.file),
-        location: form.location,
-      });
+      await reportsApi.submit({ ...reportPayload(form, { fire }), photos: photos.map((p) => p.file) });
       setForm({ ...emptyForm(user), position: form.position, agency: form.agency });
       clearPhotos();
       setErrors({});
@@ -411,21 +421,69 @@ export default function BarangayDashboard() {
                 {errors.hazard_type && <p className="adm-field-error">{errors.hazard_type}</p>}
               </div>
 
+              {fire && (
+                <div className={`adm-field ${errors.started_at ? 'has-error' : ''}`}>
+                  <label htmlFor="brg-started">When it started<span className="adm-req">*</span></label>
+                  <input
+                    id="brg-started"
+                    type="datetime-local"
+                    value={form.started_at}
+                    max={localNow()}
+                    onChange={(e) => set('started_at', e.target.value)}
+                  />
+                  {errors.started_at && <p className="adm-field-error">{errors.started_at}</p>}
+                </div>
+              )}
+
               <div className={`adm-field ${errors.location ? 'has-error' : ''}`}>
                 <label>
-                  Where exactly <span className="brg-optional">optional</span>
+                  Where exactly
+                  {fire ? <span className="adm-req">*</span> : <span className="brg-optional">optional</span>}
                 </label>
                 <p className="adm-muted" style={{ margin: '0 0 6px', fontSize: '.8rem' }}>
-                  Drop a pin where you saw it. Pins from several reports let the DRRMO draw the hazard
-                  zone around what was actually seen.
+                  {fire
+                    ? 'Drop a pin where the fire is.'
+                    : 'Drop a pin where you saw it. Pins from several reports let the DRRMO draw the hazard zone around what was actually seen.'}
                 </p>
                 <LocationPicker
                   value={form.location}
-                  onChange={(v) => set('location', v)}
+                  onChange={setLocation}
                   barangay={barangayShapes.get(String(form.barangay)) || null}
                 />
                 {errors.location && <p className="adm-field-error">{errors.location}</p>}
               </div>
+
+              {fire && (
+                <div className={`adm-field ${errors.purok ? 'has-error' : ''}`}>
+                  <label htmlFor={hasPuroks ? 'brg-purok' : 'brg-purok-other'}>
+                    Purok / Sitio
+                    {hasPuroks ? <span className="adm-req">*</span> : <span className="brg-optional">optional</span>}
+                  </label>
+                  {hasPuroks && (
+                    <select id="brg-purok" value={form.purok} onChange={(e) => set('purok', e.target.value)}>
+                      <option value="">Choose the purok or sitio</option>
+                      {purokChoices.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+                      <option value={NOT_LISTED}>Not on the list…</option>
+                    </select>
+                  )}
+                  {(!hasPuroks || form.purok === NOT_LISTED) && (
+                    <input
+                      id="brg-purok-other"
+                      type="text"
+                      maxLength={100}
+                      value={form.purok_other}
+                      onChange={(e) => {
+                        set('purok_other', e.target.value);
+                        if (errors.purok) setErrors((x) => ({ ...x, purok: undefined }));
+                      }}
+                      placeholder="Name of the purok or sitio"
+                      aria-label="Name of the purok or sitio"
+                      style={hasPuroks ? { marginTop: 6 } : undefined}
+                    />
+                  )}
+                  {errors.purok && <p className="adm-field-error">{errors.purok}</p>}
+                </div>
+              )}
             </div>
 
             <div className="brg-step">
@@ -438,7 +496,9 @@ export default function BarangayDashboard() {
                   maxLength={1000}
                   value={form.description}
                   onChange={(e) => set('description', e.target.value)}
-                  placeholder="Exact location (purok or sitio), what happened, how bad it looks, and what help is needed."
+                  placeholder={fire
+                    ? 'What is burning, how big it is, whether it is spreading, and what help is needed.'
+                    : 'Exact location (purok or sitio), what happened, how bad it looks, and what help is needed.'}
                 />
                 <div className="brg-desc-foot">
                   {errors.description ? <p className="adm-field-error">{errors.description}</p> : <span />}
@@ -509,22 +569,26 @@ export default function BarangayDashboard() {
                   )}
               </div>
 
-              <div className={`adm-field ${errors.severity_estimate ? 'has-error' : ''}`}>
-                <label>How serious is it?<span className="adm-req">*</span></label>
-                <div className="brg-severity" role="radiogroup" aria-label="How serious is it">
-                  {SEVERITIES.map((s) => {
-                    const checked = form.severity_estimate === s.value;
-                    return (
-                      <label key={s.value} className={`brg-sev brg-sev-${s.value.toLowerCase()} ${checked ? 'is-checked' : ''}`}>
-                        <input type="radio" name="severity" value={s.value} checked={checked} onChange={() => set('severity_estimate', s.value)} />
-                        <strong>{s.value}</strong>
-                        <span>{s.hint}</span>
-                      </label>
-                    );
-                  })}
+              {/* Not for fires: their level comes from the purok's history,
+                  and DRRMO records how bad it was when closing */}
+              {!fire && (
+                <div className={`adm-field ${errors.severity_estimate ? 'has-error' : ''}`}>
+                  <label>How serious is it?<span className="adm-req">*</span></label>
+                  <div className="brg-severity" role="radiogroup" aria-label="How serious is it">
+                    {SEVERITIES.map((s) => {
+                      const checked = form.severity_estimate === s.value;
+                      return (
+                        <label key={s.value} className={`brg-sev brg-sev-${s.value.toLowerCase()} ${checked ? 'is-checked' : ''}`}>
+                          <input type="radio" name="severity" value={s.value} checked={checked} onChange={() => set('severity_estimate', s.value)} />
+                          <strong>{s.value}</strong>
+                          <span>{s.hint}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {errors.severity_estimate && <p className="adm-field-error">{errors.severity_estimate}</p>}
                 </div>
-                {errors.severity_estimate && <p className="adm-field-error">{errors.severity_estimate}</p>}
-              </div>
+              )}
             </div>
 
             <div className="brg-step">
@@ -602,6 +666,8 @@ export default function BarangayDashboard() {
                         <ReportPhotos report={r} alt={`Photo you sent with the ${r.hazard_type_details?.name || 'incident'} report`} />
                         <p className="drm-report-meta">
                           <span title={formatDateTime(r.created_at)}>Sent {timeAgo(r.created_at).toLowerCase()}</span>
+                          {r.started_at && <span>Started {formatDateTime(r.started_at)}</span>}
+                          {placeLabel(r) && <span>{placeLabel(r)}</span>}
                           {r.severity_estimate && <span>Severity: {r.severity_estimate}</span>}
                           {r.reviewed_at && <span>Reviewed {timeAgo(r.reviewed_at).toLowerCase()}</span>}
                         </p>

@@ -32,6 +32,7 @@ export const reportsApi = {
   submit: ({
     barangay, hazard_type, description,
     agency = '', position = '', severity_estimate = '', photos = [], location = null,
+    started_at = null, purok = null, purok_other = '',
   }) => {
     const body = { barangay, hazard_type, description, agency, position, severity_estimate };
     // Optional map pin [lat, lng]: sent only when one was placed
@@ -39,6 +40,11 @@ export const reportsApi = {
       body.latitude = Number(location[0].toFixed(6));
       body.longitude = Number(location[1].toFixed(6));
     }
+    // Fire reports: when it started and which purok (or the name typed for
+    // one that isn't on the list). Sent only when set.
+    if (started_at) body.started_at = started_at;
+    if (purok) body.purok = purok;
+    if (purok_other) body.purok_other = purok_other;
 
     if (!photos || photos.length === 0) {
       return client.post('/api/reports/incidents/', body).then((r) => r.data);

@@ -7,6 +7,7 @@ import { hazardColor, hazardIconPath } from '../../components/Map/hazardInfo';
 import ReportLocationMap from '../../components/Map/ReportLocationMap';
 import { Icon, Modal, Toast, fieldErrors, formatDateTime, timeAgo } from './admin/adminShared';
 import { ReportPhotos } from './reportShared';
+import { placeLabel } from './fireReport';
 import ActiveZonesCard from '../../components/Resolve/ActiveZonesCard';
 import AwaitingApprovalCard from '../../components/Resolve/AwaitingApprovalCard';
 import BarangayLikelihood from '../../components/Forecast/BarangayLikelihood';
@@ -200,6 +201,8 @@ function ReportDetail({ report, onClose, onReview }) {
             <dt>Reported by</dt><dd>{reporterName(report)}</dd>
             {report.agency && (<><dt>Agency</dt><dd>{report.agency}</dd></>)}
             {report.position && (<><dt>Position</dt><dd>{report.position}</dd></>)}
+            {report.started_at && (<><dt>Started</dt><dd>{formatDateTime(report.started_at)}</dd></>)}
+            {placeLabel(report) && (<><dt>Purok / Sitio</dt><dd>{placeLabel(report)}</dd></>)}
             {report.severity_estimate && (<><dt>Severity estimate</dt><dd>{report.severity_estimate}</dd></>)}
             <dt>Report ID</dt><dd className="adm-mono">{report.id}</dd>
             {report.reviewed_at && (<>
@@ -234,6 +237,8 @@ function ReportRow({ report, onOpen, onReview }) {
           <p className="drm-report-meta">
             <span>{reporterName(report)}</span>
             {report.agency && <span>{report.agency}</span>}
+            {report.started_at && <span>Started {formatDateTime(report.started_at)}</span>}
+            {placeLabel(report) && <span>{placeLabel(report)}</span>}
             {report.severity_estimate && <span>Severity: {report.severity_estimate}</span>}
             <span title={formatDateTime(report.created_at)}>{timeAgo(report.created_at)}</span>
           </p>
