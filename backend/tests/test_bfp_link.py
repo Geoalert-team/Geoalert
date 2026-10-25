@@ -46,6 +46,11 @@ class SplitAddressTests(SimpleTestCase):
         for text, expected in cases:
             self.assertEqual(split_address(text, B), expected, text)
 
+    def test_the_last_barangay_wins_even_when_written_upper_or_lower(self):
+        # San Roque is also a sitio of Linao; "Upper Linao" is the barangay here
+        self.assertEqual(split_address('Purk Ilang-Ilang, San Roque, Upper Linao, Talisay City Cebu', B),
+                         ('Linao', [('purok', 'Ilang-Ilang'), ('', 'San Roque')]))
+
     def test_misspelled_barangays(self):
         self.assertEqual(split_address('Purok Kamunggay, Poblacio, Talisay City, Cebu', B)[0], 'Poblacion')
         self.assertEqual(split_address('Cassare, Casojong, Talisay City Cebu', B)[0], 'Cansojong')

@@ -48,21 +48,29 @@ def _spellings(barangay_names):
     return sorted(names, key=len, reverse=True)
 
 
+def _barangay_in(part, by_key, spellings):
+    """(barangay name, leftover text) when this part names a barangay, else None."""
+    if canonical(part) in by_key:
+        return by_key[canonical(part)], ''
+    words = _words(part)
+    if len(words) > 1 and words[0].upper() in UPPER_LOWER and canonical(' '.join(words[1:])) in by_key:
+        return by_key[canonical(' '.join(words[1:]))], ''
+    for spelling in spellings:
+        if part.lower().endswith(' ' + spelling.lower()) and canonical(spelling) in by_key:
+            return by_key[canonical(spelling)], part[:-len(spelling)].strip()
+    return None
+
+
 def _find_barangay(parts, by_key, spellings):
-    """(index of the barangay part, barangay name, leftover text of that part) or None."""
+    """
+    (index of the barangay part, barangay name, leftover text of that part) or
+    None. Part by part from the end, so "San Roque, Upper Linao" is in Linao:
+    the last part naming a barangay in any form wins.
+    """
     for i in range(len(parts) - 1, -1, -1):
-        if canonical(parts[i]) in by_key:
-            return i, by_key[canonical(parts[i])], ''
-    for i in range(len(parts) - 1, -1, -1):
-        words = _words(parts[i])
-        if len(words) > 1 and words[0].upper() in UPPER_LOWER:
-            key = canonical(' '.join(words[1:]))
-            if key in by_key:
-                return i, by_key[key], ''
-    for i in range(len(parts) - 1, -1, -1):
-        for spelling in spellings:
-            if parts[i].lower().endswith(' ' + spelling.lower()) and canonical(spelling) in by_key:
-                return i, by_key[canonical(spelling)], parts[i][:-len(spelling)].strip()
+        found = _barangay_in(parts[i], by_key, spellings)
+        if found:
+            return (i, *found)
     return None
 
 

@@ -34,6 +34,11 @@ class NormNameTests(SimpleTestCase):
         # "Zone 3" and "Purok 3" are different places
         self.assertNotEqual(pe.norm_name('Zone 3'), pe.norm_name('Purok 3'))
 
+    def test_accented_letters_match_plain_ones(self):
+        # The BFP types "Tres Aliños"; the purok list has "Tres Alinos"
+        self.assertEqual(pe.norm_name('Tres Aliños'), pe.norm_name('Tres Alinos'))
+        self.assertEqual(pe.norm_name('Sitio Sto. Niño'), pe.norm_name('Sto Nino'))
+
 
 class PurokCountTests(SimpleTestCase):
     def test_official_count_wins(self):

@@ -21,6 +21,7 @@ import heapq
 import json
 import math
 import re
+import unicodedata
 from ctypes import POINTER, c_uint
 
 import numpy as np
@@ -53,8 +54,11 @@ def norm_name(name):
     A key for matching the same place across sources: 'Purok Ilang-Ilang' and
     'ilang ilang' match, so do Kamunggay and Kamungay. 'Zone 3' keeps its word,
     since a zone and a purok with the same number are different places.
+    Accents go too: the BFP types "Tres Aliños" where other sources have
+    "Tres Alinos".
     """
-    words = re.findall(r'[a-z0-9]+', name.lower())
+    plain = ''.join(c for c in unicodedata.normalize('NFKD', name) if not unicodedata.combining(c))
+    words = re.findall(r'[a-z0-9]+', plain.lower())
     while words and words[0] in ('purok', 'sitio', 'so', 'prk'):
         words = words[1:]
     words = [ROMAN.get(w, w) for w in words]
