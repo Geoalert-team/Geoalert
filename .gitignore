@@ -59,3 +59,6 @@ login.json
 cookies.txt
 *.cookies
 login.json
+
+# graphify knowledge graph: regenerated locally, holds machine-specific paths
+graphify-out/
