@@ -274,8 +274,13 @@ reports and refuses fire reports, so there is one way to decide a fire.
 - Linking matches against the built `Purok` model (`name`, `kind`, `parent`) and
   `apps/barangays/aliases.py`. There is no `PlaceName` table; names that don't link are
   listed in the command's report and the fire counts at barangay level.
-- The file the team shared on 2026-10-25 has 214 rows (26 Jan 2023 – 20 Sep 2026), all
-  in Talisay except one Toledo City row, which is skipped and listed.
+- The file the team shared on 2026-10-25 has 219 rows (26 Jan 2023 – 20 Sep 2026); five
+  (rows 20–24) have text dates. All are in Talisay except one Toledo City row, which is
+  skipped and listed. Rows 190 and 191 are identical in every column; an exact repeat of
+  a row is imported once and listed as a duplicate.
+- Purok reloads (`load_puroks`) must keep a purok's id when its name stays the same, so
+  history links survive rebuilt estimates and the official lines. `import_bfp_fires
+  --relink` re-links every imported record from its `location_text` after a reload.
 
 ## Errors
 
