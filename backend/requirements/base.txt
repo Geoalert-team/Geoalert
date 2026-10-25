@@ -18,6 +18,9 @@ scipy==1.17.1
 tifffile==2026.3.3
 imagecodecs==2026.3.6
 
+# Reading the BFP fire log (manage.py import_bfp_fires)
+openpyxl==3.1.5
+
 # Supabase Storage for incident report photos (S3-compatible endpoint)
 django-storages==1.14.4
 boto3==1.35.49
