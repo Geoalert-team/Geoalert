@@ -58,14 +58,21 @@ export function puroksOf(geo, barangayId) {
 const escape = (text) => String(text ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-// What hovering a purok says: its name, then where it is and whether it's an estimate
+// What hovering a purok says: its name, where it is, and how sure the outline is.
+// An estimate with no confidence is an unnamed area: a purok nobody could place yet.
 export function purokTooltip(feature) {
   const p = feature?.properties || {};
   const where = [p.parent, p.barangay_name].filter(Boolean).map(escape).join(' · ');
-  const detail = p.source === 'official' ? where
-    : p.source === 'estimated' ? `Estimated purok area · ${escape(p.barangay_name)}`
-      : `${where} · not official`;
-  return `<strong>${escape(p.name)}</strong><br>${detail}`;
+  const note = p.source === 'official' ? ''
+    : p.source === 'community' ? 'Not official'
+      : !p.confidence ? 'Purok not identified yet'
+        : p.confidence === 'low' ? 'Estimated outline · location approximate'
+          : 'Estimated outline';
+  return `<strong>${escape(p.name)}</strong><br>${where}${note ? `<br>${note}` : ''}`;
 }
+
+// Credit for what the estimated outlines are built from, shown while the layer is
+export const PUROK_ATTRIBUTION = 'Purok estimates: OpenStreetMap, Wikimapia (CC BY-SA), Overture Maps, '
+  + 'Microsoft Building Footprints (ODbL), Visayan Electric notices';
 
 export const hasEstimates = (geo) => (geo?.features || []).some((f) => f.properties?.source !== 'official');

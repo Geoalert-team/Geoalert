@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import L from 'leaflet';
 import { GeoJSON, Pane, useMap } from 'react-leaflet';
-import { PUROK_HOVER, purokAt, purokStyle, purokTooltip } from './purokStyle';
+import { PUROK_ATTRIBUTION, PUROK_HOVER, purokAt, purokStyle, purokTooltip } from './purokStyle';
 
 // Over these the pointer belongs to something else (a hazard pin, its popup)
 const NOT_THE_MAP = '.leaflet-marker-icon, .leaflet-popup, .leaflet-tooltip, .leaflet-control';
@@ -57,7 +57,13 @@ export default function PurokLayer({ geo }) {
   const barangay = geo.features[0]?.properties?.barangay;
   return (
     <Pane name="puroks" style={{ zIndex: 370, pointerEvents: 'none' }}>
-      <GeoJSON key={`puroks-${barangay}-${geo.features.length}`} data={geo} style={purokStyle} interactive={false} />
+      <GeoJSON
+        key={`puroks-${barangay}-${geo.features.length}`}
+        data={geo}
+        style={purokStyle}
+        interactive={false}
+        attribution={PUROK_ATTRIBUTION}
+      />
       {hovered && (
         <GeoJSON
           key={`purok-hover-${hovered.id ?? hovered.properties.id}`}

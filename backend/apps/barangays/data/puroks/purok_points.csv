@@ -1,0 +1,351 @@
+barangay,name,kind,parent,lat,lng,placed_by,confidence,sources,note
+Biasong,Purok Mahayahay,purok,,,,,,fire log,
+Biasong,Central,sitio,,,,,,fire log,Central Biasong Rd
+Biasong,Sitio Laguna,sitio,,10.239241,123.827243,Wikimapia outline,high,fire log; Wikimapia,
+Biasong,Purok Mahogany,purok,Sitio Laguna,10.238110,123.827680,"Overture address ""Purok Mahogany"", 100 m from Sitio Laguna",medium,fire log; Overture Maps,
+Biasong,Zone 2,zone,,10.237120,123.829270,Overture: barangay hall and chapel addressed Zone 2,medium,fire log; Overture Maps,
+Biasong,Zone 3,zone,,10.236190,123.832210,"Overture addresses (2) ""Zone 3"" on the highway",low,fire log; Overture Maps,
+Biasong,Purok Mabuhast,purok,Zone 3,,,,,fire log,
+Biasong,San Lucas,sitio,,10.242755,123.833056,OpenStreetMap place,high,DSWD DROMIC; Visayan Electric; fire log; OpenStreetMap; news 2025-2026,
+Biasong,Sitio Botoy,sitio,,,,,,Visayan Electric,
+Biasong,Purok Kawayan,purok,Sitio Botoy,10.241630,123.828030,"Overture address ""Purok Kawayanan, Sitio Butoy""",medium,Visayan Electric; Overture Maps,
+Biasong,Ranger,sitio,,10.246400,123.831380,Overture addresses (2) on Ranger St,medium,Visayan Electric; Overture Maps,"fire log also has ""Purok Ranger, Pooc"""
+Biasong,Purok Birde,purok,,,,,,Visayan Electric,its notices name no road found on the map in Biasong
+Biasong,Purok Gumamela,purok,,,,,,Visayan Electric,its notices name no road found on the map in Biasong
+Biasong,Purok Malipayon,purok,,10.242360,123.833020,"OpenStreetMap place ""Malipayon""",high,Visayan Electric; Overture Maps,
+Biasong,Purok Maryland,purok,,,,,,Visayan Electric,
+Biasong,Purok Pag-asa,purok,,,,,,Visayan Electric,its notices name no road found on the map in Biasong
+Biasong,Purok Makulay,purok,San Lucas,10.242380,123.833570,"Overture address ""Purok Makulay, San Lucas""",low,Overture Maps,
+Biasong,Purok Orchids,purok,,10.247790,123.833920,"Overture address ""Purok Orchids Peace Subdivision""",low,Overture Maps,
+Bulacao,Sitio Alegre,sitio,,,,,,fire log,
+Bulacao,Sitio Paglaum,sitio,,10.267129,123.847965,Wikimapia place,high,fire log; Visayan Electric,also spelled Paglaom
+Bulacao,Upper Kabanayan,sitio,,,,,,fire log; SunStar 2014 hazard list; news 2025-2026,news also spells it Cabanayan
+Bulacao,Crosan,sitio,,10.274421,123.846299,Wikimapia place,high,fire log; Visayan Electric; news 2025-2026,notices spell it Cruzan
+Bulacao,Purok Malinawon,purok,,,,,,Visayan Electric,its notices name no road found on the map in Bulacao
+Bulacao,Purok Mangihatagon,purok,,,,,,Visayan Electric,its notices name no road found on the map in Bulacao
+Bulacao,Purok Panaghiusa,purok,,10.265814,123.845073,outage notices (3) along Mansueto Drive,low,Visayan Electric,
+Bulacao,Plainville,subdivision,,10.264223,123.847581,OpenStreetMap outline,high,Visayan Electric; OpenStreetMap,
+Bulacao,Sitio Holy Child,sitio,,,,,,Visayan Electric,its notices name no road found on the map in Bulacao
+Bulacao,Kalubihan,sitio,,,,,,Visayan Electric,its notices name no road found on the map in Bulacao
+Bulacao,Mansueto Subdivision,subdivision,,10.266180,123.844240,"OpenStreetMap area ""Mansueto Subdivision""",high,Visayan Electric; Overture Maps,
+Bulacao,Sitio Longdream,sitio,,10.270650,123.838740,"Overture place ""Sitio Longdream""",medium,Overture Maps,
+Bulacao,Sitio Villabusca,sitio,,10.268480,123.846120,"Overture place ""Sitio Villabusca Bulacao, Talisay City""",medium,Overture Maps,
+Cadulawan,Lower Mahayahay,sitio,,,,,,fire log,
+Cadulawan,Upper Mahayahay,sitio,,,,,,fire log,
+Cadulawan,Purok Kamunggay,purok,Lower Mahayahay,10.276130,123.845200,"Overture address ""Purok Kamungay, Candulawan""",low,fire log; Overture Maps,
+Cadulawan,Zone II (Lower),zone,,,,,,fire log; city profile 2010,"fire log: ""Lower Candulawan""; its notices name no road found on the map in Cadulawan"
+Cadulawan,Purok Mangga,purok,Zone II (Lower),,,,,fire log,its notices name no road found on the map in Cadulawan
+Cadulawan,Purok Boongon,purok,,,,,,fire log,
+Cadulawan,Purok Chicos,purok,,,,,,Visayan Electric,its notices name no road found on the map in Cadulawan
+Cadulawan,Sitio Tubod,sitio,,,,,,Visayan Electric,its notices name no road found on the map in Cadulawan
+Cadulawan,Zone I,zone,,,,,,city profile 2010; SunStar 2014 hazard list,
+Cadulawan,Sitio Little Bamboo,sitio,,,,,,SunStar 2014 hazard list,
+Cadulawan,Zone IV (Proper),zone,,,,,,city profile 2010,
+Cadulawan,Zone V (Upper),zone,,,,,,city profile 2010,
+Cadulawan,Vista Grande,subdivision,,10.279777,123.836265,OpenStreetMap outline,high,Visayan Electric; OpenStreetMap,
+Cadulawan,Purok Miracle,purok,,10.279460,123.841800,"Overture address ""Purok Miracle, Candulawan""",low,Overture Maps,
+Cadulawan,Purok Tambis,purok,,10.279000,123.840540,"Overture addresses (2) ""Purok Tambis, Candulawan""",medium,Overture Maps,
+Camp IV,Purok Sambag,purok,,,,,,fire log,
+Camp IV,Cambawog Upper,sitio,,,,,,fire log,
+Camp IV,Purok Pinya,purok,Cambawog Upper,,,,,fire log,its notices name no road found on the map in Camp IV
+Camp IV,Purok Santol,purok,,,,,,fire log,
+Camp IV,Sitio Caolong,sitio,,,,,,fire log; news 2025-2026,
+Camp IV,Purok Lubi,purok,Sitio Caolong,,,,,fire log; news 2025-2026,
+Camp IV,Sitio Languyon,sitio,,,,,,city profile 2010,
+Camp IV,Sitio Pangi,sitio,,10.333760,123.804977,Wikimapia outline,high,Wikimapia,
+Camp IV,Sitio Nangka,sitio,,,,,,news 2025-2026,hanging bridge lost to Typhoon Tino; its notices name no road found on the map in Camp IV
+Camp IV,Sitio Camp 5,sitio,,,,,,SunStar 2014 hazard list,SunStar also lists a Camp 5 in Manipis
+Cansojong,Kimba,sitio,,10.256855,123.850629,street in its address (Rafael Rabaya Street),medium,Wikipedia 2017; fire log; Inquirer,"fire log also lists ""Kimba, San Roque"""
+Cansojong,Sitio Atisan,sitio,,10.248821,123.855913,street in its address (Base Street),medium,Wikipedia 2017; fire log,also spelled Antisan
+Cansojong,Sitio Mahayahay,sitio,,10.247666,123.855460,Wikimapia outline,high,Wikimapia; Wikipedia 2017; fire log,
+Cansojong,Sitio Ebacan,sitio,,,,,,Wikipedia 2017; fire log,also spelled Ibacan
+Cansojong,Sitio Caneba,sitio,,10.250348,123.854677,"outage notices (3) along P. Labuca Street, Rafael Rabaya Street",low,fire log,
+Cansojong,Bravo,sitio,,10.256850,123.850637,outage notices (5) along Rafael Rabaya Street,low,fire log,
+Cansojong,Sitio Casare,sitio,,,,,,Wikipedia 2017; fire log,
+Cansojong,Sitio Asan,sitio,,10.245845,123.851424,Wikimapia outline,high,Visayan Electric; Wikimapia,
+Cansojong,Sitio Balut,sitio,,10.246700,123.852788,Wikimapia outline,high,Visayan Electric; Wikimapia,notices spell it Balot
+Cansojong,Sitio Maya-maya,sitio,,,,,,Visayan Electric,its notices name no road found on the map in Cansojong
+Cansojong,Sitio Ibabao,sitio,,,,,,Wikipedia 2017,
+Cansojong,Sitio Panaghi-usa,sitio,,10.251614,123.853086,"outage notices (5) along Cebu South Coastal Road, Rafael Rabaya Street, San Francisco Drive, Vicente H. Garces Street",low,Wikipedia 2017,
+Cansojong,Sitio Mushroom,sitio,,10.248180,123.854450,Overture addresses (2) on Mushroom St,medium,Wikipedia 2017; Overture Maps,
+Cansojong,Zodiac Riverside,sitio,,,,,,Wikipedia 2017,
+Cansojong,Villa Laguna,sitio,,,,,,Wikipedia 2017,
+Cansojong,Sitio Limonsito,sitio,,,,,,Wikipedia 2017,
+Cansojong,Sitio Kimberly,sitio,,,,,,Wikipedia 2017,
+Cansojong,Sitio Kisarca,sitio,Kimba,10.253280,123.852550,"Overture place ""Sitio Kisarca, Kimba Cansojong"" (two pins 700 m apart)",low,Overture Maps,
+Dumlog,Zone 3,zone,,10.247873,123.841492,street in its address (J. P. Rizal Street),medium,fire log,
+Dumlog,Zone 5,zone,,10.240280,123.840190,"Overture addresses (3) ""Zone 5, Dumlog""",low,fire log; Overture Maps,
+Dumlog,Purok Saging,purok,Zone 5,,,,,fire log,
+Dumlog,Sitio Paglaom,sitio,,,,,,fire log,
+Dumlog,Sitio Tugas,sitio,,,,,,fire log,
+Dumlog,Ramona 1,sitio,,,,,,fire log,
+Dumlog,Purok Kamatis,purok,Ramona 1,,,,,fire log,
+Dumlog,Upper Riverside,sitio,,,,,,fire log,
+Dumlog,Sta. Cruz,sitio,,,,,,fire log,
+Dumlog,Purok Botig,purok,,10.247031,123.842919,outage notices (1) along J. P. Rizal Street,low,Visayan Electric,order along road unknown
+Dumlog,Purok Kalabasa,purok,,10.248814,123.839584,outage notices (6) along J. P. Rizal Street,low,Visayan Electric,order along road unknown
+Dumlog,Purok Okra,purok,,10.248080,123.841142,outage notices (2) along J. P. Rizal Street,low,Visayan Electric,order along road unknown
+Dumlog,Sitio Santo Nino,sitio,,,,,,Wikimapia,
+Dumlog,Deca Homes,subdivision,,10.237810,123.838350,"OpenStreetMap area ""Deca Homes - Baywalk Talisay""",high,fire log; OpenStreetMap; Overture Maps,
+Dumlog,Sitio Kamalig,sitio,,10.243950,123.839050,"Overture addresses (2) ""Sitio Kamalig, Dumlog""",medium,Overture Maps,
+Dumlog,Sitio Litmon,sitio,,10.239820,123.841700,"Overture addresses (3) ""Sitio Litmon/Letmon, Dumlog""",medium,Overture Maps,
+Dumlog,Sitio Romahan,sitio,,10.238890,123.836110,"Overture place ""Sitio Romahan, Dumlog""",medium,Overture Maps,
+Dumlog,Sitio San Jose,sitio,,10.248010,123.837950,"Overture place ""Sitio San Jose, Dumlog""",medium,Overture Maps,
+Dumlog,Sitio Limonsituhan,sitio,,10.241500,123.839200,"Overture address ""Zone 6 Bascon St., Sitio Limonsituhan""",low,Overture Maps,
+Dumlog,Purok Acasia,purok,,10.244930,123.839130,"Overture address ""Purok Acasia, Burgos St, Brgy Dumlog""",low,Overture Maps,
+Dumlog,Purok Gemelina,purok,,10.241830,123.838340,"Overture address ""Zone 6, Purok Gemelina, Bascon St., Dumlog""",low,Overture Maps,
+Dumlog,Purok Guyabano,purok,,10.239970,123.841680,"Overture address ""Purok Guyabano, Dumlog""",low,Overture Maps,
+Dumlog,Purok Miracle Fruit,purok,,10.243480,123.841070,"Overture address ""Dumlog Purok Miracle Fruit""",low,Overture Maps,
+Jaclupan,Camp 2,sitio,,,,,,fire log,
+Jaclupan,Camp III,sitio,,10.305473,123.815095,outage notices (2) along Toledo - Tabunok Road,low,Visayan Electric,
+Jaclupan,Sitio Kawayan,sitio,,10.303569,123.816303,outage notices (2) along Toledo - Tabunok Road,low,Visayan Electric,also listed as a purok
+Jaclupan,Purok Avocado,purok,,10.307277,123.815398,outage notices (2) along Toledo - Tabunok Road,low,Visayan Electric,position along road approximate
+Jaclupan,Purok Banana,purok,,10.304383,123.815807,outage notices (1) along Toledo - Tabunok Road,low,Visayan Electric,position along road approximate
+Jaclupan,Purok Kasagingan,purok,,10.304036,123.816120,outage notices (1) along Toledo - Tabunok Road,low,Visayan Electric,position along road approximate
+Jaclupan,Sitio Ipilipil,sitio,,10.303776,123.816252,outage notices (1) along Toledo - Tabunok Road,low,Visayan Electric,position along road approximate
+Jaclupan,Sitio Tabok Sapa,sitio,,10.306379,123.815141,outage notices (2) along Toledo - Tabunok Road,low,Visayan Electric,position along road approximate
+Jaclupan,Purok Narra,purok,,,,,,DSWD DROMIC,
+Jaclupan,Purok Sambag,purok,Camp III,10.301460,123.817200,"Overture address ""Camp 3, Purok Sambag""",low,Overture Maps,
+Lagtang,Sitio Kawayan,sitio,,10.265376,123.837457,"outage notices (1) along Molave Extension, Sambag Street",low,fire log,order along road unknown; position along road approximate
+Lagtang,Lahara,sitio,,10.266586,123.835975,street named after it (Lahara Street),medium,fire log,Lahara Street
+Lagtang,Burlas,sitio,,10.273103,123.826047,Wikimapia outline,high,fire log; Wikimapia; SunStar 2014 hazard list,
+Lagtang,Purok 1,purok,,,,,,fire log,
+Lagtang,Tigib,sitio,,10.265724,123.838259,"outage notices (1) along Molave Extension, Sambag Street",low,fire log; SunStar 2014 hazard list,order along road unknown; position along road approximate
+Lagtang,Sitio Sta. Catalina,sitio,,10.267381,123.836634,outage notices (1) along Ilang-ilang Street,low,SunStar 2014 hazard list,
+Lagtang,Tangub,sitio,,,,,,fire log,
+Lagtang,Purok Makugihon,purok,,10.277948,123.826953,"outage notices (1) along Ilang-ilang Street, Molave Extension, Toledo - Tabunok Road",low,fire log,
+Lagtang,Molave,sitio,,10.265716,123.838258,street named after it (Molave Street),medium,fire log,Molave Street
+Lagtang,Sitio Ilang-Ilang,sitio,,10.267835,123.837546,street named after it (Ilang-ilang Street),medium,fire log; Visayan Electric,Ilang-ilang Rd
+Lagtang,Sitio Luna,sitio,,10.277948,123.826953,"outage notices (6) along Molave Extension, Toledo - Tabunok Road",low,Visayan Electric; fire log,
+Lagtang,Sitio Diego Silang,sitio,,10.265654,123.838057,outage notices (1) along Molave Extension,low,Visayan Electric,position along road approximate
+Lagtang,Sitio Hollow Block,sitio,,10.264333,123.836094,Wikimapia outline,high,Visayan Electric; Wikimapia,
+Lagtang,Sitio Mananga,sitio,,10.265748,123.838291,outage notices (4) along Molave Extension,low,Visayan Electric,
+Lagtang,Sitio Paraiso,sitio,,,,,,Visayan Electric,
+Lagtang,Sitio Riverside,sitio,,10.265108,123.837069,outage notices (6) along Molave Extension,low,Visayan Electric,
+Lagtang,Purok Emilio Aguinaldo,purok,,10.265058,123.837002,outage notices (2) along Molave Extension,low,Visayan Electric,
+Lagtang,Purok Jacinto Zamora,purok,,10.265168,123.837150,outage notices (1) along Molave Extension,low,Visayan Electric,position along road approximate
+Lagtang,Purok Jose Rizal,purok,,10.265411,123.837522,outage notices (1) along Molave Extension,low,Visayan Electric,position along road approximate
+Lagtang,Purok Melchora,purok,,10.265609,123.837933,outage notices (1) along Molave Extension,low,Visayan Electric,position along road approximate
+Lagtang,Sitio Iba,sitio,,10.290699,123.824992,OpenStreetMap place,high,city profile 2010; OpenStreetMap; SunStar 2014 hazard list,fire log puts a Sitio Iba in Lawaan II too
+Lagtang,Kasambagan,sitio,,10.268446,123.835072,OpenStreetMap place,high,OpenStreetMap; Visayan Electric,
+Lagtang,Kishanta Subdivision,subdivision,,10.274459,123.831358,Wikimapia outline,high,fire log; OpenStreetMap,
+Lagtang,Sitio Fatima,sitio,,10.266362,123.834266,street named after it (Fatima Street),medium,Overture Maps,
+Lagtang,Sitio Bagalnga,sitio,,10.268440,123.829770,"Overture place ""Zone 04, Sitio Bagalnga, Lagtang""",medium,Overture Maps,
+Lagtang,Sitio Tungasan,sitio,,10.267788,123.833272,street named after it (Tungasan Street),medium,Overture Maps,
+Lagtang,Sitio Lupa,sitio,,10.278090,123.826990,"Overture address ""Purok Neemtree, Sitio Lupa, Brgy. Lagtang""",low,Overture Maps,
+Lagtang,Purok Lawis,purok,,10.270030,123.831500,"Overture address ""Kishanta, Purok Lawis""",low,Overture Maps,
+Lagtang,Purok Liwanag,purok,Sitio Ilang-Ilang,10.267020,123.835080,"Overture address ""Ilang-Ilang Purok Liwanag"", Lagtang",low,Overture Maps,
+Lawaan I,Kalmar,sitio,,10.259088,123.828130,street in its address (Natalio Bacalso Avenue),medium,fire log,A. Bacalso St
+Lawaan I,Roseville,sitio,,10.262476,123.824438,outage notices (13) along Maghaway Road,low,Visayan Electric,
+Lawaan I,Seaview Heights,subdivision,,10.261441,123.822768,Wikimapia outline,high,fire log; Visayan Electric,
+Lawaan I,Tierra Grande,subdivision,,10.264420,123.822210,"Overture address ""Tierra Grande Camella Homes""",medium,fire log; Overture Maps,
+Lawaan II,Purok Guyabano,purok,,10.254142,123.831713,"outage notices (3) along Cebu South Coastal Road, Garnet Street, Gold Street, Natalio Bacalso Avenue, Pearl Street",low,fire log,order along road unknown
+Lawaan II,Sitio Gumamela,sitio,,10.251410,123.832410,"Overture address ""Sitio Gumamela""",low,Wikipedia 2017; fire log; Overture Maps,
+Lawaan II,Sitio Iba,sitio,,10.253703,123.833677,outage notices (6) along Cebu South Coastal Road,low,Visayan Electric; fire log,
+Lawaan II,Purok Rambutan,purok,Sitio Iba,,,,,Visayan Electric; fire log,its notices name no road found on the map in Lawaan II
+Lawaan II,Purok Avocado,purok,,10.254858,123.828618,"outage notices (3) along Cebu South Coastal Road, Garnet Street, Gold Street, Natalio Bacalso Avenue, Pearl Street",low,Visayan Electric,order along road unknown; position along road approximate
+Lawaan II,Sitio Bayabas,sitio,,10.254591,123.829763,"outage notices (3) along Cebu South Coastal Road, Garnet Street, Gold Street, Natalio Bacalso Avenue, Pearl Street",low,Visayan Electric,order along road unknown; position along road approximate
+Lawaan II,Sitio Bonbon,sitio,,,,,,Visayan Electric,its notices name no road found on the map in Lawaan II
+Lawaan II,Sitio Kaimito,sitio,,10.256940,123.831910,"Overture address ""Sitio Caimito, A. Bacaltos St., Lawaan II""",medium,Visayan Electric; Wikipedia 2017; Overture Maps,also spelled Caimito
+Lawaan II,Sitio Lemoncito,sitio,,,,,,Visayan Electric; Wikipedia 2017,also spelled Lemonsito
+Lawaan II,Sitio Puso-an,sitio,,,,,,Wikipedia 2017,its notices name no road found on the map in Lawaan II
+Lawaan II,Sitio Gangan,sitio,,,,,,Wikipedia 2017,
+Lawaan II,Sitio Oregano,sitio,,10.254683,123.829371,outage notices (1) along Cebu South Coastal Road,low,Wikipedia 2017,
+Lawaan II,Sitio Luy-a,sitio,,10.250870,123.835460,"Overture address ""Sitio Luy-a Lawaan 2""",low,Wikipedia 2017; Overture Maps,
+Lawaan II,Sitio Sombria,sitio,,10.254286,123.831071,"outage notices (1) along Cebu South Coastal Road, Cong. A. Bacaltos Street, Fidel Bas Street",low,Wikipedia 2017,
+Lawaan II,Sitio Mangga,sitio,,10.253703,123.833677,"outage notices (2) along Cebu South Coastal Road, Garnet Street, Gold Street, Natalio Bacalso Avenue, Pearl Street",low,Wikipedia 2017,order along road unknown
+Lawaan II,Sitio Gabon,sitio,,10.256800,123.831400,"Overture addresses (2) ""Sitio Gabon, Lawaan II""",low,Overture Maps,
+Lawaan II,Sitio Kalachuchi,sitio,,10.258380,123.831310,"Overture address ""A. Bacaltos, Sitio Kalachuchi""",low,Overture Maps,
+Lawaan III,Sitio Crusher,sitio,,10.264236,123.832507,"outage notices (4) along Lawaan 3 Street, Magay St., Maghaway Road, Natalio Bacalso Avenue, Yakal St.",low,Visayan Electric; fire log; OpenStreetMap,OSM: Selma Crusher
+Lawaan III,Purok Chicos,purok,,,,,,fire log,
+Lawaan III,Caduldulan,sitio,,10.260659,123.833574,outage notices (5) along Lawaan 3 Street,low,Visayan Electric; fire log; SunStar 2014 hazard list,SunStar: Canduldulan
+Lawaan III,Sitio Pagtambayayong,sitio,,10.264156,123.824763,outage notices (7) along Maghaway Road,low,fire log,
+Lawaan III,Purok Cadicay,purok,Sitio Pagtambayayong,10.266530,123.829610,"Overture address ""Sitio Cadikay, Brgy Lawaan 3""",medium,fire log; Visayan Electric; SunStar 2014 hazard list; Overture Maps,SunStar: Candicay
+Lawaan III,Purok Grapes,purok,Purok Cadicay,10.260643,123.833791,"outage notices (2) along Magay St., Natalio Bacalso Avenue, Yakal St.",low,Visayan Electric,"""Upper Cadicay Purok Grapes"""
+Lawaan III,Purok Lumboy,purok,,10.261009,123.834700,"outage notices (3) along Magay St., Natalio Bacalso Avenue, Yakal St.",low,Visayan Electric,
+Lawaan III,Purok Nangka,purok,,10.264361,123.832286,outage notices (1) along Lawaan 3 Street,low,Visayan Electric,
+Lawaan III,Sitio Pungsod,sitio,,10.262502,123.832810,Wikimapia place,high,Visayan Electric; Wikimapia,
+Lawaan III,Countryside Homes,subdivision,,10.263180,123.827663,Wikimapia outline,high,fire log,
+Lawaan III,Kamagayan Village,subdivision,,10.265565,123.830567,Wikimapia outline,high,OpenStreetMap; Visayan Electric,
+Lawaan III,Purok Orange,purok,,10.260980,123.834010,"Overture address ""Aznar Compound Purok Orange Lawaan 3""",low,Overture Maps,
+Lawaan III,Sitio Villa Raya,sitio,,10.263048,123.826143,Wikimapia outline,high,Overture Maps,
+Linao,Sitio Antipolo,sitio,,,,,,fire log; Visayan Electric,its notices name no road found on the map in Linao
+Linao,Sitio San Miguel,sitio,,10.262240,123.817060,Overture: San Miguel Linao Chapel and Covered Court,high,fire log; Visayan Electric; Overture Maps,
+Linao,Purok Yellow Bell,purok,Sitio San Miguel,,,,,fire log,
+Linao,Sitio Upper,sitio,,,,,,fire log; Visayan Electric,its notices name no road found on the map in Linao
+Linao,Purok Dancing Lady,purok,Sitio Upper,,,,,fire log,
+Linao,Sitio San Roque,sitio,,,,,,fire log; Visayan Electric,its notices name no road found on the map in Linao
+Linao,Purok Ilang-Ilang,purok,Sitio San Roque,,,,,fire log,
+Linao,Sitio Lower,sitio,,,,,,fire log; Visayan Electric,its notices name no road found on the map in Linao
+Linao,Sitio San Antonio,sitio,,10.265820,123.816190,"Overture place ""San Antonio Linao Talisay City""",medium,fire log; Visayan Electric; Overture Maps,
+Linao,Sitio Pajo,sitio,,10.261140,123.819870,"Overture place ""Pajo, Linao, Talisay City""",medium,fire log; Visayan Electric; Overture Maps,
+Linao,Bougainvillea Village,subdivision,,10.264877,123.818423,Wikimapia outline,high,fire log; OpenStreetMap,
+Linao,Moonlight Hill,subdivision,,,,,,fire log,
+Linao,Sitio Hagdanan,sitio,,,,,,Overture Maps,its notices name no road found on the map in Linao
+Linao,Purok Rose,purok,Sitio Hagdanan,10.258300,123.820240,"Overture address ""Sitio Hagdanan Purok Rose, Linao""",low,Overture Maps,
+Maghaway,Purok Sambag 2,purok,,,,,,Visayan Electric; fire log,its notices name no road found on the map in Maghaway
+Maghaway,Sitio Lawis,sitio,,10.281923,123.817223,Wikimapia place,high,Visayan Electric; Wikimapia; fire log,
+Maghaway,Purok Lomboy 2,purok,Sitio Lawis,,,,,fire log; Visayan Electric,notices: Lumboy
+Maghaway,Sitio EEA,sitio,,10.285484,123.820142,Wikimapia outline,high,Wikimapia,
+Maghaway,Sitio Ibo,sitio,,10.283370,123.822290,Wikimapia outline,high,Wikimapia,
+Maghaway,Sitio Dikyam,sitio,,10.270511,123.825903,Wikimapia outline,high,Wikimapia,
+Maghaway,Sitio Abacajan,sitio,,10.272587,123.823119,Wikimapia outline,high,Wikimapia,Wikimapia: Sitio Lower Maghaway (Abacajan)
+Maghaway,Azienda Firenze,subdivision,,10.269527,123.819798,OpenStreetMap place,high,fire log; Visayan Electric; OpenStreetMap,
+Maghaway,Azienda Milan,subdivision,,10.272354,123.818918,OpenStreetMap place,high,fire log; OpenStreetMap,
+Maghaway,Sta. Maria Heights,subdivision,,10.283010,123.817236,Wikimapia outline,high,Visayan Electric; SunStar 2014 hazard list,
+Maghaway,Purok Kulo 3,purok,,10.268760,123.823810,"Overture address ""Purok Kulo 3 Maghaway Rd.""",low,Overture Maps,
+Manipis,Purok Bamboo,purok,,,,,,GMA News,
+Manipis,Purok Kaimito,purok,,,,,,GMA News,
+Manipis,Camp 8,sitio,,10.315027,123.789380,OpenStreetMap place,high,OpenStreetMap,
+Manipis,Sitio Camp 5,sitio,,10.315124,123.789116,street named after it (Camp 8 Road),medium,SunStar 2014 hazard list,SunStar also lists a Camp 5 in Camp IV
+Manipis,Nagoyon,sitio,,,,,,SunStar 2014 hazard list,"SunStar: ""Proper Nagoyon""; spelling unconfirmed"
+Manipis,Purok Araw-Araw,purok,,10.321840,123.780760,"Overture place ""Manokan sa Purok Araw-Araw"", Toledo-Manipis Rd",medium,Overture Maps,
+Mohon,Upper Mohon,sitio,,10.255533,123.821429,OpenStreetMap place,high,fire log; OpenStreetMap,
+Mohon,Purok Bontory,purok,Upper Mohon,,,,,fire log,
+Mohon,Sitio Libo,sitio,,10.247299,123.819447,Wikimapia outline,high,Visayan Electric; Wikimapia,
+Mohon,Sitio Candaya,sitio,,10.250620,123.826142,"outage notices (2) along Cong. A. Bacaltos Street, Fidel Bas Street",low,Visayan Electric,
+Mohon,Sitio Lower,sitio,,,,,,Visayan Electric,its notices name no road found on the map in Mohon
+Mohon,Sitio Nazareno,sitio,,10.248813,123.829292,outage notices (1) along Castor Belleza Street,low,Visayan Electric,position along road approximate
+Mohon,Saint Michael,sitio,,10.249369,123.826421,outage notices (1) along Castor Belleza Street,low,Visayan Electric,position along road approximate
+Mohon,Purok Kamunggay,purok,,10.251501,123.825689,OpenStreetMap place,high,OpenStreetMap,
+Mohon,Purok Mangga 3,purok,,10.252409,123.826261,OpenStreetMap place,high,OpenStreetMap,
+Mohon,Purok Santol,purok,,10.251432,123.827285,OpenStreetMap place,high,OpenStreetMap,
+Mohon,Valley View Village,subdivision,,10.250414,123.827441,OpenStreetMap place,high,OpenStreetMap; Visayan Electric,
+Mohon,Purok Nangka,purok,Upper Mohon,10.254180,123.824660,"Overture addresses (3) ""Purok Nangka, Upper Mohon""",medium,Overture Maps,
+Mohon,Sitio Day-as,sitio,Upper Mohon,10.250670,123.826180,"Overture: Our Lady of Fatima Day-as Chapel, Upper Mohon",medium,Overture Maps,
+Mohon,Sitio Greenforest,sitio,,10.247810,123.824600,"Overture address ""Sitio Greenforest, Mohon""",medium,Overture Maps,
+Poblacion,Sitio Miramar,sitio,,10.241749,123.845504,Wikimapia outline,high,Wikimapia,"fire log: ""Marimar Phase 2"""
+Poblacion,Purok Alubati,purok,Sitio Miramar,,,,,fire log,
+Poblacion,Sitio Libra,sitio,,,,,,DSWD DROMIC; fire log,also spelled Labra
+Poblacion,Purok Kamunggay,purok,Sitio Libra,10.247050,123.847140,Overture: Libra Chapel - Purok Kamunggay,medium,fire log; Overture Maps,
+Poblacion,Tres Alinos,sitio,,10.241773,123.847317,"outage notices (1) along Burgos Street, Cabalan Street, J. P. Rizal Street, Los Marteres Street, Main Street, P. del Rosario Street, Tres Aliños Street, Vicente H. Garces Street",low,fire log,position along road approximate
+Poblacion,Purok Saluyot,purok,Tres Alinos,,,,,fire log,
+Poblacion,Garden,sitio,,10.241773,123.847317,"outage notices (2) along Burgos Street, Cabalan Street, J. P. Rizal Street, P. del Rosario Street",low,fire log,
+Poblacion,Sitio Litmon,sitio,,10.243971,123.844980,"outage notices (1) along Burgos Street, Cabalan Street, J. P. Rizal Street, Los Marteres Street, Main Street, P. del Rosario Street, Tres Aliños Street, Vicente H. Garces Street",low,fire log; OpenStreetMap,OSM: Sitio Letmon Chapel; position along road approximate
+Poblacion,Purok Bantiyong,purok,,10.243971,123.844980,"outage notices (1) along Burgos Street, Cabalan Street, J. P. Rizal Street, P. del Rosario Street",low,DSWD DROMIC,General Luna St
+Poblacion,Carmen Village,subdivision,,10.248651,123.845254,Wikimapia outline,high,fire log,
+Poblacion,Purok Repolyo,purok,,10.243540,123.850510,"Overture address ""Malayan St Purok 10 Repolyo Poblacion""",low,Overture Maps,
+Poblacion,Purok Patatas,purok,,10.243330,123.847500,"Overture address ""Purok 19 Patatas, Rizal St""",low,Overture Maps,
+Poblacion,Purok Talong,purok,,10.243330,123.845430,"Overture address ""Sarihville Subd., T. Camomot St, Purok Talong""",low,Overture Maps,
+Pooc,Purok Ranger,purok,,10.244138,123.824227,"outage notices (2) along Burgos Street, Cong. A. Bacaltos Street",low,fire log,
+Pooc,Sitio Centro,sitio,,,,,,city profile 2010; fire log,
+Pooc,Sitio Tabay,sitio,,,,,,fire log,
+Pooc,Sitio Tambis,sitio,,10.241450,123.824160,"Overture addresses (3) ""Sitio Tambis, Pooc""",medium,city profile 2010; fire log; Overture Maps,
+Pooc,Zone 5,zone,,,,,,fire log,
+Pooc,Sitio Kanipaan,sitio,,10.238400,123.822290,"Overture addresses (2) ""Sitio Kanipaan""",medium,fire log; Overture Maps,
+Pooc,Sitio Sunrise,sitio,,10.239046,123.824129,"outage notices (2) along Burgos Street, Cong. A. Bacaltos Street",low,Visayan Electric,
+Pooc,Sitio Dapdap,sitio,,,,,,city profile 2010,
+Pooc,Sitio Cainta,sitio,,10.243500,123.823330,Overture addresses (9) on Sitio Cainta Rd,medium,city profile 2010; Visayan Electric; Overture Maps,
+Pooc,Sitio Cabutoy,sitio,,10.242860,123.821820,"Overture address ""Z1 Sitio Cabutoy, Pooc""",medium,city profile 2010; Visayan Electric; Overture Maps,notices spell it Kabutoy
+Pooc,Sitio Maharlika,sitio,,10.238718,123.819677,Wikimapia outline,high,Wikimapia,
+Pooc,Purok 3,purok,Sitio Sunrise,10.239900,123.824530,"Overture address ""Purok 3-Sitio Sunrise, Pooc""",low,Visayan Electric; Overture Maps,
+Pooc,Purok 6,purok,,,,,,Visayan Electric,its notices name no road found on the map in Pooc
+Pooc,Rainbowville,subdivision,,10.242460,123.827000,"Overture place ""Rainbowville, Pooc""",medium,fire log; Overture Maps,
+Pooc,Roseville Subdivision,subdivision,,10.240690,123.825520,"Overture place ""Roseville Subdivision""",medium,city profile 2010; Visayan Electric; Overture Maps,
+Pooc,Corona del Mar,subdivision,,10.244539,123.820731,"outage notices (2) along Berango Street, Paseo Roberto Street",low,Visayan Electric,
+Pooc,Sea Breeze Homes,subdivision,,10.245773,123.824152,OpenStreetMap outline,high,OpenStreetMap,
+Pooc,Sitio Borromeo,sitio,,10.238170,123.824280,"Overture addresses (2) ""Sitio Borromeo, Pooc""",medium,Overture Maps,
+San Isidro,Sitio Crossing,sitio,,,,,,fire log,
+San Isidro,Greenville,subdivision,,10.252484,123.839225,outage notices (2) along San Isidro Road,low,fire log; Visayan Electric; OpenStreetMap,OSM: Green Village
+San Isidro,Purok Day Care,purok,Greenville,,,,,fire log,
+San Isidro,Sitio Salvador,sitio,,10.256773,123.839824,"outage notices (4) along Cebu South Coastal Road, Rafael Rabaya Street, San Isidro Road",low,fire log,
+San Isidro,Purok Labayan,purok,Sitio Salvador,,,,,fire log,
+San Isidro,Zone 2 Proper,zone,,,,,,fire log,
+San Isidro,Zone 3,zone,,10.256860,123.839841,outage notices (3) along San Isidro Road,low,Visayan Electric,
+San Isidro,Purok Siba,purok,,10.252484,123.839225,"outage notices (1) along Purok Siba Street, San Isidro Road",low,Visayan Electric; fire log,position along road approximate
+San Isidro,Largo Compound,subdivision,,10.253055,123.841061,OpenStreetMap outline,high,fire log; Visayan Electric; OpenStreetMap,also listed as Purok Largo
+San Isidro,Purok Vergara,purok,,,,,,Visayan Electric,Vergara St; its notices name no road found on the map in San Isidro
+San Isidro,Sitio Tiago,sitio,,10.258596,123.844362,street named after it (Tiago Street),medium,Visayan Electric,
+San Isidro,Siloy Compound,subdivision,,10.259934,123.842518,OpenStreetMap place,high,Visayan Electric; OpenStreetMap,notices: Ciloy
+San Isidro,Sitio Pangpang,sitio,,10.257181,123.837435,OpenStreetMap place,high,OpenStreetMap; Visayan Electric; SunStar 2014 hazard list,
+San Isidro,Sitio Mahayag,sitio,,10.258559,123.841903,Wikimapia place,high,Wikimapia,
+San Isidro,Isla Verde,subdivision,,10.253329,123.835784,outage notices (2) along Cebu South Coastal Road,low,fire log; DSWD DROMIC; news 2025-2026,
+San Isidro,Corazon Village,subdivision,,10.252263,123.840427,outage notices (12) along Cebu South Coastal Road,low,fire log,
+San Isidro,Art Ville,subdivision,,10.255170,123.836810,"Overture place ""Artville Subdivision, San Isidro""",medium,fire log; Visayan Electric; Overture Maps,
+San Isidro,Sacred Heart Village,subdivision,,10.257946,123.844482,Wikimapia outline,high,fire log,
+San Isidro,Cantoneville,subdivision,,10.256860,123.839841,"outage notices (1) along Purok Siba Street, San Isidro Road",low,Visayan Electric,position along road approximate
+San Isidro,Purok Villa Sta. Cruz,purok,,10.256710,123.837330,"Overture address ""Purok Villa Sta Cruz, San Isidro Road""",low,Overture Maps,
+San Roque,Sitio Laray,sitio,,10.260217,123.856208,Wikimapia outline,high,Visayan Electric; fire log; Wikimapia; DSWD DROMIC,
+San Roque,Purok Sambag,purok,Sitio Laray,10.256578,123.859258,outage notices (14) along Cebu South Coastal Road,low,fire log,
+San Roque,Purok Macopa,purok,Sitio Laray,,,,,Visayan Electric; fire log,its notices name no road found on the map in San Roque
+San Roque,Purok Kabayoan 2,purok,Sitio Laray,,,,,fire log; Visayan Electric,
+San Roque,Sitio Ughay,sitio,,10.256578,123.859258,"outage notices (2) along Cebu South Coastal Road, F. Jaca Street, Rafael Rabaya Street, Vicente H. Garces Street",low,fire log; Visayan Electric,also spelled Ughai; order along road unknown; position along road approximate
+San Roque,Purok Calachuchi,purok,Sitio Ughay,10.254472,123.854574,outage notices (5) along Rafael Rabaya Street,low,Visayan Electric; fire log,"""Ughay 1""; position along road approximate"
+San Roque,Sitio Ramona,sitio,,10.261107,123.849375,street in its address (Dawis Road),medium,fire log,Dawis Rd
+San Roque,Purok Ilang-Ilang,purok,,10.253073,123.856868,outage notices (5) along Rafael Rabaya Street,low,Visayan Electric; fire log,
+San Roque,Sitio Kimba,sitio,,10.253563,123.856040,outage notices (20) along Rafael Rabaya Street,low,fire log; Inquirer,Cansojong also has a Kimba
+San Roque,Purok Gumamela,purok,,10.257981,123.866531,"outage notices (2) along Cebu South Coastal Road, F. Jaca Street, Rafael Rabaya Street, Vicente H. Garces Street",low,fire log,order along road unknown; position along road approximate
+San Roque,Sitio Kadarohan,sitio,,,,,,Visayan Electric; Inquirer,Inquirer: Sitio Daruhan
+San Roque,Sitio San Roque Proper,sitio,,10.253383,123.861981,Wikimapia outline,high,Wikimapia,
+San Roque,Purok Agoho,purok,,10.257931,123.866663,"outage notices (6) along Cebu South Coastal Road, Rafael Rabaya Street, Vicente H. Garces Street",low,Visayan Electric,order along road unknown; position along road approximate
+San Roque,Purok Altis,purok,,10.257931,123.866663,outage notices (1) along Cebu South Coastal Road,low,Visayan Electric,
+San Roque,Purok Bakasi,purok,,10.254359,123.854756,outage notices (5) along Rafael Rabaya Street,low,Visayan Electric,position along road approximate
+San Roque,Purok Batong,purok,,10.254588,123.854387,outage notices (4) along Rafael Rabaya Street,low,Visayan Electric,position along road approximate
+San Roque,Purok Bayabas,purok,,,,,,Visayan Electric,
+San Roque,Purok Bayang,purok,,10.255013,123.853685,outage notices (6) along Rafael Rabaya Street,low,Visayan Electric,
+San Roque,Purok Chicos,purok,,10.257981,123.866531,"outage notices (9) along Cebu South Coastal Road, Rafael Rabaya Street",low,Visayan Electric,
+San Roque,Purok Guyabano,purok,,10.254234,123.854957,outage notices (7) along Rafael Rabaya Street,low,Visayan Electric,
+San Roque,Purok Humay-humay,purok,,,,,,Visayan Electric,its notices name no road found on the map in San Roque
+San Roque,Purok Kalabasa,purok,,10.255491,123.852871,outage notices (4) along Rafael Rabaya Street,low,Visayan Electric,position along road approximate
+San Roque,Purok Kalinao,purok,,10.256073,123.851915,outage notices (5) along Rafael Rabaya Street,low,Visayan Electric,
+San Roque,Purok Kapayas,purok,,10.258566,123.865088,outage notices (4) along Cebu South Coastal Road,low,Visayan Electric,
+San Roque,Purok Lambay,purok,,10.256415,123.851362,outage notices (5) along Rafael Rabaya Street,low,Visayan Electric,
+San Roque,Purok Rambutan,purok,,,,,,Visayan Electric,
+San Roque,Purok Pugapo,purok,,10.258566,123.865088,"outage notices (6) along Cebu South Coastal Road, Rafael Rabaya Street, Vicente H. Garces Street",low,Visayan Electric,order along road unknown; position along road approximate
+San Roque,Purok San Rafael,purok,,10.256578,123.859258,"outage notices (10) along Cebu South Coastal Road, Rafael Rabaya Street",low,Visayan Electric,
+San Roque,Purok Santan,purok,,10.252122,123.858399,outage notices (6) along Rafael Rabaya Street,low,Visayan Electric,
+San Roque,Purok Taloroton,purok,,10.256578,123.859258,"outage notices (6) along Cebu South Coastal Road, Rafael Rabaya Street, Vicente H. Garces Street",low,Visayan Electric,order along road unknown; position along road approximate
+San Roque,Purok Tambis,purok,,10.253253,123.856545,outage notices (5) along Rafael Rabaya Street,low,Visayan Electric,
+San Roque,Purok Tilapia,purok,,10.253914,123.855471,outage notices (11) along Rafael Rabaya Street,low,Visayan Electric,
+San Roque,Purok Okra,purok,,10.256696,123.850906,outage notices (2) along Rafael Rabaya Street,low,Visayan Electric,
+San Roque,Purok Avocado,purok,Sitio Laray,10.254160,123.860850,"Overture address ""V.H. Garces St., Purok Avocado Laray, San Roque""",low,Overture Maps,
+San Roque,Purok Kalapati,purok,Sitio Kimba,10.255870,123.852470,"Overture address ""Purok Kalapati, R. Rabaya St., Kimba San Roque""",low,Overture Maps,
+San Roque,Purok Sayaw,purok,Sitio Kadarohan,10.257930,123.855030,"Overture address ""Purok Sayaw, Daruhan Drive""",low,Overture Maps,
+Tabunoc,Sitio Neighborhood,sitio,,10.263897,123.843787,Wikimapia outline,high,Wikimapia; fire log,
+Tabunoc,Sitio Mananga II,sitio,,10.262621,123.834787,Wikimapia place,high,DSWD DROMIC; fire log; news 2025-2026,
+Tabunoc,Purok Rizal,purok,Sitio Mananga II,,,,,fire log,
+Tabunoc,Sitio Mananga I,sitio,,10.261897,123.836136,street named after it (Mananga Ⅱ Street),medium,DSWD DROMIC,
+Tabunoc,Purok Soliman,purok,,10.262534,123.841154,"outage notices (1) along Colis Street, Natalio Bacalso Avenue, Rafael Rabaya Street, Victoria Street",low,fire log; Visayan Electric,"fire log: Purok Suliman, Nunez Compound"
+Tabunoc,Sitio Kalubihan,sitio,,10.262533,123.844912,Wikimapia outline,high,Wikimapia; fire log,
+Tabunoc,Sitio Nonoc,sitio,,10.261275,123.844878,street named after it (Nonoc Road),medium,fire log,
+Tabunoc,Purok Matinahuron,purok,Sitio Nonoc,10.261006,123.846725,"outage notices (1) along Nonoc Road, Santo Nino Street, Tiago Street",low,fire log,
+Tabunoc,Sitio Mahayahay,sitio,,10.264581,123.837742,outage notices (8) along Rafael Rabaya Street,low,fire log; Visayan Electric,
+Tabunoc,Purok Alisto,purok,,,,,,fire log,
+Tabunoc,Purok Juan Luna,purok,,10.263981,123.839749,outage notices (1) along Molave Street,low,Visayan Electric,order along road unknown; position along road approximate
+Tabunoc,Purok Melchora,purok,,10.264273,123.839519,outage notices (1) along Molave Street,low,Visayan Electric,order along road unknown; position along road approximate
+Tabunoc,Sitio Paraiso,sitio,,10.265168,123.838775,outage notices (1) along Molave Street,low,Visayan Electric,order along road unknown; position along road approximate
+Tabunoc,Purok Lopez Jaena,purok,,10.261293,123.839154,OpenStreetMap place,high,Visayan Electric; OpenStreetMap,
+Tabunoc,Purok Mabini,purok,,10.260441,123.844718,outage notices (1) along Rafael Rabaya Street,low,Visayan Electric,
+Tabunoc,Purok Malipayon,purok,,10.261823,123.842351,"outage notices (4) along Rafael Rabaya Street, San Isidro Road",low,Visayan Electric,
+Tabunoc,Zone 2,zone,,10.262534,123.841154,"outage notices (3) along Molave Street, Rafael Rabaya Street",low,Visayan Electric,
+Tabunoc,Zone 3,zone,,10.264567,123.837766,"outage notices (2) along Rafael Rabaya Street, San Isidro Road",low,Visayan Electric,
+Tabunoc,Sitio Bahadas,sitio,,10.261888,123.842243,outage notices (2) along Rafael Rabaya Street,low,Visayan Electric,
+Tabunoc,Sitio Panaghiusa,sitio,,10.263789,123.839068,outage notices (7) along Rafael Rabaya Street,low,Visayan Electric,
+Tabunoc,Palm View Village,subdivision,,10.264344,123.842711,OpenStreetMap place,high,OpenStreetMap,
+Tabunoc,Friendly Homes,subdivision,,10.264200,123.845540,"Overture address ""Friendly Homes Subdivision""",low,city profile 2010; Overture Maps,
+Tabunoc,Purok Determinado,purok,Sitio Nonoc,10.261020,123.846570,"Overture addresses (2) ""Purok Determinado, Nonoc Rd, Tabunok""",medium,Overture Maps,
+Tabunoc,Purok Kalinaw,purok,,10.260800,123.841830,"Overture place ""Purok Kalinaw - Tabunok""",medium,Overture Maps,
+Tabunoc,Purok Makatarunganon,purok,,10.264700,123.840480,"Overture place ""Purok Makatarunganon Tabunok""",medium,Overture Maps,
+Tabunoc,Purok Matinabangon,purok,,10.262090,123.848640,"Overture address ""Purok Matinabangon""",low,Overture Maps,
+Tabunoc,Purok Rafael Palma,purok,,10.263340,123.837950,"Overture address ""Purok Rafael Palma, Colis St""",low,Overture Maps,
+Tangke,Sitio Tunga,sitio,,10.250820,123.862218,street named after it (Tunga Street),medium,Visayan Electric; fire log,
+Tangke,Purok Mamsa,purok,Sitio Tunga,10.251524,123.859415,outage notices (1) along Rafael Rabaya Street,low,fire log,
+Tangke,Sitio Magay,sitio,,10.251332,123.860022,outage notices (4) along Rafael Rabaya Street,low,Visayan Electric; fire log,Magay St; position along road approximate
+Tangke,Sitio Rattan,sitio,,10.251382,123.859819,outage notices (4) along Rafael Rabaya Street,low,Visayan Electric; fire log; Inquirer,also spelled Ratan; position along road approximate
+Tangke,Sitio Sambagan,sitio,,10.251423,123.859677,outage notices (5) along Rafael Rabaya Street,low,fire log,
+Tangke,Sitio Salvador,sitio,,10.252040,123.864502,street named after it (Salvador Street),medium,fire log,Salvador St
+Tangke,Sitio Dali-Dali,sitio,,10.252056,123.864508,"outage notices (1) along Galaxy Street, Salvador Street",low,Visayan Electric,
+Tangke,Sitio Galaxy,sitio,,10.250008,123.861888,street named after it (Galaxy Street),medium,Visayan Electric,Galaxy St
+Tangke,Sitio Kalinaw,sitio,,10.259995,123.870288,Wikimapia outline,high,Visayan Electric; Wikimapia; OpenStreetMap,OSM: Kalinao
+Tangke,Sitio San Rafael,sitio,,10.258601,123.868958,Wikimapia outline,high,Visayan Electric; Wikimapia,
+Tapul,Sitio Napo,sitio,,10.289910,123.808533,Wikimapia outline,high,DSWD DROMIC; fire log; Wikimapia,Wikimapia: Sitio Napu
+Tapul,Sitio Catican,sitio,,,,,,fire log,
+Tapul,Sitio Hawanay,sitio,,10.306768,123.793119,OpenStreetMap place,high,OpenStreetMap,
+Tapul,Sitio Campo,sitio,,,,,,SunStar 2014 hazard list,
+Tapul,Purok 1,purok,,,,,,Visayan Electric,its notices name no road found on the map in Tapul
+Tapul,Purok 2,purok,,,,,,Visayan Electric,its notices name no road found on the map in Tapul
+Tapul,Purok 3,purok,,10.289939,123.805397,Wikimapia outline,high,Visayan Electric; Wikimapia,
+Tapul,Purok 4,purok,,,,,,Visayan Electric; fire log,its notices name no road found on the map in Tapul
+Tapul,Purok 5,purok,,,,,,Visayan Electric,its notices name no road found on the map in Tapul
+Tapul,Purok 6,purok,,,,,,Visayan Electric,its notices name no road found on the map in Tapul
+Tapul,Purok 7,purok,Sitio Catican,,,,,Visayan Electric; fire log; SunStar 2014 hazard list,its notices name no road found on the map in Tapul

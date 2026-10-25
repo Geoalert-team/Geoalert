@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 from django.conf import settings
-from django.contrib.gis.geos import MultiPolygon
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
 from django.core.management.base import BaseCommand, CommandError
 from scipy import ndimage
 
@@ -15,32 +15,49 @@ from apps.barangays.aliases import canonical
 from apps.barangays.models import Barangay
 from apps.hazards import susceptibility as sus
 
-OUT_FILE = Path(__file__).resolve().parents[2] / 'data' / 'puroks' / 'talisay_puroks_estimated.geojson'
+DATA_DIR = Path(__file__).resolve().parents[2] / 'data' / 'puroks'
+OUT_FILE = DATA_DIR / 'talisay_puroks_estimated.geojson'
+# Where each researched purok/sitio name was found (hand-editable; SOURCES.md)
+POINTS_FILE = DATA_DIR / 'purok_points.csv'
+# Outlines drawn for some of them on Wikimapia and OpenStreetMap
+OUTLINES_FILE = DATA_DIR / 'community_outlines.geojson'
+# How many puroks each barangay has: official sitio counts from the City of
+# Talisay Barangay Profiles (2010); elsewhere households (PSA 2015 census) / 175,
+# the median households per sitio in those profiles
+COUNTS_FILE = DATA_DIR / 'barangay_counts.csv'
 
 # Microsoft Global ML Building Footprints (ODbL): one file per zoom-9 tile;
 # 132330002 covers all of Talisay
 BUILDINGS_INDEX = 'https://minedbuildings.z5.web.core.windows.net/global-buildings/dataset-links.csv'
 BUILDINGS_TILE = '132330002'
 
-# How many puroks to split each barangay into. Official sitio counts from the
-# City of Talisay Barangay Profiles (2010); elsewhere households (PSA 2015
-# census) / 175, the median households per sitio in those profiles.
-OFFICIAL_SITIOS = {'Cansojong': 26, 'Tabunoc': 22, 'Lawaan II': 14, 'Pooc': 12, 'Camp IV': 9,
-                   'Jaclupan': 9, 'Maghaway': 6, 'Cadulawan': 5}
-HOUSEHOLDS_2015 = {
-    'Biasong': 1509, 'Bulacao': 2949, 'Cadulawan': 1095, 'Camp IV': 687, 'Cansojong': 3921, 'Dumlog': 4245,
-    'Jaclupan': 1921, 'Lagtang': 3071, 'Lawaan I': 2052, 'Lawaan II': 1301, 'Lawaan III': 2598, 'Linao': 2199,
-    'Maghaway': 1632, 'Manipis': 521, 'Mohon': 2372, 'Poblacion': 2027, 'Pooc': 2322, 'San Isidro': 3647,
-    'San Roque': 4183, 'Tabunoc': 3454, 'Tangke': 3187, 'Tapul': 346,
-}
-OFFICIAL = {canonical(k): v for k, v in OFFICIAL_SITIOS.items()}
-HOUSEHOLDS = {canonical(k): v for k, v in HOUSEHOLDS_2015.items()}
+
+def read_research(points_file=POINTS_FILE, outlines_file=OUTLINES_FILE, counts_file=COUNTS_FILE):
+    """
+    ({barangay: [name rows]}, {(barangay, name): outline}, {barangay: (official count, households)}),
+    keyed by canonical barangay name.
+    """
+    points = {}
+    with open(points_file, encoding='utf-8', newline='') as fh:
+        for row in csv.DictReader(fh):
+            points.setdefault(canonical(row['barangay']), []).append(row)
+    outlines = {}
+    for f in json.loads(Path(outlines_file).read_text(encoding='utf-8'))['features']:
+        p = f['properties']
+        outlines[(canonical(p['barangay']), p['name'])] = GEOSGeometry(json.dumps(f['geometry']), srid=4326)
+    counts = {}
+    with open(counts_file, encoding='utf-8', newline='') as fh:
+        for row in csv.DictReader(fh):
+            counts[canonical(row['barangay'])] = (int(row['official_sitios']) if row['official_sitios'] else None,
+                                                  int(row['households_2015'] or 0))
+    return points, outlines, counts
 
 
 class Command(BaseCommand):
     help = ('Split every barangay into estimated purok areas along roads, creeks and ridges, sized by '
-            'where its houses are, and write them as GeoJSON for load_puroks. Stand-in until the '
-            "Barangay Hall's official purok lines arrive.")
+            'where its houses are, and write them as GeoJSON for load_puroks. Puroks whose place was '
+            'found (data/puroks/purok_points.csv) grow from there and carry their names; the rest are '
+            "unnamed. Stand-in until the Barangay Hall's official purok lines arrive.")
 
     def add_arguments(self, parser):
         parser.add_argument('--out', default=str(OUT_FILE), help='GeoJSON to write.')
@@ -74,13 +91,18 @@ class Command(BaseCommand):
             raise CommandError(f'Download failed: {exc}') from exc
         log(f'  {len(buildings)} buildings')
 
+        try:
+            research = read_research()
+        except FileNotFoundError as exc:
+            raise CommandError(f'Research file missing: {exc.filename}') from exc
+
         step, barrier, houses = self.costs(grid, dem, osm, buildings, log)
         labels = sus.draw_polygons(grid, [(i + 1, [list(r.coords) for r in poly])
                                           for i, b in enumerate(barangays) for poly in b.boundary])
         features = []
         for i, b in enumerate(barangays):
             if b in wanted:
-                features += self.split_one(b, labels == i + 1, grid, step, barrier, houses, dem, log)
+                features += self.split_one(b, labels == i + 1, grid, step, barrier, houses, dem, research, log)
 
         out = Path(options['out'])
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -124,7 +146,7 @@ class Command(BaseCommand):
         barrier = np.maximum(main_roads * pe.MAIN_ROAD_PENALTY_M, water * pe.WATER_PENALTY_M).astype(np.float64)
         return step, barrier, houses
 
-    def split_one(self, barangay, mask, grid, step, barrier, houses, dem, log):
+    def split_one(self, barangay, mask, grid, step, barrier, houses, dem, research, log):
         rows, cols = np.nonzero(mask)
         if not len(rows):
             log(f'  {barangay.name}: too small for the grid, skipped')
@@ -134,9 +156,27 @@ class Command(BaseCommand):
         win = (slice(r0, r1), slice(c0, c1))
         inside = mask[win]
 
-        official = OFFICIAL.get(canonical(barangay.name))
-        n, basis = pe.purok_count(official, HOUSEHOLDS.get(canonical(barangay.name), 0), 0)
-        owner = pe.split(inside, houses[win], step[win], n, barrier=barrier[win], dem=dem[win].astype(np.float64))
+        points, outlines, counts = research
+        key = canonical(barangay.name)
+        names = points.get(key, [])
+        named, leaves = pe.area_points(names)
+        official, households = counts.get(key, (None, 0))
+        n, basis = pe.purok_count(official, households, leaves)
+        n = max(n, len(named))
+
+        def to_cell(row):
+            col, r = grid.to_cell(float(row['lng']), float(row['lat']))
+            return int(r) - r0, int(col) - c0
+
+        # Names with an outline on Wikimapia or OSM start from all of it
+        drawn = [(i + 1, [list(ring.coords) for ring in poly])
+                 for i, row in enumerate(named) if (key, row['name']) in outlines
+                 for poly in pe.polygons(outlines[(key, row['name'])])]
+        preset = sus.draw_polygons(grid, drawn)[win] - 1 if drawn else None
+        # Names placed only from outage notices are roughly right: they may start at a nearby house cluster
+        owner = pe.split_named(inside, houses[win], step[win], n, [to_cell(r) for r in named], preset=preset,
+                               barrier=barrier[win], dem=dem[win].astype(np.float64),
+                               loose=[r['confidence'] == 'low' for r in named], loose_reach=pe.LOOSE_REACH_M / grid.res)
         # Cut-off bits smaller than a tenth of a typical area (or 0.1 ha) join their surroundings
         min_cells = max(pe.MIN_PIECE_HA * 10_000 / grid.res ** 2, inside.sum() / n / 10)
         owner = pe.tidy(owner, inside, min_cells=min_cells)
@@ -145,17 +185,31 @@ class Command(BaseCommand):
         def to_lnglat(x, y):
             return sus.px_to_lnglat(grid.px0 + c0 + x, grid.py0 + r0 + y, grid.zoom)
 
-        areas = []
+        found, unnamed = [], []
         for label, shape in shapes.items():
             geom = pe.to_map(shape, to_lnglat).intersection(barangay.boundary)
-            pieces = [g for g in (geom if geom.geom_type in ('MultiPolygon', 'GeometryCollection') else [geom])
-                      if g.geom_type == 'Polygon' and pe.area_m2(g) >= pe.MIN_PIECE_HA * 10_000]
-            if pieces:
-                areas.append(MultiPolygon(*pieces, srid=4326))
-        # Number the areas north to south, then west to east, so the names stay put between builds
-        areas.sort(key=lambda g: (-round(g.point_on_surface.y, 3), g.point_on_surface.x))
-        log(f'  {barangay.name}: {len(areas)} areas (target {n}, from {basis}), '
-            f'{int(houses[win][inside].sum())} buildings')
-        return [{'type': 'Feature', 'geometry': json.loads(g.json), 'properties': {
-            'barangay': barangay.name, 'name': f'Area {k}', 'kind': 'purok', 'source': 'estimated'}}
-            for k, g in enumerate(areas, 1)]
+            pieces = [g for g in pe.polygons(geom) if pe.area_m2(g) >= pe.MIN_PIECE_HA * 10_000]
+            if not pieces:
+                continue
+            area = MultiPolygon(*pieces, srid=4326)
+            if label < len(named):
+                found.append((named[label], area))
+            else:
+                unnamed.append(area)
+        # Number the unnamed areas north to south, then west to east, so they stay put between builds
+        unnamed.sort(key=lambda g: (-round(g.point_on_surface.y, 3), g.point_on_surface.x))
+
+        lost = [r['name'] for r in named if r['name'] not in {f['name'] for f, _ in found}]
+        log(f'  {barangay.name}: {len(found)} named + {len(unnamed)} unnamed areas (target {n}, from {basis}); '
+            f'{sum(1 for r in names if not r["lat"])} names still to place')
+        if lost:
+            log(f'      no area left for {", ".join(lost)}')
+
+        def feature(geom, **props):
+            return {'type': 'Feature', 'geometry': json.loads(geom.json),
+                    'properties': {'barangay': barangay.name, 'source': 'estimated', **props}}
+
+        return ([feature(g, name=r['name'], kind=r['kind'], parent=r['parent'], confidence=r['confidence'])
+                 for r, g in found] +
+                [feature(g, name=f'Unnamed area {k}', kind='purok', parent='', confidence='')
+                 for k, g in enumerate(unnamed, 1)])

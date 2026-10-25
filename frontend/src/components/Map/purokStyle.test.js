@@ -74,11 +74,26 @@ describe('purokAt', () => {
 });
 
 describe('purokTooltip', () => {
-  test('an estimated area says so, with its barangay', () => {
-    const html = purokTooltip(feature({ name: 'Area 3', source: 'estimated', barangay_name: 'Tangke' }));
-    expect(html).toContain('<strong>Area 3</strong>');
-    expect(html).toContain('Estimated purok area');
+  test('a named estimate shows its sitio and barangay and says the outline is estimated', () => {
+    const html = purokTooltip(feature({
+      name: 'Purok Sambag', parent: 'Sitio Laray', source: 'estimated', confidence: 'high', barangay_name: 'San Roque',
+    }));
+    expect(html).toContain('<strong>Purok Sambag</strong>');
+    expect(html).toContain('Sitio Laray · San Roque');
+    expect(html).toContain('Estimated outline');
+    expect(html).not.toContain('approximate');
+  });
+
+  test('a name placed only roughly says its location is approximate', () => {
+    const html = purokTooltip(feature({ name: 'Purok Okra', source: 'estimated', confidence: 'low', barangay_name: 'Dumlog' }));
+    expect(html).toContain('location approximate');
+  });
+
+  test('an unnamed area says the purok is not identified yet', () => {
+    const html = purokTooltip(feature({ name: 'Unnamed area 3', source: 'estimated', confidence: '', barangay_name: 'Tangke' }));
+    expect(html).toContain('<strong>Unnamed area 3</strong>');
     expect(html).toContain('Tangke');
+    expect(html).toContain('Purok not identified yet');
   });
 
   test('an official purok shows its sitio and barangay', () => {

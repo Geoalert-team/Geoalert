@@ -7,10 +7,13 @@ should settle on main roads, creeks and ridges, and each purok should hold
 about its share of the barangay's houses. These tests pin that behaviour on
 small hand-made grids, without the database.
 """
+import json
 import math
+import tempfile
+from pathlib import Path
 
 import numpy as np
-from django.contrib.gis.geos import MultiPolygon, Polygon
+from django.contrib.gis.geos import GeometryCollection, LineString, MultiPolygon, Polygon
 from django.test import SimpleTestCase
 
 from apps.barangays import purok_estimate as pe
@@ -96,6 +99,44 @@ class GrowTests(SimpleTestCase):
         owner = pe.grow(inside, step=grid(5, 5, 9), houses=grid(5, 5, 1), seeds=[(1, 1)],
                         quotas=[1e9], caps=[1e9])
         self.assertTrue((owner[2:, 2:] == 0).all())
+
+
+class GrowFromOutlineTests(SimpleTestCase):
+    """A name with an outline drawn on Wikimapia or OSM starts from that whole outline."""
+
+    def test_the_outline_is_kept_whole_and_grows_outward(self):
+        inside = np.ones((10, 30), bool)
+        preset = np.full((10, 30), -1, np.int32)
+        preset[3:7, 2:6] = 0  # 16 cells
+        owner = pe.grow(inside, step=grid(10, 30, 9), houses=grid(10, 30, 1), seeds=[(5, 4), (5, 25)],
+                        quotas=[40, 1e9], caps=[1e9, 1e9], preset=preset)
+        self.assertTrue((owner[3:7, 2:6] == 0).all())
+        self.assertEqual(int((owner == 0).sum()), 40)
+
+    def test_no_other_area_enters_an_outline(self):
+        inside = np.ones((5, 20), bool)
+        preset = np.full((5, 20), -1, np.int32)
+        preset[:, 8:12] = 1  # an outline across the whole strip, already holding its share
+        owner = pe.grow(inside, step=grid(5, 20, 9), houses=grid(5, 20, 1), seeds=[(2, 2), (2, 10)],
+                        quotas=[1e9, 20], caps=[1e9, 1e9], preset=preset)
+        self.assertTrue((owner[:, 8:12] == 1).all())
+        self.assertFalse((owner[:, 12:] == 0).any())  # area 0 can't walk through it
+
+    def test_two_points_on_the_same_cell_both_get_an_area(self):
+        inside = np.ones((9, 9), bool)
+        owner = pe.grow(inside, step=grid(9, 9, 9), houses=grid(9, 9, 1), seeds=[(4, 4), (4, 4)],
+                        quotas=[1e9, 1e9], caps=[1e9, 1e9])
+        self.assertGreater(int((owner == 0).sum()), 1)
+        self.assertGreater(int((owner == 1).sum()), 1)
+
+    def test_a_point_inside_another_names_outline_moves_out_of_it(self):
+        inside = np.ones((9, 9), bool)
+        preset = np.full((9, 9), -1, np.int32)
+        preset[2:7, 2:7] = 0
+        owner = pe.grow(inside, step=grid(9, 9, 9), houses=grid(9, 9, 1), seeds=[(4, 4), (4, 4)],
+                        quotas=[25, 1e9], caps=[1e9, 1e9], preset=preset)
+        self.assertTrue((owner[2:7, 2:7] == 0).all())
+        self.assertGreater(int((owner == 1).sum()), 0)
 
 
 class SeedPointsTests(SimpleTestCase):
@@ -207,12 +248,12 @@ class SplitTests(SimpleTestCase):
         self.step = grid(20, 40, 9)
 
     def test_every_cell_of_the_barangay_gets_an_area(self):
-        labels = pe.split(self.inside, self.houses, self.step, n=2)
+        labels = pe.split_named(self.inside, self.houses, self.step, n=2, seeds=[])
         self.assertTrue((labels[self.inside] >= 0).all())
         self.assertEqual(set(np.unique(labels).tolist()), {0, 1})
 
     def test_each_house_cluster_lands_in_its_own_area(self):
-        labels = pe.split(self.inside, self.houses, self.step, n=2)
+        labels = pe.split_named(self.inside, self.houses, self.step, n=2, seeds=[])
         left, right = set(labels[5:10, 3:8].ravel().tolist()), set(labels[10:15, 30:36].ravel().tolist())
         self.assertEqual(len(left), 1)
         self.assertEqual(len(right), 1)
@@ -221,7 +262,7 @@ class SplitTests(SimpleTestCase):
     def test_more_puroks_than_house_cells_still_splits(self):
         houses = np.zeros((20, 40))
         houses[10, 10] = 1
-        labels = pe.split(self.inside, houses, self.step, n=4)
+        labels = pe.split_named(self.inside, houses, self.step, n=4, seeds=[])
         self.assertEqual(len(np.unique(labels[self.inside])), 4)
 
     def test_a_detached_piece_of_the_barangay_is_covered_too(self):
@@ -230,9 +271,85 @@ class SplitTests(SimpleTestCase):
         inside[:, 30:] = True   # an islet the growth can't walk to
         houses = np.zeros((20, 40))
         houses[5:10, 3:8] = 1
-        labels = pe.split(inside, houses, self.step, n=1)
+        labels = pe.split_named(inside, houses, self.step, n=1, seeds=[])
         self.assertTrue((labels[inside] == 0).all())
         self.assertTrue((labels[~inside] == -1).all())
+
+
+class SplitNamedTests(SimpleTestCase):
+    """Researched names grow from where they were found; unnamed areas cover the rest."""
+
+    def setUp(self):
+        self.inside = np.ones((20, 40), bool)
+        self.houses = np.zeros((20, 40))
+        self.houses[5:10, 3:8] = 2     # a cluster on the left
+        self.houses[10:15, 30:36] = 2  # and one on the right
+        self.step = grid(20, 40, 9)
+
+    def test_each_name_keeps_its_index_at_its_point(self):
+        labels = pe.split_named(self.inside, self.houses, self.step, n=2, seeds=[(7, 5)])
+        self.assertEqual(labels[7, 5], 0)
+
+    def test_the_unnamed_area_starts_where_no_name_was_found(self):
+        labels = pe.split_named(self.inside, self.houses, self.step, n=2, seeds=[(7, 5)])
+        self.assertTrue((labels[10:15, 30:36] == 1).all())
+        self.assertEqual(set(np.unique(labels[self.inside]).tolist()), {0, 1})
+
+    def test_every_cell_of_the_barangay_gets_an_area(self):
+        labels = pe.split_named(self.inside, self.houses, self.step, n=4, seeds=[(7, 5), (12, 32)])
+        self.assertTrue((labels[self.inside] >= 0).all())
+        self.assertEqual(len(np.unique(labels[self.inside])), 4)
+
+    def test_more_names_than_puroks_gives_every_name_an_area(self):
+        labels = pe.split_named(self.inside, self.houses, self.step, n=1, seeds=[(7, 5), (12, 32)])
+        self.assertEqual(set(np.unique(labels[self.inside]).tolist()), {0, 1})
+
+    def test_approximate_names_spread_over_the_nearest_house_clusters(self):
+        houses = np.zeros((20, 60))
+        houses[5:10, 3:8] = 2      # left
+        houses[5:10, 25:30] = 2    # middle
+        houses[5:10, 50:55] = 2    # right
+        inside = np.ones((20, 60), bool)
+        # Two names an outage notice put on the same spot by the left cluster
+        labels = pe.split_named(inside, houses, grid(20, 60, 9), n=3, seeds=[(7, 9), (7, 9)], loose=[True, True])
+        self.assertEqual({int(labels[7, 5]), int(labels[7, 27])}, {0, 1})
+        self.assertEqual(int(labels[7, 52]), 2)  # the far cluster stays unnamed
+
+    def test_an_approximate_name_far_from_any_free_cluster_keeps_its_point(self):
+        labels = pe.split_named(self.inside, self.houses, self.step, n=2, seeds=[(7, 5), (18, 20)],
+                                loose=[False, True], loose_reach=3)
+        self.assertEqual(int(labels[18, 20]), 1)
+
+    def test_an_outline_stays_with_its_name(self):
+        preset = np.full((20, 40), -1, np.int32)
+        preset[0:4, 15:25] = 0
+        labels = pe.split_named(self.inside, self.houses, self.step, n=3, seeds=[(2, 20)], preset=preset)
+        self.assertTrue((labels[0:4, 15:25] == 0).all())
+
+
+class AreaPointsTests(SimpleTestCase):
+    def row(self, name, parent='', placed=True):
+        return {'name': name, 'parent': parent, 'lat': '10.25' if placed else '', 'lng': '123.85' if placed else ''}
+
+    def test_a_sitio_whose_purok_is_placed_gives_way_to_it(self):
+        rows = [self.row('Sitio Laray'), self.row('Purok Sambag', parent='Sitio Laray')]
+        points, _ = pe.area_points(rows)
+        self.assertEqual([r['name'] for r in points], ['Purok Sambag'])
+
+    def test_a_sitio_whose_puroks_are_not_placed_keeps_its_area(self):
+        rows = [self.row('Sitio Laray'), self.row('Purok Sambag', parent='Sitio Laray', placed=False)]
+        points, _ = pe.area_points(rows)
+        self.assertEqual([r['name'] for r in points], ['Sitio Laray'])
+
+    def test_names_without_a_point_get_no_area(self):
+        points, _ = pe.area_points([self.row('Sitio Tubod', placed=False)])
+        self.assertEqual(points, [])
+
+    def test_leaves_count_every_name_that_is_nobodys_parent(self):
+        rows = [self.row('Sitio Laray'), self.row('Purok Sambag', parent='Sitio Laray'),
+                self.row('Purok Macopa', parent='Sitio Laray', placed=False), self.row('Sitio Ughay')]
+        _, leaves = pe.area_points(rows)
+        self.assertEqual(leaves, 3)
 
 
 class TidyTests(SimpleTestCase):
@@ -283,6 +400,40 @@ class BuildingCentresTests(SimpleTestCase):
         lng, lat = centres[0]
         self.assertAlmostEqual(lng, 123.805, places=4)
         self.assertAlmostEqual(lat, 10.305, places=4)
+
+
+class ReadResearchTests(SimpleTestCase):
+    def test_names_outlines_and_counts_are_keyed_by_barangay_under_any_spelling(self):
+        from apps.barangays.aliases import canonical
+        from apps.barangays.management.commands.build_purok_estimates import read_research
+
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            (d / 'points.csv').write_text(
+                'barangay,name,kind,parent,lat,lng,placed_by,confidence,sources,note\n'
+                'Tabunok,Purok Kalinaw,purok,,10.2608,123.8418,Overture place,medium,Overture Maps,\n'
+                'Camp 4,Sitio Nangka,sitio,,,,,,news,\n', encoding='utf-8')
+            (d / 'outlines.geojson').write_text(json.dumps({'type': 'FeatureCollection', 'features': [{
+                'type': 'Feature', 'properties': {'barangay': 'Tabunoc', 'name': 'Purok Kalinaw'},
+                'geometry': {'type': 'Polygon', 'coordinates': [[[0, 0], [1, 0], [1, 1], [0, 0]]]}}]}),
+                encoding='utf-8')
+            (d / 'counts.csv').write_text(
+                'barangay,official_sitios,official_source,households_2015,households_source\n'
+                'Camp IV,9,profile,687,PSA\nTabunoc,,,3454,PSA\n', encoding='utf-8')
+            points, outlines, counts = read_research(d / 'points.csv', d / 'outlines.geojson', d / 'counts.csv')
+        self.assertEqual(points[canonical('Tabunoc')][0]['name'], 'Purok Kalinaw')
+        self.assertEqual(points[canonical('Camp IV')][0]['lat'], '')
+        self.assertIn((canonical('Tabunok'), 'Purok Kalinaw'), outlines)
+        self.assertEqual(counts[canonical('Camp 4')], (9, 687))
+        self.assertEqual(counts[canonical('Tabunoc')], (None, 3454))
+
+
+class PolygonsTests(SimpleTestCase):
+    def test_polygons_come_out_of_any_shape_and_lines_are_dropped(self):
+        a, b = Polygon.from_bbox((0, 0, 1, 1)), Polygon.from_bbox((2, 0, 3, 1))
+        self.assertEqual(len(pe.polygons(a)), 1)
+        self.assertEqual(len(pe.polygons(MultiPolygon(a, b))), 2)
+        self.assertEqual(len(pe.polygons(GeometryCollection(a, LineString((0, 0), (1, 1))))), 1)
 
 
 class AreaTests(SimpleTestCase):

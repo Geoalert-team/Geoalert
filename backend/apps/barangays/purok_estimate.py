@@ -3,14 +3,16 @@ Estimated purok outlines, until the Barangay Hall sends official ones.
 
 No purok or sitio boundaries are published for Talisay, so the map draws
 estimates (design: docs/superpowers/specs/2026-10-23-purok-boundaries-design.md).
-A barangay is split into as many areas as it has puroks. Each area starts at
-the centre of one of the barangay's house clusters and grows across the hazard
-map's grid. Growing is cheap through houses and small streets and expensive
-across main roads, creeks and ridges, so the borders between areas settle on
-them, as real purok borders tend to. Each area stops once it holds its share of
-the barangay's houses, so dense puroks come out small and upland ones large;
-the empty ground left over then goes to the nearest area, so the whole
-barangay is split.
+A barangay is split into as many areas as it has puroks. Each purok whose
+place was found (data/puroks/purok_points.csv) starts there, from its whole
+outline if Wikimapia or OSM has one; puroks nobody could place start at the
+centres of the house clusters left over and stay unnamed. Every area grows
+across the hazard map's grid. Growing is cheap through houses and small
+streets and expensive across main roads, creeks and ridges, so the borders
+between areas settle on them, as real purok borders tend to. Each area stops
+once it holds its share of the barangay's houses, so dense puroks come out
+small and upland ones large; the empty ground left over then goes to the
+nearest area, so the whole barangay is split.
 
 Everything here is plain functions on arrays and GEOS shapes, so it tests
 without the database or any download.
@@ -37,6 +39,7 @@ CLIMB_M_PER_M = 10           # each metre climbed: like walking this much furthe
 CAP_FACTOR = 1.5             # a purok reaches at most this many times its typical radius
 MIN_PIECE_HA = 0.1           # smaller leftover pieces are dropped
 HOUSEHOLDS_PER_PUROK = 175   # median of the city's 2010 profiles (2015 households)
+LOOSE_REACH_M = 500          # a name placed only roughly may start this far from its point
 
 ROMAN = {'i': '1', 'ii': '2', 'iii': '3', 'iv': '4', 'v': '5',
          'vi': '6', 'vii': '7', 'viii': '8', 'ix': '9', 'x': '10'}
@@ -73,18 +76,17 @@ def purok_count(official, households, names):
     return base, basis
 
 
-def _snap(blocked, r, c, reach=4):
-    """The free cell nearest (r, c), so a point drawn on the barangay line still counts."""
-    h, w = blocked.shape
-    best = None
-    for dr in range(-reach, reach + 1):
-        for dc in range(-reach, reach + 1):
-            rr, cc = r + dr, c + dc
-            if 0 <= rr < h and 0 <= cc < w and not blocked[rr, cc]:
-                d = dr * dr + dc * dc
-                if best is None or d < best[0]:
-                    best = (d, rr, cc)
-    return None if best is None else (best[1], best[2])
+def _snap(blocked, r, c):
+    """
+    The free cell nearest (r, c): a point drawn on the barangay line, inside
+    another name's outline or on another point still gets a start of its own.
+    """
+    if not blocked[r, c]:
+        return r, c
+    if blocked.all():
+        return None
+    _, (ri, ci) = ndimage.distance_transform_edt(blocked, return_indices=True)
+    return int(ri[r, c]), int(ci[r, c])
 
 
 def _move_cost(step, barrier, dem, r, c, nr, nc):
@@ -97,7 +99,7 @@ def _move_cost(step, barrier, dem, r, c, nr, nc):
     return cost
 
 
-def grow(inside, step, houses, seeds, quotas, caps, barrier=None, dem=None):
+def grow(inside, step, houses, seeds, quotas, caps, barrier=None, dem=None, preset=None):
     """
     Grow every seed at once across the grid (multi-source Dijkstra); each cell
     goes to the seed that reaches it most cheaply.
@@ -111,38 +113,53 @@ def grow(inside, step, houses, seeds, quotas, caps, barrier=None, dem=None):
     barrier  metres added on stepping onto a cell with a higher barrier than
              the one left: crossing a road or creek costs once, following it doesn't
     dem      ground height in metres; climbing costs CLIMB_M_PER_M per metre
+    preset   int array: cells a seed holds from the start (its outline drawn on
+             Wikimapia or OSM), -1 elsewhere. They count towards its share, it
+             grows outward from all of them, and no other seed enters them.
 
     Returns an int array: the seed index owning each cell, -1 for nobody.
     """
     h, w = inside.shape
-    blocked = ~inside
     owner = np.full((h, w), -1, dtype=np.int32)
     claimed = [0.0] * len(seeds)
-    origin = []
     heap = []
+    if preset is not None:
+        fixed = inside & (preset >= 0)
+        owner[fixed] = preset[fixed]
+        for i in range(len(seeds)):
+            claimed[i] = float(houses[owner == i].sum())
+        heap += [(0.0, int(owner[r, c]), int(r), int(c)) for r, c in zip(*np.nonzero(fixed))]
+    # Where a seed can't start: outside, someone's outline, another seed's start
+    taken = ~inside | (owner >= 0)
+    origin = []
     for i, (r, c) in enumerate(seeds):
-        r, c = int(r), int(c)
-        if not (0 <= r < h and 0 <= c < w) or blocked[r, c]:
-            snapped = _snap(blocked, min(max(r, 0), h - 1), min(max(c, 0), w - 1))
-            if snapped is None:
-                origin.append(None)
-                continue
-            r, c = snapped
+        r, c = min(max(int(r), 0), h - 1), min(max(int(c), 0), w - 1)
+        if owner[r, c] == i:  # inside its own outline, which already started it
+            origin.append((r, c))
+            continue
+        snapped = _snap(taken, r, c)
+        if snapped is None:
+            origin.append(None)
+            continue
+        r, c = snapped
         origin.append((r, c))
-        heapq.heappush(heap, (0.0, i, r, c))
+        taken[r, c] = True
+        heap.append((0.0, i, r, c))
+    heapq.heapify(heap)
 
     while heap:
         d, i, r, c = heapq.heappop(heap)
-        if owner[r, c] != -1 or claimed[i] >= quotas[i]:
-            continue
-        r0, c0 = origin[i]
-        if math.hypot(r - r0, c - c0) > caps[i]:
-            continue
-        owner[r, c] = i
-        claimed[i] += houses[r, c]
+        if owner[r, c] == -1:
+            r0, c0 = origin[i]
+            if claimed[i] >= quotas[i] or math.hypot(r - r0, c - c0) > caps[i]:
+                continue
+            owner[r, c] = i
+            claimed[i] += houses[r, c]
+        elif owner[r, c] != i or d > 0:
+            continue  # someone else's, or reached again: only an outline cell starts from here
         for dr, dc in NEIGHBORS:
             nr, nc = r + dr, c + dc
-            if not (0 <= nr < h and 0 <= nc < w) or blocked[nr, nc] or owner[nr, nc] != -1:
+            if not (0 <= nr < h and 0 <= nc < w) or not inside[nr, nc] or owner[nr, nc] != -1:
                 continue
             heapq.heappush(heap, (d + _move_cost(step, barrier, dem, r, c, nr, nc), i, nr, nc))
     return owner
@@ -220,25 +237,79 @@ def fill_gaps(owner, inside, step, barrier=None, dem=None):
     return out
 
 
-def split(inside, houses, step, n, barrier=None, dem=None):
+def area_points(rows):
     """
-    Split one barangay into n areas: start at the centres of its n house
-    clusters, grow each to its share of the houses, then hand the empty
-    ground left over to the nearest area. Returns the area index of every
-    cell, -1 outside the barangay.
+    (names that get an area of their own, how many puroks the names stand for).
+
+    rows are one barangay's researched names (purok_points.csv); a name needs
+    a lat/lng to get an area. A sitio whose purok was placed gives way to it,
+    and the purok's label carries the sitio's name instead ("Purok Sambag ·
+    Sitio Laray"). The count is every name that is nobody's parent, placed or
+    not, since each is a purok on the ground.
     """
+    placed = [r for r in rows if str(r.get('lat') or '').strip() and str(r.get('lng') or '').strip()]
+    has_placed_child = {r['parent'] for r in placed if r.get('parent')}
+    parents = {r['parent'] for r in rows if r.get('parent')}
+    points = [r for r in placed if r['name'] not in has_placed_child]
+    return points, sum(1 for r in rows if r['name'] not in parents)
+
+
+def split_named(inside, houses, step, n, seeds, preset=None, barrier=None, dem=None, loose=None, loose_reach=math.inf):
+    """
+    Split one barangay into n areas. The first ones grow from where researched
+    names were found (seeds, in order; preset holds the outlines drawn for
+    them). The puroks nobody placed still need room, so the rest start at the
+    centres of the house clusters no name sits in. Each area grows to its
+    share of the houses, then the empty ground left over goes to the nearest
+    area. Returns the area index of every cell, -1 outside the barangay:
+    0 .. len(seeds) - 1 are the names, the rest unnamed.
+
+    loose marks names whose point is only roughly right: outage notices put
+    every name they list somewhere along one road, often on top of each
+    other. Those start at the free house cluster nearest their point instead
+    (within loose_reach cells), so names listed together end up side by side
+    rather than squeezed into slivers.
+    """
+    n = max(n, len(seeds))
+    loose = loose or [False] * len(seeds)
     rows, cols = np.nonzero(inside & (houses > 0))
     if len(rows) >= n:
         weights = houses[rows, cols]
     else:  # hardly any houses known: spread the starts over the whole barangay
         rows, cols = np.nonzero(inside)
         weights = np.ones(len(rows))
-    seeds = seed_points(list(zip(rows.tolist(), cols.tolist())), weights.tolist(), n)
+    centres = seed_points(list(zip(rows.tolist(), cols.tolist())), weights.tolist(), n)
+
+    def dist(a, b):
+        return math.hypot(a[0] - b[0], a[1] - b[1])
+
+    def take_nearest(point):
+        if centres:
+            centres.pop(min(range(len(centres)), key=lambda j: dist(centres[j], point)))
+
+    # Each name found exactly stands for the house cluster nearest it
+    for seed, rough in zip(seeds, loose):
+        if not rough:
+            take_nearest(seed)
+    # Rough ones move onto a free cluster, closest pairs first
+    starts = list(seeds)
+    pairs = sorted((dist(seeds[i], c), i, c) for i in range(len(seeds)) if loose[i] for c in centres)
+    moved = set()
+    for d, i, c in pairs:
+        if d <= loose_reach and i not in moved and c in centres:
+            starts[i] = c
+            centres.remove(c)
+            moved.add(i)
+    for i in range(len(seeds)):
+        if loose[i] and i not in moved:  # no free cluster near: keep its point
+            take_nearest(seeds[i])
+    # The clusters left over start the unnamed areas
+    seeds = starts + centres
     k = len(seeds)
     total = float(houses[inside].sum())
-    quota = total / k if total > 0 else math.inf
-    cap = CAP_FACTOR * math.sqrt(inside.sum() / k / math.pi)
-    owner = grow(inside, step, houses, seeds, [quota] * k, [cap] * k, barrier=barrier, dem=dem)
+    quota = total / n if total > 0 else math.inf
+    cap = CAP_FACTOR * math.sqrt(inside.sum() / n / math.pi)
+    owner = grow(inside, step, houses, seeds, [quota] * k, [cap] * k, barrier=barrier, dem=dem, preset=preset)
     owner = fill_gaps(owner, inside, step, barrier=barrier, dem=dem)
     # A detached piece (an islet, or ground cut off by the grid) that no area
     # could walk to goes to the nearest area as the crow flies
@@ -390,6 +461,15 @@ def to_map(geom, to_lnglat):
         rings = [[to_lnglat(x, y) for x, y in ring.coords] for ring in poly]
         out.append(Polygon(*rings))
     return MultiPolygon(*out, srid=4326)
+
+
+def polygons(geom):
+    """The polygons in a shape, whatever kind it is (cutting can leave lines and points too)."""
+    if geom.geom_type == 'Polygon':
+        return [geom]
+    if geom.geom_type in ('MultiPolygon', 'GeometryCollection'):
+        return [p for g in geom for p in polygons(g)]
+    return []
 
 
 def area_m2(geom):
