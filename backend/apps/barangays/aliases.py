@@ -11,10 +11,12 @@ ALIASES = {
     'Tabunoc': ['Tabunok'],
     'Cadulawan': ['Candulawan'],
     'Camp IV': ['Camp 4', 'Camp Four'],
-    'Lawaan I': ['Lawaan 1'],
-    'Lawaan II': ['Lawaan 2'],
-    'Lawaan III': ['Lawaan 3'],
-    'Poblacion': ['Poblacion (Talisay)'],
+    'Lawaan I': ['Lawaan 1', 'Lawa-an 1'],
+    'Lawaan II': ['Lawaan 2', 'Lawa-an 2'],
+    'Lawaan III': ['Lawaan 3', 'Lawa-an 3'],
+    # Misspellings found in the BFP fire log
+    'Poblacion': ['Poblacion (Talisay)', 'Poblacio'],
+    'Cansojong': ['Casojong'],
     'Tangke': ['Tanke'],
 }
 
