@@ -66,6 +66,7 @@ class IncidentReportSerializer(serializers.ModelSerializer):
     photos = ReportPhotoSerializer(many=True, read_only=True)
     latitude = serializers.SerializerMethodField()
     longitude = serializers.SerializerMethodField()
+    purok_name = serializers.CharField(source='purok.name', read_only=True, default=None)
 
     def get_latitude(self, obj):
         return round(obj.location.y, 6) if obj.location else None
@@ -104,6 +105,9 @@ class IncidentReportSerializer(serializers.ModelSerializer):
             'hazard_zone',
             # Where the reporter saw it, or null when no pin was dropped
             'latitude', 'longitude',
+            # Fire reports: when it started and which purok (or the name
+            # typed when the purok is not on the list)
+            'started_at', 'purok', 'purok_name', 'purok_other',
         ]
 
 

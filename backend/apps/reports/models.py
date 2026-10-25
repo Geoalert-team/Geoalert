@@ -5,7 +5,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 from apps.accounts.models import User
-from apps.barangays.models import Barangay
+from apps.barangays.models import Barangay, Purok
 from apps.hazards.models import HazardType, HazardZone
 from apps.history.models import HistoricalRecord
 
@@ -61,6 +61,16 @@ class IncidentReport(models.Model):
     # reports of one event carry a pin, DRRMO can draw the zone around them
     # instead of guessing where the edge is.
     location = PointField(srid=4326, null=True, blank=True, db_column='incr_location')
+
+    # When and where, as the BFP fire log has them (its columns A-F). A fire
+    # report needs all three; other hazards leave them empty. The purok comes
+    # from the pin and the reporter can change it. When theirs is not on the
+    # list they type its name instead, which is how an unnamed area on the
+    # map gets its real name.
+    started_at  = models.DateTimeField(null=True, blank=True, db_column='incr_started_at')
+    purok       = models.ForeignKey(Purok, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='incident_reports', db_column='incr_prk_id')
+    purok_other = models.CharField(max_length=100, blank=True, default='', db_column='incr_purok_other')
 
     casualties_dead    = models.IntegerField(null=True, blank=True, default=0, validators=[MinValueValidator(0)], db_column='incr_casualties_dead')
     casualties_injured = models.IntegerField(null=True, blank=True, default=0, validators=[MinValueValidator(0)], db_column='incr_casualties_injured')
