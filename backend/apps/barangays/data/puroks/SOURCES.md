@@ -13,6 +13,8 @@ draws estimated outlines from the files here, and `manage.py load_puroks` loads 
 | `barangay_counts.csv` | How many puroks each barangay has: the official sitio count where the city's 2010 profile gives one, and 2015 households (÷ 175 gives the count elsewhere). |
 | `notices.json` | The Visayan Electric outage notices that place names along roads (evidence for the `low` rows). |
 | `talisay_puroks_estimated.geojson` | The built outlines. Generated; don't edit by hand. |
+| `name_variants.csv` | Other spellings of a purok's name (`barangay,variant,name`), so a BFP address like "Ilan-ilang, San Roque" still finds Purok Ilang-Ilang. Read by `manage.py import_bfp_fires`. Hand-editable. |
+| `needs_barangay_check.csv` | Names from the BFP fire log that no source could place, with their fire count, one example address and what was searched. For the Barangay Hall: a location for any of them names one of the unnamed areas. |
 
 ## Confidence
 
@@ -31,13 +33,13 @@ barangay's purok count says they exist, but not where.
 
 | Source | Used for | Licence / terms | Accessed |
 |---|---|---|---|
-| Fire incident log 2021–2026 (supplied by the team) | Names only; no fire records imported | Internal | 2026-10-23 |
+| BFP Talisay fire incident log, Jan 2023 – Sep 2026 (supplied by the team) | Names, and the spelling of a name where sources differ (the log wins); its fires are imported as history by `manage.py import_bfp_fires` | Internal | 2026-10-23, 2026-10-25 |
 | City of Talisay 2010 Barangay Profiles, via the Wayback Machine (talisaycitycebu.gov.ph) | Official sitio counts, a few names | Public record | 2026-10-23 |
 | Visayan Electric service interruption notices, 2024–2026 (visayanelectric.com) | Names with barangay and roads | Public notices | 2026-10-23 |
 | Wikipedia, 2017 revisions of the barangay articles | Sitio lists for Cansojong and Lawaan II | CC BY-SA 4.0 | 2026-10-23 |
 | DSWD DROMIC fire reports for Talisay (dromic.dswd.gov.ph) | Names | Public record | 2026-10-23 |
 | Wikimapia (wikimapia.org, public API) | Places and outlines | CC BY-SA 3.0 | 2026-10-23 |
-| OpenStreetMap (Overpass API) | Places, landmarks, named areas, streets | ODbL 1.0 | 2026-10-23, 2026-10-25 |
+| OpenStreetMap (Overpass API, Nominatim search) | Places, landmarks, named areas, streets | ODbL 1.0 | 2026-10-23, 2026-10-25 |
 | Overture Maps places, release 2026-10-21.0 | Places and addresses naming a sitio or purok | CDLA Permissive 2.0 | 2026-10-25 |
 | SunStar, "3,000 families in disaster-prone areas in Talisay" (2014) | Landslide-prone sitio names | News report | 2026-10-25 |
 | Philstar/The Freeman, SunStar and GMA reports, 2025–2026 (Typhoon Tino, fires) | Names (Sitio Nangka, Camp IV, and others) | News reports | 2026-10-25 |
