@@ -85,6 +85,12 @@ class PlanImportTests(SimpleTestCase):
                                 [CANSOJONG], {CANSOJONG.id: ['Sitio Ebacan']}, {})
         self.assertEqual(report['unlinked']['Cansojong']['Sitio Ibacan'], {'fires': 1, 'close': ['Sitio Ebacan']})
 
+    def test_close_names_are_found_despite_repeated_syllables(self):
+        # difflib pairs the wrong halves of "ilan-ilang" and scores it 0.53
+        _, report = plan_import([row(location='Ilan-ilang, San Roque, Talisay City, Cebu')], set(),
+                                [ROQUE], {ROQUE.id: ['Purok Ilang-Ilang', 'Purok Sambag']}, {})
+        self.assertEqual(report['unlinked']['San Roque']['Ilan-ilang']['close'], ['Purok Ilang-Ilang'])
+
     def test_unknown_alarm_is_low_and_listed(self):
         [rec], report = plan_import([row(alarm='ALARM X')], set(), [ROQUE], {}, {})
         self.assertEqual(rec['severity_level'], 'Green')

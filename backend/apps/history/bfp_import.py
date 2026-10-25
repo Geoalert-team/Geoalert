@@ -7,7 +7,6 @@ could not be placed goes into a report, so the purok list can be fixed
 (spellings, missing names) and the import re-run: a re-run only adds rows
 whose source_ref is new.
 """
-import difflib
 from collections import Counter
 
 from apps.barangays.purok_estimate import norm_name
@@ -25,9 +24,30 @@ def _as_typed(label, place):
     return f'{label.title()} {place}' if label else place
 
 
-def _close(place, purok_names):
-    by_key = {norm_name(n): n for n in purok_names}
-    return [by_key[k] for k in difflib.get_close_matches(norm_name(place), list(by_key), n=3, cutoff=0.75)]
+def _edit_distance(a, b):
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, start=1):
+        cur = [i]
+        for j, cb in enumerate(b, start=1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
+        prev = cur
+    return prev[-1]
+
+
+def _similarity(a, b):
+    """
+    1 for the same name, falling with each letter added, dropped or changed.
+    Not difflib: its greedy matching pairs the wrong halves of repeated
+    syllables and scores Ilan-ilang against Ilang-Ilang at 0.53.
+    """
+    return 1 - _edit_distance(a, b) / max(len(a), len(b), 1)
+
+
+def _close(place, purok_names, cutoff=0.75):
+    """Up to three purok names spelled nearly like `place`, closest first."""
+    key = norm_name(place)
+    scored = sorted(((_similarity(key, norm_name(n)), n) for n in purok_names), key=lambda s: -s[0])
+    return [n for score, n in scored if score >= cutoff][:3]
 
 
 def _note_unlinked(report, row, barangay, purok_names):
