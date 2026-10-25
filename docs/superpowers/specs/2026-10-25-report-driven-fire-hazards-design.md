@@ -34,7 +34,7 @@ count.
 | Question | Choice |
 |---|---|
 | Which hazards use the new flow | Fire only, for now |
-| How a fire becomes active | DRRMO approves a report; it goes live as a pin at the reporter's spot. No drawing |
+| How a fire becomes active | DRRMO approves a report; it goes live as pins at its puroks' centres. No drawing |
 | Manual publishing | Removed for Fire. Floods and landslides keep it |
 | Alert level | Starts at the history level of the report's purok; the officer may raise it, never lower it. The server enforces this |
 | Extreme | Always waits for a second officer, as today (auto-release after the approval window) |
@@ -42,7 +42,7 @@ count.
 | How related pins count | One fire = one history record = +1 for each purok its pins sit in |
 | What the report asks | When and where only: the BFP log's columns A–F, plus a description and photos. Everything from Property type on is DRRMO's, entered when closing (revised 2026-10-25) |
 | Who reports | Barangay personnel accounts, as today |
-| A purok that isn't on the list | "Not on the list" and the reporter types its name: evidence for naming unnamed areas |
+| Puroks on a fire report | One or more, up to 10, from the barangay's list. The map is a preview, not clickable: it outlines each chosen purok with a pin at its centre. No "Not on the list" for now (revised 2026-10-25) |
 | Closing a fire | Two steps: **Fire out** (all-clear, pin leaves the map) then **Resolved** (BFP figures, history written) |
 | Reporter feedback | A step tracker on each report, with a notification at every step |
 | History view | Tapping a barangay shows its whole history; picking a purok shows only that purok's |
@@ -78,7 +78,8 @@ unaffected.
 - New status **`Resolving`** ("fire out, figures pending"), between `Active` and
   `Resolved`. Off the public map; counts as neither active nor history.
 - `fire_out_at`, `fire_out_by` (FK `User`, `SET_NULL`): set by Fire out.
-- For a fire, `geometry` is the union of 25 m circles around the pins of all its reports.
+- For a fire, `geometry` is the union of 25 m circles around the pins of all its reports
+  (one per purok on each report).
   It is only used to find the barangays to alert (`affected_barangays`). It is never
   drawn on the public map.
 
@@ -101,12 +102,18 @@ New fields, used by fire reports:
 | Field | What it holds |
 |---|---|
 | `started_at` | When the fire started (date and time); defaults to the submit time |
-| `purok` | FK `Purok`, `SET_NULL`. Pre-filled from the pin, correctable by the reporter |
-| `purok_other` | Text, up to 100 characters: the purok or sitio the reporter typed when theirs is not on the list. Set only when `purok` is empty |
+| `puroks` | M2M `Purok` through `incident_report_purok`. The puroks the fire is in, as the reporter chose them, in the barangay; up to 10 |
 
-`location` (the pin) becomes required for fire reports. `severity_estimate` is no longer
-asked for fires. Region, province and city are not asked: they are always Region 7,
-Cebu, Talisay City.
+A fire report's pins are its puroks' centres (a point inside each purok,
+`point_on_surface`). The reporter doesn't place a pin. `location` is set by the server
+to the first purok's centre, or to the barangay's when it has no puroks, so screens
+that show one point per report keep working. `severity_estimate` is no longer asked for
+fires. Region, province and city are not asked: they are always Region 7, Cebu, Talisay
+City.
+
+The single `purok` and `purok_other` columns added first (migration `0005`) leave the
+model. Their database columns stay until the copies of the app that read them are gone,
+because the shared database serves more than one branch.
 
 Property types, as they appear in the BFP log. DRRMO picks one when closing a fire:
 
@@ -152,10 +159,10 @@ these fields when **Fire** is chosen:
 
 | Field | Notes |
 |---|---|
-| When it started * | Date and time, defaults to now; not in the future |
+| When it started * | Date and time; set to now when Fire is chosen, unless the reporter already changed it; not in the future |
 | Barangay * | Locked to the assigned barangay, as today |
-| Pin on map * | Must fall inside the barangay |
-| Purok / Sitio * | The barangay's puroks, pre-selected from the pin and changeable, plus **Not on the list**, which opens a text box for the name. Optional when the barangay has no puroks |
+| Purok / Sitio * | One or more of the barangay's puroks, shown as chips with ×, added from a "+ Add another" list. Optional when the barangay has no puroks. If the list can't be loaded, the form says so and offers to try again |
+| Where exactly | A preview map, not clickable: the barangay's outline, each chosen purok outlined, and a pin at each one's centre |
 | What's happening * | Description, as today |
 | Photos | As today |
 | Position, agency | As today |
@@ -165,9 +172,10 @@ system) and exact location. Property type, casualties, damage, structures and al
 level are DRRMO's, entered when closing (section 4).
 
 `POST /api/reports/incidents/` (existing) validates the fire fields when the hazard type
-is Fire: `started_at` required and not in the future, the pin inside the barangay, the
-purok in that barangay, and exactly one of `purok` / `purok_other` when the barangay has
-puroks.
+is Fire: a barangay, `started_at` required and not in the future, at least one purok
+when the barangay has puroks, every purok in that barangay, at most 10. Any pin the
+client sends is ignored; the server sets `location` from the puroks. Other hazard types
+store no `started_at` or `puroks`, whatever the client sends.
 
 ### 2. The step tracker
 
@@ -202,8 +210,8 @@ transaction:
 
 | Body | Effect |
 |---|---|
-| `{"action": "approve", "severity": "Orange"?}` | Level = the purok's level (Low when it has no history), or `severity` if higher; lower → 400 *"Can't be lower than Moderate: this purok's history sets it."* Creates a Fire `HazardZone` (25 m circle round the pin), links the report, sets it `Validated`. Red → `Awaiting_Approval`, approvers notified, as `HazardZoneCreateView` does. Otherwise `Active` and `issue_alert` |
-| `{"action": "attach", "zone": "<id>"}` | Links the report to that zone, sets it `Validated`, adds a circle round its pin to the geometry. Barangays newly covered are alerted through the same path as reshaping a zone. If the new pin's purok level is above the zone's level, the zone is raised through `request_raise` / `apply_raise`, so a raise to Red is held |
+| `{"action": "approve", "severity": "Orange"?}` | Level = the purok's level (Low when it has no history), or `severity` if higher; lower → 400 *"Can't be lower than Moderate: this purok's history sets it."* Creates a Fire `HazardZone` (25 m circles round the report's pins), links the report, sets it `Validated`. Red → `Awaiting_Approval`, approvers notified, as `HazardZoneCreateView` does. Otherwise `Active` and `issue_alert` |
+| `{"action": "attach", "zone": "<id>"}` | Links the report to that zone, sets it `Validated`, adds circles round its pins to the geometry. Barangays newly covered are alerted through the same path as reshaping a zone. If any of the report's puroks has a level above the zone's level, the zone is raised through `request_raise` / `apply_raise`, so a raise to Red is held |
 | `{"action": "reject", "note": "..."}` | Note required; report `Rejected` |
 
 - The report must still be `Pending`; otherwise 409 *"Already decided by X at 08:20."*
@@ -237,7 +245,7 @@ reports and refuses fire reports, so there is one way to decide a fire.
 ### 5. Pins on the map
 
 - The hazard list the public map reads includes, for each fire zone, its `pins`:
-  `[{lat, lng, purok_name}]`, one per linked report. No reporter names.
+  `[{lat, lng, purok_name}]`, one per purok of each linked report. No reporter names.
 - Public map: only `Active` zones. Each pin is coloured by the zone's level. Pins of one
   fire share a count badge ("3"); tapping one highlights them all, joins them with thin
   dashed lines and opens the zone panel: *"Same fire · 3 reports · since 08:12"*.
@@ -289,7 +297,7 @@ reports and refuses fire reports, so there is one way to decide a fire.
 
 ## Errors
 
-- Pin outside the barangay → 400 *"The pin is outside Barangay X."*
+- A purok from another barangay → 400 *"That purok is not in Barangay X."*
 - Barangay with no puroks → the purok field is optional; the fire counts at barangay
   level only.
 - Level lookup fails in the dialog → Approve is disabled with *"Couldn't work out the
@@ -308,8 +316,8 @@ reports and refuses fire reports, so there is one way to decide a fire.
     `puroks` holds both puroks when the pins sit in two, blank figures stay null;
   - generic resolve PATCH refuses Fire zones;
   - import: the 2026-10-23 cases, plus `puroks` set when linked.
-- Frontend (Jest): fire form fields and validation (purok pre-selected from the pin,
-  "Not on the list" needs a name), the close form's sub-category list follows the
+- Frontend (Jest): fire form fields and validation (at least one purok, at most 10, the
+  start time refreshed when Fire is chosen), the close form's sub-category list follows the
   category, tracker steps for each status combination, related pins grouped by zone,
   panel switching between barangay and purok.
 - Screenshots before handing over: the fire form, the decision dialog with a nearby fire,
