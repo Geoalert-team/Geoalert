@@ -146,6 +146,9 @@ class IncidentReportCreateSerializer(serializers.ModelSerializer):
             'photos',
             'latitude',
             'longitude',
+            'started_at',
+            'purok',
+            'purok_other',
         ]
 
     def validate(self, attrs):
@@ -164,6 +167,19 @@ class IncidentReportCreateSerializer(serializers.ModelSerializer):
                     {'location': 'The pin is outside Talisay City. Place it where you saw the hazard.'}
                 )
             attrs['location'] = point
+
+        # A fire report is when and where (the BFP log's columns A-F)
+        hazard, barangay = attrs.get('hazard_type'), attrs.get('barangay')
+        if hazard is not None and hazard.name.lower() == 'fire' and barangay is not None:
+            from django.utils import timezone
+            from apps.barangays.models import Purok
+            from apps.reports.fire_report import fire_report_errors
+
+            attrs['purok_other'] = (attrs.get('purok_other') or '').strip()
+            errors = fire_report_errors(attrs, barangay, Purok.objects.filter(barangay=barangay).exists(),
+                                        timezone.now())
+            if errors:
+                raise serializers.ValidationError(errors)
         return attrs
 
     def create(self, validated_data):
