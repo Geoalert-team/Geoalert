@@ -40,7 +40,9 @@ count.
 | Extreme | Always waits for a second officer, as today (auto-release after the approval window) |
 | Same fire reported twice | Each report keeps its own pin. Pins of one fire are marked as related |
 | How related pins count | One fire = one history record = +1 for each purok its pins sit in |
-| What the report asks | What is known at the scene. The BFP totals are entered when closing |
+| What the report asks | When and where only: the BFP log's columns A–F, plus a description and photos. Everything from Property type on is DRRMO's, entered when closing (revised 2026-10-25) |
+| Who reports | Barangay personnel accounts, as today |
+| A purok that isn't on the list | "Not on the list" and the reporter types its name: evidence for naming unnamed areas |
 | Closing a fire | Two steps: **Fire out** (all-clear, pin leaves the map) then **Resolved** (BFP figures, history written) |
 | Reporter feedback | A step tracker on each report, with a notification at every step |
 | History view | Tapping a barangay shows its whole history; picking a purok shows only that purok's |
@@ -100,14 +102,13 @@ New fields, used by fire reports:
 |---|---|
 | `started_at` | When the fire started (date and time); defaults to the submit time |
 | `purok` | FK `Purok`, `SET_NULL`. Pre-filled from the pin, correctable by the reporter |
-| `property_category` | `RESIDENTIAL`, `NON_RESIDENTIAL`, `NON_STRUCTURAL`, `TRANSPORT` |
-| `property_subcategory` | One of the sub-categories of that category (below) |
-| `injured_so_far` | Integer ≥ 0, default 0 |
+| `purok_other` | Text, up to 100 characters: the purok or sitio the reporter typed when theirs is not on the list. Set only when `purok` is empty |
 
 `location` (the pin) becomes required for fire reports. `severity_estimate` is no longer
-asked for fires.
+asked for fires. Region, province and city are not asked: they are always Region 7,
+Cebu, Talisay City.
 
-Property types, as they appear in the BFP log:
+Property types, as they appear in the BFP log. DRRMO picks one when closing a fire:
 
 | Category | Sub-categories |
 |---|---|
@@ -116,8 +117,8 @@ Property types, as they appear in the BFP log:
 | Non-structural | Rubbish, Grass, Electrical pole |
 | Transport | Automobile, Motorcycle, Truck, Bus, Tricycle, Jeepney, Locomotive |
 
-The list lives in one backend module and is served to the form, so adding a type is one
-edit.
+The list lives in one backend module and is served to the close form, so adding a type
+is one edit.
 
 ### `HistoricalRecord` (`apps/history/models.py`)
 
@@ -125,7 +126,7 @@ edit.
 |---|---|
 | `puroks` | M2M `Purok` through `historical_record_purok`. Every purok the event touched; +1 each |
 | `alarm_level` | BFP alarm level as given (list below) |
-| `property_category`, `property_subcategory` | As on the report |
+| `property_category`, `property_subcategory` | Set by DRRMO when closing |
 | `damage_cost` | Decimal, PHP |
 | `structures_affected` | Integer |
 | `injured_ff_male`, `injured_ff_female`, `injured_civ_male`, `injured_civ_female` | Integers |
@@ -154,15 +155,19 @@ these fields when **Fire** is chosen:
 | When it started * | Date and time, defaults to now; not in the future |
 | Barangay * | Locked to the assigned barangay, as today |
 | Pin on map * | Must fall inside the barangay |
-| Purok / Sitio * | The barangay's puroks; pre-selected from the pin, changeable. Optional when the barangay has no puroks |
-| Property type * | Category, then a sub-category list for it |
+| Purok / Sitio * | The barangay's puroks, pre-selected from the pin and changeable, plus **Not on the list**, which opens a text box for the name. Optional when the barangay has no puroks |
 | What's happening * | Description, as today |
 | Photos | As today |
-| Anyone hurt so far? | Number, default 0 |
 | Position, agency | As today |
 
+These are the BFP log's columns A–F: date, time, region/province/city (filled in by the
+system) and exact location. Property type, casualties, damage, structures and alarm
+level are DRRMO's, entered when closing (section 4).
+
 `POST /api/reports/incidents/` (existing) validates the fire fields when the hazard type
-is Fire.
+is Fire: `started_at` required and not in the future, the pin inside the barangay, the
+purok in that barangay, and exactly one of `purok` / `purok_other` when the barangay has
+puroks.
 
 ### 2. The step tracker
 
@@ -219,8 +224,8 @@ reports and refuses fire reports, so there is one way to decide a fire.
   Purok Sambag is still waiting for BFP figures").
 - `POST /api/hazards/<id>/close/` (DRRMO): `Resolving` → `Resolved`. Body: `alarm_level`
   (required), the eight casualty counts, `damage_cost`, `structures_affected`,
-  `property_category`, `property_subcategory` (pre-filled from the first report),
-  `summary`. Writes **one** `HistoricalRecord`:
+  `property_category` and `property_subcategory` (required; the sub-category list
+  follows the category), `summary`. Writes **one** `HistoricalRecord`:
   - `occurred_at` = the earliest `started_at` of the zone's reports;
   - `puroks` = the distinct puroks of the zone's reports;
   - `barangay` = the first report's barangay; `severity_level` = the zone's level;
@@ -303,7 +308,8 @@ reports and refuses fire reports, so there is one way to decide a fire.
     `puroks` holds both puroks when the pins sit in two, blank figures stay null;
   - generic resolve PATCH refuses Fire zones;
   - import: the 2026-10-23 cases, plus `puroks` set when linked.
-- Frontend (Jest): fire form fields and validation, sub-category list follows the
+- Frontend (Jest): fire form fields and validation (purok pre-selected from the pin,
+  "Not on the list" needs a name), the close form's sub-category list follows the
   category, tracker steps for each status combination, related pins grouped by zone,
   panel switching between barangay and purok.
 - Screenshots before handing over: the fire form, the decision dialog with a nearby fire,
