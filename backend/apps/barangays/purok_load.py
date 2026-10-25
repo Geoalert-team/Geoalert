@@ -96,6 +96,32 @@ def compare(old_by_name, new_by_name):
     return {'matched': matched, 'only_estimated': only_old, 'only_new': only_new}
 
 
+def plan_replace(existing, rows):
+    """
+    What loading `rows` does to the puroks already there, given as
+    (id, barangay_id, name): a purok whose name matches one in the file
+    (under norm_name, so a re-spelling still matches) is updated and keeps
+    its id; the rest of the file is created; the rest of what was there is
+    deleted. Keeping ids is what keeps fire history linked to its purok.
+    """
+    by_key = {}
+    for pk, barangay_id, name in existing:
+        by_key.setdefault((barangay_id, norm_name(name)), pk)
+    plan = {'update': [], 'create': [], 'delete': []}
+    kept = set()
+    for row in rows:
+        pk = by_key.get((row['barangay_id'], norm_name(row['name'])))
+        if pk is None or pk in kept:
+            plan['create'].append(row)
+        else:
+            kept.add(pk)
+            plan['update'].append((pk, row))
+    plan['delete'] = [pk for pk, _, _ in existing if pk not in kept]
+    return plan
+
+
 def replace(rows, store):
-    """Replace the puroks of exactly the barangays that appear in the rows."""
-    store.replace({r['barangay_id'] for r in rows}, rows)
+    """Replace the puroks of exactly the barangays that appear in the rows, keeping ids where names match."""
+    plan = plan_replace(store.existing({r['barangay_id'] for r in rows}), rows)
+    store.apply(plan)
+    return plan

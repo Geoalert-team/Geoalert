@@ -110,21 +110,37 @@ class OverlapTests(SimpleTestCase):
 
 
 class FakeStore:
-    def __init__(self):
-        self.cleared, self.created = None, None
+    def __init__(self, existing=()):
+        self.rows, self.asked, self.applied = list(existing), None, None
 
-    def replace(self, barangay_ids, rows):
-        self.cleared, self.created = set(barangay_ids), rows
+    def existing(self, barangay_ids):
+        self.asked = set(barangay_ids)
+        return [r for r in self.rows if r[1] in self.asked]
+
+    def apply(self, plan):
+        self.applied = plan
 
 
 class ReplaceTests(SimpleTestCase):
-    def test_only_the_barangays_in_the_file_are_replaced(self):
-        rows = [{'barangay_id': 21, 'name': 'Tunga'}, {'barangay_id': 21, 'name': 'Magay'},
-                {'barangay_id': 22, 'name': 'Purok 4'}]
-        store = FakeStore()
-        pl.replace(rows, store)
-        self.assertEqual(store.cleared, {21, 22})
-        self.assertEqual(len(store.created), 3)
+    """
+    A reload updates puroks in place rather than deleting and recreating
+    them, so their ids, and the fire history linked to them, survive.
+    """
+
+    def test_matching_puroks_are_updated_new_created_missing_deleted(self):
+        tunga, rattan = {'barangay_id': 21, 'name': 'Sitio Tunga'}, {'barangay_id': 21, 'name': 'Rattan'}
+        plan = pl.plan_replace([(7, 21, 'Sitio Tunga'), (8, 21, 'Magay')], [tunga, rattan])
+        self.assertEqual(plan, {'update': [(7, tunga)], 'create': [rattan], 'delete': [8]})
+
+    def test_a_respelled_purok_keeps_its_id(self):
+        row = {'barangay_id': 16, 'name': 'Purok Kamunggay'}
+        self.assertEqual(pl.plan_replace([(5, 16, 'Purok Kamungay')], [row])['update'], [(5, row)])
+
+    def test_only_the_barangays_in_the_file_are_touched(self):
+        store = FakeStore(existing=[(7, 21, 'Sitio Tunga'), (9, 22, 'Purok 4')])
+        pl.replace([{'barangay_id': 21, 'name': 'Sitio Tunga'}], store)
+        self.assertEqual(store.asked, {21})
+        self.assertEqual(store.applied['delete'], [])
 
 
 class PurokSerializerTests(SimpleTestCase):

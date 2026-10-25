@@ -12,16 +12,23 @@ DATA_DIR = Path(__file__).resolve().parents[2] / 'data' / 'puroks'
 ESTIMATES = DATA_DIR / 'talisay_puroks_estimated.geojson'
 
 
-class DatabaseStore:
-    """Replaces the puroks of the given barangays in one go."""
+FIELDS = ['name', 'kind', 'parent', 'boundary', 'source', 'confidence']
 
-    def replace(self, barangay_ids, rows):
+
+class DatabaseStore:
+    """Applies a purok_load.plan_replace plan in one transaction."""
+
+    def existing(self, barangay_ids):
+        return list(Purok.objects.filter(barangay_id__in=barangay_ids).values_list('id', 'barangay_id', 'name'))
+
+    def apply(self, plan):
         with transaction.atomic():
-            Purok.objects.filter(barangay_id__in=barangay_ids).delete()
-            Purok.objects.bulk_create(Purok(
-                barangay_id=r['barangay_id'], name=r['name'], kind=r['kind'], parent=r['parent'],
-                boundary=r['boundary'], source=r['source'], confidence=r['confidence'],
-            ) for r in rows)
+            # Deletes first, so a kept purok can take over a deleted one's name
+            Purok.objects.filter(id__in=plan['delete']).delete()
+            for pk, r in plan['update']:
+                Purok.objects.filter(id=pk).update(**{f: r[f] for f in FIELDS})
+            Purok.objects.bulk_create(Purok(barangay_id=r['barangay_id'], **{f: r[f] for f in FIELDS})
+                                      for r in plan['create'])
 
 
 class Command(BaseCommand):
@@ -73,9 +80,13 @@ class Command(BaseCommand):
         if options['dry_run']:
             self.stdout.write(self.style.SUCCESS(f'Dry run: {len(rows)} puroks checked, nothing saved.'))
             return
-        purok_load.replace(rows, DatabaseStore())
+        plan = purok_load.replace(rows, DatabaseStore())
         self.stdout.write(self.style.SUCCESS(
-            f'Loaded {len(rows)} puroks for {len({r["barangay_id"] for r in rows})} barangays.'))
+            f'Loaded {len(rows)} puroks for {len({r["barangay_id"] for r in rows})} barangays '
+            f'({len(plan["update"])} updated, {len(plan["create"])} added, {len(plan["delete"])} removed).'))
+        if plan['create'] or plan['delete']:
+            self.stdout.write('Puroks were added or removed: run "manage.py import_bfp_fires --relink" '
+                              'so fire history follows them.')
 
     def report(self, rows):
         """Per barangay, how the new outlines line up with the ones they replace."""
