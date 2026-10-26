@@ -18,6 +18,7 @@ from apps.hazards.views import (
     HazardUnifiedView,
     HazardLayerListView,
 )
+from apps.hazards.fire_close_views import FiguresDueView, FireCloseView, FireOutView
 from apps.hazards.field_views import (
     PastZonesNearView, ZoneFieldMarkDetailView, ZoneFieldMarksView,
 )
@@ -43,5 +44,9 @@ urlpatterns = [
     path('for-barangay/',      HazardZoneForBarangayView.as_view(),   name='hazard-for-barangay'),
     path('<uuid:pk>/verify/',  HazardZoneVerifyView.as_view(),        name='hazard-verify'),
     path('<uuid:pk>/retract/', HazardZoneRetractView.as_view(),       name='hazard-retract'),
+    # A fire resolves in two steps: out (all-clear), then the BFP figures
+    path('<uuid:pk>/fire-out/', FireOutView.as_view(),               name='hazard-fire-out'),
+    path('<uuid:pk>/close/',   FireCloseView.as_view(),              name='hazard-fire-close'),
+    path('figures-due/',       FiguresDueView.as_view(),             name='hazard-figures-due'),
     path('<uuid:pk>/',         HazardZoneDetailView.as_view(),        name='hazard-detail'),
 ]

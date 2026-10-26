@@ -42,6 +42,10 @@ class HazardZone(models.Model):
         # own after APPROVAL_WINDOW so an empty office can't hold back a
         # typhoon warning.
         ('Awaiting_Approval', 'Awaiting approval'),
+        # A fire that is out: the all-clear has gone and it is off the map,
+        # but DRRMO has yet to record the BFP figures (alarm level,
+        # casualties, damage) that close it into history.
+        ('Resolving', 'Fire out, figures pending'),
     ]
 
     VERIFICATION_CHOICES = [
@@ -71,6 +75,10 @@ class HazardZone(models.Model):
     cordon_m     = models.IntegerField(null=True, blank=True, db_column='hzzn_cordon_m')
     activated_at = models.DateTimeField(auto_now_add=True, db_column='hzzn_activated_at')
     resolved_at  = models.DateTimeField(null=True, blank=True, db_column='hzzn_resolved_at')
+    # A fire put out (status Resolving): when, and by which officer
+    fire_out_at  = models.DateTimeField(null=True, blank=True, db_column='hzzn_fire_out_at')
+    fire_out_by  = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                     related_name='fires_put_out', db_column='hzzn_fire_out_by')
 
     verification_status = models.CharField(
         max_length=20, choices=VERIFICATION_CHOICES, default='Pending',

@@ -44,3 +44,13 @@ class FireReportFieldsTests(SimpleTestCase):
         self.assertEqual(sorted(op.name for op in split[0].state_operations), ['purok', 'purok_other'])
         sql = ' '.join(op.sql for op in ops if isinstance(op, migrations.RunSQL))
         self.assertIn('INSERT INTO incident_report_purok', sql)  # round-1 puroks carried over
+
+    def test_deleting_a_purok_or_report_never_trips_a_foreign_key(self):
+        # Django no longer manages incr_prk_id, and teammates' copies don't
+        # know the link table, so the database itself must clear or cascade
+        ops = import_module('apps.reports.migrations.0007_report_purok_on_delete').Migration.operations
+        sql = ' '.join(op.sql for op in ops if isinstance(op, migrations.RunSQL))
+        for column, target, rule in (('incr_prk_id', r'purok\(prk_id\)', 'SET NULL'),
+                                     ('incidentreport_id', r'incident_report\(incr_id\)', 'CASCADE'),
+                                     ('purok_id', r'purok\(prk_id\)', 'CASCADE')):
+            self.assertRegex(sql, rf'FOREIGN KEY \({column}\) REFERENCES {target} ON DELETE {rule}')

@@ -210,7 +210,8 @@ class HazardZoneListView(APIView):
             HazardZone.objects
             .filter(status='Active')
             .select_related('hazard_type', 'barangay', 'verified_by', 'approved_by', 'reviewed_by')
-            .prefetch_related('verifications__barangay', 'verifications__answered_by')
+            .prefetch_related('verifications__barangay', 'verifications__answered_by',
+                              'incidentreport_set__puroks')  # a report-made fire's pins
         )
 
         barangay = request.query_params.get('barangay')

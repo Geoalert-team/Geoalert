@@ -8,6 +8,8 @@ import ReportLocationMap from '../../components/Map/ReportLocationMap';
 import { Icon, Modal, Toast, fieldErrors, formatDateTime, timeAgo } from './admin/adminShared';
 import { ReportPhotos } from './reportShared';
 import { placeLabel } from './fireReport';
+import { canDecide, historyLine, isFireReport, levelLabel, reportPins } from './fireDecision';
+import PurokPreviewMap from '../../components/Map/PurokPreviewMap';
 import ActiveZonesCard from '../../components/Resolve/ActiveZonesCard';
 import AwaitingApprovalCard from '../../components/Resolve/AwaitingApprovalCard';
 import BarangayLikelihood from '../../components/Forecast/BarangayLikelihood';
@@ -120,6 +122,176 @@ function ReviewDialog({ report, decision, onCancel, onDone }) {
   );
 }
 
+/**
+ * Deciding a fire report: the report as sent (what is happening, photos, its
+ * puroks on the map, when it started, who sent it), then approve it as a new
+ * fire (it goes on the map as a pin at each of its puroks), attach it to a
+ * fire already live nearby, or reject it. The officer doesn't choose a
+ * level: it is the highest among its puroks' fire history.
+ * onDone(message) after a decision is saved.
+ */
+function FireDecisionDialog({ report, onCancel, onDone }) {
+  const [info, setInfo] = useState(null);
+  const [loadError, setLoadError] = useState(false);
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const load = useCallback(() => {
+    setLoadError(false);
+    setInfo(null);
+    reportsApi.decision(report.id).then(setInfo).catch(() => setLoadError(true));
+  }, [report.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function decide(body, message) {
+    setBusy(true);
+    setError('');
+    try {
+      const data = await reportsApi.decide(report.id, { ...body, note: note.trim() });
+      onDone(typeof message === 'function' ? message(data) : message);
+    } catch (err) {
+      const fields = fieldErrors(err);
+      setError(fields.form || fields.error || fields.note || 'The decision could not be saved. Please try again.');
+      setBusy(false);
+    }
+  }
+
+  const blocked = Boolean(info?.error);
+  const years = info?.thresholds?.years ?? 5;
+  const pins = reportPins(report);
+
+  return (
+    <Modal
+      title="Decide this fire report"
+      subtitle={`${barangayName(report) || 'Barangay not set'} · reported by ${reporterName(report)}`}
+      onClose={busy ? () => {} : onCancel}
+      width={640}
+      labelId="drm-fire-decision-title"
+      footer={
+        <>
+          <button type="button" className="adm-btn adm-btn-ghost" onClick={onCancel} disabled={busy}>Cancel</button>
+          <button
+            type="button"
+            className="adm-btn adm-btn-danger"
+            disabled={busy || !info || blocked}
+            onClick={() => (note.trim()
+              ? decide({ action: 'reject' }, 'Fire report rejected.')
+              : setError('Say why the report is rejected.'))}
+          >
+            <Icon name="x" size={16} strokeWidth={2.5} /> Reject
+          </button>
+          <button
+            type="button"
+            className="adm-btn adm-btn-primary"
+            disabled={busy || !info || blocked}
+            onClick={() => decide(
+              { action: 'approve' },
+              (data) => (data.held ? 'Fire approved: waiting for a second officer.' : 'Fire approved: it is on the map.'),
+            )}
+          >
+            <Icon name="check" size={16} strokeWidth={2.5} /> {busy ? 'Saving…' : 'Approve as new fire'}
+          </button>
+        </>
+      }
+    >
+      <div className="drm-detail">
+        {info?.error && <div className="adm-alert" role="alert"><Icon name="info" size={16} />{info.error}</div>}
+
+        <section className="drm-detail-section">
+          <h3>What was reported</h3>
+          <p className="drm-detail-desc">{report.description || 'No description given.'}</p>
+          <ReportPhotos report={report} alt="Photo sent with the fire report" />
+        </section>
+
+        <section className="drm-detail-section">
+          <h3>Where</h3>
+          {pins.length ? (
+            <PurokPreviewMap pins={pins} caption={placeLabel(report) || 'Where the reporter pinned it.'} />
+          ) : (
+            <p className="adm-muted">No purok or pin was given.</p>
+          )}
+        </section>
+
+        <section className="drm-detail-section">
+          <h3>Details</h3>
+          <dl className="drm-dl">
+            <dt>Barangay</dt><dd>{barangayName(report) || 'Not set'}</dd>
+            {placeLabel(report) && (<><dt>Purok / Sitio</dt><dd>{placeLabel(report)}</dd></>)}
+            {report.started_at && (<><dt>Started</dt><dd>{formatDateTime(report.started_at)}</dd></>)}
+            <dt>Sent</dt><dd>{formatDateTime(report.created_at)}</dd>
+            <dt>Reported by</dt><dd>{reporterName(report)}</dd>
+            {report.position && (<><dt>Position</dt><dd>{report.position}</dd></>)}
+            {report.agency && (<><dt>Agency</dt><dd>{report.agency}</dd></>)}
+          </dl>
+        </section>
+
+        <section className="drm-detail-section">
+          <h3>On the map it will be</h3>
+          {!info && !loadError && <p className="adm-muted">Working out the level from its puroks&apos; fire history…</p>}
+          {loadError && (
+            <div className="adm-alert" role="alert">
+              <Icon name="info" size={16} />
+              Couldn&apos;t load the fire&apos;s history.
+              <button type="button" className="adm-btn adm-btn-ghost adm-btn-sm" onClick={load}>Try again</button>
+            </div>
+          )}
+          {info && (
+            <>
+              <p className="drm-detail-desc">
+                <strong>{levelLabel(info.level)}</strong>, from its puroks&apos; fire history.
+                {info.level === 'Red' ? ' Extreme waits for a second officer.' : ''}
+              </p>
+              {info.puroks.length > 0 && (
+                <ul className="drm-fire-history">{info.puroks.map((p) => <li key={p.id}>{historyLine(p, years)}</li>)}</ul>
+              )}
+            </>
+          )}
+        </section>
+
+        {info?.nearby?.length > 0 && (
+          <section className="drm-detail-section">
+            <h3>Fires already live nearby</h3>
+            <ul className="drm-fire-nearby">
+              {info.nearby.map((z) => (
+                <li key={z.id}>
+                  <span>
+                    {levelLabel(z.severity)} fire
+                    {z.puroks.length ? ` · ${z.puroks.join(', ')}` : ''}
+                    {` · ${z.reports} report${z.reports === 1 ? '' : 's'}`}
+                    {z.status === 'Awaiting_Approval' ? ' · awaiting a second officer' : ''}
+                  </span>
+                  <button
+                    type="button"
+                    className="adm-btn adm-btn-ghost adm-btn-sm"
+                    disabled={busy || blocked}
+                    onClick={() => decide({ action: 'attach', zone: z.id }, 'Report attached to the fire.')}
+                  >
+                    Attach to this fire
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <div className="adm-field">
+          <label htmlFor="drm-fire-note">Note<span className="adm-optional">Needed to reject</span></label>
+          <textarea
+            id="drm-fire-note"
+            rows={3}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="e.g. Confirmed with the barangay by phone. Or why it is rejected."
+          />
+        </div>
+        {error && <div className="adm-alert" role="alert"><Icon name="info" size={16} />{error}</div>}
+      </div>
+    </Modal>
+  );
+}
+
 function ReportDetail({ report, onClose, onReview }) {
   const place = [report.barangay_details?.name, report.barangay_details?.municipality].filter(Boolean).join(', ');
   return (
@@ -144,11 +316,16 @@ function ReportDetail({ report, onClose, onReview }) {
           <>
             <button type="button" className="adm-btn adm-btn-ghost" onClick={onClose}>Close</button>
             {/* A validated report is a known hazard: offer to put it on the
-                map, or show the zone already published from it. */}
+                map, or show the zone already published from it. A fire
+                goes on the map through the fire decision, never by drawing. */}
             {report.status === 'Validated' && (report.hazard_zone ? (
               <Link className="adm-btn adm-btn-primary" to={`/map?zone=${report.hazard_zone}`}>
                 View published zone
               </Link>
+            ) : isFireReport(report) ? (
+              <button type="button" className="adm-btn adm-btn-primary" onClick={() => onReview(report, 'Validated')}>
+                <Icon name="check" size={16} strokeWidth={2.5} /> Approve to map
+              </button>
             ) : (
               <Link
                 className="adm-btn adm-btn-primary"
@@ -280,6 +457,7 @@ export default function DRRMODashboard() {
 
   const [selected, setSelected] = useState(null); // report in the full view
   const [reviewing, setReviewing] = useState(null); // { report, decision }
+  const [deciding, setDeciding] = useState(null);   // a fire report being decided
   const [toast, setToast] = useState(null);
 
   const load = useCallback(() => {
@@ -357,8 +535,17 @@ export default function DRRMODashboard() {
     setBarangayFilter('');
   }
 
+  // A fire report is decided in one step that also puts it on the map
   function openReview(report, decision) {
-    setReviewing({ report, decision });
+    if (canDecide(report)) setDeciding(report);
+    else setReviewing({ report, decision });
+  }
+
+  function decideDone(message) {
+    setDeciding(null);
+    setSelected(null);
+    setToast({ id: Date.now(), tone: 'good', message });
+    load();
   }
 
   function reviewDone(decision) {
@@ -551,7 +738,7 @@ export default function DRRMODashboard() {
         </section>
       </div>
 
-      {selected && !reviewing && (
+      {selected && !reviewing && !deciding && (
         <ReportDetail report={selected} onClose={() => setSelected(null)} onReview={openReview} />
       )}
       {reviewing && (
@@ -561,6 +748,9 @@ export default function DRRMODashboard() {
           onCancel={() => setReviewing(null)}
           onDone={reviewDone}
         />
+      )}
+      {deciding && (
+        <FireDecisionDialog report={deciding} onCancel={() => setDeciding(null)} onDone={decideDone} />
       )}
       <Toast key={toast?.id} toast={toast} onDone={clearToast} />
     </div>

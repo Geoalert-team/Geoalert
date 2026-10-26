@@ -329,6 +329,12 @@ class IncidentReportReviewView(APIView):
         except IncidentReport.DoesNotExist:
             return Response({'error': 'Report not found'}, status=status.HTTP_404_NOT_FOUND)
 
+        # A fire report has one way to be decided, which also puts it on the
+        # map: POST .../decide/ (apps/reports/decide_views.py)
+        if report.hazard_type and report.hazard_type.name.lower() == 'fire':
+            return Response({'error': 'Fire reports are approved or rejected with the fire decision.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         serializer = IncidentReportReviewSerializer(report, data=request.data, partial=True)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

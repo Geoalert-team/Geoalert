@@ -36,7 +36,7 @@ count.
 | Which hazards use the new flow | Fire only, for now |
 | How a fire becomes active | DRRMO approves a report; it goes live as pins at its puroks' centres. No drawing |
 | Manual publishing | Removed for Fire. Floods and landslides keep it |
-| Alert level | Starts at the history level of the report's purok; the officer may raise it, never lower it. The server enforces this |
+| Alert level | The highest history level among the report's puroks. The officer doesn't choose it (revised 2026-10-26: the decision shows the report, not a level picker) |
 | Extreme | Always waits for a second officer, as today (auto-release after the approval window) |
 | Same fire reported twice | Each report keeps its own pin. Pins of one fire are marked as related |
 | How related pins count | One fire = one history record = +1 for each purok its pins sit in |
@@ -210,7 +210,7 @@ transaction:
 
 | Body | Effect |
 |---|---|
-| `{"action": "approve", "severity": "Orange"?}` | Level = the purok's level (Low when it has no history), or `severity` if higher; lower → 400 *"Can't be lower than Moderate: this purok's history sets it."* Creates a Fire `HazardZone` (25 m circles round the report's pins), links the report, sets it `Validated`. Red → `Awaiting_Approval`, approvers notified, as `HazardZoneCreateView` does. Otherwise `Active` and `issue_alert` |
+| `{"action": "approve", "note"?}` | Level = the highest level among the report's puroks (Low when none has history); any level the client sends is ignored. Creates a Fire `HazardZone` (25 m circles round the report's pins), links the report, sets it `Validated`. Red → `Awaiting_Approval`, approvers notified, as `HazardZoneCreateView` does. Otherwise `Active` and `issue_alert` |
 | `{"action": "attach", "zone": "<id>"}` | Links the report to that zone, sets it `Validated`, adds circles round its pins to the geometry. Barangays newly covered are alerted through the same path as reshaping a zone. If any of the report's puroks has a level above the zone's level, the zone is raised through `request_raise` / `apply_raise`, so a raise to Red is held |
 | `{"action": "reject", "note": "..."}` | Note required; report `Rejected` |
 
@@ -267,6 +267,61 @@ reports and refuses fire reports, so there is one way to decide a fire.
 - A barangay's history = records whose `barangay` is it, plus records with a purok in it,
   each counted once.
 
+### 7. Fire history and the BFP export (added 2026-10-26)
+
+A closed fire is one BFP row: the report gave columns A–F (date, time, place), and the
+close form gives the rest (G onward). The history page and the export show it that way.
+
+**The close form**, for the officer:
+
+| Field | Notes |
+|---|---|
+| Property type | Category, then the sub-categories for it (the BFP list) |
+| Injured | Firefighter male / female, civilian male / female |
+| Fatalities | Firefighter male / female, civilian male / female |
+| Estimated cost of damage (PHP) | |
+| Affected structures | |
+| Alarm level | The BFP list |
+| What happened | Optional summary |
+
+- Alarm level, category and sub-category are required.
+- The counts and the cost may be left blank for "not counted yet", which is not zero.
+- The lists come from one backend module and are served by `GET /api/history/bfp-options/`.
+
+**Everywhere a fire is resolved, it goes through the two steps.** The map's hazard panel
+and the DRRMO "active zones" card show **Fire out** instead of "Resolve and archive". The
+DRRMO dashboard lists fires waiting for figures, each with **Enter BFP figures**.
+
+**History page.** A fire record also shows:
+- alarm level
+- property type
+- injured and fatalities
+- affected structures
+
+Staff also see the exact location and the damage cost. Other hazards are unchanged.
+
+**Export.** `GET /api/history/fires.xlsx` (DRRMO Officer, System Admin), with the history
+page's date and barangay filters, downloads one sheet:
+- **Header:** the BFP fire log's three header rows, with the same merged cells and words.
+- **Rows:** one per fire, oldest first.
+- **Columns A–W:**
+
+  | Column | Content |
+  |---|---|
+  | A | Date |
+  | B | Time of alarm, stored as the number HHMM and shown as HH:MM, as the BFP file does |
+  | C–E | `Region_7`, `Cebu`, `Talisay_City_c` |
+  | F | Exact location: the address as BFP typed it for imported fires; `PUROK X, PUROK Y, BRGY Z` for fires closed in the app |
+  | G–H | Property category and sub-category |
+  | I–T | Injured firefighter M, F, total; civilian M, F, total. Fatalities firefighter M, F, total; civilian M, F, total |
+  | U | Damage (PHP) |
+  | V | Structures |
+  | W | Alarm |
+
+- A blank count stays blank.
+- The history page has an **Export fires (Excel)** button for staff. The export is
+  logged, as the report prints are.
+
 ## Changes to the hazard-levels spec
 
 | # | Hazard-levels spec | This spec |
@@ -308,7 +363,7 @@ reports and refuses fire reports, so there is one way to decide a fire.
 ## Testing
 
 - Backend (`backend/tests/`), in the style of the existing tests:
-  - decide: approve at the purok level, approve raised, below-level rejected, Red held
+  - decide: approve at the puroks' history level (a sent level ignored), Red held
     for a second officer, attach (geometry grows, new barangay alerted, level raised),
     reject without a note refused, already-decided 409, attach to a closed zone 409;
   - review endpoint refuses fire reports; manual create refuses Fire;

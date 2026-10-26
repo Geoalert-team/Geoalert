@@ -31,13 +31,24 @@ function FitTo({ data }) {
  *   barangay  the barangay's GeoJSON feature, or null
  *   puroks    the chosen puroks' GeoJSON features
  *   pins      [{ id, name, lat, lng }] from purokPins()
+ *   caption   the line under the map, or the reporter's default
+ *
+ * It frames the purok outlines, else the barangay, else the pins.
  */
-export default function PurokPreviewMap({ barangay = null, puroks = [], pins = [] }) {
+export default function PurokPreviewMap({ barangay = null, puroks = [], pins = [], caption = null }) {
   const chosen = useMemo(
     () => (puroks.length ? { type: 'FeatureCollection', features: puroks } : null),
     [puroks],
   );
   const chosenKey = puroks.map((f) => f.id).join(',');
+  const pinKey = pins.map((p) => `${p.lat},${p.lng}`).join('|');
+  const pinPoints = useMemo(() => {
+    const points = pins.filter((p) => p.lat != null && p.lng != null);
+    return points.length ? {
+      type: 'FeatureCollection',
+      features: points.map((p) => ({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [p.lng, p.lat] } })),
+    } : null;
+  }, [pinKey]); // eslint-disable-line react-hooks/exhaustive-deps -- keyed by the pins' places, not the array
 
   return (
     <div className="lp">
@@ -66,11 +77,11 @@ export default function PurokPreviewMap({ barangay = null, puroks = [], pins = [
           {pins.filter((p) => p.lat != null && p.lng != null).map((p) => (
             <Marker key={p.id} position={[p.lat, p.lng]} icon={PIN} interactive={false} title={p.name} />
           ))}
-          <FitTo data={chosen || (barangay?.geometry ? barangay : null)} />
+          <FitTo data={chosen || (barangay?.geometry ? barangay : null) || pinPoints} />
         </MapContainer>
       </div>
       <span className="lp-status">
-        {pins.length ? 'The pins show the puroks you chose.' : 'Choose a purok and its pin shows here.'}
+        {caption || (pins.length ? 'The pins show the puroks you chose.' : 'Choose a purok and its pin shows here.')}
       </span>
     </div>
   );

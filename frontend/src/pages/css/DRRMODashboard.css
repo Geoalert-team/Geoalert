@@ -99,6 +99,13 @@
 /* ---------- Review dialog ---------- */
 .drm-review { padding-top: 14px; display: flex; flex-direction: column; gap: 14px; }
 .drm-review-text { color: var(--db-body); }
+/* Fire decision: the puroks' history and fires nearby */
+.drm-fire-history, .drm-fire-nearby { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.drm-fire-history li { color: var(--db-body); font-size: .88rem; }
+.drm-fire-nearby li {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 8px 10px; border: 1px solid var(--db-line); border-radius: 8px; font-size: .86rem;
+}
 .drm textarea {
   width: 100%; padding: 10px 12px; border: 1px solid var(--adm-line-strong); border-radius: 10px;
   background: var(--adm-surface); color: var(--db-heading); font-family: var(--db-font-body); font-size: .92rem; resize: vertical;

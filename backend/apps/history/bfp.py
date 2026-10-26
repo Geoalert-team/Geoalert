@@ -160,3 +160,85 @@ def source_ref(when, location):
 
 def is_talisay(row):
     return _text(row.get('city')).upper().startswith('TALISAY')
+
+
+# --- Closing a fire in the app: the log's columns G onward ------------------
+
+# Property types as the BFP log has them. The one list the close form, the
+# server's check and the export share.
+PROPERTY_TYPES = {
+    'RESIDENTIAL': ['SINGLE AND TWO FAMILY DWELLING'],
+    'NON_RESIDENTIAL': ['BUSINESS', 'MERCANTILE', 'STORAGE', 'HEALTH CARE', 'ASSEMBLY', 'EDUCATIONAL',
+                        'INDUSTRIAL', 'MISCELLANEOUS'],
+    'NON_STRUCTURAL': ['RUBBISH', 'GRASS', 'ELECTRICAL POLE'],
+    'TRANSPORT': ['AUTOMOBILE', 'MOTORCYCLE', 'TRUCK', 'BUS', 'TRICYCLE', 'JEEPNEY', 'LOCOMOTIVE'],
+}
+
+# The log uses 1st-4th alarm, TF Alpha, fire out upon arrival and
+# unresponded; the rest is the BFP's alarm ladder (to confirm with BFP).
+ALARM_LEVELS = ['FIRE OUT UPON ARRIVAL', '1ST ALARM', '2ND ALARM', '3RD ALARM', '4TH ALARM', '5TH ALARM',
+                'TF ALPHA', 'TF BRAVO', 'TF CHARLIE', 'TF DELTA', 'TF ECHO', 'GENERAL ALARM', 'UNRESPONDED']
+
+
+def _blank(value):
+    return value is None or str(value).strip() == ''
+
+
+def _whole(value):
+    """(int, ok) for a count: blank is (None, True), anything else must be a whole number 0 or more."""
+    if _blank(value):
+        return None, True
+    text = str(value).strip()
+    if not text.isdigit():
+        return None, False
+    return int(text), True
+
+
+def _pesos(value):
+    if _blank(value):
+        return None, True
+    try:
+        amount = Decimal(str(value).replace(',', '').strip())
+    except InvalidOperation:
+        return None, False
+    return (amount, True) if amount >= 0 else (None, False)
+
+
+def close_fields(data):
+    """
+    (fields, errors) for closing a fire: HistoricalRecord field values from
+    the close form, and {field: message} for what is missing or wrong.
+    """
+    fields, errors = {}, {}
+
+    alarm = _text(data.get('alarm_level')).upper()
+    if alarm not in ALARM_LEVELS:
+        errors['alarm_level'] = 'Choose the alarm level.'
+    fields['alarm_level'] = alarm
+
+    category = _text(data.get('property_category')).upper()
+    subcategory = _text(data.get('property_subcategory')).upper()
+    if subcategory not in PROPERTY_TYPES.get(category, []):
+        errors['property_subcategory'] = 'Choose the property type.'
+    fields['property_category'], fields['property_subcategory'] = category, subcategory
+
+    for key in (*CASUALTY_FIELDS, 'structures_affected'):
+        fields[key], ok = _whole(data.get(key))
+        if not ok:
+            errors[key] = 'Enter a whole number, 0 or more.'
+    fields['damage_cost'], ok = _pesos(data.get('damage_cost'))
+    if not ok:
+        errors['damage_cost'] = 'Enter an amount in pesos, 0 or more.'
+
+    known = [fields[k] for k in CASUALTY_FIELDS if fields[k] is not None]
+    fields['total_casualties'] = sum(known) if known else None
+    fields['summary'] = (data.get('summary') or '').strip()
+    return fields, errors
+
+
+def exact_location(purok_names, barangay_name):
+    """The log's 'Exact Location' for a fire closed in the app: 'PUROK X, PUROK Y, BRGY Z'."""
+    parts = [n.upper() for n in purok_names]
+    if barangay_name:
+        parts.append(f'BRGY {barangay_name.upper()}')
+    return ', '.join(parts)

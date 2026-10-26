@@ -61,6 +61,7 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
     # The same cordon without the hazard inside it, for drawing: the map
     # hatches this ring so it never looks like a hazard level of its own.
     cordon_ring = serializers.SerializerMethodField()
+    pins = serializers.SerializerMethodField()
 
     def _reach(self, obj):
         """The zone grown by its cordon, buffered once per zone per response."""
@@ -85,6 +86,30 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
     def get_cordon_ring(self, obj):
         ring = cordon_ring(obj.geometry, self._reach(obj))
         return json.loads(ring.geojson) if ring is not None else None
+
+    def get_pins(self, obj):
+        """
+        [{lat, lng, purok_name}] for a fire made from reports: one per purok
+        its reports name (a point inside each), or the report's own location
+        when it names none. [] for a zone drawn by an officer, and for any
+        flood or landslide: those keep their drawn area even when published
+        from a pinned report.
+        """
+        if (obj.hazard_type.name if obj.hazard_type else '').lower() != 'fire':
+            return []
+        pins, seen = [], set()
+        for report in obj.incidentreport_set.all():
+            puroks = list(report.puroks.all())
+            for purok in puroks:
+                if purok.id in seen:
+                    continue
+                seen.add(purok.id)
+                p = purok.boundary.point_on_surface
+                pins.append({'lat': round(p.y, 6), 'lng': round(p.x, 6), 'purok_name': purok.name})
+            if not puroks and report.location is not None:
+                pins.append({'lat': round(report.location.y, 6), 'lng': round(report.location.x, 6),
+                             'purok_name': None})
+        return pins
 
     def get_in_view(self, obj):
         within = self.context.get('within_ids')
@@ -115,6 +140,9 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
             # Safety cordon: its width, the area it reaches, and that area
             # less the hazard
             'cordon_m', 'cordon', 'cordon_ring',
+            # A fire made from reports: one pin per purok, drawn instead of
+            # the zone's shading and outline
+            'pins',
         ]
 
 

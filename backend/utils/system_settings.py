@@ -42,6 +42,19 @@ SETTINGS = {
         15, 5, 120, 'minutes', 'Unread Extreme alert reminder',
         'Barangays that have not opened an Extreme alert after this long are reminded.',
     ),
+    # A purok's level comes from how often it was hit (apps/history/purok_levels.py)
+    'history.period_years': (
+        5, 1, 20, 'years', 'History period for hazard levels',
+        'Only past events from this many years back count toward a purok\'s level.',
+    ),
+    'history.moderate_at': (
+        3, 2, 50, 'events', 'Past events for orange (Moderate)',
+        'A purok with at least this many past events in the period is Moderate.',
+    ),
+    'history.extreme_at': (
+        5, 3, 100, 'events', 'Past events for red (Extreme)',
+        'A purok with at least this many past events in the period is Extreme.',
+    ),
 }
 
 

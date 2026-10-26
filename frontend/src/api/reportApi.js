@@ -78,6 +78,16 @@ export const reportsApi = {
   review: (id, { status, review_note }) =>
     client.patch(`/api/reports/incidents/${id}/review/`, { status, review_note }).then((r) => r.data),
 
+  // DRRMO/Admin: a fire report's puroks with their fire history, the level
+  // that history sets, and live fires nearby it could join
+  decision: (id) => client.get(`/api/reports/incidents/${id}/decide/`).then((r) => r.data),
+
+  // DRRMO/Admin: decide a fire report. body is
+  //   { action: 'approve', severity?, note? }   a new fire, live on the map
+  //   { action: 'attach', zone, note? }          joins a fire nearby
+  //   { action: 'reject', note }
+  decide: (id, body) => client.post(`/api/reports/incidents/${id}/decide/`, body).then((r) => r.data),
+
 
 
   // DRRMO/Admin: hazard summary & response status reports

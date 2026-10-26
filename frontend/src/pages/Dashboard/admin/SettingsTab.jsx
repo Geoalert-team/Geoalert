@@ -7,6 +7,7 @@ const GROUPS = [
   { prefix: 'auth.', title: 'Sign-in and lockout' },
   { prefix: 'session.', title: 'Sessions' },
   { prefix: 'alerts.', title: 'Extreme alerts' },
+  { prefix: 'history.', title: 'Hazard levels from history' },
 ];
 
 /**
