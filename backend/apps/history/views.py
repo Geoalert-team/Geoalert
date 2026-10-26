@@ -43,15 +43,18 @@ class HistoricalRecordListView(APIView):
         purok = (request.query_params.get('purok') or '').strip()
         if purok and not barangay:
             return Response({'error': 'purok needs a barangay.'}, status=400)
-        if purok and purok != 'none' and not purok.isdigit():
-            return Response({'error': 'purok must be an id or "none".'}, status=400)
+        if purok and purok != 'none':
+            try:
+                purok = int(purok)
+            except ValueError:
+                return Response({'error': 'purok must be an id or "none".'}, status=400)
         if barangay:
             from apps.history.area import barangay_records
             records = records.filter(id__in=barangay_records(barangay))
         if purok == 'none':
             records = records.filter(barangay_id=barangay, puroks__isnull=True)
         elif purok:
-            records = records.filter(puroks__id=int(purok))
+            records = records.filter(puroks__id=purok)
 
         severity = request.query_params.get('severity')
         if severity:

@@ -41,6 +41,8 @@ test('the barangay view lists its puroks, the unplaced and five events', async (
   expect(historyApi.area).toHaveBeenCalledWith({ barangay: 19, types: 'Fire' });
   expect(el.textContent).toContain('21 fires in the last 5 years');
   expect(button(el, 'Purok Sambag').textContent).toContain('2');
+  // The level in words, not only its colour
+  expect(button(el, 'Purok Sambag').textContent).toContain('Low');
   expect(button(el, 'Purok not recorded').textContent).toContain('16');
   expect(events(el)).toHaveLength(5);
   await act(async () => { button(el, 'Show more').click(); });
@@ -61,7 +63,8 @@ test('the purok view has a way back', async () => {
   historyApi.area.mockResolvedValue(SAMBAG);
   const { el, props } = await render({ purokId: 7 });
   expect(historyApi.area).toHaveBeenCalledWith({ barangay: 19, purok: 7, types: 'Fire' });
-  expect(el.textContent).toContain('Purok Sambag');
+  expect(el.querySelector('.pm-area-title').textContent).toContain('Purok Sambag');
+  expect(el.querySelector('.pm-area-title').textContent).toContain('Low');
   expect(el.textContent).toContain('2 fires in the last 5 years');
   expect(events(el)).toHaveLength(2);
   await act(async () => { button(el, '‹ San Roque').click(); });

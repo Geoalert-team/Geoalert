@@ -26,7 +26,11 @@ test('only puroks with a level are filled', () => {
 test('the hover line and the copy', () => {
   const levels = byPurok(RESULTS);
   expect(historyLine(levels.get('7'), ['Fire', 'Flood'], 5)).toBe('2 fires (Low), 4 floods (Moderate)');
-  expect(historyLine(levels.get('7'), ['Landslide'], 5)).toBe('No past hazards in the last 5 years');
+  // Only the ticked types: a purok with fires, seen with only Landslide ticked,
+  // has no landslides, not "no past hazards"; with nothing ticked it says nothing
+  expect(historyLine(levels.get('7'), ['Landslide'], 5)).toBe('No landslides in the last 5 years');
+  expect(historyLine(levels.get('8'), ['Fire', 'Flood'], 5)).toBe('No past hazards in the last 5 years');
+  expect(historyLine(levels.get('7'), [], 5)).toBe('');
   expect(thresholdText(T)).toBe('1–2 · 3–4 · 5+ past events in the last 5 years');
   expect(thresholdText({ years: 3, moderate: 2, extreme: 3 })).toBe('1 · 2 · 3+ past events in the last 3 years');
   expect(typeNoun(['Fire'], 1)).toBe('fire');

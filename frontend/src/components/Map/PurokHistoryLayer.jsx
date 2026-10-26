@@ -22,7 +22,8 @@ export default function PurokHistoryLayer({ geo, levels, types, tooltipFor, skip
     const features = filled.features.filter((f) => String(f.properties?.barangay) !== String(skipBarangay));
     return features.length ? { type: 'FeatureCollection', features } : null;
   }, [filled, skipBarangay]);
-  usePurokHover(hoverable, tooltipFor);
+  // Its tooltip names the barangay too, so the barangay's own steps aside (PublicMap.css)
+  usePurokHover(hoverable, tooltipFor, 'pm-on-past-purok');
 
   if (!filled) return null;
   // react-leaflet's GeoJSON only reads its data once: remount when the fills change

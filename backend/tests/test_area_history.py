@@ -152,3 +152,5 @@ class HistoryListPurokTests(RecordMixin, TestCase):
     def test_purok_filter_needs_a_barangay_and_an_id(self):
         self.assertEqual(self.listed(purok='none').data, {'error': 'purok needs a barangay.'})
         self.assertEqual(self.listed(barangay=self.home.id, purok='abc').status_code, 400)
+        # A digit int() can't read (a superscript two) is a 400 too, never a 500
+        self.assertEqual(self.listed(barangay=self.home.id, purok='²').status_code, 400)

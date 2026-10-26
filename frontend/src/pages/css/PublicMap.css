@@ -541,6 +541,10 @@
 .pm-area-puroks button > span:nth-child(2) { flex: 1; min-width: 0; }
 .pm-area-puroks small, .pm-area-title small { display: block; color: var(--pm-soft); font-size: .8rem; }
 .pm-area-count { font-weight: 800; }
+.pm-area-level { color: var(--pm-soft); font-size: .8rem; font-weight: 700; }
+/* While the purok fills name a purok, its tooltip carries the barangay's
+   name too: the barangay's own tooltip would stack on top of it */
+.pm-on-past-purok .pm-brgy-tip { display: none; }
 .pm-area-back {
   padding: 4px 0;
   border: 0;

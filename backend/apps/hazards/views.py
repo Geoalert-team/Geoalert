@@ -1,11 +1,12 @@
 import json
+import logging
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.gis.geos import Polygon
-from django.db import connection, transaction
+from django.db import DatabaseError, connection, transaction
 from django.db.models import Count, Q
 from django.db.models.expressions import RawSQL
 from django.utils import timezone
@@ -47,6 +48,8 @@ from apps.hazards.alerts import (
     type_name,
     where_text,
 )
+
+logger = logging.getLogger(__name__)
 
 # An active zone of the same hazard type already covering this share of a
 # new drawing is most likely the same event: the officer is asked to update
@@ -561,9 +564,15 @@ class HazardZoneDetailView(APIView):
                 is_sample        = zone.is_sample,
             )
             # It counts once in every purok its area overlaps, which is what
-            # colours those puroks on the map (fires are closed elsewhere)
+            # colours those puroks on the map (fires are closed elsewhere).
+            # A shape PostGIS can't compare costs the links, never the
+            # all-clear below: a retry couldn't send it, the zone is resolved.
             if zone.geometry:
-                record.puroks.set(overlapping_puroks(zone.geometry))
+                try:
+                    with transaction.atomic():
+                        record.puroks.set(overlapping_puroks(zone.geometry))
+                except DatabaseError:
+                    logger.warning('Resolved zone %s: its puroks could not be worked out', zone.id, exc_info=True)
 
         if is_resolving:
             told, where = all_clear(zone, request.user, request.data.get('summary') or '')

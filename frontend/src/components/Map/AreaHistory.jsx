@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { historyApi } from '../../api/historyApi';
 import { severityInfo } from './hazardInfo';
-import { areaTitle } from './purokLevels';
+import { areaTitle, levelLabel } from './purokLevels';
 
 const PAGE = 5; // events shown per "Show more"
 
@@ -11,7 +11,18 @@ function formatDate(iso) {
 }
 
 function Swatch({ level }) {
-  return <span className="pm-area-swatch" style={{ background: level ? severityInfo(level).color : '#c3cad6' }} />;
+  return (
+    <span
+      className="pm-area-swatch"
+      aria-hidden="true"
+      style={{ background: level ? severityInfo(level).color : '#c3cad6' }}
+    />
+  );
+}
+
+// The level in words beside its colour, so it reads without the colour
+function Level({ level }) {
+  return level ? <span className="pm-area-level">{levelLabel(level)}</span> : null;
 }
 
 /**
@@ -69,6 +80,7 @@ export default function AreaHistory({ barangay, purokId, types, onPickPurok }) {
             <Swatch level={area.level} />
             <strong>{area.purok?.name}</strong>
             {area.purok?.parent && <small>{area.purok.parent}</small>}
+            <Level level={area.level} />
           </p>
         </>
       )}
@@ -85,6 +97,7 @@ export default function AreaHistory({ barangay, purokId, types, onPickPurok }) {
                   <strong>{p.name}</strong>
                   {p.parent && <small>{p.parent}</small>}
                 </span>
+                <Level level={p.level} />
                 <span className="pm-area-count">{p.count}</span>
               </button>
             </li>

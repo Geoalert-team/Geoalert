@@ -60,12 +60,18 @@ export function typeNoun(types, n) {
   return n === 1 ? one : `${one}s`;
 }
 
-// What hovering a purok adds: "2 fires (Low), 4 floods (Moderate)"
+// "Low" / "Moderate" / "Extreme", or '' for no level
+export const levelLabel = (code) => LABEL[code] || '';
+
+// What hovering a purok adds: "2 fires (Low), 4 floods (Moderate)". Only the
+// ticked types: with only floods ticked, a purok with fires has "No floods",
+// not "No past hazards"; with nothing ticked there is nothing to add.
 export function historyLine(entry, types, years) {
+  if (!types.length) return '';
   const parts = types
     .filter((t) => entry?.[t]?.count)
     .map((t) => `${entry[t].count} ${typeNoun([t], entry[t].count)} (${LABEL[entry[t].level]})`);
-  return parts.length ? parts.join(', ') : `No past hazards ${period(years)}`;
+  return parts.length ? parts.join(', ') : `No ${typeNoun(types, 2)} ${period(years)}`;
 }
 
 // "1–2 · 3–4 · 5+ past events in the last 5 years"

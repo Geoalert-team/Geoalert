@@ -353,32 +353,41 @@ export default function PublicMap() {
       });
   }, []);
 
-  // A map left open (a phone on the barangay hall desk) used to show the
-  // zones from when it was opened, forever. Refresh while the tab is
-  // visible; the server answers 304 when nothing changed, so this is cheap.
-  useEffect(() => {
-    const id = setInterval(() => {
-      if (document.visibilityState === 'visible') loadHazards(true);
-    }, MAP_REFRESH_MS);
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') loadHazards(true);
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => {
-      clearInterval(id);
-      document.removeEventListener('visibilitychange', onVisible);
-    };
-  }, [loadHazards]);
-
   // Each purok's past hazards, for the Past hazards colours. Reloaded after
-  // a resolve, since that writes a new historical record; a failed reload
-  // keeps the colours already shown.
+  // a resolve, since that writes a new historical record, and with the
+  // hazards below; a failed reload keeps the colours already shown. An
+  // unchanged answer keeps the same state, so an open purok tooltip stays.
+  const purokLevelsTag = useRef(null);
   const loadPurokLevels = useCallback(() => {
     return historyApi
       .purokLevels()
-      .then((data) => setPurokLevels({ thresholds: data.thresholds, levels: byPurok(data.results) }))
+      .then((data) => {
+        const tag = JSON.stringify(data);
+        if (tag === purokLevelsTag.current) return;
+        purokLevelsTag.current = tag;
+        setPurokLevels({ thresholds: data.thresholds, levels: byPurok(data.results) });
+      })
       .catch(() => setPurokLevels((prev) => (prev && !prev.error ? prev : { error: true })));
   }, []);
+
+  // A map left open (a phone on the barangay hall desk) used to show the
+  // zones from when it was opened, forever. Refresh while the tab is
+  // visible; the server answers 304 when nothing changed, so this is cheap.
+  // The purok colours come along: a fire closed from the DRRMO dashboard
+  // recolours its puroks here without a reload.
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState !== 'visible') return;
+      loadHazards(true);
+      loadPurokLevels();
+    };
+    const id = setInterval(refresh, MAP_REFRESH_MS);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [loadHazards, loadPurokLevels]);
 
   // Load hazards, barangay and purok outlines once
   useEffect(() => {
@@ -867,12 +876,12 @@ export default function PublicMap() {
   const thresholds = purokLevels?.thresholds || null;
   // What hovering a purok says: its name, and in Past hazards its counts.
   // Stable between renders, since the hover listeners are rebuilt when it changes.
-  const purokTip = useCallback(
-    (f) => (view === 'past' && levels
-      ? `${purokTooltip(f)}<br>${historyLine(levels.get(String(f.id ?? f.properties?.id)), visibleTypeList, thresholds.years)}`
-      : purokTooltip(f)),
-    [view, levels, thresholds, visibleTypeList],
-  );
+  const purokTip = useCallback((f) => {
+    const line = view === 'past' && levels
+      ? historyLine(levels.get(String(f.id ?? f.properties?.id)), visibleTypeList, thresholds.years)
+      : '';
+    return line ? `${purokTooltip(f)}<br>${line}` : purokTooltip(f);
+  }, [view, levels, thresholds, visibleTypeList]);
   const layerName =
     activeTypes.size === HAZARD_TYPES.length ? 'all hazards'
       : activeTypes.size === 0 ? 'no layers shown'
