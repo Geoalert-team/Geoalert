@@ -90,7 +90,7 @@ export default function ResetPassword() {
       <main className="lg-card">
         <div className="lg-brand">
           <span className="lg-logo"><img src={logo} alt="" /></span>
-          <span className="lg-brand-name">GeoAlert</span>
+          <span className="lg-brand-name">GeoAlert Talisay</span>
         </div>
 
         <div className="lg-head">

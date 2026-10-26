@@ -4,7 +4,7 @@ import { hazardColor, hazardIconPath } from '../../components/Map/hazardInfo';
 // Small pieces for showing incident reports. Styles live in css/DRRMODashboard.css.
 
 export function HazardIcon({ type, size = 'md' }) {
-  const color = hazardColor(type) || '#43516a';
+  const color = hazardColor(type) || '#3f4f3d';
   return (
     <span className={`drm-hazard-icon drm-hazard-${size}`} style={{ color, background: `${color}1a` }} aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round">

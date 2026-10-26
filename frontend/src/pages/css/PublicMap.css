@@ -1,18 +1,19 @@
 /* =========================================================
    Public map page (pm-)
-   Same theme as the homepage: navy #1c2e4a, white, rounded cards
+   Same theme as the homepage: green #46923c, white, rounded cards
    ========================================================= */
 
 .pm {
-  --pm-navy: #1c2e4a;
-  --pm-navy-hover: #2a4268;
+  --pm-brand: #46923c;
+  --pm-ink: #2f6b28;
+  --pm-brand-hover: #3a7d31;
   --pm-white: #ffffff;
-  --pm-mist: #f2f5f9;
-  --pm-line: #dde3ec;
-  --pm-heading: #1c2e4a;
-  --pm-body: #43516a;
-  --pm-soft: #6a778d;
-  --pm-shadow: 0 8px 24px rgba(28, 46, 74, .14), 0 2px 6px rgba(28, 46, 74, .08);
+  --pm-mist: #f1f8f0;
+  --pm-line: #d9e7d6;
+  --pm-heading: #1f3d1c;
+  --pm-body: #3f4f3d;
+  --pm-soft: #66785f;
+  --pm-shadow: 0 8px 24px rgba(31, 61, 28, .14), 0 2px 6px rgba(31, 61, 28, .08);
   --pm-font-head: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --pm-font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
 
@@ -39,7 +40,7 @@
 .pm a:focus-visible,
 .pm button:focus-visible,
 .pm input:focus-visible {
-  outline: 3px solid #7fa7e6;
+  outline: 3px solid #46923c;
   outline-offset: 2px;
 }
 
@@ -162,14 +163,14 @@
   border: 1px solid var(--pm-line);
   border-radius: 999px;
   background: var(--pm-white);
-  box-shadow: 0 2px 6px rgba(28, 46, 74, .1);
+  box-shadow: 0 2px 6px rgba(31, 61, 28, .1);
   color: var(--pm-heading);
   font-weight: 700;
   font-size: .92rem;
   transition: background-color .2s ease, color .2s ease;
 }
 .pm-chip:hover { background: var(--pm-mist); }
-.pm-chip.is-active { background: var(--pm-navy); border-color: var(--pm-navy); color: var(--pm-white); }
+.pm-chip.is-active { background: var(--pm-brand); border-color: var(--pm-brand); color: var(--pm-white); }
 
 /* History / Active hazards switch for the shading */
 .pm-mode {
@@ -179,7 +180,7 @@
   border: 1px solid var(--pm-line);
   border-radius: 999px;
   background: var(--pm-white);
-  box-shadow: 0 2px 6px rgba(28, 46, 74, .1);
+  box-shadow: 0 2px 6px rgba(31, 61, 28, .1);
 }
 .pm-mode button {
   min-height: 32px;
@@ -194,8 +195,8 @@
   cursor: pointer;
 }
 .pm-mode button:hover { background: var(--pm-mist); }
-.pm-mode button.is-active { background: var(--pm-navy); color: var(--pm-white); }
-.pm-mode button:focus-visible { outline: 3px solid #7aa7ff; outline-offset: 2px; }
+.pm-mode button.is-active { background: var(--pm-brand); color: var(--pm-white); }
+.pm-mode button:focus-visible { outline: 3px solid #46923c; outline-offset: 2px; }
 
 /* ---------- Status pills (loading, sample data, errors) ---------- */
 .pm-status {
@@ -253,7 +254,7 @@
   border: 3px solid var(--pm-white, #fff);
   border-radius: 50%;
   background: var(--pin);
-  box-shadow: 0 4px 12px rgba(28, 46, 74, .35);
+  box-shadow: 0 4px 12px rgba(31, 61, 28, .35);
   cursor: pointer;
   transition: transform .2s ease;
 }
@@ -269,7 +270,7 @@
 .pm-pin:hover { transform: scale(1.1); }
 .pm-pin.is-selected {
   transform: scale(1.25);
-  box-shadow: 0 0 0 4px rgba(28, 46, 74, .35), 0 6px 16px rgba(28, 46, 74, .4);
+  box-shadow: 0 0 0 4px rgba(31, 61, 28, .35), 0 6px 16px rgba(31, 61, 28, .4);
 }
 
 /* Soft pulse on high-risk pins so they stand out */
@@ -397,7 +398,7 @@
   transition: background-color .2s ease, color .2s ease;
 }
 .pm-tab:hover { color: var(--pm-heading); }
-.pm-tab.is-active { background: var(--pm-white); color: var(--pm-heading); box-shadow: 0 1px 4px rgba(28, 46, 74, .15); }
+.pm-tab.is-active { background: var(--pm-white); color: var(--pm-heading); box-shadow: 0 1px 4px rgba(31, 61, 28, .15); }
 
 .pm-tabpanel { padding-top: 22px; }
 .pm-tabpanel h3 { font-size: 1.15rem; font-weight: 800; margin-bottom: 8px; }
@@ -437,7 +438,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--pm-navy);
+  background: var(--pm-brand);
   color: var(--pm-white);
   font-weight: 700;
   font-size: .85rem;
@@ -458,10 +459,10 @@
   text-decoration: none;
   transition: background-color .2s ease, color .2s ease;
 }
-.pm-btn-primary { background: var(--pm-navy); color: var(--pm-white); }
-.pm-btn-primary:hover { background: var(--pm-navy-hover); }
-.pm-btn-outline { border-color: var(--pm-navy); color: var(--pm-navy); }
-.pm-btn-outline:hover { background: var(--pm-navy); color: var(--pm-white); }
+.pm-btn-primary { background: var(--pm-brand); color: var(--pm-white); }
+.pm-btn-primary:hover { background: var(--pm-brand-hover); }
+.pm-btn-outline { border-color: var(--pm-brand); color: var(--pm-ink); }
+.pm-btn-outline:hover { background: var(--pm-brand); color: var(--pm-white); }
 
 /* History */
 .pm-timeline li { display: flex; gap: 12px; align-items: flex-start; }
@@ -486,9 +487,9 @@
 }
 .pm-history-chip span { margin-left: 2px; color: var(--pm-soft); font-weight: 600; }
 .pm-history-chip:hover { background: var(--pm-mist); }
-.pm-history-chip.is-active { border-color: var(--pm-navy); background: var(--pm-navy); color: #fff; }
+.pm-history-chip.is-active { border-color: var(--pm-brand); background: var(--pm-brand); color: #fff; }
 .pm-history-chip.is-active span { color: rgba(255, 255, 255, .75); }
-.pm-history-chip:focus-visible, .pm-history-more:focus-visible { outline: 3px solid #7aa7ff; outline-offset: 2px; }
+.pm-history-chip:focus-visible, .pm-history-more:focus-visible { outline: 3px solid #46923c; outline-offset: 2px; }
 .pm-history-more {
   width: 100%;
   margin-top: 14px;
@@ -501,7 +502,7 @@
   font-weight: 700;
   cursor: pointer;
 }
-.pm-history-more:hover { background: #e8edf5; }
+.pm-history-more:hover { background: #cce7c9; }
 .pm-history-more:disabled { opacity: .6; cursor: wait; }
 .pm-history-summary { margin: 6px 0 0; color: var(--pm-body); font-size: .92rem; }
 .pm-history-list { margin-top: 12px; }
@@ -564,12 +565,12 @@
 /* Officer view on a hazard: who has opened its alert */
 .hp-receipts {
   margin: 0 0 12px; padding: 8px 10px;
-  border: 1px solid var(--db-border, #d8dee8); border-radius: 10px;
+  border: 1px solid var(--db-border, #d1e2cf); border-radius: 10px;
   font-size: .84rem;
 }
 .hp-receipts summary { cursor: pointer; }
 .hp-receipts ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
-.hp-receipts li small { display: block; color: #5b6575; }
+.hp-receipts li small { display: block; color: #556952; }
 .hp-receipts-name { font-weight: 600; }
 .hp-receipts-ok { color: #1e7b45; }
 .hp-receipts-wait { color: #a15c00; }

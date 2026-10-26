@@ -36,12 +36,12 @@ installPrintResize(ChartJS);
 
 /* ---------- Ink: text and furniture, never series identity ---------- */
 export const INK = {
-  heading: '#1c2e4a', // --db-heading
-  body:    '#43516a', // --db-body
-  soft:    '#6a778d', // --db-soft
-  line:    '#dde3ec', // --db-line
+  heading: '#1f3d1c', // --db-heading
+  body:    '#3f4f3d', // --db-body
+  soft:    '#66785f', // --db-soft
+  line:    '#d9e7d6', // --db-line
   surface: '#ffffff', // --db-white
-  navy:    '#1c2e4a', // --db-navy
+  green:    '#46923c', // --db-brand
 };
 
 /* ---------- Categorical: which hazard, not how bad ----------
@@ -57,7 +57,7 @@ export const HAZARD_SERIES = {
   Flood:     '#1e88e5',
   Fire:      '#f4511e',
   Landslide: '#8a5a00',
-  Other:     '#43516a',
+  Other:     '#3f4f3d',
 };
 
 export function hazardSeriesColor(name) {
@@ -94,7 +94,7 @@ const FONT = {
 export const TOOLTIP = {
   backgroundColor: INK.heading,
   titleColor: '#ffffff',
-  bodyColor: '#e8edf5',
+  bodyColor: '#cce7c9',
   padding: 10,
   cornerRadius: 8,
   displayColors: true,

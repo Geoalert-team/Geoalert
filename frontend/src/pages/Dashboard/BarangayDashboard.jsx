@@ -375,7 +375,7 @@ export default function BarangayDashboard() {
 
         <div className="adm-metrics">
           <div className="adm-metric">
-            <span className="adm-metric-icon adm-metric-navy"><Icon name="list" size={20} /></span>
+            <span className="adm-metric-icon adm-metric-brand"><Icon name="list" size={20} /></span>
             <div className="adm-metric-text">
               <span className="adm-metric-label">Reports submitted</span>
               <span className="adm-metric-value">{loading ? '—' : counts.All}</span>

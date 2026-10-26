@@ -80,7 +80,7 @@ export default function BarangayPanel({
           <div className="pm-panel-head">
             <div
               className="pm-panel-icon"
-              style={{ background: highest?.tint || '#eef1f5', color: highest?.color || '#43516a' }}
+              style={{ background: highest?.tint || '#eef4ed', color: highest?.color || '#3f4f3d' }}
               aria-hidden="true"
             >
               <svg viewBox="0 0 24 24"><path d={PIN_PATH} /></svg>
@@ -103,8 +103,8 @@ export default function BarangayPanel({
               Highest level: {highest.label.toLowerCase()}
             </span>
           ) : (
-            <span className="pm-badge" style={{ background: '#eef1f5', color: '#43516a' }}>
-              <span className="pm-badge-dot" style={{ background: '#6a778d' }} />
+            <span className="pm-badge" style={{ background: '#eef4ed', color: '#3f4f3d' }}>
+              <span className="pm-badge-dot" style={{ background: '#66785f' }} />
               No active hazards
             </span>
           )}

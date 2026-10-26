@@ -3,14 +3,14 @@
    Shared styles (ph-) come from PublicHome.css
    ========================================================= */
 
-/* ---------- Hero: navy band with an emergency callout ---------- */
+/* ---------- Hero: green band with an emergency callout ---------- */
 .ct-hero {
   position: relative;
   overflow: hidden;
   padding: 64px 0 72px;
-  background: var(--ph-navy);
+  background: var(--ph-brand);
   border-top: 1px solid rgba(255, 255, 255, .08);
-  color: #d6deea;
+  color: #e3f1e1;
 }
 
 /* Blurred photo behind the hero */
@@ -22,12 +22,12 @@
   filter: blur(4px);
 }
 
-/* Navy tint on top of the photo so the white text stays easy to read */
+/* Green tint on top of the photo so the white text stays easy to read */
 .ct-hero::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(28, 46, 74, .72);
+  background: rgba(31, 61, 28, .72);
 }
 
 /* Keep the text and buttons above the photo and tint */
@@ -38,9 +38,7 @@
 
 .ct-hero-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 48px;
-  align-items: center;
+  grid-template-columns: 1fr;
 }
 
 .ct-hero-place {
@@ -55,7 +53,7 @@
 }
 
 .ph .ct-hero-title {
-  max-width: 14ch;
+  max-width: 20ch;
   color: var(--ph-white);
   font-size: clamp(2.2rem, 4.6vw, 3.4rem);
   font-weight: 800;
@@ -67,34 +65,6 @@
   margin-top: 18px;
   font-size: 1.15rem;
 }
-
-/* Emergency callout: the most important thing on the page */
-.ct-urgent {
-  padding: 28px;
-  border-radius: var(--ph-radius-lg);
-  background: var(--ph-high);
-  color: var(--ph-white);
-}
-.ct-urgent-title {
-  font-family: var(--ph-font-head);
-  font-weight: 800;
-  font-size: 1.5rem;
-  line-height: 1.2;
-}
-.ct-urgent-text { margin-top: 6px; color: #fde4e4; }
-
-.ct-urgent-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 20px;
-}
-.ct-urgent-actions .ph-btn { flex-wrap: wrap; column-gap: .35em; }
-.ct-nowrap { white-space: nowrap; }
-.ct-btn-white { background: var(--ph-white); color: #a12f2f; }
-.ct-btn-white:hover { background: #fde4e4; }
-.ct-btn-ghost { border-color: rgba(255, 255, 255, .8); color: var(--ph-white); }
-.ct-btn-ghost:hover { background: rgba(255, 255, 255, .15); }
 
 /* ---------- Get in touch ---------- */
 .ct-contact-grid {
@@ -130,7 +100,7 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.ct-icon-email { background: #e6effb; color: #2f6fd1; }
+.ct-icon-email { background: #e7f2e6; color: #46923c; }
 .ct-icon-social { background: #efeafb; color: #6546c3; }
 
 .ct-contact-note { margin-top: 4px; color: var(--ph-soft); }
@@ -149,12 +119,12 @@
 }
 .ct-contact-list dd { margin: 2px 0 0; }
 .ct-contact-list a {
-  color: var(--ph-navy);
+  color: var(--ph-ink);
   font-weight: 700;
   word-break: break-word;
   text-underline-offset: 3px;
 }
-.ct-contact-list a:hover { color: var(--ph-navy-hover); }
+.ct-contact-list a:hover { color: var(--ph-brand-hover); }
 
 /* ---------- Office location ---------- */
 .ct-office {
@@ -194,7 +164,6 @@
 
 /* ---------- Responsive ---------- */
 @media (max-width: 960px) {
-  .ct-hero-grid { grid-template-columns: 1fr; gap: 32px; }
   .ph .ct-hero-title { max-width: none; }
   .ct-office { grid-template-columns: 1fr; }
 }
@@ -202,8 +171,6 @@
 @media (max-width: 640px) {
   .ct-hero { padding: 44px 0 52px; }
   .ct-contact-grid { grid-template-columns: 1fr; }
-  .ct-urgent { padding: 22px; }
-  .ct-urgent-actions .ph-btn { width: 100%; }
   .ct-office-map { min-height: 260px; }
   .ct-office-info { padding: 24px; }
 }

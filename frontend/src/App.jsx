@@ -30,7 +30,11 @@ function Gate({ children, roles }) {
 }
 
 function AppRoutes() {
+  const { pathname } = useLocation();
   return (
+    // Keyed on the path alone so each new page fades in, while a tab change
+    // that only touches the query string leaves the page where it is.
+    <div key={pathname} className="page-transition">
     <Routes>
       {/* Public, no login required */}
       <Route path="/" element={<PublicHome />} />
@@ -76,6 +80,7 @@ function AppRoutes() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </div>
   );
 }
 

@@ -1,28 +1,28 @@
 /* =========================================================
    Admin dashboard. Builds on the .db tokens in Dashboard.css
-   (navy #1c2e4a, mist background, Bricolage + Atkinson).
+   (green #46923c, mist background, Bricolage + Atkinson).
    Prefix: adm-
    ========================================================= */
 
 .adm {
   --adm-surface: #ffffff;
-  --adm-line: #e3e8ef;
-  --adm-line-strong: #cfd7e3;
-  --adm-row-hover: #f7f9fc;
-  --adm-focus: 0 0 0 3px rgba(42, 66, 104, .18);
-  --adm-shadow-sm: 0 1px 2px rgba(28, 46, 74, .05);
-  --adm-shadow-md: 0 1px 3px rgba(28, 46, 74, .06), 0 8px 24px -12px rgba(28, 46, 74, .18);
+  --adm-line: #e1ece0;
+  --adm-line-strong: #c3d8bf;
+  --adm-row-hover: #f6faf5;
+  --adm-focus: 0 0 0 3px rgba(43, 72, 39, .18);
+  --adm-shadow-sm: 0 1px 2px rgba(31, 61, 28, .05);
+  --adm-shadow-md: 0 1px 3px rgba(31, 61, 28, .06), 0 8px 24px -12px rgba(31, 61, 28, .18);
 
   /* Role tones */
-  --tone-admin: #1c2e4a;  --tone-admin-tint: #e8edf5;
+  --tone-admin: #2f6b28;  --tone-admin-tint: #cce7c9;
   --tone-drrmo: #b4520b;  --tone-drrmo-tint: #fdf0e3;
   --tone-brgy:  #0f766e;  --tone-brgy-tint:  #e2f4f1;
-  --tone-none:  #6a778d;  --tone-none-tint:  #eef1f5;
+  --tone-none:  #66785f;  --tone-none-tint:  #eef4ed;
 
   --good: #16693a; --good-tint: #e6f5ec;
   --warn: #8a5a00; --warn-tint: #fdf3dc;
   --bad:  #b42318; --bad-tint:  #fdecea;
-  --info: #1d4f91; --info-tint: #e7effa;
+  --info: #2f6b28; --info-tint: #e3f1e1;
 }
 
 .adm-wrap { max-width: 1200px; margin: 0 auto; padding: 36px 24px 72px; }
@@ -62,7 +62,7 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
 .adm-status-panel {
   position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; width: min(440px, 88vw);
   padding: 16px; border: 1px solid var(--adm-line); border-radius: var(--db-radius);
-  background: var(--adm-surface); box-shadow: 0 16px 40px rgba(16, 32, 56, .16);
+  background: var(--adm-surface); box-shadow: 0 16px 40px rgba(21, 36, 19, .16);
   text-align: left;
 }
 .adm-status-head { font-size: .8rem; font-weight: 800; color: var(--db-heading); margin: 0 0 10px; }
@@ -88,7 +88,7 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
 }
 .adm-tab:hover { color: var(--db-heading); }
 .adm-tab.is-active { color: var(--db-heading); }
-.adm-tab.is-active::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background: var(--db-navy); }
+.adm-tab.is-active::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background: var(--db-brand); }
 .adm-tab:focus-visible { outline: none; box-shadow: var(--adm-focus); border-radius: 8px; }
 .adm-tab-count { min-width: 22px; padding: 1px 7px; border-radius: var(--db-pill); background: var(--tone-admin-tint); color: var(--db-heading); font-size: .75rem; text-align: center; }
 
@@ -102,12 +102,12 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
 .adm-btn:focus-visible { outline: none; box-shadow: var(--adm-focus); }
 .adm-btn:disabled { opacity: .55; cursor: not-allowed; }
 .adm-btn-sm { height: 34px; padding: 0 12px; font-size: .84rem; border-radius: 9px; }
-.adm-btn-primary { background: var(--db-navy); color: #fff; box-shadow: var(--adm-shadow-sm); }
-.adm-btn-primary:hover:not(:disabled) { background: var(--db-navy-hover); }
+.adm-btn-primary { background: var(--db-brand); color: #fff; box-shadow: var(--adm-shadow-sm); }
+.adm-btn-primary:hover:not(:disabled) { background: var(--db-brand-hover); }
 .adm-btn-ghost { background: var(--adm-surface); color: var(--db-heading); border-color: var(--adm-line-strong); }
 .adm-btn-ghost:hover:not(:disabled) { background: var(--db-mist); }
-.adm-btn-outline { background: transparent; color: var(--db-navy); border-color: var(--db-navy); }
-.adm-btn-outline:hover:not(:disabled) { background: var(--db-navy); color: #fff; }
+.adm-btn-outline { background: transparent; color: var(--db-ink); border-color: var(--db-brand); }
+.adm-btn-outline:hover:not(:disabled) { background: var(--db-brand); color: #fff; }
 .adm-btn-danger { background: var(--bad); color: #fff; }
 .adm-btn-danger:hover:not(:disabled) { background: #912018; }
 
@@ -149,7 +149,7 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
   border: 1px solid var(--adm-line); border-radius: var(--db-radius); background: var(--adm-surface); box-shadow: var(--adm-shadow-sm);
 }
 .adm-metric-icon { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; }
-.adm-metric-navy  { background: var(--tone-admin-tint); color: var(--tone-admin); }
+.adm-metric-brand  { background: var(--tone-admin-tint); color: var(--tone-admin); }
 .adm-metric-green { background: var(--good-tint); color: var(--good); }
 .adm-metric-amber { background: var(--warn-tint); color: #b46f00; }
 .adm-metric-blue  { background: var(--info-tint); color: var(--info); }
@@ -220,8 +220,8 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
   background: var(--adm-surface); color: var(--db-heading); font-family: var(--db-font-body); font-size: .92rem;
   transition: border-color .15s ease, box-shadow .15s ease;
 }
-.adm input::placeholder { color: #9aa5b6; }
-.adm input:focus, .adm select:focus { outline: none; border-color: var(--db-navy-hover); box-shadow: var(--adm-focus); }
+.adm input::placeholder { color: #8fab8b; }
+.adm input:focus, .adm select:focus { outline: none; border-color: var(--db-brand-hover); box-shadow: var(--adm-focus); }
 .adm input:disabled, .adm select:disabled { background: var(--db-mist); color: var(--db-soft); }
 .adm-select { width: auto !important; min-width: 150px; cursor: pointer; }
 
@@ -265,27 +265,27 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
 .adm-status.is-active { color: var(--good); }
 .adm-status.is-active .adm-status-dot { background: #1f9d55; }
 .adm-status.is-inactive { color: var(--db-soft); }
-.adm-status.is-inactive .adm-status-dot { background: #b7c0cd; }
+.adm-status.is-inactive .adm-status-dot { background: #afc5ac; }
 
 .adm-row-actions { display: flex; gap: 2px; justify-content: flex-end; }
 
-.adm-skeleton { display: block; height: 12px; width: 70%; border-radius: 6px; background: linear-gradient(90deg, #eef1f5 25%, #f6f8fb 50%, #eef1f5 75%); background-size: 200% 100%; animation: adm-shimmer 1.2s infinite; }
+.adm-skeleton { display: block; height: 12px; width: 70%; border-radius: 6px; background: linear-gradient(90deg, #eef4ed 25%, #f4f9f4 50%, #eef4ed 75%); background-size: 200% 100%; animation: adm-shimmer 1.2s infinite; }
 @keyframes adm-shimmer { to { background-position: -200% 0; } }
 
 .adm-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 16px; color: var(--db-soft); text-align: center; }
-.adm-empty .adm-icon { color: #b7c0cd; }
+.adm-empty .adm-icon { color: #afc5ac; }
 
 .adm-pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--adm-line); font-size: .86rem; color: var(--db-soft); }
 
 /* ---------- Modal ---------- */
 .adm-backdrop {
   position: fixed; inset: 0; z-index: 1100; display: flex; align-items: flex-start; justify-content: center;
-  padding: 5vh 16px; overflow-y: auto; background: rgba(20, 32, 52, .5); backdrop-filter: blur(2px);
+  padding: 5vh 16px; overflow-y: auto; background: rgba(21, 36, 19, .5); backdrop-filter: blur(2px);
   animation: adm-fade .15s ease;
 }
 .adm-modal {
   width: 100%; display: flex; flex-direction: column; max-height: 90vh;
-  border-radius: 18px; background: var(--adm-surface); box-shadow: 0 24px 60px -12px rgba(15, 23, 42, .35);
+  border-radius: 18px; background: var(--adm-surface); box-shadow: 0 24px 60px -12px rgba(16, 26, 14, .35);
   animation: adm-rise .18s ease;
 }
 @keyframes adm-fade { from { opacity: 0; } }
@@ -343,10 +343,10 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
   border: 1.5px solid var(--adm-line-strong); border-radius: 12px; background: var(--adm-surface) !important; color: var(--db-body) !important;
   cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease;
 }
-.adm-role-option:hover { border-color: #9fb0c8; }
+.adm-role-option:hover { border-color: #8dbb87; }
 .adm-role-option input { position: absolute; opacity: 0; pointer-events: none; }
 .adm-role-option:focus-within { box-shadow: var(--adm-focus); }
-.adm-role-option.is-checked { border-color: var(--db-navy); box-shadow: 0 0 0 1px var(--db-navy); }
+.adm-role-option.is-checked { border-color: var(--db-brand); box-shadow: 0 0 0 1px var(--db-brand); }
 .adm-role-option-icon { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; }
 .adm-role-option.adm-tone-admin .adm-role-option-icon { background: var(--tone-admin-tint); color: var(--tone-admin); }
 .adm-role-option.adm-tone-drrmo .adm-role-option-icon { background: var(--tone-drrmo-tint); color: var(--tone-drrmo); }
@@ -358,7 +358,7 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
   position: absolute; top: 12px; right: 12px; display: flex; align-items: center; justify-content: center;
   width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--adm-line-strong); color: transparent;
 }
-.adm-role-option.is-checked .adm-role-option-check { background: var(--db-navy); border-color: var(--db-navy); color: #fff; }
+.adm-role-option.is-checked .adm-role-option-check { background: var(--db-brand); border-color: var(--db-brand); color: #fff; }
 .adm-role-picker.has-error .adm-role-option:not(.is-checked) { border-color: #e9958c; }
 
 .adm-alert { display: flex; align-items: flex-start; gap: 8px; margin: 14px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--bad-tint); color: var(--bad); font-size: .86rem; font-weight: 700; }
@@ -381,7 +381,7 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
   position: fixed; right: 24px; bottom: 24px; z-index: 1200; display: flex; align-items: center; gap: 10px;
   max-width: min(420px, calc(100vw - 32px)); padding: 12px 16px; border-radius: 12px;
   background: var(--db-heading); color: #fff; font-size: .9rem; font-weight: 700;
-  box-shadow: 0 12px 30px -8px rgba(15, 23, 42, .45); animation: adm-rise .2s ease;
+  box-shadow: 0 12px 30px -8px rgba(16, 26, 14, .45); animation: adm-rise .2s ease;
 }
 .adm-toast .adm-icon { color: #7ee2a8; }
 .adm-toast.is-bad .adm-icon { color: #ffb4ab; }

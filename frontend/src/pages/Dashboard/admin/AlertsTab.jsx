@@ -34,7 +34,7 @@ function SeverityTag({ severity }) {
   return <span className={`adm-action adm-action-${meta.tone}`}>{meta.label}</span>;
 }
 
-function Stat({ value, label, note, tone = 'navy', icon }) {
+function Stat({ value, label, note, tone = 'brand', icon }) {
   return (
     <div className="adm-metric">
       <span className={`adm-metric-icon adm-metric-${tone}`}><Icon name={icon} size={20} /></span>
@@ -113,7 +113,7 @@ export default function AlertsTab() {
       <div className="adm-metrics">
         <Stat
           icon="alert"
-          tone="navy"
+          tone="brand"
           label="Alerts issued"
           value={summary?.alerts_issued}
           note={`In the ${WINDOWS.find((w) => w.value === days)?.label.toLowerCase() || 'window'}`}

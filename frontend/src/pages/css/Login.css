@@ -6,14 +6,15 @@
    ========================================================= */
 
 .lg {
-  --lg-navy: #1c2e4a;
-  --lg-navy-hover: #2a4268;
+  --lg-brand: #46923c;
+  --lg-ink: #2f6b28;
+  --lg-brand-hover: #3a7d31;
   --lg-white: #ffffff;
-  --lg-mist: #f2f5f9;
-  --lg-line: #dde3ec;
-  --lg-heading: #1c2e4a;
-  --lg-body: #43516a;
-  --lg-soft: #6a778d;
+  --lg-mist: #f1f8f0;
+  --lg-line: #d9e7d6;
+  --lg-heading: #1f3d1c;
+  --lg-body: #3f4f3d;
+  --lg-soft: #66785f;
   --lg-font-head: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --lg-font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
 
@@ -27,7 +28,7 @@
   min-height: 100dvh;
   padding: 88px 20px 32px;
   overflow: hidden;
-  background: var(--lg-navy);
+  background: var(--lg-brand);
   color: var(--lg-body);
   font-family: var(--lg-font-body);
   font-size: 1rem;
@@ -44,19 +45,19 @@
   filter: blur(10px) saturate(.5); /* less color from the photo so the blue tint shows */
 }
 
-/* Blue-navy tint over the photo */
+/* Green tint over the photo */
 .lg::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(160deg, rgba(28, 46, 74, .85) 0%, rgba(30, 80, 160, .75) 100%);
+  background: linear-gradient(160deg, rgba(31, 61, 28, .85) 0%, rgba(70, 146, 60, .78) 100%);
 }
 
 .lg a:focus-visible,
 .lg button:focus-visible,
 .lg input:focus-visible {
-  outline: 3px solid #7fa7e6;
+  outline: 3px solid #46923c;
   outline-offset: 2px;
 }
 
@@ -98,7 +99,7 @@
   padding: 40px 36px 32px;
   border-radius: 28px;
   background: var(--lg-white);
-  box-shadow: 0 24px 60px rgba(10, 20, 40, .35);
+  box-shadow: 0 24px 60px rgba(13, 23, 12, .35);
 }
 
 .lg-brand {
@@ -115,10 +116,11 @@
   height: 56px;
   border-radius: 50%;
   background: var(--lg-white);
-  box-shadow: 0 0 0 1px var(--lg-line);
+  box-shadow: 0 0 0 3px #cce7c9;
   overflow: hidden;
 }
-.lg-logo img { width: 100%; height: 100%; object-fit: contain; transform: scale(1.3); }
+/* Zoomed like the navbar's badge: the seal's ring fills the circle */
+.lg-logo img { width: 100%; height: 100%; object-fit: contain; transform: scale(1.62); }
 .lg-brand-name {
   font-family: var(--lg-font-head);
   font-weight: 800;
@@ -181,10 +183,10 @@
   font-size: 1rem;
   transition: border-color .2s ease, background-color .2s ease;
 }
-.lg .lg-field input::placeholder { color: #98a3b5; }
+.lg .lg-field input::placeholder { color: #8caa89; }
 .lg .lg-field input:focus {
   outline: none;
-  border-color: var(--lg-navy);
+  border-color: var(--lg-brand);
   background: var(--lg-white);
 }
 
@@ -200,7 +202,7 @@
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: var(--lg-navy);
+  color: var(--lg-ink);
   font-family: inherit;
   font-weight: 700;
   font-size: .9rem;
@@ -269,10 +271,10 @@
 .lg-submit {
   margin-top: 6px;
   border: 0;
-  background: var(--lg-navy);
+  background: var(--lg-brand);
   color: var(--lg-white);
 }
-.lg-submit:hover:not(:disabled) { background: var(--lg-navy-hover); }
+.lg-submit:hover:not(:disabled) { background: var(--lg-brand-hover); }
 .lg-submit:disabled { opacity: .55; cursor: not-allowed; }
 
 .lg-secondary {
@@ -281,7 +283,7 @@
   background: transparent;
   color: var(--lg-heading);
 }
-.lg-secondary:hover { border-color: var(--lg-navy); }
+.lg-secondary:hover { border-color: var(--lg-brand); }
 
 .lg-note {
   margin: 20px 0 0;
@@ -291,7 +293,7 @@
   font-size: .92rem;
   text-align: center;
 }
-.lg-note a { color: var(--lg-navy); font-weight: 700; text-underline-offset: 3px; }
+.lg-note a { color: var(--lg-ink); font-weight: 700; text-underline-offset: 3px; }
 
 .lg-footer {
   margin: 24px 0 0;

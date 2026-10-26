@@ -36,7 +36,7 @@ export default function CategoryBars({
     datasets: [{
       label: valueHead,
       data: rows.map((r) => r.value),
-      backgroundColor: rows.map((r) => r.color || INK.navy),
+      backgroundColor: rows.map((r) => r.color || INK.brand),
       // A 2px ring in the surface colour keeps adjacent bars from fusing
       borderColor: INK.surface,
       borderWidth: 2,

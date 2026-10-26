@@ -77,7 +77,7 @@ export default function LocationPicker({ value, onChange, barangay = null }) {
               key={String(outline.id ?? outline.properties?.id)}
               data={outline}
               interactive={false}
-              style={{ color: '#1c2e4a', weight: 2, fillOpacity: 0.04 }}
+              style={{ color: '#1f3d1c', weight: 2, fillOpacity: 0.04 }}
             />
           )}
           {!value && <FitTo feature={outline} />}

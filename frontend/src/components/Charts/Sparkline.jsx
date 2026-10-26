@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * A tile-sized trend: one 2px navy line and a dot on the latest value, no
+ * A tile-sized trend: one 2px green line and a dot on the latest value, no
  * axes. It gives a count its shape over the period; the exact monthly
  * numbers are in the Month by month table, and the <title> names the low and
  * high months for anyone who cannot see the line.
@@ -54,13 +54,13 @@ export default function Sparkline({ points = [], label, width = 120, height = 32
       <polyline
         points={line}
         fill="none"
-        stroke="var(--db-navy)"
+        stroke="var(--db-brand)"
         strokeWidth="2"
         strokeLinejoin="round"
         strokeLinecap="round"
       />
       {/* A ring in the surface colour keeps the dot readable on the line */}
-      <circle cx={lastX} cy={lastY} r="2.5" fill="var(--db-navy)" stroke="var(--db-white)" strokeWidth="1.5" />
+      <circle cx={lastX} cy={lastY} r="2.5" fill="var(--db-brand)" stroke="var(--db-white)" strokeWidth="1.5" />
     </svg>
   );
 }

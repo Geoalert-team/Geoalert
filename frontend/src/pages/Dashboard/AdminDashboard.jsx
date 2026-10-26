@@ -128,7 +128,7 @@ function Overview({ metrics, users, onAddUser, onOpenTab }) {
   return (
     <>
       <div className="adm-metrics">
-        <MetricCard icon="users" tone="navy" label="Total accounts" value={total} note={`${Object.keys(byRole).length} roles in use`} />
+        <MetricCard icon="users" tone="brand" label="Total accounts" value={total} note={`${Object.keys(byRole).length} roles in use`} />
         <MetricCard
           icon="userCheck"
           tone="green"
@@ -290,7 +290,7 @@ export default function AdminDashboard() {
           <div>
             <p className="adm-eyebrow">System administration</p>
             <h1>Admin dashboard</h1>
-            <p className="adm-lede">Manage staff accounts, review activity and keep an eye on GeoAlert at a glance.</p>
+            <p className="adm-lede">Manage staff accounts, review activity and keep an eye on GeoAlert Talisay at a glance.</p>
           </div>
           <div className="adm-header-side">
             <SystemStatus health={health} failed={healthFailed} loading={refreshing} />

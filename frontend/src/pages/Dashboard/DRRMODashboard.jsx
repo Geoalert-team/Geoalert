@@ -39,7 +39,7 @@ const barangayName = (r) => r.barangay_details?.name || '';
 const reporterName = (r) => r.reporter_name || r.submitted_by_name || 'Unknown reporter';
 
 function HazardIcon({ type, size = 'md' }) {
-  const color = hazardColor(type) || '#43516a';
+  const color = hazardColor(type) || '#3f4f3d';
   return (
     <span className={`drm-hazard-icon drm-hazard-${size}`} style={{ color, background: `${color}1a` }} aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round">
@@ -593,7 +593,7 @@ export default function DRRMODashboard() {
             </div>
           </div>
           <div className="adm-metric">
-            <span className="adm-metric-icon adm-metric-navy"><Icon name="alert" size={20} /></span>
+            <span className="adm-metric-icon adm-metric-brand"><Icon name="alert" size={20} /></span>
             <div className="adm-metric-text">
               <span className="adm-metric-label">Active hazard zones</span>
               <span className="adm-metric-value">{activeHazards ?? '—'}</span>

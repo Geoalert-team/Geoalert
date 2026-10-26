@@ -40,10 +40,10 @@ const STAFF_LINKS = {
   Barangay_Personnel: [DASHBOARD, SECURITY],
 };
 
-// Below this width the bar folds into the ☰ menu, signed in or out. The
-// right-hand slot is the same width either way (so the links never move),
-// and the whole bar needs about 939 px; folding below 960 leaves a margin.
-const COMPACT = "(max-width: 959px)";
+// Below this width the bar folds into the ☰ menu, signed in or out. Signed
+// in with a long first name the whole bar needs about 1060 px; folding
+// below 1100 leaves a margin.
+const COMPACT = "(max-width: 1099px)";
 
 export default function PublicNavbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -98,7 +98,7 @@ export default function PublicNavbar() {
           <span className="pn-logo">
             <img src={logo} alt="" />
           </span>
-          <span className="pn-brand-name">GeoAlert</span>
+          <span className="pn-brand-name">GeoAlert Talisay</span>
         </Link>
 
         {/* On a narrow screen the bell stays in sight, beside the ☰ button */}
@@ -132,9 +132,8 @@ export default function PublicNavbar() {
               <AccountPanel user={user} links={staffLinks} onNavigate={closeMenu} onLogout={handleLogout} />
             ) : login
           ) : (
-            // One right-hand slot, the same width signed in or out, so the
-            // public links never move: the alert bell and Log in, or the
-            // bell and the account button
+            // The right-hand slot, right beside the links: the alert bell
+            // and Log in, or the bell and the account button
             <div className="pn-account">
               {/* Each bell is only mounted (and polling) for its own audience */}
               {user ? <NotificationBell /> : <ResidentAlertBell />}

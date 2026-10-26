@@ -55,7 +55,7 @@ test('a bad link says so and offers a new one', async () => {
 });
 
 test('an unreachable server says so and offers to try again, not "expired"', async () => {
-  const offline = "Can't reach the GeoAlert server. Check your internet connection, or that the backend is running.";
+  const offline = "Can't reach the GeoAlert Talisay server. Check your internet connection, or that the backend is running.";
   authApi.checkResetLink.mockRejectedValueOnce(new Error(offline)).mockResolvedValueOnce({ valid: true });
   const el = await render();
   expect(el.textContent).toContain(offline);

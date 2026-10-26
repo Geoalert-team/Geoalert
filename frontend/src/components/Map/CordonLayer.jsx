@@ -28,7 +28,7 @@ import { SEVERITY, severityInfo } from './hazardInfo';
 // The officer's draft while previewing a publish, same green as its outline
 export const DRAFT_COLOR = '#0b6b3a';
 // The legend shows the texture; its text says the colour follows the hazard
-const LEGEND_COLOR = '#1c2e4a';
+const LEGEND_COLOR = '#1f3d1c';
 
 const PATTERN_COLORS = {
   ...Object.fromEntries(Object.entries(SEVERITY).map(([code, s]) => [code, s.color])),

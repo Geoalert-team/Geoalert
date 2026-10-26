@@ -15,7 +15,7 @@ function CredentialsDialog({ info, onClose }) {
     navigator.clipboard.writeText(text).then(() => setCopied(what)).catch(() => setCopied(''));
   }
 
-  const loginDetails = `GeoAlert staff account\nEmail: ${info.email}\nTemporary password: ${info.password}\nPlease change your password after signing in.`;
+  const loginDetails = `GeoAlert Talisay staff account\nEmail: ${info.email}\nTemporary password: ${info.password}\nPlease change your password after signing in.`;
 
   return (
     <Modal

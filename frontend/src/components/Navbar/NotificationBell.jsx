@@ -79,7 +79,7 @@ function ItemIcon({ n }) {
   }
   const tone = n.category === "report"
     ? (/rejected/i.test(n.content) ? "bad" : /validated/i.test(n.content) ? "good" : "info")
-    : n.category === "security" ? "warn" : "navy";
+    : n.category === "security" ? "warn" : "brand";
   return (
     <span className={`nb-icon nb-tone-${tone}`}>
       <StrokeIcon name={ICONS[n.category] ? n.category : "account"} />

@@ -5,9 +5,9 @@
   display: grid;
   gap: 12px;
   padding: 18px;
-  border: 1px solid var(--ph-line, #dde3ec);
+  border: 1px solid var(--ph-line, #d9e7d6);
   border-radius: var(--ph-radius, 16px);
-  background: var(--ph-mist, #f2f5f9);
+  background: var(--ph-mist, #f1f8f0);
 }
 
 .ge-field,
@@ -17,7 +17,7 @@
   margin: 0;
   font-size: .86rem;
   font-weight: 700;
-  color: var(--ph-heading, #1c2e4a);
+  color: var(--ph-heading, #46923c);
 }
 
 .ge-field input,
@@ -25,10 +25,10 @@
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
-  border: 1px solid var(--ph-line, #dde3ec);
+  border: 1px solid var(--ph-line, #d9e7d6);
   border-radius: 10px;
   background: #fff;
-  color: var(--ph-body, #43516a);
+  color: var(--ph-body, #3f4f3d);
   font: inherit;
   font-weight: 400;
   font-size: .95rem;
@@ -37,34 +37,34 @@
 .ge-field input:focus,
 .ge-step textarea:focus {
   outline: none;
-  border-color: var(--ph-navy, #1c2e4a);
-  box-shadow: 0 0 0 3px rgba(28, 46, 74, .12);
+  border-color: var(--ph-brand, #46923c);
+  box-shadow: 0 0 0 3px rgba(31, 61, 28, .12);
 }
 
 .ge-steps { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .ge-step { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; align-items: start; }
 .ge-step-num {
   display: grid; place-items: center; width: 26px; height: 26px; margin-top: 9px;
-  border-radius: 50%; background: var(--ph-navy, #1c2e4a); color: #fff; font-size: .78rem; font-weight: 700;
+  border-radius: 50%; background: var(--ph-brand, #46923c); color: #fff; font-size: .78rem; font-weight: 700;
 }
 .ge-step-tools { display: flex; gap: 4px; margin-top: 6px; }
 .ge-step-tools button {
-  width: 32px; height: 32px; border: 1px solid var(--ph-line, #dde3ec); border-radius: 8px;
-  background: #fff; color: var(--ph-body, #43516a); font: inherit; cursor: pointer;
+  width: 32px; height: 32px; border: 1px solid var(--ph-line, #d9e7d6); border-radius: 8px;
+  background: #fff; color: var(--ph-body, #3f4f3d); font: inherit; cursor: pointer;
 }
-.ge-step-tools button:hover:not(:disabled) { border-color: var(--ph-navy, #1c2e4a); color: var(--ph-navy, #1c2e4a); }
+.ge-step-tools button:hover:not(:disabled) { border-color: var(--ph-brand, #46923c); color: var(--ph-ink); }
 .ge-step-tools button:disabled { opacity: .4; cursor: default; }
 
 .ge-add,
 .ge-cancel {
-  justify-self: start; padding: 8px 16px; border: 1px solid var(--ph-navy, #1c2e4a); border-radius: var(--ph-pill, 999px);
-  background: transparent; color: var(--ph-navy, #1c2e4a); font: inherit; font-size: .88rem; font-weight: 700; cursor: pointer;
+  justify-self: start; padding: 8px 16px; border: 1px solid var(--ph-brand, #46923c); border-radius: var(--ph-pill, 999px);
+  background: transparent; color: var(--ph-ink); font: inherit; font-size: .88rem; font-weight: 700; cursor: pointer;
 }
 .ge-save {
   padding: 9px 20px; border: 0; border-radius: var(--ph-pill, 999px);
-  background: var(--ph-navy, #1c2e4a); color: #fff; font: inherit; font-size: .9rem; font-weight: 700; cursor: pointer;
+  background: var(--ph-brand, #46923c); color: #fff; font: inherit; font-size: .9rem; font-weight: 700; cursor: pointer;
 }
-.ge-save:hover:not(:disabled) { background: var(--ph-navy-hover, #2a4268); }
+.ge-save:hover:not(:disabled) { background: var(--ph-brand-hover, #3a7d31); }
 .ge-save:disabled,
 .ge-cancel:disabled { opacity: .6; cursor: default; }
 

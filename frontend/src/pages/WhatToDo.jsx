@@ -632,7 +632,7 @@ export default function WhatToDo() {
               <img src={logo} alt="" />
             </span>
             <div>
-              <p className="ph-footer-name">GeoAlert</p>
+              <p className="ph-footer-name">GeoAlert Talisay</p>
               <p className="ph-footer-tagline">
                 Community geospatial hazard guidance and risk awareness for Talisay City.
               </p>
@@ -645,7 +645,7 @@ export default function WhatToDo() {
             <li><Link to="/what-to-do">What to do</Link></li>
           </ul>
         </div>
-        <p className="ph-container ph-footer-copy">&copy; {new Date().getFullYear()} GeoAlert</p>
+        <p className="ph-container ph-footer-copy">&copy; {new Date().getFullYear()} GeoAlert Talisay</p>
       </footer>
     </div>
   );

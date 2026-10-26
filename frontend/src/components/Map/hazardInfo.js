@@ -27,9 +27,9 @@ export const SEVERITY = {
 
 const UNKNOWN_SEVERITY = {
   label: 'Not rated',
-  color: '#6a778d',
-  tint: '#eef1f5',
-  text: '#43516a',
+  color: '#66785f',
+  tint: '#eef4ed',
+  text: '#3f4f3d',
   advice: 'Check back for updates from the DRRMO.',
 };
 
@@ -102,7 +102,7 @@ export const HAZARD_COLORS = {
   Flood: '#1e88e5',     // water blue
   Fire: '#f4511e',      // flame orange
   Landslide: '#8d5a2b', // earth brown
-  Other: '#43516a',
+  Other: '#3f4f3d',
 };
 
 export function hazardColor(type) {

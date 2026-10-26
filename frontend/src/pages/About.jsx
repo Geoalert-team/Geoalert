@@ -84,7 +84,7 @@ export default function About() {
         <section className="ab-hero">
           <div className="ph-container">
             <p className="ab-hero-place">Talisay City DRRMO</p>
-            <h1 className="ab-hero-title">About GeoAlert</h1>
+            <h1 className="ab-hero-title">About GeoAlert Talisay</h1>
             <p className="ab-hero-lead">
               Real-time hazard mapping, clear safety guidance and coordinated disaster
               preparedness for every barangay in Talisay City.
@@ -98,7 +98,7 @@ export default function About() {
             <div className="ab-mission-text">
               <h2>Strengthening community resilience</h2>
               <p>
-                GeoAlert was developed with the Talisay City Disaster Risk Reduction and Management
+                GeoAlert Talisay was developed with the Talisay City Disaster Risk Reduction and Management
                 Office (DRRMO) to bring critical hazard information together in one place that
                 anyone can open on their phone.
               </p>
@@ -179,7 +179,7 @@ export default function About() {
         <section className="ph-section ph-section-tint">
           <div className="ph-container">
             <div className="ph-section-head">
-              <h2>Who runs GeoAlert</h2>
+              <h2>Who runs GeoAlert Talisay</h2>
             </div>
 
             <div className="ab-team-card">
@@ -193,7 +193,7 @@ export default function About() {
               <div>
                 <h3>DRRMO Head</h3>
                 <p className="ab-team-org">Talisay City Disaster Risk Reduction and Management Office</p>
-                <p className="ab-team-role">Oversees the GeoAlert team.</p>
+                <p className="ab-team-role">Oversees the GeoAlert Talisay team.</p>
               </div>
             </div>
           </div>
@@ -208,7 +208,7 @@ export default function About() {
               <img src={logo} alt="" />
             </span>
             <div>
-              <p className="ph-footer-name">GeoAlert</p>
+              <p className="ph-footer-name">GeoAlert Talisay</p>
               <p className="ph-footer-tagline">
                 Community geospatial hazard guidance and risk awareness for Talisay City.
               </p>
@@ -221,7 +221,7 @@ export default function About() {
             <li><Link to="/what-to-do">What to do</Link></li>
           </ul>
         </div>
-        <p className="ph-container ph-footer-copy">&copy; {new Date().getFullYear()} GeoAlert</p>
+        <p className="ph-container ph-footer-copy">&copy; {new Date().getFullYear()} GeoAlert Talisay</p>
       </footer>
     </div>
   );

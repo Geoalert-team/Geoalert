@@ -107,11 +107,11 @@
   gap: 10px;
   margin-bottom: 10px;
 }
-.pm-layers-title { font-weight: 800; font-size: .92rem; color: var(--pm-heading, #1c2e4a); }
+.pm-layers-title { font-weight: 800; font-size: .92rem; color: var(--pm-heading, #46923c); }
 .pm-layers-link {
   padding: 0; border: 0; background: none; cursor: pointer;
   font: inherit; font-size: .8rem; font-weight: 700;
-  color: #1c2e4a; text-decoration: underline; text-underline-offset: 3px;
+  color: #1f3d1c; text-decoration: underline; text-underline-offset: 3px;
 }
 
 .pm-layers-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
@@ -119,15 +119,15 @@
   display: flex; align-items: center; gap: 10px;
   padding: 7px 8px; border-radius: 10px;
 }
-.pm-layers-list li:hover { background: #f3f6fb; }
+.pm-layers-list li:hover { background: #f2f8f1; }
 
 .pm-layers-list input[type='checkbox'] {
   width: 17px; height: 17px; flex-shrink: 0; margin: 0;
-  accent-color: #1c2e4a; cursor: pointer;
+  accent-color: #46923c; cursor: pointer;
 }
 .pm-layers-list label {
   display: flex; align-items: center; gap: 9px; flex: 1;
-  font-size: .9rem; color: #1c2e4a; cursor: pointer;
+  font-size: .9rem; color: #1f3d1c; cursor: pointer;
 }
 .pm-layers-name { flex: 1; font-weight: 600; }
 
@@ -136,7 +136,7 @@
 
 .pm-layers-count {
   min-width: 22px; padding: 1px 7px; border-radius: 999px;
-  background: #eef2f8; color: #43516a;
+  background: #ebf4ea; color: #3f4f3d;
   font-size: .76rem; font-weight: 700; text-align: center;
 }
 
@@ -148,34 +148,34 @@
   margin: 10px 0 0;
   font-size: .82rem;
   line-height: 1.45;
-  color: #5b6878;
+  color: #556b52;
 }
 
 /* Display options below the hazard types: zone outlines on or off */
 .pm-layers-display {
   display: flex; align-items: flex-start; gap: 10px;
   margin-top: 8px; padding: 9px 8px 2px;
-  border-top: 1px solid #e6ebf2;
+  border-top: 1px solid #e1eee0;
 }
 .pm-layers-display input[type='checkbox'] {
   width: 17px; height: 17px; flex-shrink: 0; margin: 2px 0 0;
-  accent-color: #1c2e4a; cursor: pointer;
+  accent-color: #46923c; cursor: pointer;
 }
 .pm-layers-display label {
-  flex: 1; font-size: .9rem; font-weight: 600; color: #1c2e4a; cursor: pointer;
+  flex: 1; font-size: .9rem; font-weight: 600; color: #1f3d1c; cursor: pointer;
 }
 .pm-layers-display small {
   display: block; margin-top: 2px;
-  font-size: .76rem; font-weight: 400; color: #5b6878;
+  font-size: .76rem; font-weight: 400; color: #556b52;
 }
 
 .pm-layers-retry {
   margin-top: 10px; padding: 6px 12px;
-  border: 1px solid #dde3ec; border-radius: 999px;
+  border: 1px solid #d9e7d6; border-radius: 999px;
   background: #fff; cursor: pointer;
-  font: inherit; font-size: .8rem; font-weight: 700; color: #1c2e4a;
+  font: inherit; font-size: .8rem; font-weight: 700; color: #1f3d1c;
 }
-.pm-layers-retry:hover { background: #f3f6fb; }
+.pm-layers-retry:hover { background: #f2f8f1; }
 
 /* ---------- Overlapping zones ---------- */
 /* A dashed ring round the pin: this spot sits inside more than one hazard. */
@@ -185,7 +185,7 @@
   left: 50%; top: 14px;
   width: 34px; height: 34px;
   margin-left: -17px;
-  border: 2px dashed #1c2e4a;
+  border: 2px dashed #46923c;
   border-radius: 50%;
   opacity: .85;
   pointer-events: none;
@@ -194,22 +194,22 @@
 .pm-legend-overlap {
   flex-shrink: 0;
   width: 16px; height: 16px;
-  border: 2px dashed #1c2e4a;
+  border: 2px dashed #46923c;
   border-radius: 50%;
 }
 
 .pm-overlap {
   margin: 14px 0;
   padding: 12px 14px;
-  border-left: 3px solid #1c2e4a;
+  border-left: 3px solid #46923c;
   border-radius: 0 10px 10px 0;
-  background: #f3f6fb;
+  background: #f2f8f1;
   font-size: .86rem;
   line-height: 1.5;
 }
-.pm-overlap strong { display: block; color: #1c2e4a; }
+.pm-overlap strong { display: block; color: #1f3d1c; }
 .pm-overlap-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-.pm-overlap p { margin: 4px 0 0; color: #5b6878; }
+.pm-overlap p { margin: 4px 0 0; color: #556b52; }
 
 /* ---------- Safety cordon: the hatched ring, in words ---------- */
 .pm-cordon-note {
@@ -217,11 +217,11 @@
   padding: 12px 14px;
   border-left: 4px dashed;
   border-radius: 0 10px 10px 0;
-  background: repeating-linear-gradient(45deg, #f6f7f9 0 6px, #eceff4 6px 9px);
+  background: repeating-linear-gradient(45deg, #f6f7f9 0 6px, #e9f2e8 6px 9px);
   font-size: .86rem;
 }
-.pm-cordon-note strong { display: block; color: #1c2e4a; }
-.pm-cordon-note p { margin: 4px 0 0; color: #3f4b5c; }
+.pm-cordon-note strong { display: block; color: #1f3d1c; }
+.pm-cordon-note p { margin: 4px 0 0; color: #395036; }
 
 /* The stripe patterns for cordons: present for fills to point at, no space taken */
 .gx-cordon-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
@@ -231,28 +231,28 @@
 .pm-stack {
   margin-top: 16px;
   padding: 10px;
-  border: 1px solid var(--pm-line, #dde3ec);
+  border: 1px solid var(--pm-line, #d9e7d6);
   border-radius: 14px;
-  background: var(--pm-mist, #f2f5f9);
+  background: var(--pm-mist, #f1f8f0);
 }
 .pm-stack-head {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 0 2px 8px;
   font-size: .84rem;
-  color: var(--pm-heading, #1c2e4a);
+  color: var(--pm-heading, #46923c);
 }
-.pm-stack-step { display: flex; align-items: center; gap: 4px; font-size: .8rem; color: var(--pm-soft, #6a778d); }
+.pm-stack-step { display: flex; align-items: center; gap: 4px; font-size: .8rem; color: var(--pm-soft, #66785f); }
 .pm-stack-step span { min-width: 3.4em; text-align: center; font-variant-numeric: tabular-nums; }
 .pm-stack-step button {
   display: grid; place-items: center;
   width: 30px; height: 30px;
-  border: 1px solid var(--pm-line, #dde3ec);
+  border: 1px solid var(--pm-line, #d9e7d6);
   border-radius: 50%;
   background: var(--pm-white, #fff);
-  color: var(--pm-heading, #1c2e4a);
+  color: var(--pm-heading, #46923c);
   cursor: pointer;
 }
-.pm-stack-step button:hover { background: #e8edf5; }
+.pm-stack-step button:hover { background: #cce7c9; }
 .pm-stack-step svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .pm-stack-list {
   display: flex; gap: 6px;
@@ -266,36 +266,36 @@
   border: 2px solid transparent;
   border-radius: 999px;
   background: var(--pm-white, #fff);
-  color: var(--pm-body, #43516a);
+  color: var(--pm-body, #3f4f3d);
   font: inherit;
   text-align: left;
   white-space: nowrap;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(28, 46, 74, .08);
+  box-shadow: 0 1px 2px rgba(31, 61, 28, .08);
 }
-.pm-stack-item:hover { background: #f8fafd; }
-.pm-stack-item.is-active { color: var(--pm-heading, #1c2e4a); }
-.pm-stack-item:focus-visible, .pm-stack-step button:focus-visible { outline: 3px solid #7aa7ff; outline-offset: 2px; }
+.pm-stack-item:hover { background: #f7faf7; }
+.pm-stack-item.is-active { color: var(--pm-heading, #46923c); }
+.pm-stack-item:focus-visible, .pm-stack-step button:focus-visible { outline: 3px solid #46923c; outline-offset: 2px; }
 .pm-stack-icon {
   display: grid; place-items: center;
   width: 28px; height: 28px;
   border-radius: 50%;
-  background: var(--pm-mist, #f2f5f9);
+  background: var(--pm-mist, #f1f8f0);
 }
 .pm-stack-icon svg { width: 17px; height: 17px; fill: currentColor; }
 .pm-stack-text { display: grid; line-height: 1.15; }
 .pm-stack-text strong { font-size: .84rem; }
-.pm-stack-text small { display: flex; align-items: center; gap: 5px; font-size: .74rem; color: var(--pm-soft, #6a778d); }
+.pm-stack-text small { display: flex; align-items: center; gap: 5px; font-size: .74rem; color: var(--pm-soft, #66785f); }
 .pm-stack-text .pm-overlap-dot { width: 7px; height: 7px; }
 
 /* ---------- Expandable legend ---------- */
 .pm-legend-toggle {
   display: flex; align-items: center; justify-content: space-between;
   width: 100%; padding: 0 0 8px; margin-bottom: 4px;
-  border: 0; border-bottom: 1px solid #e3e8f0;
+  border: 0; border-bottom: 1px solid #ddebdb;
   background: none; cursor: pointer;
   font: inherit; font-size: .82rem; font-weight: 800;
-  letter-spacing: .04em; text-transform: uppercase; color: #1c2e4a;
+  letter-spacing: .04em; text-transform: uppercase; color: #1f3d1c;
 }
 .pm-legend-toggle svg {
   width: 16px; height: 16px;
@@ -306,10 +306,10 @@
 .pm-legend.is-collapsed .pm-legend-toggle svg { transform: rotate(-90deg); }
 
 .pm-legend-row { align-items: flex-start; }
-.pm-legend-row strong { display: block; color: #1c2e4a; }
+.pm-legend-row strong { display: block; color: #1f3d1c; }
 .pm-legend-row small {
   display: block; max-width: 180px;
-  color: var(--pm-soft, #6a778d); font-size: .76rem; line-height: 1.35;
+  color: var(--pm-soft, #66785f); font-size: .76rem; line-height: 1.35;
 }
 
 .pm-legend-symbol { display: inline-flex; width: 16px; height: 16px; flex-shrink: 0; }

@@ -5,7 +5,7 @@
 
 .rlm-map {
   height: 220px;
-  border: 1px solid var(--adm-line, #ccd5e2);
+  border: 1px solid var(--adm-line, #c2dbbf);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -16,13 +16,13 @@
 .rlm-coords {
   margin: 0;
   font-size: .8rem;
-  color: var(--db-soft, #5b6678);
+  color: var(--db-soft, #556b52);
 }
 
 .rlm-none {
   margin: 0;
   font-size: .86rem;
-  color: var(--db-soft, #5b6678);
+  color: var(--db-soft, #556b52);
   font-style: italic;
 }
 

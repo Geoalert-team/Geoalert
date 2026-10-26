@@ -101,7 +101,10 @@ export default function PublicHome() {
   // Which hotline was just copied: { name, ok }
   const [copyStatus, setCopyStatus] = useState(null);
 
-  // Move to the next photo every few seconds (restarts when a dot is clicked)
+  // The arrows wrap around: before the first photo comes the last
+  const showSlide = (i) => setCurrentSlide((i + SLIDES.length) % SLIDES.length);
+
+  // Move to the next photo every few seconds (restarts when a dot or arrow is clicked)
   useEffect(() => {
     if (paused) return undefined;
     const timer = setInterval(() => {
@@ -141,7 +144,7 @@ export default function PublicHome() {
                 See which parts of Talisay are at risk, and what to do about it.
               </h1>
               <p className="ph-hero-lead">
-                GeoAlert is a community hazard map for Talisay City. Check the current risk level
+                GeoAlert Talisay is a community hazard map for Talisay City. Check the current risk level
                 for floods, landslides, storm surges and fires in your barangay, then follow clear
                 safety steps.
               </p>
@@ -152,33 +155,57 @@ export default function PublicHome() {
               <p className="ph-hero-note">No account needed to view the map.</p>
             </div>
 
-            <div
-              className="ph-slider"
-              onMouseEnter={() => setPaused(true)}
-              onMouseLeave={() => setPaused(false)}
-            >
+            <div className="ph-hero-media">
               <div
-                className="ph-slider-track"
-                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+                className="ph-slider"
+                onMouseEnter={() => setPaused(true)}
+                onMouseLeave={() => setPaused(false)}
               >
-                {SLIDES.map((slide) => (
-                  <div className="ph-slide" key={slide.alt}>
-                    <img src={slide.src} alt={slide.alt} />
-                  </div>
-                ))}
-              </div>
+                <div
+                  className="ph-slider-track"
+                  style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+                >
+                  {SLIDES.map((slide, i) => (
+                    <div
+                      className={`ph-slide ${i === currentSlide ? 'is-active' : ''}`}
+                      key={slide.alt}
+                      aria-hidden={i !== currentSlide}
+                    >
+                      <img src={slide.src} alt={slide.alt} />
+                    </div>
+                  ))}
+                </div>
 
-              <div className="ph-slider-dots" role="group" aria-label="Choose photo">
-                {SLIDES.map((slide, i) => (
-                  <button
-                    key={slide.alt}
-                    type="button"
-                    className={`ph-slider-dot ${i === currentSlide ? 'is-active' : ''}`}
-                    aria-label={`Photo ${i + 1}`}
-                    aria-pressed={i === currentSlide}
-                    onClick={() => setCurrentSlide(i)}
-                  />
-                ))}
+                {/* Previous / next, inside the photo on either side */}
+                <button
+                  type="button"
+                  className="ph-slider-arrow ph-slider-prev"
+                  aria-label="Previous photo"
+                  onClick={() => showSlide(currentSlide - 1)}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+                </button>
+                <button
+                  type="button"
+                  className="ph-slider-arrow ph-slider-next"
+                  aria-label="Next photo"
+                  onClick={() => showSlide(currentSlide + 1)}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+                </button>
+
+                <div className="ph-slider-dots" role="group" aria-label="Choose photo">
+                  {SLIDES.map((slide, i) => (
+                    <button
+                      key={slide.alt}
+                      type="button"
+                      className={`ph-slider-dot ${i === currentSlide ? 'is-active' : ''}`}
+                      aria-label={`Photo ${i + 1}`}
+                      aria-pressed={i === currentSlide}
+                      onClick={() => setCurrentSlide(i)}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -239,7 +266,7 @@ export default function PublicHome() {
         <section className="ph-section">
           <div className="ph-container">
             <div className="ph-section-head">
-              <h2>How to use GeoAlert</h2>
+              <h2>How to use GeoAlert Talisay</h2>
             </div>
 
             <ol className="ph-steps">
@@ -294,7 +321,7 @@ export default function PublicHome() {
               <img src={logo} alt="" />
             </span>
             <div>
-              <p className="ph-footer-name">GeoAlert</p>
+              <p className="ph-footer-name">GeoAlert Talisay</p>
               <p className="ph-footer-tagline">
                 Community geospatial hazard guidance and risk awareness for Talisay City.
               </p>
@@ -307,7 +334,7 @@ export default function PublicHome() {
             <li><Link to="/what-to-do">What to do</Link></li>
           </ul>
         </div>
-        <p className="ph-container ph-footer-copy">&copy; {new Date().getFullYear()} GeoAlert</p>
+        <p className="ph-container ph-footer-copy">&copy; {new Date().getFullYear()} GeoAlert Talisay</p>
       </footer>
     </div>
   );

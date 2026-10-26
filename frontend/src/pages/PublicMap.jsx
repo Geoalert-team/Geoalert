@@ -882,7 +882,7 @@ export default function PublicMap() {
     const selected =
       panelOpen && selectedBarangayId != null && String(featureId(feature)) === String(selectedBarangayId);
     return selected
-      ? { className: 'pm-brgy', color: '#111111', weight: 2.6, opacity: 1, fillColor: '#1c2e4a', fillOpacity: 0.07 }
+      ? { className: 'pm-brgy', color: '#111111', weight: 2.6, opacity: 1, fillColor: '#46923c', fillOpacity: 0.07 }
       : { className: 'pm-brgy', color: '#2b2b2b', weight: 1, opacity: 0.8, fillOpacity: 0 };
   }
 
@@ -1029,7 +1029,7 @@ export default function PublicMap() {
               center={selection.spot}
               radius={6}
               interactive={false}
-              pathOptions={{ color: '#1c2e4a', weight: 2, fillColor: '#ffffff', fillOpacity: 1 }}
+              pathOptions={{ color: '#1f3d1c', weight: 2, fillColor: '#ffffff', fillOpacity: 1 }}
             />
           )}
 
@@ -1083,14 +1083,14 @@ export default function PublicMap() {
             <Polygon
               positions={draftPoints}
               interactive={false}
-              pathOptions={{ color: '#1c2e4a', weight: 2, dashArray: '6 4', fillOpacity: 0.12 }}
+              pathOptions={{ color: '#1f3d1c', weight: 2, dashArray: '6 4', fillOpacity: 0.12 }}
             />
           )}
           {draftPoints.length === 2 && (
             <Polyline
               positions={draftPoints}
               interactive={false}
-              pathOptions={{ color: '#1c2e4a', weight: 2, dashArray: '6 4' }}
+              pathOptions={{ color: '#1f3d1c', weight: 2, dashArray: '6 4' }}
             />
           )}
           {draftPoints.map((p, i) => (

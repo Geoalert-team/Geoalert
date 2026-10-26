@@ -30,7 +30,7 @@ export default function ForgotPassword() {
       if (err?.status === 429) setError(LIMIT);
       // No reply at all (offline, server down) can't reveal anything about
       // the account, and "we've sent a link" would be untrue: say so
-      else if (!err?.status) setError(err?.message || "Can't reach the GeoAlert server.");
+      else if (!err?.status) setError(err?.message || "Can't reach the GeoAlert Talisay server.");
       else setSent(true); // a server error: same answer, nothing about the account leaks
     } finally {
       setBusy(false);
@@ -47,7 +47,7 @@ export default function ForgotPassword() {
       <main className="lg-card">
         <div className="lg-brand">
           <span className="lg-logo"><img src={logo} alt="" /></span>
-          <span className="lg-brand-name">GeoAlert</span>
+          <span className="lg-brand-name">GeoAlert Talisay</span>
         </div>
 
         <div className="lg-head">

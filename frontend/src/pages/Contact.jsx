@@ -70,7 +70,7 @@ export default function Contact() {
       <PublicNavbar />
 
       <main id="ph-main">
-        {/* ============ HERO + EMERGENCY CALLOUT ============ */}
+        {/* ============ HERO ============ */}
         <section className="ct-hero">
           <div className="ph-container ct-hero-grid">
             <div>
@@ -79,18 +79,6 @@ export default function Contact() {
               <p className="ct-hero-lead">
                 Reach the right people when it matters most. Save these numbers before you need them.
               </p>
-            </div>
-
-            <div className="ct-urgent">
-              <p className="ct-urgent-title">Life-threatening emergency?</p>
-              <p className="ct-urgent-text">Call right away. Don't wait to send a message or email.</p>
-              <div className="ct-urgent-actions">
-                <a className="ph-btn ct-btn-white" href="tel:911">Call 911</a>
-                <a className="ph-btn ct-btn-ghost" href={toTelLink(drrmo.number)}>
-                  <span>Call DRRMO</span>
-                  <span className="ct-nowrap">{drrmo.number}</span>
-                </a>
-              </div>
             </div>
           </div>
         </section>
@@ -131,7 +119,7 @@ export default function Contact() {
           <div className="ph-container">
             <div className="ph-section-head">
               <h2>Get in touch</h2>
-              <p>For questions, feedback or help using GeoAlert. Not for emergencies.</p>
+              <p>For questions, feedback or help using GeoAlert Talisay. Not for emergencies.</p>
             </div>
 
             <div className="ct-contact-grid">
@@ -210,7 +198,7 @@ export default function Contact() {
               <img src={logo} alt="" />
             </span>
             <div>
-              <p className="ph-footer-name">GeoAlert</p>
+              <p className="ph-footer-name">GeoAlert Talisay</p>
               <p className="ph-footer-tagline">
                 Community geospatial hazard guidance and risk awareness for Talisay City.
               </p>
@@ -223,7 +211,7 @@ export default function Contact() {
             <li><Link to="/what-to-do">What to do</Link></li>
           </ul>
         </div>
-        <p className="ph-container ph-footer-copy">&copy; {new Date().getFullYear()} GeoAlert</p>
+        <p className="ph-container ph-footer-copy">&copy; {new Date().getFullYear()} GeoAlert Talisay</p>
       </footer>
     </div>
   );

@@ -4,30 +4,44 @@
 /* =========================================================
    The navigation bar, on every page and for everyone. Signed-in staff get
    the bell and one account button (.pn-acct, AccountMenu.jsx) whose menu
-   holds who they are, their role's pages and Log out. Below 960 px
+   holds who they are, their role's pages and Log out. Below 1100 px
    (PublicNavbar.jsx) the header gets .is-compact and folds into the ☰
    menu, which ends with the same account panel, already open.
    All classes start with "pn-" so they don't clash with index.css
    ========================================================= */
 
 .pn-header {
-  --pn-navy: #1c2e4a;
+  --pn-brand: #46923c;
+  /* The bar itself: a darker green than the buttons, so it reads as a frame */
+  --pn-bar: #33691e;
+  --pn-ink: #2f6b28;
+  --pn-deep: #1f3d1c;
+  --pn-mint: #cce7c9;
   --pn-white: #ffffff;
-  --pn-mist: #f2f5f9;
-  --pn-line: #e3e8ef;
-  --pn-soft: #6a778d;
+  --pn-mist: #f1f8f0;
+  --pn-line: #e1ece0;
+  --pn-soft: #66785f;
   /* The role colours of the dashboards' avatars (AdminDashboard.css) */
-  --pn-tone-admin: #1c2e4a;  --pn-tone-admin-tint: #e8edf5;
+  --pn-tone-admin: #2f6b28;  --pn-tone-admin-tint: #cce7c9;
   --pn-tone-drrmo: #b4520b;  --pn-tone-drrmo-tint: #fdf0e3;
   --pn-tone-brgy:  #0f766e;  --pn-tone-brgy-tint:  #e2f4f1;
-  --pn-tone-none:  #6a778d;  --pn-tone-none-tint:  #eef1f5;
+  --pn-tone-none:  #66785f;  --pn-tone-none-tint:  #eef4ed;
 
   position: sticky;
   top: 0;
   z-index: 1100; /* stays above Leaflet map controls (z-index 1000) */
-  background: var(--pn-navy);
+  background: var(--pn-bar);
+  box-shadow:
+    0 1px 0 rgba(31, 61, 28, 0.18),
+    0 10px 24px -18px rgba(31, 61, 28, 0.6);
   color: var(--pn-white);
   font-family: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  /* Its own type base, so the bar is the same size on every page instead of
+     inheriting the homepage's 17px / 1.65 or the dashboards' 16px / 1.55 */
+  font-size: 1rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .pn-inner {
@@ -53,33 +67,47 @@
 .pn-brand-name {
   font-family: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   font-weight: 800;
-  font-size: 1.35rem;
-  letter-spacing: -0.01em;
+  font-size: 1.4rem;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
 }
 
-/* Logo in a white circle so the black compass letters stay visible */
+/* The DRRMO seal in a white badge. The seal's green ring is only about 60%
+   of logo1.png (the compass points around it are cropped anyway), so the
+   image is zoomed until the ring reaches the badge's edge, which also hides
+   the tips of the compass points.
+   A mint halo separates the badge from the green bar. */
 .pn-logo {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
   display: grid;
   place-items: center;
   border-radius: 50%;
   background: var(--pn-white);
   overflow: hidden;
+  box-shadow:
+    0 0 0 3px rgba(204, 231, 201, 0.55),
+    0 4px 12px rgba(31, 61, 28, 0.35);
+  transition: box-shadow 0.2s ease;
 }
 .pn-logo img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transform: scale(1.3);
+  transform: scale(1.62);
+}
+.pn-brand:hover .pn-logo {
+  box-shadow:
+    0 0 0 3px var(--pn-mint),
+    0 4px 12px rgba(31, 61, 28, 0.35);
 }
 
 /* Links */
 .pn-menu {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 18px;
 }
 
 .pn-links {
@@ -92,12 +120,12 @@
 
 .pn-link {
   display: block;
-  padding: 8px 14px;
+  padding: 9px 15px;
   border-radius: 999px;
-  color: #d6deea;
+  color: var(--pn-white);
   text-decoration: none;
   font-weight: 700;
-  font-size: 0.98rem;
+  font-size: 1.06rem;
   /* A squeezed bar must never break "What to do" onto two lines */
   white-space: nowrap;
   transition:
@@ -105,24 +133,21 @@
     color 0.2s ease;
 }
 .pn-link:hover {
-  color: var(--pn-white);
-  background: rgba(255, 255, 255, 0.08);
-}
-.pn-link.is-active {
-  color: var(--pn-white);
   background: rgba(255, 255, 255, 0.14);
 }
+.pn-link.is-active {
+  color: var(--pn-deep);
+  background: var(--pn-mint);
+}
 
-/* The right-hand slot, the same width signed in or out, so the public
-   links never move. Signed out it holds Log in at its right end; signed in,
-   the bell and the account button, also right-aligned.
-   264 px = bell 42 + gap 10 + account button up to about 200. */
+/* The right-hand slot: the bell and Log in, or the bell and the account
+   button. It is only as wide as what it holds, so the links sit right
+   beside the bell either way. At its widest (bell 42 + gap 10 + account
+   button up to about 200) the whole bar needs about 1060 px. */
 .pn-account {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 10px;
-  width: 264px;
   flex-shrink: 0;
 }
 
@@ -132,21 +157,27 @@
   min-height: 42px;
   padding: 0 20px;
   border-radius: 999px;
-  background: var(--pn-white);
-  color: var(--pn-navy);
+  background: var(--pn-mint);
+  color: var(--pn-deep);
   font-weight: 700;
   font-size: 0.95rem;
   text-decoration: none;
+  box-shadow: 0 2px 6px rgba(31, 61, 28, 0.18);
   transition: background-color 0.2s ease;
 }
 .pn-login:hover {
-  background: #dfe7f3;
+  background: var(--pn-white);
 }
 
 .pn-header a:focus-visible,
 .pn-header button:focus-visible {
-  outline: 3px solid #7fa7e6;
+  outline: 3px solid var(--pn-white);
   outline-offset: 3px;
+}
+.pn-acct-menu :focus-visible,
+.nb-panel :focus-visible,
+.pn-bell-dropdown :focus-visible {
+  outline-color: var(--pn-ink) !important;
 }
 
 /* Hamburger (mobile only) */
@@ -219,7 +250,7 @@
   max-height: calc(100vh - 72px);
   overflow-y: auto;
   padding: 16px 24px 24px;
-  background: var(--pn-navy);
+  background: var(--pn-bar);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 .pn-header.is-compact .pn-menu.is-open {
@@ -302,7 +333,7 @@
 /* On a staff page, the button says you are inside your pages */
 .pn-acct-btn.is-active {
   background: rgba(255, 255, 255, 0.24);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 0 0 2px var(--pn-mint);
 }
 .pn-acct-first {
   max-width: 120px; /* longer names end in "…"; the menu shows them in full */
@@ -329,8 +360,8 @@
   border: 1px solid var(--pn-line);
   border-radius: 16px;
   background: var(--pn-white);
-  color: var(--pn-navy);
-  box-shadow: 0 16px 40px rgba(16, 32, 56, 0.16);
+  color: var(--pn-ink);
+  box-shadow: 0 16px 40px rgba(21, 36, 19, 0.16);
   overflow: hidden;
 }
 
@@ -388,7 +419,7 @@
   gap: 10px;
   padding: 10px 12px;
   border-radius: 10px;
-  color: var(--pn-navy);
+  color: var(--pn-ink);
   font-family: inherit;
   font-weight: 700;
   font-size: 0.95rem;
@@ -404,12 +435,12 @@
 .pn-acct-logout:hover {
   background: var(--pn-mist);
 }
-/* The page you are on: tinted, its icon in navy, a dot at the right */
+/* The page you are on: tinted, its icon in green, a dot at the right */
 .pn-acct-link.is-active {
   background: var(--pn-tone-admin-tint);
 }
 .pn-acct-link.is-active svg {
-  color: var(--pn-navy);
+  color: var(--pn-ink);
 }
 .pn-acct-link.is-active::after {
   content: "";
@@ -417,7 +448,7 @@
   height: 7px;
   margin-left: auto;
   border-radius: 50%;
-  background: var(--pn-navy);
+  background: var(--pn-brand);
 }
 .pn-acct-logout {
   width: calc(100% - 12px);
@@ -433,7 +464,7 @@
 }
 
 /* Folded bar: the same panel, already open at the bottom of the ☰ menu,
-   in the bar's own navy */
+   in the bar's own green */
 .pn-header.is-compact .pn-acct-panel {
   padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
@@ -446,7 +477,7 @@
   color: var(--pn-white);
 }
 .pn-header.is-compact .pn-acct-email {
-  color: #9fb0c8;
+  color: #e3f1e1;
 }
 .pn-header.is-compact .pn-acct-links {
   padding: 0;
@@ -455,26 +486,26 @@
 .pn-header.is-compact .pn-acct-link,
 .pn-header.is-compact .pn-acct-logout {
   padding: 12px 14px;
-  color: #d6deea;
+  color: var(--pn-white);
 }
 .pn-header.is-compact .pn-acct-link svg,
 .pn-header.is-compact .pn-acct-logout svg {
-  color: #9fb0c8;
+  color: #e3f1e1;
 }
 .pn-header.is-compact .pn-acct-link:hover,
 .pn-header.is-compact .pn-acct-logout:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--pn-white);
-}
-.pn-header.is-compact .pn-acct-link.is-active {
   background: rgba(255, 255, 255, 0.14);
   color: var(--pn-white);
 }
+.pn-header.is-compact .pn-acct-link.is-active {
+  background: var(--pn-mint);
+  color: var(--pn-deep);
+}
 .pn-header.is-compact .pn-acct-link.is-active svg {
-  color: var(--pn-white);
+  color: var(--pn-deep);
 }
 .pn-header.is-compact .pn-acct-link.is-active::after {
-  background: var(--pn-white);
+  background: var(--pn-brand);
 }
 .pn-header.is-compact .pn-acct-logout {
   width: 100%;
@@ -520,7 +551,7 @@
   height: 20px;
   padding: 0 5px;
   border-radius: 999px;
-  border: 2px solid var(--pn-navy);
+  border: 2px solid var(--pn-bar);
   background: #e5484d;
   color: var(--pn-white);
   font-size: 0.7rem;
@@ -537,8 +568,8 @@
   max-width: calc(100vw - 32px);
   border-radius: 12px;
   background: var(--pn-white);
-  color: var(--pn-navy);
-  box-shadow: 0 12px 28px rgba(10, 20, 40, 0.25);
+  color: var(--pn-ink);
+  box-shadow: 0 12px 28px rgba(13, 23, 12, 0.25);
   overflow: hidden;
   z-index: 20;
 }
@@ -548,7 +579,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
-  border-bottom: 1px solid #e3e9f1;
+  border-bottom: 1px solid #deecdd;
   font-weight: 700;
   font-size: 0.95rem;
 }
@@ -556,7 +587,7 @@
 .pn-bell-markall {
   border: 0;
   background: transparent;
-  color: #2f5fa8;
+  color: var(--pn-ink);
   font-family: inherit;
   font-weight: 700;
   font-size: 0.82rem;
@@ -570,7 +601,7 @@
   margin: 0;
   padding: 24px 14px;
   text-align: center;
-  color: #6b7a90;
+  color: #63805f;
   font-size: 0.9rem;
 }
 
@@ -589,19 +620,19 @@
   width: 100%;
   padding: 11px 14px;
   border: 0;
-  border-bottom: 1px solid #eef2f7;
+  border-bottom: 1px solid #ebf4ea;
   background: var(--pn-white);
-  color: var(--pn-navy);
+  color: var(--pn-ink);
   text-align: left;
   font-family: inherit;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
 .pn-bell-item:hover {
-  background: #f3f6fb;
+  background: #f2f8f1;
 }
 .pn-bell-item.is-unread {
-  background: #eaf1fc;
+  background: #eaf3e8;
 }
 .pn-bell-item.is-unread .pn-bell-text {
   font-weight: 700;
@@ -611,7 +642,7 @@
   line-height: 1.35;
 }
 .pn-bell-time {
-  color: #6b7a90;
+  color: #63805f;
   font-size: 0.75rem;
 }
 

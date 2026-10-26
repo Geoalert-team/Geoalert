@@ -63,7 +63,7 @@ export default function PurokPreviewMap({ barangay = null, puroks = [], pins = [
               key={`b-${barangay.id ?? barangay.properties?.id}`}
               data={barangay}
               interactive={false}
-              style={{ color: '#1c2e4a', weight: 2, fillOpacity: 0.04 }}
+              style={{ color: '#1f3d1c', weight: 2, fillOpacity: 0.04 }}
             />
           )}
           {chosen && (

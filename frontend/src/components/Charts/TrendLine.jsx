@@ -15,7 +15,7 @@ import { withAlpha } from '../../utils/color';
  * Props:
  *   points   [{ label, value }] in time order
  *   height   px
- *   color    line colour (hex), default navy; the fill under it follows
+ *   color    line colour (hex), default green; the fill under it follows
  *   unit     { one, many } naming what is counted, for the tooltip
  *   table    false when the caller shows the numbers in its own table
  *   empty    message when there is nothing to draw
@@ -25,7 +25,7 @@ const EVENTS = { one: 'event', many: 'events' };
 export default function TrendLine({
   points = [],
   height = 280,
-  color = INK.navy,
+  color = INK.brand,
   unit = EVENTS,
   table = true,
   empty = 'No data for this filter.',

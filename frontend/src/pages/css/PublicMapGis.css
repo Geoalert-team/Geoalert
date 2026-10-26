@@ -11,7 +11,7 @@
   cursor: pointer;
 }
 .pm-drop svg { display: block; width: 100%; height: 100%; }
-.pm-drop-body { fill: var(--pm-navy); stroke: #fff; stroke-width: 2; }
+.pm-drop-body { fill: var(--pm-brand); stroke: #fff; stroke-width: 2; }
 .pm-drop-wrap:hover .pm-drop { transform: scale(1.08); }
 .pm-drop.is-selected,
 .pm-drop-wrap:hover .pm-drop.is-selected { transform: scale(1.2); }
@@ -46,8 +46,8 @@
   transition: background-color .2s ease, color .2s ease;
 }
 .pm-basemap button:hover { color: var(--pm-heading); }
-.pm-basemap button.is-active { background: var(--pm-navy); color: var(--pm-white); }
-.pm-basemap button:focus-visible { outline: 3px solid var(--pm-navy); outline-offset: 2px; }
+.pm-basemap button.is-active { background: var(--pm-brand); color: var(--pm-white); }
+.pm-basemap button:focus-visible { outline: 3px solid var(--pm-brand); outline-offset: 2px; }
 
 @media (max-width: 860px) {
   .pm-basemap.is-hidden-mobile { display: none; }
@@ -80,14 +80,14 @@
   padding: 4px 10px;
   border: 0;
   border-radius: 999px;
-  background: var(--pm-navy);
+  background: var(--pm-brand);
   box-shadow: var(--pm-shadow);
   color: var(--pm-white);
   font-family: inherit;
   font-weight: 700;
   font-size: .85rem;
 }
-.pm .pm-brgy-tip.leaflet-tooltip-top::before { border-top-color: var(--pm-navy); }
+.pm .pm-brgy-tip.leaflet-tooltip-top::before { border-top-color: var(--pm-brand); }
 
 /* ---------- Purok name, on hovering a purok of the selected barangay ---------- */
 .pm .pm-purok-tip {
@@ -107,7 +107,7 @@
 /* Barangay rows in the search results: hollow dot = place, filled dot = hazard */
 .pm-results-dot-brgy {
   background: transparent;
-  border: 2px solid var(--pm-navy);
+  border: 2px solid var(--pm-brand);
 }
 
 /* ---------- Barangay panel: hazard list ---------- */
@@ -132,7 +132,7 @@
   cursor: pointer;
 }
 .pm-brgy-list button:hover { background: var(--pm-mist); }
-.pm-brgy-list button:focus-visible { outline: 3px solid var(--pm-navy); outline-offset: 2px; }
+.pm-brgy-list button:focus-visible { outline: 3px solid var(--pm-brand); outline-offset: 2px; }
 .pm-brgy-list strong { display: block; color: var(--pm-heading); }
 .pm-brgy-list small { color: var(--pm-soft); font-size: .88rem; }
 
@@ -152,7 +152,7 @@
 /* ---------- Editable "What to do" steps: one box per step ---------- */
 .pm-guide .pm-btn { font-family: inherit; cursor: pointer; }
 .pm-guide .pm-btn-outline { background: transparent; }
-.pm-guide .pm-btn-outline:hover { background: var(--pm-navy); color: var(--pm-white); }
+.pm-guide .pm-btn-outline:hover { background: var(--pm-brand); color: var(--pm-white); }
 .pm-guide .pm-btn:disabled { opacity: .55; cursor: not-allowed; }
 
 .pm-phase-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
@@ -169,7 +169,7 @@
   cursor: pointer;
 }
 .pm-phase-tab:hover { background: var(--pm-mist); }
-.pm-phase-tab.is-active { background: var(--pm-navy); border-color: var(--pm-navy); color: var(--pm-white); }
+.pm-phase-tab.is-active { background: var(--pm-brand); border-color: var(--pm-brand); color: var(--pm-white); }
 
 .pm-guide-tools { display: grid; gap: 8px; margin-top: 16px; }
 /* "Edit on What to do" is a link styled as the panel's button */
@@ -180,6 +180,6 @@
 .pm-brgy-group {
   margin: 14px 0 6px;
   font-size: .78rem; font-weight: 700; letter-spacing: .02em;
-  color: var(--pm-muted, #5b6678);
+  color: var(--pm-muted, #556b52);
 }
 
