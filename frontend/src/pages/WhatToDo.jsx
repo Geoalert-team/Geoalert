@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
-import { hazardIconPath, DRRMO_HOTLINE } from '../components/Map/hazardInfo';
+import { hazardIconPath } from '../components/Map/hazardInfo';
 import { GUIDES, PHASES, UNIVERSAL_TIPS, VIDEOS } from '../data/safetyGuides';
 import { hazardsApi } from '../api/hazardsApi';
 import { guidanceApi } from '../api/guidanceApi';
@@ -606,20 +606,6 @@ export default function WhatToDo() {
                 </ul>
               </div>
             )}
-          </div>
-        </section>
-
-        {/* ============ EMERGENCY STRIP ============ */}
-        <section className="wt-emergency">
-          <div className="ph-container wt-emergency-inner">
-            <p>
-              <strong>In an emergency, don't read. Call.</strong>
-              <span>911 or the Talisay DRRMO at {DRRMO_HOTLINE.label}</span>
-            </p>
-            <div className="wt-emergency-actions">
-              <a className="ph-btn wt-btn-white" href="tel:911">Call 911</a>
-              <a className="ph-btn wt-btn-ghost" href={DRRMO_HOTLINE.tel}>Call DRRMO</a>
-            </div>
           </div>
         </section>
       </main>

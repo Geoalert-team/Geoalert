@@ -335,31 +335,6 @@
 .wt-playlist-item strong { display: block; color: var(--ph-heading); font-size: .96rem; line-height: 1.35; }
 .wt-playlist-item small { color: var(--ph-soft); font-size: .85rem; }
 
-/* ---------- Emergency strip ---------- */
-.wt-emergency {
-  padding: 32px 0;
-  background: var(--ph-high);
-  color: var(--ph-white);
-}
-.wt-emergency-inner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-.wt-emergency strong {
-  display: block;
-  font-family: var(--ph-font-head);
-  font-size: 1.4rem;
-}
-.wt-emergency-inner span { color: #fde4e4; }
-.wt-emergency-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.wt-btn-white { background: var(--ph-white); color: #a12f2f; }
-.wt-btn-white:hover { background: #fde4e4; }
-.wt-btn-ghost { border-color: rgba(255, 255, 255, .8); color: var(--ph-white); }
-.wt-btn-ghost:hover { background: rgba(255, 255, 255, .15); }
-
 /* ---------- Filter bar + reset ---------- */
 .wt-filter-bar {
   display: flex;
@@ -485,7 +460,6 @@
   .wt-steps-card, .wt-supplies-card { padding: 22px; }
   .wt-tips { grid-template-columns: 1fr; }
   .wt-playlist-item img { width: 96px; }
-  .wt-emergency-actions, .wt-emergency-actions .ph-btn { width: 100%; }
 }
 /* Keyword search */
 .wt-search {
