@@ -255,9 +255,13 @@ class IncidentReportListCreateView(APIView):
     permission_classes = [IsAuthenticated, IsBarangayPersonnel]
 
     def get(self, request):
-        # prefetch_related, or listing N reports costs N extra queries for
-        # their photos
-        reports = IncidentReport.objects.all().prefetch_related('photos')
+        # Fetched up front, or listing N reports costs N extra queries each
+        # for their photos, puroks, barangay, type and people
+        reports = (
+            IncidentReport.objects.all()
+            .select_related('barangay', 'hazard_type', 'submitted_by', 'reviewed_by')
+            .prefetch_related('photos', 'puroks')
+        )
 
         role = request.user.role.name if request.user.role else None
         if role == 'Barangay_Personnel':

@@ -32,7 +32,7 @@ export const reportsApi = {
   submit: ({
     barangay, hazard_type, description,
     agency = '', position = '', severity_estimate = '', photos = [], location = null,
-    started_at = null, purok = null, purok_other = '',
+    started_at = null, puroks = [],
   }) => {
     const body = { barangay, hazard_type, description, agency, position, severity_estimate };
     // Optional map pin [lat, lng]: sent only when one was placed
@@ -40,18 +40,20 @@ export const reportsApi = {
       body.latitude = Number(location[0].toFixed(6));
       body.longitude = Number(location[1].toFixed(6));
     }
-    // Fire reports: when it started and which purok (or the name typed for
-    // one that isn't on the list). Sent only when set.
+    // Fire reports: when it started. Sent only when set.
     if (started_at) body.started_at = started_at;
-    if (purok) body.purok = purok;
-    if (purok_other) body.purok_other = purok_other;
 
     if (!photos || photos.length === 0) {
-      return client.post('/api/reports/incidents/', body).then((r) => r.data);
+      // Fire reports: the puroks it is in, as a list of ids
+      return client
+        .post('/api/reports/incidents/', puroks.length ? { ...body, puroks } : body)
+        .then((r) => r.data);
     }
 
     const form = new FormData();
     Object.entries(body).forEach(([k, v]) => form.append(k, v ?? ''));
+    // One entry per purok: appending the array whole would send "3,6"
+    puroks.forEach((id) => form.append('puroks', id));
     // Appended under the same key once per file. DRF reads them back with
     // getlist(), so all of them arrive rather than only the last.
     photos.forEach((file) => form.append('photos', file, file.name));

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from apps.reports.models import IncidentReport, ReportPhoto
 from apps.hazards.serializers import HazardTypeSerializer
+from apps.barangays.models import Purok
 from apps.barangays.serializers import BarangaySerializer
 
 # A phone photo is 2-4 MB. Past this it is someone uploading something that
@@ -57,6 +58,23 @@ class ReportPhotoSerializer(serializers.ModelSerializer):
         return photo_url(obj.image, self.context.get('request'))
 
 
+class ReportPurokSerializer(serializers.ModelSerializer):
+    """A purok a report names, with the point where its pin goes: a point
+    inside the purok (not its centroid, which can fall outside an odd shape)."""
+    lat = serializers.SerializerMethodField()
+    lng = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Purok
+        fields = ['id', 'name', 'lat', 'lng']
+
+    def get_lat(self, obj):
+        return round(obj.boundary.point_on_surface.y, 6)
+
+    def get_lng(self, obj):
+        return round(obj.boundary.point_on_surface.x, 6)
+
+
 class IncidentReportSerializer(serializers.ModelSerializer):
     hazard_type_details = HazardTypeSerializer(source='hazard_type', read_only=True)
     barangay_details = BarangaySerializer(source='barangay', read_only=True)
@@ -66,7 +84,7 @@ class IncidentReportSerializer(serializers.ModelSerializer):
     photos = ReportPhotoSerializer(many=True, read_only=True)
     latitude = serializers.SerializerMethodField()
     longitude = serializers.SerializerMethodField()
-    purok_name = serializers.CharField(source='purok.name', read_only=True, default=None)
+    puroks = ReportPurokSerializer(many=True, read_only=True)
 
     def get_latitude(self, obj):
         return round(obj.location.y, 6) if obj.location else None
@@ -105,9 +123,9 @@ class IncidentReportSerializer(serializers.ModelSerializer):
             'hazard_zone',
             # Where the reporter saw it, or null when no pin was dropped
             'latitude', 'longitude',
-            # Fire reports: when it started and which purok (or the name
-            # typed when the purok is not on the list)
-            'started_at', 'purok', 'purok_name', 'purok_other',
+            # Fire reports: when it started and which puroks, each with
+            # where its pin goes
+            'started_at', 'puroks',
         ]
 
 
@@ -131,6 +149,10 @@ class IncidentReportCreateSerializer(serializers.ModelSerializer):
 
     # Optional map pin. Two plain numbers rather than GeoJSON, because a
     # report with photos arrives as multipart form data.
+    # Fire reports: the puroks the fire is in, by id. A list, so a report
+    # with photos (multipart) sends the key once per purok.
+    puroks = serializers.PrimaryKeyRelatedField(queryset=Purok.objects.all(), many=True, required=False)
+
     latitude = serializers.FloatField(required=False, allow_null=True, min_value=-90, max_value=90)
     longitude = serializers.FloatField(required=False, allow_null=True, min_value=-180, max_value=180)
 
@@ -147,16 +169,21 @@ class IncidentReportCreateSerializer(serializers.ModelSerializer):
             'latitude',
             'longitude',
             'started_at',
-            'purok',
-            'purok_other',
+            'puroks',
         ]
 
     def validate(self, attrs):
         from django.contrib.gis.geos import Point
+        from django.utils import timezone
         from apps.hazards.geometry import city_outline
+        from apps.reports.fire_report import prepare_report
 
         lat = attrs.pop('latitude', None)
         lng = attrs.pop('longitude', None)
+        hazard = attrs.get('hazard_type')
+        if hazard is not None and hazard.name.lower() == 'fire':
+            # A fire report's place comes from its puroks, never a pin
+            lat = lng = None
         if (lat is None) != (lng is None):
             raise serializers.ValidationError({'location': 'Send both latitude and longitude, or neither.'})
         if lat is not None:
@@ -168,18 +195,12 @@ class IncidentReportCreateSerializer(serializers.ModelSerializer):
                 )
             attrs['location'] = point
 
-        # A fire report is when and where (the BFP log's columns A-F)
-        hazard, barangay = attrs.get('hazard_type'), attrs.get('barangay')
-        if hazard is not None and hazard.name.lower() == 'fire' and barangay is not None:
-            from django.utils import timezone
-            from apps.barangays.models import Purok
-            from apps.reports.fire_report import fire_report_errors
-
-            attrs['purok_other'] = (attrs.get('purok_other') or '').strip()
-            errors = fire_report_errors(attrs, barangay, Purok.objects.filter(barangay=barangay).exists(),
-                                        timezone.now())
-            if errors:
-                raise serializers.ValidationError(errors)
+        # A fire report is when and where (the BFP log's columns A-F); other
+        # hazards keep no fire fields
+        attrs, errors = prepare_report(attrs, timezone.now(),
+                                       lambda barangay: Purok.objects.filter(barangay=barangay).exists())
+        if errors:
+            raise serializers.ValidationError(errors)
         return attrs
 
     def create(self, validated_data):
@@ -193,7 +214,9 @@ class IncidentReportCreateSerializer(serializers.ModelSerializer):
         whose pictures are missing without saying so.
         """
         photos = validated_data.pop('photos', [])
+        puroks = validated_data.pop('puroks', [])
         report = super().create(validated_data)
+        report.puroks.set(puroks)
         for image in photos:
             ReportPhoto.objects.create(report=report, image=image)
         return report

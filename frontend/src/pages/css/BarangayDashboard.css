@@ -37,6 +37,14 @@
 
 /* ---------- Optional photo ---------- */
 .brg-optional { margin-left: 6px; font-weight: 600; font-size: .76rem; color: var(--db-soft); }
+/* The puroks a fire report names: one chip each, with × to take it off */
+.brg-purok-chips { margin: 0 0 8px; }
+.brg-purok-chip { align-items: center; gap: 6px; }
+.brg-purok-chip button {
+  border: 0; background: none; padding: 0 2px; font: inherit; font-size: 1rem; line-height: 1;
+  color: var(--db-soft); cursor: pointer;
+}
+.brg-purok-chip button:hover { color: #a12f2f; }
 .adm-hint { margin-top: 6px; font-size: .78rem; color: var(--db-soft); }
 
 /* The real input is hidden but still focusable, so the label below acts as

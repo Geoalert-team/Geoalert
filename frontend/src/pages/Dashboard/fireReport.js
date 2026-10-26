@@ -1,19 +1,22 @@
 // What the incident report form asks, checks and sends. A fire report is
-// when and where, the BFP fire log's columns A-F: when it started, a pin,
-// and the purok (picked from the pin, or typed when it isn't on the list).
-// Property type, casualties, damage and alarm level are DRRMO's, entered
-// when the fire is closed. Other hazards keep "How serious is it?".
+// when and where, the BFP fire log's columns A-F: when it started and the
+// puroks it is in, picked from the barangay's list. The reporter doesn't
+// place a pin: the map shows one at each chosen purok, and the server sets
+// the report's location from them. Property type, casualties, damage and
+// alarm level are DRRMO's, entered when the fire is closed. Other hazards
+// keep the clickable pin and "How serious is it?".
 // The server checks the same rules (apps/reports/fire_report.py) with the
 // same words.
 
-import { purokAt, puroksOf } from '../../components/Map/purokStyle';
+import { puroksOf } from '../../components/Map/purokStyle';
 
-// The purok choice that opens a text box for the name
-export const NOT_LISTED = 'other';
+export const MAX_PUROKS = 10;
 
 // A phone clock a few minutes fast is not a start time in the future
 const CLOCK_SKEW_MS = 5 * 60 * 1000;
 const UNNAMED = /^Unnamed area (\d+)$/;
+// Errors that belong to one hazard type's fields, cleared when it changes
+const HAZARD_FIELD_ERRORS = ['started_at', 'puroks', 'location', 'severity_estimate'];
 
 export function isFireType(hazardTypes, id) {
   const type = (hazardTypes || []).find((t) => String(t.id) === String(id));
@@ -26,11 +29,13 @@ export function localNow(now = new Date()) {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
 }
 
-// The barangay's puroks for the dropdown: named ones A-Z, then the unnamed
-// areas in number order, marked as having no name yet
-export function purokOptions(geo, barangayId) {
-  const features = puroksOf(geo, barangayId)?.features || [];
-  const all = features.map((f) => ({ id: String(f.id), name: f.properties?.name || '' }));
+// The barangay's puroks not chosen yet, for "+ Add another": named ones
+// A-Z, then the unnamed areas in number order, marked as having no name yet
+export function purokOptions(geo, barangayId, chosen = []) {
+  const taken = new Set(chosen.map(String));
+  const all = (puroksOf(geo, barangayId)?.features || [])
+    .map((f) => ({ id: String(f.id), name: f.properties?.name || '' }))
+    .filter((p) => !taken.has(p.id));
   const named = all.filter((p) => !UNNAMED.test(p.name)).sort((a, b) => a.name.localeCompare(b.name));
   const unnamed = all.filter((p) => UNNAMED.test(p.name))
     .sort((a, b) => Number(a.name.match(UNNAMED)[1]) - Number(b.name.match(UNNAMED)[1]));
@@ -40,14 +45,37 @@ export function purokOptions(geo, barangayId) {
   ];
 }
 
-// The purok under a pin ([lat, lng]) in this barangay, or null
-export function purokAtPin(geo, barangayId, location) {
-  if (!location) return null;
-  const feature = purokAt(puroksOf(geo, barangayId), location[1], location[0]);
-  return feature ? String(feature.id) : null;
+// Where the map puts a pin for each chosen purok: a point inside it
+export function purokPins(geo, ids) {
+  const byId = new Map((geo?.features || []).map((f) => [String(f.id), f]));
+  return ids.map(String).map((id) => byId.get(id)).filter(Boolean).map((f) => ({
+    id: String(f.id),
+    name: f.properties?.name || '',
+    lat: f.properties?.label_point?.[1],
+    lng: f.properties?.label_point?.[0],
+  }));
 }
 
-export function validateReport(form, { fire, hasPuroks, now = new Date() }) {
+// Choosing Fire sets the start time to now, unless the reporter already
+// changed it: a dashboard left open since morning must not date a fire then
+export function withHazardType(form, id, { fire, now = new Date() }) {
+  const next = { ...form, hazard_type: id };
+  if (fire && !form.started_at_edited) next.started_at = localNow(now);
+  return next;
+}
+
+// Another barangay's puroks don't belong to this report
+export function withBarangay(form, id) {
+  return { ...form, barangay: id, puroks: [] };
+}
+
+export function hazardSwitchErrors(errors) {
+  const next = { ...errors };
+  HAZARD_FIELD_ERRORS.forEach((k) => delete next[k]);
+  return next;
+}
+
+export function validateReport(form, { fire, hasPuroks, purokStatus, now = new Date() }) {
   const e = {};
   if (!form.barangay) e.barangay = 'Choose the barangay where this is happening.';
   if (!form.hazard_type) e.hazard_type = 'Choose the type of hazard.';
@@ -61,10 +89,10 @@ export function validateReport(form, { fire, hasPuroks, now = new Date() }) {
   else if (new Date(form.started_at).getTime() > now.getTime() + CLOCK_SKEW_MS) {
     e.started_at = "The start time can't be in the future.";
   }
-  if (!form.location) e.location = 'Drop a pin where the fire is.';
-  const typed = (form.purok_other || '').trim();
-  const chosen = form.purok === NOT_LISTED ? typed : form.purok;
-  if (hasPuroks && !chosen) e.purok = "Choose the purok or sitio, or pick 'Not on the list' and type its name.";
+  const puroks = form.puroks || [];
+  if (purokStatus === 'failed') e.puroks = "The purok list didn't load. Try again.";
+  else if (puroks.length > MAX_PUROKS) e.puroks = `Choose at most ${MAX_PUROKS} puroks.`;
+  else if (hasPuroks && puroks.length === 0) e.puroks = 'Choose the purok or sitio where the fire is.';
   return e;
 }
 
@@ -76,20 +104,17 @@ export function reportPayload(form, { fire }) {
     description: form.description.trim(),
     position: form.position,
     agency: form.agency,
-    location: form.location,
   };
-  if (!fire) return { ...body, severity_estimate: form.severity_estimate };
-
-  body.started_at = new Date(form.started_at).toISOString();
-  const typed = (form.purok_other || '').trim();
-  if (form.purok && form.purok !== NOT_LISTED) body.purok = Number(form.purok);
-  else if (typed) body.purok_other = typed;
-  return body;
+  if (!fire) return { ...body, location: form.location, severity_estimate: form.severity_estimate };
+  return {
+    ...body,
+    started_at: new Date(form.started_at).toISOString(),
+    puroks: (form.puroks || []).map(Number),
+  };
 }
 
-// Where a report says it is: its purok, or the name typed for one not on the list
+// Where a report says it is: the puroks it names
 export function placeLabel(report) {
-  if (report.purok_name) return report.purok_name;
-  if (report.purok_other) return `${report.purok_other} (not on the list)`;
-  return null;
+  const names = (report.puroks || []).map((p) => p.name).filter(Boolean);
+  return names.length ? names.join(', ') : null;
 }

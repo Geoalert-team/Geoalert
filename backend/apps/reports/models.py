@@ -63,14 +63,14 @@ class IncidentReport(models.Model):
     location = PointField(srid=4326, null=True, blank=True, db_column='incr_location')
 
     # When and where, as the BFP fire log has them (its columns A-F). A fire
-    # report needs all three; other hazards leave them empty. The purok comes
-    # from the pin and the reporter can change it. When theirs is not on the
-    # list they type its name instead, which is how an unnamed area on the
-    # map gets its real name.
-    started_at  = models.DateTimeField(null=True, blank=True, db_column='incr_started_at')
-    purok       = models.ForeignKey(Purok, on_delete=models.SET_NULL, null=True, blank=True,
-                                    related_name='incident_reports', db_column='incr_prk_id')
-    purok_other = models.CharField(max_length=100, blank=True, default='', db_column='incr_purok_other')
+    # report needs both; other hazards leave them empty. The reporter picks
+    # the puroks; the map shows a pin at each one's centre, and the report's
+    # `location` is set from the first. (Migration 0006 keeps the old single
+    # purok columns, incr_prk_id and incr_purok_other, in the database for
+    # copies of the app that still read them.)
+    started_at = models.DateTimeField(null=True, blank=True, db_column='incr_started_at')
+    puroks     = models.ManyToManyField(Purok, blank=True, related_name='incident_reports',
+                                        db_table='incident_report_purok')
 
     casualties_dead    = models.IntegerField(null=True, blank=True, default=0, validators=[MinValueValidator(0)], db_column='incr_casualties_dead')
     casualties_injured = models.IntegerField(null=True, blank=True, default=0, validators=[MinValueValidator(0)], db_column='incr_casualties_injured')
