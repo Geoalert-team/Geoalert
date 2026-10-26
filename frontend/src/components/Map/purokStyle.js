@@ -25,6 +25,9 @@ export function purokStyle(feature) {
 // Laid over purokStyle for the purok under the pointer
 export const PUROK_HOVER = { weight: 3, fill: true, fillColor: PUROK_COLOR, fillOpacity: 0.15 };
 
+// Laid over purokStyle for the purok whose past hazards the panel shows
+export const PUROK_SELECTED = { weight: 3.5, dashArray: null };
+
 function inRing(lng, lat, ring) {
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {

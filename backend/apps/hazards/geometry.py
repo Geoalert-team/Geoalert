@@ -231,3 +231,13 @@ def cordon_ring(geometry, reach):
     if not parts:
         return None
     return MultiPolygon(parts, srid=reach.srid or geometry.srid or 4326)
+
+
+def overlapping_puroks(geometry):
+    """
+    The puroks a zone's area overlaps, for its history record when resolved:
+    the zone counts once in each. A purok that only shares a border with it
+    doesn't count.
+    """
+    from apps.barangays.models import Purok
+    return Purok.objects.filter(boundary__intersects=geometry).exclude(boundary__touches=geometry)

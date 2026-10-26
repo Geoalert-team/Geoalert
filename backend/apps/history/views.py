@@ -1,4 +1,3 @@
-import math
 from datetime import timedelta
 
 from django.utils import timezone
@@ -20,7 +19,10 @@ class HistoricalRecordListView(APIView):
     Public access — no login required.
 
     Filters:
-      ?barangay=1
+      ?barangay=1      filed under it, or linked to one of its puroks
+                       (apps/history/area.py), each record once
+      ?purok=12  or  ?purok=none   with ?barangay: one purok's records, or
+                       the barangay's records that name no purok
       ?hazard_type=1   or   ?hazard_type_name=Flood
       ?severity=Red
       ?date_from=2026-01-01&date_to=2026-12-31
@@ -38,8 +40,18 @@ class HistoricalRecordListView(APIView):
         records = HistoricalRecord.objects.select_related('hazard_type', 'barangay')
 
         barangay = request.query_params.get('barangay')
+        purok = (request.query_params.get('purok') or '').strip()
+        if purok and not barangay:
+            return Response({'error': 'purok needs a barangay.'}, status=400)
+        if purok and purok != 'none' and not purok.isdigit():
+            return Response({'error': 'purok must be an id or "none".'}, status=400)
         if barangay:
-            records = records.filter(barangay_id=barangay)
+            from apps.history.area import barangay_records
+            records = records.filter(id__in=barangay_records(barangay))
+        if purok == 'none':
+            records = records.filter(barangay_id=barangay, puroks__isnull=True)
+        elif purok:
+            records = records.filter(puroks__id=int(purok))
 
         severity = request.query_params.get('severity')
         if severity:
@@ -181,57 +193,82 @@ class HistoricalTrendsView(APIView):
             'by_month':       by_month,
         })
 
-class HistoricalHeatView(APIView):
-    """
-    GET /api/history/heat/?years=5
-    Where past hazards happened, for the heat shading on the public map.
-    Public access.
+def _type_names(request):
+    """?types=Flood,Fire as a list of names; empty means every type."""
+    return [t.strip() for t in (request.query_params.get('types') or '').split(',') if t.strip()]
 
-    Each record becomes one spot: the middle of its archived hazard zone and
-    that zone's radius, or the middle of its barangay when no zone was kept.
-    Records with neither are skipped, since there is nowhere to put them.
+
+class PurokLevelsView(APIView):
+    """
+    GET /api/history/purok-levels/?types=Flood,Fire
+    Each purok's level from how often it was hit, per hazard type, for the
+    map's purok colours. Public access.
+
+      {"thresholds": {"years", "moderate", "extreme"},
+       "results": [{"purok": id, "type": "Fire", "count": 3, "level": "Orange"}]}
+
+    Puroks with no past event are left out. Without ?types, every type;
+    unknown names match nothing.
     """
     permission_classes = [AllowAny]
 
-    FALLBACK_RADIUS_M = 150  # barangay-only records: a modest patch at its centre
+    def get(self, request):
+        from apps.history.purok_levels import level_for, purok_counts, thresholds
+
+        t = thresholds()
+        since = timezone.now() - timedelta(days=365 * t['years'])
+        counts = purok_counts(since, _type_names(request))
+        results = [
+            {'purok': purok, 'type': kind, 'count': n, 'level': level_for(n, t)}
+            for (purok, kind), n in sorted(counts.items())
+        ]
+        return Response({'thresholds': t, 'results': results})
+
+
+class AreaHistoryView(APIView):
+    """
+    GET /api/history/area/?barangay=7[&purok=12|none][&types=Fire][&period=all]
+    One barangay's past hazards, or one of its puroks', for the map's
+    barangay panel and the History page's Purok filter. Public access;
+    DRRMO staff also get each event's BFP address and damage.
+
+    In the history period (Settings) unless ?period=all. With no purok:
+    the total, each purok with history (count, level), how many records
+    name no purok, and the events. With purok=<id>: that purok only; with
+    purok=none: the barangay's records that name no purok.
+    See apps/history/area.py.
+    """
+    permission_classes = [AllowAny]
 
     def get(self, request):
+        from apps.barangays.models import Barangay, Purok
+        from apps.history.area import area_history
+        from apps.history.purok_levels import thresholds
+        from utils.permissions import IsDRRMOOfficer
+
         try:
-            years = min(max(int(request.query_params.get('years', 5)), 1), 20)
-        except (TypeError, ValueError):
-            years = 5
-        since = timezone.now() - timedelta(days=365 * years)
+            barangay = Barangay.objects.get(pk=int(request.query_params.get('barangay', '')))
+        except ValueError:
+            return Response({'error': 'barangay must be an id.'}, status=400)
+        except Barangay.DoesNotExist:
+            return Response({'error': 'Barangay not found'}, status=404)
 
-        records = (
-            HistoricalRecord.objects
-            .filter(occurred_at__gte=since)
-            .select_related('hazard_type', 'hazard_zone', 'barangay')
-        )
+        purok = (request.query_params.get('purok') or '').strip() or None
+        if purok is not None and purok != 'none':
+            try:
+                purok_id = int(purok)
+            except ValueError:
+                return Response({'error': 'purok must be an id or "none".'}, status=400)
+            purok = Purok.objects.filter(pk=purok_id, barangay=barangay).first()
+            if purok is None:
+                return Response({'error': f'That purok is not in Barangay {barangay.name}.'}, status=400)
 
-        spots = []
-        for r in records:
-            if r.hazard_zone and r.hazard_zone.geometry:
-                geom = r.hazard_zone.geometry
-                point = geom.point_on_surface
-                xmin, ymin, xmax, ymax = geom.extent
-                width = (xmax - xmin) * 111320 * math.cos(math.radians(point.y))
-                height = (ymax - ymin) * 111320
-                radius = max(10, min(width, height) / 2)
-            elif r.barangay and r.barangay.boundary:
-                point = r.barangay.boundary.point_on_surface
-                radius = self.FALLBACK_RADIUS_M
-            else:
-                continue
-            spots.append({
-                'type': r.hazard_type.name if r.hazard_type else None,
-                'severity': r.severity_level,
-                'lat': round(point.y, 6),
-                'lng': round(point.x, 6),
-                'radius': round(radius),
-                'occurred_at': r.occurred_at,
-            })
+        since = None
+        if request.query_params.get('period') != 'all':
+            since = timezone.now() - timedelta(days=365 * thresholds()['years'])
 
-        return Response({'years': years, 'spots': spots})
+        staff = IsDRRMOOfficer().has_permission(request, self)
+        return Response(area_history(barangay, purok, _type_names(request), since, staff))
 
 
 class HistoricalForecastView(APIView):

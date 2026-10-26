@@ -136,8 +136,8 @@ class Command(BaseCommand):
     def _top_up_history(self, history, active, barangay_at, grids, options, now, fake, rnd):
         """
         Make sure each active hazard (sample or real) has at least --min-history
-        past records of the same type in its barangay, so its History tab and
-        the heat shading around it aren't empty. Returns how many were added.
+        past records of the same type in its barangay, so its History tab
+        isn't empty. Returns how many were added.
         """
         need = options['min_history']
         if need <= 0:

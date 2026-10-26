@@ -15,7 +15,7 @@ from apps.accounts.models import User
 from apps.barangays.models import Barangay
 from apps.history.models import HistoricalRecord
 
-from apps.hazards.geometry import cordon_ring, main_barangay, overlap_shares, with_cordon
+from apps.hazards.geometry import cordon_ring, main_barangay, overlap_shares, overlapping_puroks, with_cordon
 from apps.hazards.models import HazardType, HazardZone, HazardAlert, HazardVerification
 from apps.hazards.serializers import (
     clean_zone_geometry,
@@ -549,7 +549,7 @@ class HazardZoneDetailView(APIView):
         # Archive to historical records on the transition into Resolved,
         # not on every PATCH that happens to carry status='Resolved'.
         if is_resolving and not HistoricalRecord.objects.filter(hazard_zone=zone).exists():
-            HistoricalRecord.objects.create(
+            record = HistoricalRecord.objects.create(
                 barangay         = zone.barangay,
                 hazard_type      = zone.hazard_type,
                 hazard_zone      = zone,
@@ -560,6 +560,10 @@ class HazardZoneDetailView(APIView):
                 total_displaced  = _as_count(request.data.get('total_displaced')),
                 is_sample        = zone.is_sample,
             )
+            # It counts once in every purok its area overlaps, which is what
+            # colours those puroks on the map (fires are closed elsewhere)
+            if zone.geometry:
+                record.puroks.set(overlapping_puroks(zone.geometry))
 
         if is_resolving:
             told, where = all_clear(zone, request.user, request.data.get('summary') or '')

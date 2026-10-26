@@ -520,6 +520,39 @@
   vertical-align: middle;
 }
 
+/* Past hazards in the barangay panel: its puroks, then one purok */
+.pm-area-swatch { flex: none; width: 12px; height: 12px; border-radius: 3px; }
+.pm-area-puroks { margin-top: 10px; }
+.pm-area-puroks li + li { border-top: 1px solid var(--pm-line); }
+.pm-area-puroks button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 4px;
+  border: 0;
+  background: none;
+  color: var(--pm-heading);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-area-puroks button:hover { background: var(--pm-mist); }
+.pm-area-puroks button > span:nth-child(2) { flex: 1; min-width: 0; }
+.pm-area-puroks small, .pm-area-title small { display: block; color: var(--pm-soft); font-size: .8rem; }
+.pm-area-count { font-weight: 800; }
+.pm-area-back {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--pm-navy);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pm-area-title { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.pm-area-puroks button:focus-visible, .pm-area-back:focus-visible { outline: 3px solid #7aa7ff; outline-offset: 2px; }
+
 /* =========================================================
    Mobile: search on top, panel becomes a bottom sheet
    ========================================================= */

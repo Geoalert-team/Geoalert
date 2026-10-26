@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { barangaysApi } from '../../api/barangaysApi';
 import { severityInfo, hazardIconPath, hazardColor, SEVERITY_RANK } from './hazardInfo';
 import SpotReading from './SpotReading';
+import AreaHistory from './AreaHistory';
 
 const PIN_PATH = 'M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7z';
 
@@ -41,9 +42,15 @@ function HazardList({ items, onSelectHazard }) {
 //
 // spot, susceptibilityIndex, rivers  the tapped point and the data to read
 // it with, for the "This spot" section (no spot when chosen from search)
+//
+// purokId       the purok whose past hazards are shown (an id, or 'none' for
+//               the records that name no purok); null for the whole barangay
+// onPickPurok   (id | 'none' | null) from the past hazards section
+// historyTypes  the hazard types ticked in Layers, for the past hazards
 export default function BarangayPanel({
   barangay, hazards, allHazards = [], open, onClose, onSelectHazard,
   spot = null, susceptibilityIndex = null, rivers = null,
+  purokId = null, onPickPurok = () => {}, historyTypes = [],
 }) {
   const closeRef = useRef(null);
   const [split, setSplit] = useState(null); // { inside: [ids], crossing: [ids] } or null
@@ -135,6 +142,11 @@ export default function BarangayPanel({
             ) : (
               <HazardList items={sorted} onSelectHazard={onSelectHazard} />
             )}
+          </div>
+
+          <div className="pm-tabpanel">
+            <h3>Past hazards</h3>
+            <AreaHistory barangay={barangay} purokId={purokId} types={historyTypes} onPickPurok={onPickPurok} />
           </div>
         </div>
       )}
