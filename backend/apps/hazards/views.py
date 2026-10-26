@@ -429,6 +429,16 @@ class HazardZoneDetailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # A fire is closed with its BFP figures (POST /api/hazards/<id>/close/),
+        # which fill the fire log's columns G onward. Resolving it here would
+        # file a history record without them.
+        is_fire = (zone.hazard_type.name if zone.hazard_type else '').lower() == 'fire'
+        if is_fire and new_status in ('Resolved', 'Archived') and not was_already_resolved:
+            return Response(
+                {'error': 'Fire zones are closed with their BFP figures.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         valid_statuses = [
             c[0] for c in HazardZone.STATUS_CHOICES if c[0] != 'Retracted'
         ]

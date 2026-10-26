@@ -1,5 +1,5 @@
 import {
-  hazardSwitchErrors, isFireType, localNow, placeLabel, purokOptions, purokPins, reportPayload,
+  areaFields, hazardNoun, hazardSwitchErrors, isFireType, localNow, placeLabel, purokOptions, purokPins, reportPayload,
   validateReport, withBarangay, withHazardType,
 } from './fireReport';
 
@@ -25,7 +25,7 @@ const GEO = {
 const FIRE = {
   barangay: '19', hazard_type: '2', description: 'Smoke from a house near the chapel',
   started_at: '2026-10-25T13:00', started_at_edited: false, location: [10.255, 123.855],
-  puroks: ['3', '6'], severity_estimate: '',
+  puroks: ['3', '6'],
 };
 const NOW = new Date('2026-10-25T14:00');
 
@@ -47,26 +47,27 @@ test('pins sit at each chosen purok, in order', () => {
   ]);
 });
 
-test('choosing Fire refreshes a start time nobody touched', () => {
+test('choosing any hazard refreshes a start time nobody touched', () => {
   const later = new Date(2026, 9, 25, 14, 0);
-  expect(withHazardType({ ...FIRE, started_at: '2026-10-25T08:00' }, '2', { fire: true, now: later }).started_at)
+  expect(withHazardType({ ...FIRE, started_at: '2026-10-25T08:00' }, '2', { now: later }).started_at)
     .toBe('2026-10-25T14:00');
+  expect(withHazardType({ ...FIRE, started_at: '2026-10-25T08:00' }, '1', { now: later }))
+    .toMatchObject({ hazard_type: '1', started_at: '2026-10-25T14:00' });
   expect(withHazardType({ ...FIRE, started_at: '2026-10-25T08:00', started_at_edited: true }, '2',
-    { fire: true, now: later }).started_at).toBe('2026-10-25T08:00');
-  expect(withHazardType(FIRE, '1', { fire: false, now: later }).hazard_type).toBe('1');
+    { now: later }).started_at).toBe('2026-10-25T08:00');
 });
 
 test('changing barangay empties the puroks', () => {
   expect(withBarangay(FIRE, '8')).toMatchObject({ barangay: '8', puroks: [] });
 });
 
-test('switching hazard clears the fire errors', () => {
-  expect(hazardSwitchErrors({ puroks: 'x', started_at: 'y', location: 'z', severity_estimate: 's', description: 'd' }))
+test('switching hazard clears the when-and-where errors, which name the hazard', () => {
+  expect(hazardSwitchErrors({ puroks: 'x', started_at: 'y', location: 'z', description: 'd' }))
     .toEqual({ description: 'd' });
 });
 
 test('fire report checks', () => {
-  const opts = { fire: true, hasPuroks: true, purokStatus: 'ready', now: NOW };
+  const opts = { noun: 'fire', hasPuroks: true, purokStatus: 'ready', now: NOW };
   expect(validateReport(FIRE, opts)).toEqual({});
   expect(validateReport({ ...FIRE, location: null }, opts)).toEqual({}); // no pin needed
   expect(validateReport({ ...FIRE, puroks: [] }, opts).puroks).toBe('Choose the purok or sitio where the fire is.');
@@ -82,25 +83,62 @@ test('fire report checks', () => {
   expect(validateReport({ ...FIRE, started_at: '' }, opts).started_at).toBe('Say when the fire started.');
 });
 
-test('other hazards still ask how serious it is', () => {
-  expect(validateReport({ ...FIRE, puroks: [] }, { fire: false, hasPuroks: true, purokStatus: 'ready', now: NOW }))
-    .toEqual({ severity_estimate: 'Choose how serious it looks.' });
+test('flood and landslide reports say when and which puroks too, but not how serious it is', () => {
+  const opts = { noun: 'flood', hasPuroks: true, purokStatus: 'ready', now: NOW };
+  expect(validateReport(FIRE, opts)).toEqual({});
+  expect(validateReport({ ...FIRE, location: null }, opts)).toEqual({}); // the pin stays optional
+  expect(validateReport({ ...FIRE, puroks: [], started_at: '' }, opts)).toEqual({
+    started_at: 'Say when the flood started.',
+    puroks: 'Choose the purok or sitio where the flood is.',
+  });
+  expect(validateReport({ ...FIRE, puroks: [] }, { ...opts, noun: 'landslide' }).puroks)
+    .toBe('Choose the purok or sitio where the landslide is.');
 });
 
-test('payload: fire sends puroks, no pin; other types keep the pin', () => {
+test('the hazard is named by its type, or "hazard" before one is chosen', () => {
+  const types = [{ id: 1, name: 'Flood' }, { id: 2, name: 'Fire' }, { id: 3, name: 'Landslide' }];
+  expect(hazardNoun(types, '1')).toBe('flood');
+  expect(hazardNoun(types, 3)).toBe('landslide');
+  expect(hazardNoun(types, '')).toBe('hazard');
+});
+
+test('payload: every report sends when and puroks; a fire sends no pin, other types keep theirs', () => {
   const fire = reportPayload(FIRE, { fire: true });
   expect(fire).toMatchObject({ barangay: 19, hazard_type: 2, puroks: [3, 6] });
   expect(fire.started_at).toBe(new Date('2026-10-25T13:00').toISOString());
   ['location', 'severity_estimate', 'purok', 'purok_other'].forEach((k) => expect(fire).not.toHaveProperty(k));
-  const flood = reportPayload({ ...FIRE, severity_estimate: 'Moderate' }, { fire: false });
-  expect(flood).toMatchObject({ severity_estimate: 'Moderate', location: [10.255, 123.855] });
-  ['started_at', 'puroks'].forEach((k) => expect(flood).not.toHaveProperty(k));
+  const flood = reportPayload(FIRE, { fire: false });
+  expect(flood).toMatchObject({ location: [10.255, 123.855], puroks: [3, 6] });
+  expect(flood.started_at).toBe(new Date('2026-10-25T13:00').toISOString());
+  expect(flood).not.toHaveProperty('severity_estimate');
 });
 
 test('place label lists the puroks', () => {
   expect(placeLabel({ puroks: [{ name: 'Purok Santol' }, { name: 'Purok Lubi' }] })).toBe('Purok Santol, Purok Lubi');
   expect(placeLabel({ puroks: [] })).toBeNull();
   expect(placeLabel({})).toBeNull();
+});
+
+test('region, province and city come from the barangay, in the fire log\'s order', () => {
+  const jaclupan = { name: 'Jaclupan', region: 'Region VII (Central Visayas)', province: 'Cebu', municipality: 'Talisay City' };
+  expect(areaFields(jaclupan).map((f) => [f.label, f.value])).toEqual([
+    ['Region', 'Region VII (Central Visayas)'],
+    ['Province / District', 'Cebu'],
+    ['City / Municipality', 'Talisay City'],
+  ]);
+  // A barangay not chosen yet, or an older server without them: left blank
+  expect(areaFields(undefined).map((f) => f.value)).toEqual(['', '', '']);
+});
+
+test('the payload never sends region, province or city', () => {
+  const body = reportPayload(
+    { barangay: '7', hazard_type: '2', description: 'Smoke from a house', position: '', agency: '',
+      started_at: '2026-10-26T10:00', puroks: ['3'] },
+    { fire: true },
+  );
+  expect(body).not.toHaveProperty('region');
+  expect(body).not.toHaveProperty('province');
+  expect(body).not.toHaveProperty('municipality');
 });
 
 test('only the Fire hazard type gets the fire form', () => {

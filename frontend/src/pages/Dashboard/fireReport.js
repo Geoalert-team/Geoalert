@@ -1,10 +1,13 @@
-// What the incident report form asks, checks and sends. A fire report is
+// What the incident report form asks, checks and sends. Every report is
 // when and where, the BFP fire log's columns A-F: when it started and the
-// puroks it is in, picked from the barangay's list. The reporter doesn't
-// place a pin: the map shows one at each chosen purok, and the server sets
-// the report's location from them. Property type, casualties, damage and
-// alarm level are DRRMO's, entered when the fire is closed. Other hazards
-// keep the clickable pin and "How serious is it?".
+// puroks it is in, picked from the barangay's list. A fire's reporter
+// doesn't place a pin: the map shows one at each chosen purok, and the
+// server sets the report's location from them. Property type, casualties,
+// damage and alarm level are DRRMO's, entered when the fire is closed.
+// Floods and landslides also keep an optional clickable pin, which the
+// DRRMO draws zones around; without one the server places them at their
+// first purok. No report asks how serious it is: the DRRMO sets the level
+// when it publishes the hazard.
 // The server checks the same rules (apps/reports/fire_report.py) with the
 // same words.
 
@@ -16,11 +19,17 @@ export const MAX_PUROKS = 10;
 const CLOCK_SKEW_MS = 5 * 60 * 1000;
 const UNNAMED = /^Unnamed area (\d+)$/;
 // Errors that belong to one hazard type's fields, cleared when it changes
-const HAZARD_FIELD_ERRORS = ['started_at', 'puroks', 'location', 'severity_estimate'];
+const HAZARD_FIELD_ERRORS = ['started_at', 'puroks', 'location'];
+
+// The chosen hazard's name for the checks' wording ("Say when the flood
+// started."), or "hazard" before one is chosen
+export function hazardNoun(hazardTypes, id) {
+  const type = (hazardTypes || []).find((t) => String(t.id) === String(id));
+  return (type?.name || '').toLowerCase() || 'hazard';
+}
 
 export function isFireType(hazardTypes, id) {
-  const type = (hazardTypes || []).find((t) => String(t.id) === String(id));
-  return (type?.name || '').toLowerCase() === 'fire';
+  return hazardNoun(hazardTypes, id) === 'fire';
 }
 
 // The value a datetime-local input takes: YYYY-MM-DDTHH:mm in local time
@@ -56,11 +65,11 @@ export function purokPins(geo, ids) {
   }));
 }
 
-// Choosing Fire sets the start time to now, unless the reporter already
+// Choosing a hazard sets the start time to now, unless the reporter already
 // changed it: a dashboard left open since morning must not date a fire then
-export function withHazardType(form, id, { fire, now = new Date() }) {
+export function withHazardType(form, id, { now = new Date() } = {}) {
   const next = { ...form, hazard_type: id };
-  if (fire && !form.started_at_edited) next.started_at = localNow(now);
+  if (!form.started_at_edited) next.started_at = localNow(now);
   return next;
 }
 
@@ -75,24 +84,21 @@ export function hazardSwitchErrors(errors) {
   return next;
 }
 
-export function validateReport(form, { fire, hasPuroks, purokStatus, now = new Date() }) {
+// noun names the hazard in the messages; see hazardNoun
+export function validateReport(form, { noun = 'hazard', hasPuroks, purokStatus, now = new Date() }) {
   const e = {};
   if (!form.barangay) e.barangay = 'Choose the barangay where this is happening.';
   if (!form.hazard_type) e.hazard_type = 'Choose the type of hazard.';
   if (form.description.trim().length < 10) e.description = 'Describe what you are seeing in a sentence or two.';
 
-  if (!fire) {
-    if (!form.severity_estimate) e.severity_estimate = 'Choose how serious it looks.';
-    return e;
-  }
-  if (!form.started_at) e.started_at = 'Say when the fire started.';
+  if (!form.started_at) e.started_at = `Say when the ${noun} started.`;
   else if (new Date(form.started_at).getTime() > now.getTime() + CLOCK_SKEW_MS) {
     e.started_at = "The start time can't be in the future.";
   }
   const puroks = form.puroks || [];
   if (purokStatus === 'failed') e.puroks = "The purok list didn't load. Try again.";
   else if (puroks.length > MAX_PUROKS) e.puroks = `Choose at most ${MAX_PUROKS} puroks.`;
-  else if (hasPuroks && puroks.length === 0) e.puroks = 'Choose the purok or sitio where the fire is.';
+  else if (hasPuroks && puroks.length === 0) e.puroks = `Choose the purok or sitio where the ${noun} is.`;
   return e;
 }
 
@@ -104,13 +110,21 @@ export function reportPayload(form, { fire }) {
     description: form.description.trim(),
     position: form.position,
     agency: form.agency,
-  };
-  if (!fire) return { ...body, location: form.location, severity_estimate: form.severity_estimate };
-  return {
-    ...body,
     started_at: new Date(form.started_at).toISOString(),
     puroks: (form.puroks || []).map(Number),
   };
+  // A fire is placed at its puroks; other hazards send their pin, if any
+  return fire ? body : { ...body, location: form.location };
+}
+
+// Where the barangay is filed, as the BFP fire log's columns C-E. Shown on
+// every report, never typed: the server reads them from the barangay.
+export function areaFields(barangay) {
+  return [
+    { key: 'region', label: 'Region', value: barangay?.region || '' },
+    { key: 'province', label: 'Province / District', value: barangay?.province || '' },
+    { key: 'municipality', label: 'City / Municipality', value: barangay?.municipality || '' },
+  ];
 }
 
 // Where a report says it is: the puroks it names

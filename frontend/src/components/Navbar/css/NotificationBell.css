@@ -1,5 +1,6 @@
 /* =========================================================
-   Notification bell panel (all signed-in roles). The bell button
+   Notification bell panel (all signed-in roles, and the residents'
+   hazard alert bell when signed out). The bell button
    itself keeps the pn-bell-* styles from PublicNavbar.css.
    Prefix: nb-
    ========================================================= */
@@ -85,6 +86,13 @@
 .nb-empty-icon { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; margin-bottom: 6px; border-radius: 14px; background: #e8edf5; color: #1c2e4a; }
 .nb-empty strong { font-size: .98rem; color: #1c2e4a; }
 .nb-empty p { margin: 0; max-width: 260px; font-size: .86rem; color: #6a778d; }
+
+/* Residents' bell (ResidentAlertBell.jsx): one list, no tabs, and a link
+   to the map where the staff bell has "Mark all as read" */
+.nb-head-ruled { padding-bottom: 12px; border-bottom: 1px solid #e3e8ef; }
+a.nb-markall { text-decoration: none; }
+.nb-list { margin: 0; padding: 8px 8px 6px; list-style: none; }
+.nb-empty-icon.nb-tone-good { background: #e6f5ec; color: #16693a; }
 
 /* Bell shake when something new arrives */
 .nb-ring svg { animation: nb-ring 1s ease; transform-origin: 50% 4px; }

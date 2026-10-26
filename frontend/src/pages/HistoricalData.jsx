@@ -1,17 +1,12 @@
-﻿import React, { useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
+import RecordDetail from '../components/History/RecordDetail';
 import { historyApi } from '../api/historyApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { hazardsApi } from '../api/hazardsApi';
 import './css/Dashboard.css';
 import './css/HistoricalData.css';
-
-const SEVERITY = {
-  Red:    { label: 'Extreme',  color: 'var(--db-high)' },
-  Orange: { label: 'Moderate', color: 'var(--db-medium)' },
-  Green:  { label: 'Low',      color: 'var(--db-low)' },
-};
 
 // A blank count in the archive means "nobody counted", which is not zero.
 // Printing it as 0 would quietly turn an uncounted incident into a
@@ -31,9 +26,11 @@ const PAGE_SIZE = 10;
 
 /**
  * The archive of resolved hazards, one record at a time, filterable by
- * hazard type, barangay and date. The trends, seasonal outlook and barangay
- * likelihood that used to sit here are in Reports › Analytics, which reads
- * the same records.
+ * hazard type, barangay and date. Each record opens in full (RecordDetail):
+ * the BFP figures for a fire, and what the barangay reported. The list shows
+ * no severity: a record is what happened, not how its alert was graded.
+ * The trends, seasonal outlook and barangay likelihood that used to sit here
+ * are in Reports › Analytics, which reads the same records.
  */
 export default function HistoricalData() {
   const [records, setRecords] = useState([]);
@@ -47,6 +44,13 @@ export default function HistoricalData() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
+  // The record open in full, and the row to return focus to on close
+  const [openId, setOpenId] = useState(null);
+  const opener = useRef(null);
+  const closeRecord = useCallback(() => {
+    setOpenId(null);
+    opener.current?.focus();
+  }, []);
 
   useEffect(() => {
     barangaysApi.list()
@@ -146,28 +150,28 @@ export default function HistoricalData() {
               <>
               <div className="db-list">
                 {pageRecords.map((r) => (
-                  <div key={r.id} className="db-item">
-                    <div className="db-item-head">
+                  <button
+                    key={r.id}
+                    type="button"
+                    className="db-item db-item-clickable db-record-row"
+                    onClick={(e) => { opener.current = e.currentTarget; setOpenId(r.id); }}
+                  >
+                    <span className="db-item-head">
                       <span className="db-item-title">
                         {nestedName(r.hazard_type_detail) || 'Hazard'}
                         {' - '}
                         {nestedName(r.barangay_detail) || 'Unspecified barangay'}
                         {r.is_sample && <span className="db-badge" style={{ marginLeft: 8 }}>Sample</span>}
                       </span>
-                      <span
-                        className="db-item-meta"
-                        style={{ color: SEVERITY[r.severity_level]?.color, fontWeight: 600 }}
-                      >
-                        {SEVERITY[r.severity_level]?.label || r.severity_level}
-                      </span>
-                    </div>
-                    <div className="db-item-meta">{r.description}</div>
-                    <div className="db-item-meta">
+                      <span className="db-record-open" aria-hidden="true">View details ›</span>
+                    </span>
+                    <span className="db-item-meta">{r.description}</span>
+                    <span className="db-item-meta">
                       {new Date(r.occurred_at).toLocaleDateString()}
                       {' · '}{countText('Casualties', r.total_casualties)}
                       {' · '}{countText('Displaced', r.total_displaced)}
-                    </div>
-                  </div>
+                    </span>
+                  </button>
                 ))}
               </div>
 
@@ -190,6 +194,8 @@ export default function HistoricalData() {
           </div>
         )}
       </div>
+
+      {openId && <RecordDetail recordId={openId} onClose={closeRecord} />}
     </div>
   );
 }

@@ -140,8 +140,8 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
             ))}
           </ul>
           {major.length
-            ? 'Publishing sends the same barangays a second alert. If the area or severity changed, update the existing zone (Edit area, Change severity). Publish only if this is a separate event.'
-            : 'Publishing again sends a second alert for the same hazard. To change the existing one, edit it instead.'}
+            ? 'Publishing sends the same barangays a second alert. Publish only if this is a separate event.'
+            : 'Publishing again sends a second alert for the same hazard. Publish only if this is a separate event.'}
         </div>
       )}
 

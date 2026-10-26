@@ -1,8 +1,8 @@
 """
-Resolving a fire in two steps against a real database: Fire out sends the
-all-clear and takes it off the map; closing it with the BFP figures files
-one history record that counts once in each of its puroks. Floods keep the
-one-step resolve.
+Resolving a fire against a real database: Fire out sends the all-clear and
+takes it off the map; closing it with the BFP figures files one history
+record that counts once in each of its puroks. Closing a fire still on the
+map does both in one step. Floods keep the one-step resolve.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -65,6 +65,24 @@ class FireCloseViewTests(FireSetupMixin, TestCase):
         self.assertIn('PUROK NEAR', record.location_text)
         zone.refresh_from_db()
         self.assertEqual(zone.status, 'Resolved')
+
+    def test_closing_a_live_fire_puts_it_out_and_files_it_in_one_step(self):
+        zone = self.fire_zone(self.near, self.far)
+        response = self.post(zone, 'close', {**OK, 'fatal_civ_female': 2, 'structures_affected': 3})
+        self.assertEqual(response.status_code, 201)
+        zone.refresh_from_db()
+        self.assertEqual((zone.status, zone.fire_out_by_id), ('Resolved', self.officer.id))
+        self.assertIsNotNone(zone.fire_out_at)
+        record = HistoricalRecord.objects.get(hazard_zone=zone)
+        self.assertEqual((record.fatal_civ_female, record.structures_affected, record.total_casualties), (2, 3, 2))
+        self.assertTrue(Notification.objects.filter(recipient=self.reporter, content__contains='filed in history').exists())
+
+    def test_bad_figures_leave_a_live_fire_on_the_map(self):
+        zone = self.fire_zone(self.near)
+        self.assertEqual(self.post(zone, 'close', {**OK, 'property_subcategory': 'GRASS'}).status_code, 400)
+        zone.refresh_from_db()
+        self.assertEqual(zone.status, 'Active')
+        self.assertFalse(Notification.objects.filter(content__contains='ALL CLEAR').exists())
 
     def test_closing_twice_files_one_record(self):
         zone = self.fire_zone(self.near, status='Resolving')

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import NotificationBell from "./NotificationBell";
+import ResidentAlertBell from "./ResidentAlertBell";
 import AccountMenu, { AccountPanel } from "./AccountMenu";
 import useMediaQuery from "./useMediaQuery";
 import logo from "../../assets/images/logo1.png";
@@ -14,6 +15,9 @@ import "./css/PublicNavbar.css";
  * bell and one account button (AccountMenu.jsx): their name and role, their
  * role's pages and Log out, all in its menu. All of it disappears again on
  * logout. Map is a public link, so no role lists it again.
+ *
+ * Signed out (residents), the bell is the hazard alert bell instead
+ * (ResidentAlertBell.jsx): the hazards on the public map, no account needed.
  */
 const PUBLIC_LINKS = [
   { to: "/", label: "Home" },
@@ -99,7 +103,7 @@ export default function PublicNavbar() {
 
         {/* On a narrow screen the bell stays in sight, beside the ☰ button */}
         <div className="pn-compact-actions">
-          {user && compact && <NotificationBell />}
+          {compact && (user ? <NotificationBell /> : <ResidentAlertBell />)}
           <button
             type="button"
             className="pn-toggle"
@@ -129,11 +133,11 @@ export default function PublicNavbar() {
             ) : login
           ) : (
             // One right-hand slot, the same width signed in or out, so the
-            // public links never move: Log in, or the bell and the account
-            // button
+            // public links never move: the alert bell and Log in, or the
+            // bell and the account button
             <div className="pn-account">
-              {/* Only mounted (and polling) while someone is logged in */}
-              {user && <NotificationBell />}
+              {/* Each bell is only mounted (and polling) for its own audience */}
+              {user ? <NotificationBell /> : <ResidentAlertBell />}
               {user ? <AccountMenu user={user} links={staffLinks} onLogout={handleLogout} /> : login}
             </div>
           )}

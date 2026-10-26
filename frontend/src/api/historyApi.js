@@ -23,4 +23,7 @@ export const historyApi = {
   // Where past hazards happened (centre, radius, severity, date), for the map's heat shading
   heat: (years) =>
     client.get('/api/history/heat/', { params: years ? { years } : {} }).then((r) => r.data),
+
+  // DRRMO: the fire close form's lists, { property_types: {category: [sub]}, alarm_levels: [...] }
+  bfpOptions: () => client.get('/api/history/bfp-options/').then((r) => r.data),
 };

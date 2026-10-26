@@ -1,8 +1,11 @@
 """
-Resolving a fire in two steps.
+Resolving a fire: put out, then closed with the BFP figures.
 
 POST /api/hazards/<id>/fire-out/   the fire is out: all-clear, off the map
-POST /api/hazards/<id>/close/      the BFP figures: one history record
+POST /api/hazards/<id>/close/      the BFP figures: one history record. On a
+                                   fire still Active it is put out first, in
+                                   the same transaction (the resolve form's
+                                   one step); on one already out it only closes
 GET  /api/hazards/figures-due/     fires out and still waiting for figures
 
 A fire is one row of the BFP fire log. The report gave its columns A-F
@@ -47,6 +50,25 @@ def _puroks(zone):
     return puroks
 
 
+def _put_out(zone, user, note, reporter_text):
+    """
+    Take an Active fire off the map: Resolving, the all-clear to everyone who
+    got its alert, and a word to whoever reported it. Call inside the
+    transaction holding the zone's lock. Returns (told, where).
+    """
+    zone.status = 'Resolving'
+    zone.fire_out_at = timezone.now()
+    zone.fire_out_by = user
+    touch(zone)  # the daily reminder now asks for the BFP figures
+    zone.save(update_fields=['status', 'fire_out_at', 'fire_out_by', 'next_nudge_at'])
+
+    told, where = all_clear(zone, user, note)
+    reporters = {r.submitted_by for r in zone.incidentreport_set.select_related('submitted_by')
+                 if r.submitted_by and r.submitted_by.is_active}
+    notify(reporters, reporter_text.format(where=where), zone)
+    return told, where
+
+
 class FireOutView(APIView):
     permission_classes = [IsAuthenticated, IsDRRMOOfficer]
 
@@ -58,17 +80,8 @@ class FireOutView(APIView):
                 return Response({'error': 'Hazard zone not found'}, status=status.HTTP_404_NOT_FOUND)
             if not _is_fire(zone) or zone.status != 'Active':
                 return Response({'error': 'Only an active fire can be put out.'}, status=status.HTTP_409_CONFLICT)
-
-            zone.status = 'Resolving'
-            zone.fire_out_at = timezone.now()
-            zone.fire_out_by = request.user
-            touch(zone)  # the daily reminder now asks for the BFP figures
-            zone.save(update_fields=['status', 'fire_out_at', 'fire_out_by', 'next_nudge_at'])
-
-            told, where = all_clear(zone, request.user, note)
-            reporters = {r.submitted_by for r in zone.incidentreport_set.select_related('submitted_by')
-                         if r.submitted_by and r.submitted_by.is_active}
-            notify(reporters, f'The fire you reported at {where} is out. DRRMO will record the BFP figures.', zone)
+            told, where = _put_out(zone, request.user, note,
+                                   'The fire you reported at {where} is out. DRRMO will record the BFP figures.')
 
         log_event(request, 'FIRE_OUT', 'hazard_zone', zone.id,
                   f'{type_name(zone)} for {where} is out. All-clear sent to {len(told)} account(s).')
@@ -84,15 +97,21 @@ class FireCloseView(APIView):
             zone = _locked_fire(pk)
             if zone is None:
                 return Response({'error': 'Hazard zone not found'}, status=status.HTTP_404_NOT_FOUND)
-            if not _is_fire(zone) or zone.status != 'Resolving':
-                return Response({'error': 'Only a fire that is out can be closed.'},
+            if not _is_fire(zone) or zone.status not in ('Active', 'Resolving'):
+                return Response({'error': 'Only a live fire, or one that is out, can be closed.'},
                                 status=status.HTTP_409_CONFLICT)
             if errors:
                 return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
+            summary = fields.pop('summary')
+            # Still on the map: put it out first, so the all-clear goes with the record
+            put_out = None
+            if zone.status == 'Active':
+                put_out = _put_out(zone, request.user, summary,
+                                   'The fire you reported at {where} is out and has been filed in history.')
+
             puroks = _puroks(zone)
             started = [r.started_at for r in zone.incidentreport_set.all() if r.started_at]
-            summary = fields.pop('summary')
             record = HistoricalRecord.objects.create(
                 hazard_zone=zone,
                 hazard_type=zone.hazard_type,
@@ -112,6 +131,10 @@ class FireCloseView(APIView):
             zone.resolved_at = timezone.now()
             zone.save(update_fields=['status', 'resolved_at'])
 
+        if put_out:
+            told, where = put_out
+            log_event(request, 'FIRE_OUT', 'hazard_zone', zone.id,
+                      f'{type_name(zone)} for {where} is out. All-clear sent to {len(told)} account(s).')
         log_event(request, 'CLOSE_FIRE', 'hazard_zone', zone.id,
                   f'Fire closed with {fields["alarm_level"]}; history record {record.id} '
                   f'for {len(puroks)} purok(s).')

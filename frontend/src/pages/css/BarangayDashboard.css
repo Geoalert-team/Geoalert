@@ -19,6 +19,12 @@
 }
 .brg-locked strong { color: var(--db-heading); }
 
+/* Region, province and city: read from the barangay, laid out like the
+   BFP fire log's columns C-E */
+.brg-area { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.brg-area dt { margin-bottom: 6px; font-size: .84rem; font-weight: 700; color: var(--db-heading); }
+.brg-area dd { flex: 1; margin: 0; } /* same height when the region wraps */
+
 .brg-choice-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .brg-choice {
   display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px;
@@ -26,8 +32,8 @@
   font-weight: 700; color: var(--db-heading) !important; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease;
 }
 .brg-choice:hover { border-color: #9fb0c8; }
-.brg-choice input, .brg-sev input { position: absolute; opacity: 0; pointer-events: none; }
-.brg-choice:focus-within, .brg-sev:focus-within { box-shadow: var(--adm-focus); }
+.brg-choice input { position: absolute; opacity: 0; pointer-events: none; }
+.brg-choice:focus-within { box-shadow: var(--adm-focus); }
 .brg-choice.is-checked { border-color: var(--db-navy); box-shadow: 0 0 0 1px var(--db-navy); }
 .drm-hazard-sm { width: 30px; height: 30px; border-radius: 9px; }
 
@@ -98,23 +104,6 @@
   .brg-photo-thumb { width: 84px; height: 84px; }
 }
 
-.brg-severity { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.brg-sev {
-  position: relative; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px;
-  border: 1.5px solid var(--adm-line-strong); border-radius: 12px; background: var(--adm-surface); cursor: pointer;
-  color: var(--db-soft) !important; font-weight: 400 !important; transition: border-color .15s ease, background-color .15s ease;
-}
-.brg-sev strong { display: flex; align-items: center; gap: 7px; font-size: .92rem; color: var(--db-heading); }
-.brg-sev strong::before { content: ""; width: 9px; height: 9px; border-radius: 50%; }
-.brg-sev span { font-size: .76rem; line-height: 1.35; }
-.brg-sev-low strong::before { background: #1f9d55; }
-.brg-sev-moderate strong::before { background: #d99a00; }
-.brg-sev-high strong::before { background: #d64545; }
-.brg-sev.is-checked { border-color: var(--db-navy); box-shadow: 0 0 0 1px var(--db-navy); }
-.brg-sev-low.is-checked { background: #f1faf4; }
-.brg-sev-moderate.is-checked { background: #fef9ec; }
-.brg-sev-high.is-checked { background: #fdf1f1; }
-
 .brg-submit { padding-top: 16px; border-top: 1px solid var(--adm-line); display: flex; justify-content: flex-end; }
 .brg-submit .adm-btn { min-width: 220px; }
 
@@ -151,7 +140,7 @@
   .brg-form { position: static; }
 }
 @media (max-width: 560px) {
-  .brg-severity { grid-template-columns: 1fr; }
+  .brg-area { grid-template-columns: 1fr; }
   .brg-steppers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .brg-submit .adm-btn { width: 100%; }
   .brg-guide-body { padding-left: 14px; }

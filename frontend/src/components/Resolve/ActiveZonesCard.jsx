@@ -169,7 +169,7 @@ export default function ActiveZonesCard({ onResolved }) {
                   <button
                     type="button"
                     className="db-btn db-btn-outline db-btn-sm"
-                    onClick={() => setTarget({ id: z.id, title: zoneLabel(z), mode: 'resolve' })}
+                    onClick={() => setTarget({ id: z.id, title: zoneLabel(z), type: zoneType(z), mode: 'resolve' })}
                   >
                     Resolve
                   </button>
@@ -272,6 +272,7 @@ export default function ActiveZonesCard({ onResolved }) {
             ) : (
               <ResolveHazardForm
                 zoneId={target.id}
+                hazardType={target.type}
                 title={target.title}
                 onCancel={() => setTarget(null)}
                 onResolved={handleClosed}

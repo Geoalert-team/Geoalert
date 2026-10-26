@@ -9,7 +9,7 @@ from django.db.models import Count
 from django.db.models.functions import TruncMonth
 
 from apps.history.models import HistoricalRecord
-from apps.history.serializers import HistoricalRecordSerializer
+from apps.history.serializers import HistoricalRecordDetailSerializer, HistoricalRecordSerializer
 from utils.sampling import TRUTHY
 
 
@@ -102,13 +102,17 @@ class HistoricalRecordDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            record = HistoricalRecord.objects.get(pk=pk)
+            record = (HistoricalRecord.objects
+                      .select_related('barangay', 'hazard_type')
+                      .prefetch_related('puroks')
+                      .get(pk=pk))
         except HistoricalRecord.DoesNotExist:
             return Response(
                 {'error': 'Historical record not found'},
                 status=404
             )
-        return Response(HistoricalRecordSerializer(record).data)
+        # In full: the BFP figures, the puroks and the exact location too
+        return Response(HistoricalRecordDetailSerializer(record).data)
 
 
 class HistoricalTrendsView(APIView):

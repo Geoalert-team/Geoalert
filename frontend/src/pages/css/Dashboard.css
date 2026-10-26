@@ -269,6 +269,65 @@
 .db-resolve .db-field-row .db-field { margin-bottom: 0; }
 .db-resolve .db-field-row { margin-bottom: 12px; }
 
+/* What the barangay reported, at the top of the resolve form (ZoneReports.jsx) */
+.db-rz-reports { margin: 0 0 16px; }
+.db-rz-reports h4 {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 8px;
+  font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--db-soft);
+}
+.db-rz-count { padding: 1px 8px; border-radius: var(--db-pill); background: var(--db-mist); color: var(--db-heading); letter-spacing: 0; text-transform: none; }
+.db-rz-report { padding: 12px 14px; border: 1px solid var(--db-line); border-radius: 12px; background: var(--db-white); }
+.db-rz-report + .db-rz-report { margin-top: 10px; }
+.db-rz-report-title { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin: 0; color: var(--db-heading); font-size: .92rem; }
+.db-rz-status { padding: 1px 8px; border-radius: var(--db-pill); background: var(--db-mist); color: var(--db-body); font-size: .72rem; font-weight: 700; }
+.db-rz-status.is-validated { background: var(--db-low-tint); color: #16693a; }
+.db-rz-status.is-pending { background: var(--db-medium-tint); color: #7a5700; }
+.db-rz-status.is-rejected { background: var(--db-high-tint); color: #a12f2f; }
+.db-rz-meta { margin: 2px 0 8px; font-size: .78rem; color: var(--db-soft); }
+.db-rz-desc { margin: 0 0 8px; font-size: .88rem; line-height: 1.5; color: var(--db-body); white-space: pre-wrap; }
+.db-rz-photos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.db-rz-photos img { display: block; width: 84px; height: 64px; border-radius: 8px; object-fit: cover; }
+.db-rz-facts { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; margin: 0; font-size: .82rem; }
+.db-rz-facts dt { color: var(--db-soft); }
+.db-rz-facts dd { margin: 0; color: var(--db-heading); }
+
+/* Closing a fire: the BFP fire log's columns G-W (CloseFireForm.jsx) */
+.db-bfp-head { margin: 4px 0 8px; font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--db-soft); }
+.db-bfp-grid {
+  display: grid; grid-template-columns: minmax(72px, auto) repeat(3, minmax(0, 1fr)); gap: 6px 8px; align-items: center;
+  margin: 0 0 12px; padding: 10px 12px 12px; border: 1px solid var(--db-line); border-radius: 12px;
+}
+.db-bfp-grid legend { padding: 0 4px; font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--db-soft); }
+.db-bfp-col { font-size: .76rem; color: var(--db-soft); text-align: center; }
+.db-bfp-row { font-size: .84rem; color: var(--db-heading); }
+.db-bfp-grid input { width: 100%; min-width: 0; padding: 6px 8px; border: 1px solid var(--db-line); border-radius: 8px; font: inherit; text-align: center; }
+.db-bfp-grid input:focus { outline: none; border-color: var(--db-navy); box-shadow: 0 0 0 3px rgba(28, 46, 74, .12); }
+.db-bfp-grid input[aria-invalid="true"], .db-resolve [aria-invalid="true"] { border-color: var(--db-high); }
+.db-bfp-total { font-weight: 700; color: var(--db-heading); text-align: center; }
+.db-bfp-grid .db-bfp-err { grid-column: 1 / -1; }
+.db-bfp-err { display: block; margin-top: 2px; font-size: .78rem; font-weight: 600; color: #a12f2f; }
+
+/* A history record in full (RecordDetail.jsx), opened from a row */
+.db-record-row { display: block; width: 100%; font: inherit; color: inherit; text-align: left; }
+.db-record-row .db-item-meta { display: block; }
+.db-record-open { font-size: .82rem; font-weight: 700; color: var(--db-navy); white-space: nowrap; }
+.db-record h2 { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin: 0; font-size: 1.2rem; }
+.db-modal-close {
+  flex-shrink: 0; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--db-mist);
+  color: var(--db-heading); font-size: 1.4rem; line-height: 1; cursor: pointer;
+}
+.db-modal-close:hover { background: var(--db-line); }
+.db-modal-close:focus-visible { outline: 3px solid #7fa7e6; outline-offset: 2px; }
+.db-record-desc { margin: 0; font-size: .9rem; line-height: 1.55; color: var(--db-body); white-space: pre-wrap; }
+.db-bfp-tables { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.db-bfp-table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.db-bfp-table caption { margin-bottom: 4px; text-align: left; font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--db-soft); }
+.db-bfp-table th, .db-bfp-table td { padding: 5px 6px; border-bottom: 1px solid var(--db-line); text-align: center; }
+.db-bfp-table thead th { font-size: .76rem; font-weight: 600; color: var(--db-soft); }
+.db-bfp-table tbody th { text-align: left; font-weight: 600; color: var(--db-heading); }
+.db-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 560px) { .db-bfp-tables { grid-template-columns: 1fr; } }
+
 /* ---- Seasonal risk outlook (Reports › Analytics) ---- */
 .db-outlook-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

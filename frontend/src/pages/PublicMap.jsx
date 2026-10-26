@@ -1,22 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, Polygon, Polyline, ZoomControl, ScaleControl, Pane, ImageOverlay, CircleMarker, Tooltip, Popup, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, Polygon, Polyline, ZoomControl, ScaleControl, Pane, ImageOverlay, CircleMarker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PublishHazardPanel from '../components/Publish/PublishHazardPanel';
-import ReshapeZonePanel from '../components/Publish/ReshapeZonePanel';
 import LayerControl from '../components/Map/LayerControl';
 import HazardPanel, { clearHistoryCache } from '../components/Map/HazardPanel';
 import BarangayPanel from '../components/Map/BarangayPanel';
-import { MARK_STYLE, markPathOptions } from '../components/Map/FieldMarks';
 import { useSusceptibility } from '../components/Map/susceptibility';
 import { HAZARD_LEVELS, useHazardLevelLayer } from '../components/Map/hazardLevels';
 import CordonLayer, { CordonPatterns, DRAFT_COLOR, cordonFill, cordonRingStyle, hasCordon } from '../components/Map/CordonLayer';
 import PurokLayer from '../components/Map/PurokLayer';
 import { hasEstimates, puroksOf } from '../components/Map/purokStyle';
 import { HAZARD_TYPES, SEVERITY, severityInfo, hazardKey, hazardIconPath, hazardColor } from '../components/Map/hazardInfo';
-import { MIN_CORNERS, cornersOfZone, insertCorner, middleOf } from '../utils/drawnZone';
+import { MIN_CORNERS, middleOf } from '../utils/drawnZone';
 import { boundaryRings, snapPoint } from '../utils/snap';
 import { hazardsApi } from '../api/hazardsApi';
 import { barangaysApi } from '../api/barangaysApi';
@@ -259,13 +257,7 @@ export default function PublicMap() {
   // Publishing: 'off' until DRRMO starts, 'placing' while waiting for the
   // first tap, then 'editing' with the form open while more corners of the
   // outline are tapped in.
-  const { canPublish, user } = useAuth();
-  // Staff who can check zones on the ground: barangay personnel and officers
-  const staffRole = user?.role?.name || user?.role;
-  const canMark = ['Barangay_Personnel', 'DRRMO_Officer', 'System_Admin'].includes(staffRole);
-  // Spots checked on the ground for the zone in view, and a mark being placed
-  const [zoneMarks, setZoneMarks] = useState({ zoneId: null, results: [] });
-  const [marking, setMarking] = useState(null); // { zoneId, kind } while placing
+  const { canPublish } = useAuth();
   const [publishMode, setPublishMode] = useState('off');
   const [draftPoints, setDraftPoints] = useState([]);
   // Which shaping method the publish panel is on. Hand drawing treats a tap
@@ -283,10 +275,6 @@ export default function PublicMap() {
   // The shape as the server will save it (cut at the city boundary), shown
   // while the officer checks the summary before sending
   const [previewShape, setPreviewShape] = useState(null);
-  // Reshaping a live zone ('reshaping' mode): the zone, and earlier versions
-  // of the outline so a change can be undone one step at a time.
-  const [reshapeZone, setReshapeZone] = useState(null);
-  const [draftHistory, setDraftHistory] = useState([]);
   // Alt held down: place corners exactly where tapped, without snapping
   const altHeld = useRef(false);
 
@@ -580,18 +568,17 @@ export default function PublicMap() {
   }, [map, loading, hazards]);
 
   // Open a hazard straight from a link, e.g. tapping a notification, which
-  // points at /map?zone=<id>. Runs once, then strips the parameter so a later
-  // refresh doesn't reopen a panel the user has closed.
-  const deepLinked = useRef(false);
+  // points at /map?zone=<id>. Strips the parameter once used, so a later
+  // refresh doesn't reopen a panel the user has closed, while another link
+  // followed on this page (the alert bell in the navbar) still opens its zone.
   useEffect(() => {
-    if (deepLinked.current || loading) return;
+    if (loading) return;
     const zoneId = searchParams.get('zone');
     if (!zoneId) return;
 
     const target = hazards.find((h) => String(h.id) === String(zoneId));
     if (!target) return;
 
-    deepLinked.current = true;
     hasFitted.current = true;   // don't fit all pins, then fly away from them
     selectHazard(target);
     searchParams.delete('zone');
@@ -789,56 +776,12 @@ export default function PublicMap() {
     setDraftSeed(null);
     setPublishPrefill(null);
     setPreviewShape(null);
-    setReshapeZone(null);
-    setDraftHistory([]);
-  }
-
-  function startReshape(item) {
-    const corners = cornersOfZone(item.feature);
-    if (corners.length < MIN_CORNERS) return;
-    setPanelOpen(false);
-    setReshapeZone(item);
-    setDraftPoints(corners);
-    setDraftHistory([]);
-    setPublishMode('reshaping');
-  }
-
-  // Reshaping keeps every earlier outline so Undo can step back through
-  // moves, added corners and removed ones alike.
-  function changeDraft(next) {
-    setDraftHistory((h) => [...h, draftPoints]);
-    setDraftPoints(next);
-  }
-
-  function undoReshape() {
-    if (!draftHistory.length) return;
-    setDraftPoints(draftHistory[draftHistory.length - 1]);
-    setDraftHistory((h) => h.slice(0, -1));
-  }
-
-  function removeDraftCorner(index) {
-    if (publishMode !== 'reshaping' || draftPoints.length <= MIN_CORNERS) return;
-    changeDraft(draftPoints.filter((_, i) => i !== index));
-  }
-
-  async function handleReshaped() {
-    cancelPublish();
-    setPublishNotice('Area updated. Every barangay it covers will be asked to confirm it again.');
-    await refreshMap();
   }
 
   // One handler for every map click: add a corner to the outline while
   // publishing, otherwise close whichever details panel is open.
   function handleMapClick(clicked) {
-    if (marking) {
-      placeMark(clicked);
-      return;
-    }
     const latlng = publishMode === 'off' ? clicked : snapLatLng(clicked);
-    if (publishMode === 'reshaping') {
-      changeDraft(insertCorner(draftPoints, [latlng.lat, latlng.lng]));
-      return;
-    }
     if (publishMode === 'placing' || publishMode === 'editing') {
       // Hand drawing reads a tap as a corner. A generating method takes the
       // tap as its starting point (unsnapped: it is where the officer saw the
@@ -897,48 +840,6 @@ export default function PublicMap() {
     () => draftPoints.filter((p) => !barangays.some((b) => containsPoint(b.feature, p))).length,
     [draftPoints, barangays],
   );
-
-  // Field marks for the zone open in the panel, or the one being reshaped
-  const marksZoneId = reshapeZone?.id || selectedHazard?.id || null;
-  const loadMarks = useCallback((zoneId) => {
-    if (!zoneId || !canMark) { setZoneMarks({ zoneId: null, results: [] }); return; }
-    hazardsApi.marks(zoneId)
-      .then((d) => setZoneMarks({ zoneId, results: d?.results || [] }))
-      .catch(() => setZoneMarks({ zoneId, results: [] }));
-  }, [canMark]);
-  useEffect(() => { loadMarks(marksZoneId); }, [marksZoneId, loadMarks]);
-  const visibleMarks = zoneMarks.zoneId && zoneMarks.zoneId === marksZoneId ? zoneMarks.results : [];
-
-  // Taking back a mark dropped on the wrong spot. The server answers with
-  // the whole list again, so the counts and the "disagrees" warning settle
-  // from the same reply rather than a second fetch out in the field.
-  const [removingMark, setRemovingMark] = useState(null);
-  async function removeMark(zoneId, mark) {
-    setRemovingMark(mark.id);
-    try {
-      const fresh = await hazardsApi.removeMark(zoneId, mark.id);
-      setZoneMarks({ zoneId, results: fresh?.results || [] });
-      setPublishNotice(`${MARK_STYLE[mark.kind]?.label || 'Mark'} removed.`);
-    } catch (err) {
-      setPublishNotice(err?.message || 'Could not remove that mark.');
-    } finally {
-      setRemovingMark(null);
-    }
-  }
-
-  async function placeMark(latlng) {
-    const { zoneId, kind } = marking;
-    setMarking(null);
-    try {
-      const mark = await hazardsApi.addMark(zoneId, { kind, latitude: latlng.lat, longitude: latlng.lng });
-      setPublishNotice(mark.disagrees
-        ? 'Spot marked. It disagrees with the outline, so the officer who published it has been told.'
-        : 'Spot marked.');
-      loadMarks(zoneId);
-    } catch (err) {
-      setPublishNotice(err?.message || 'Could not mark that spot.');
-    }
-  }
 
   // Seasonal likelihood, fetched only while that view is open
   useEffect(() => {
@@ -1020,7 +921,7 @@ export default function PublicMap() {
           'pm-stage',
           publishMode !== 'off' ? 'is-placing' : '',
           // The drawing card sits bottom-right, where the zoom buttons are
-          publishMode === 'editing' || publishMode === 'reshaping' ? 'has-pub-panel' : '',
+          publishMode === 'editing' ? 'has-pub-panel' : '',
         ].filter(Boolean).join(' ')}
       >
         {/* ============ MAP ============ */}
@@ -1109,7 +1010,7 @@ export default function PublicMap() {
                   // Barangay polygons cover the whole city, so while a hazard
                   // is being placed they have to pass the click through
                   // instead of opening the barangay panel.
-                  if (publishMode !== 'off' || marking) {
+                  if (publishMode !== 'off') {
                     handleMapClick(e.latlng);
                     return;
                   }
@@ -1169,36 +1070,6 @@ export default function PublicMap() {
             />
           )}
 
-          {/* Spots checked on the ground for the zone in view (staff only) */}
-          {visibleMarks.map((m) => (
-            <CircleMarker key={m.id} center={[m.lat, m.lng]} pathOptions={markPathOptions(m)} bubblingMouseEvents={false}>
-              <Tooltip direction="top">
-                {MARK_STYLE[m.kind]?.label || m.kind}
-                {m.by ? ` · ${m.by}` : ''}
-                {m.note ? ` · "${m.note}"` : ''}
-                {m.disagrees ? ' · disagrees with the outline' : ''}
-              </Tooltip>
-              {/* Only on marks this person may take back; the server decides
-                  that, and enforces the same rule on the request itself. */}
-              {m.can_remove && (
-                <Popup>
-                  <p className="pm-mark-pop">
-                    <strong>{MARK_STYLE[m.kind]?.label || m.kind}</strong>
-                    {m.by ? <> · {m.by}</> : null}
-                  </p>
-                  <button
-                    type="button"
-                    className="db-btn db-btn-outline db-btn-sm"
-                    disabled={removingMark === m.id}
-                    onClick={() => removeMark(marksZoneId, m)}
-                  >
-                    {removingMark === m.id ? 'Removing…' : 'Remove this mark'}
-                  </button>
-                </Popup>
-              )}
-            </CircleMarker>
-          ))}
-
           {/* Starting point of a generating method */}
           {publishMode === 'editing' && draftSeed && draftMethod !== 'hand' && (
             <Marker
@@ -1233,11 +1104,8 @@ export default function PublicMap() {
               // 'drag' fires on every mouse move, so the outline and the
               // area follow the corner live instead of jumping on release.
               eventHandlers={{
-                // Remember the outline before the drag, so Undo can put it back
-                dragstart: () => { if (publishMode === 'reshaping') setDraftHistory((h) => [...h, draftPoints]); },
                 drag: (e) => moveDraftCorner(i, e.target.getLatLng()),
                 dragend: (e) => moveDraftCorner(i, snapLatLng(e.target.getLatLng())),
-                contextmenu: (e) => { L.DomEvent.preventDefault(e.originalEvent); removeDraftCorner(i); },
               }}
             />
           ))}
@@ -1536,26 +1404,15 @@ export default function PublicMap() {
 
         {/* ============ DETAILS PANELS ============ */}
         <HazardPanel
-          onReshape={canPublish ? startReshape : undefined}
           item={selectedHazard}
           open={panelOpen && !!selectedHazard}
           onClose={() => setPanelOpen(false)}
           onResolved={handleResolved}
           onRetracted={handleRetracted}
           onVerified={handleVerified}
-          onChanged={() => refreshMap()}
           stack={stack}
           onPick={showStacked}
-          marks={canMark && selectedHazard ? visibleMarks : null}
-          onMark={canMark && selectedHazard ? (kind) => setMarking({ zoneId: selectedHazard.id, kind }) : undefined}
-          marking={marking && selectedHazard && marking.zoneId === selectedHazard.id ? marking.kind : null}
         />
-        {marking && (
-          <div className="pub-hint">
-            <span>Tap the map where you checked: {MARK_STYLE[marking.kind].label.toLowerCase()}</span>
-            <button type="button" onClick={() => setMarking(null)}>Cancel</button>
-          </div>
-        )}
         {publishNotice && (
           <div className="pub-notice" role="status">
             <span>{publishNotice}</span>
@@ -1573,19 +1430,6 @@ export default function PublicMap() {
           </div>
         )}
 
-        {publishMode === 'reshaping' && reshapeZone && (
-          <ReshapeZonePanel
-            zone={reshapeZone}
-            points={draftPoints}
-            canUndo={draftHistory.length > 0}
-            onUndo={undoReshape}
-            onReset={() => { setDraftPoints(draftHistory[0] || draftPoints); setDraftHistory([]); }}
-            onCancel={cancelPublish}
-            onSaved={handleReshaped}
-            marks={visibleMarks}
-          />
-        )}
-
         {publishMode === 'editing' && (
           <PublishHazardPanel
             points={draftPoints}
@@ -1598,7 +1442,7 @@ export default function PublicMap() {
             onPublished={handlePublished}
             prefill={publishPrefill}
             onPreviewShape={setPreviewShape}
-            onReplacePoints={changeDraft}
+            onReplacePoints={setDraftPoints}
             onMethodChange={setDraftMethod}
             seed={draftSeed}
             susceptibilityIndex={susceptibility.index}

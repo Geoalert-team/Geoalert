@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { FieldMarksSection } from './FieldMarks';
 import { severityInfo, hazardIconPath, hazardColor, DRRMO_HOTLINE } from './hazardInfo';
 import GuidanceSteps from './GuidanceSteps';
 import ResolveHazardForm from '../Resolve/ResolveHazardForm';
@@ -276,8 +275,7 @@ function HazardStack({ stack, current, onPick }) {
 // Slides in from the left (desktop) or up from the bottom (mobile).
 // stack: the hazards at the clicked spot (including item); onPick switches between them.
 export default function HazardPanel({
-  item, open, onClose, onResolved, onRetracted, onVerified, onReshape, onChanged, stack = [], onPick,
-  marks = null, onMark, marking = null,
+  item, open, onClose, onResolved, onRetracted, onVerified, stack = [], onPick,
 }) {
   const [tab, setTab] = useState('overview');
   // 'resolve' when the hazard is over, 'retract' when it should never have
@@ -288,10 +286,6 @@ export default function HazardPanel({
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [verifyError, setVerifyError] = useState('');
-  // DRRMO changing the severity of a live zone
-  const [sevPick, setSevPick] = useState(null);
-  const [sevBusy, setSevBusy] = useState(false);
-  const [sevMsg, setSevMsg] = useState('');
   // DRRMO's reply to a dispute
   const [reviewNote, setReviewNote] = useState('');
   const [reviewing, setReviewing] = useState(false);
@@ -308,8 +302,6 @@ export default function HazardPanel({
     setVerifyError('');
     setReviewNote('');
     setReviewError('');
-    setSevPick(null);
-    setSevMsg('');
     if (open) closeRef.current?.focus({ preventScroll: true });
   }, [item?.id, open]);
 
@@ -337,30 +329,6 @@ export default function HazardPanel({
   const myAnswer = answers.find((v) => String(v.barangay) === String(user?.assigned_barangay));
   const disputed = item?.verificationStatus === 'Disputed';
   const canReview = canResolve && disputed && !item?.reviewNote;
-
-  async function saveSeverity() {
-    if (!item || !sevPick || sevPick === item.severity) { setSevPick(null); return; }
-    setSevBusy(true);
-    setSevMsg('');
-    try {
-      const zone = await hazardsApi.update(item.id, { severity: sevPick });
-      setSevPick(null);
-      // Raising to Extreme waits for a second officer, like a new Extreme alert
-      if (zone.approval?.required) {
-        const due = zone.approval.due_at
-          ? new Date(zone.approval.due_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-          : '';
-        setSevMsg(`Sent for approval. Another officer has to approve raising this to Extreme${due ? `, or it is raised on its own at ${due}` : ''}.`);
-      } else {
-        setSevMsg('Severity changed. Every barangay will be asked to confirm it again.');
-      }
-      onChanged?.(zone);
-    } catch (err) {
-      setSevMsg(err?.message || 'Could not change the severity.');
-    } finally {
-      setSevBusy(false);
-    }
-  }
 
   async function submitReview() {
     if (!item) return;
@@ -517,11 +485,6 @@ export default function HazardPanel({
                   </p>
                 )}
 
-                {/* ---------- Spots checked on the ground (staff) ---------- */}
-                {marks && (item.status || 'Active') === 'Active' && (
-                  <FieldMarksSection marks={marks} onMark={onMark} marking={marking} />
-                )}
-
                 {/* ---------- Barangay: answer for the ground ---------- */}
                 {canConfirm && (
                   <div className="db-scope db-embed">
@@ -621,7 +584,7 @@ export default function HazardPanel({
                   <div className="db-scope db-embed">
                     <p className="db-hint" style={{ marginBottom: 8 }}>
                       A barangay disputed this. If you checked and it stays as it
-                      is, say why. Otherwise withdraw it or edit its area.
+                      is, say why. Otherwise withdraw it.
                     </p>
                     <label className="db-field" htmlFor="pm-review-note">
                       What did you check?
@@ -652,6 +615,7 @@ export default function HazardPanel({
                     {closing === 'resolve' && (
                       <ResolveHazardForm
                         zoneId={item.id}
+                        hazardType={item.type}
                         title={`${item.type} · ${item.location}`}
                         onCancel={() => setClosing(null)}
                         onResolved={(zone) => {
@@ -685,48 +649,7 @@ export default function HazardPanel({
                           <button type="button" className="db-btn db-btn-outline" onClick={() => setClosing('retract')}>
                             Published in error
                           </button>
-                          {onReshape && (
-                            <button type="button" className="db-btn db-btn-outline" onClick={() => onReshape(item)}>
-                              Edit area
-                            </button>
-                          )}
-                          <button type="button" className="db-btn db-btn-outline" onClick={() => { setSevMsg(''); setSevPick(item.severity); }}>
-                            Change severity
-                          </button>
                         </div>
-                        {sevPick && (
-                          <div className="db-confirm" style={{ marginTop: 10 }}>
-                            <p>New severity</p>
-                            <div className="db-btn-row">
-                              {['Green', 'Orange', 'Red'].map((code) => (
-                                <button
-                                  key={code}
-                                  type="button"
-                                  className={`db-btn db-btn-sm ${sevPick === code ? 'db-btn-primary' : 'db-btn-outline'}`}
-                                  aria-pressed={sevPick === code}
-                                  onClick={() => setSevPick(code)}
-                                >
-                                  {severityInfo(code).label}
-                                </button>
-                              ))}
-                            </div>
-                            {sevPick === 'Red' && item.severity !== 'Red' && (
-                              <p className="db-hint" style={{ marginTop: 6 }}>
-                                Raising to Extreme needs a second officer. It stays
-                                at its current level until then.
-                              </p>
-                            )}
-                            <div className="db-btn-row" style={{ marginTop: 8 }}>
-                              <button type="button" className="db-btn db-btn-primary db-btn-sm" onClick={saveSeverity} disabled={sevBusy || sevPick === item.severity}>
-                                {sevBusy ? 'Saving…' : 'Save'}
-                              </button>
-                              <button type="button" className="db-btn db-btn-outline db-btn-sm" onClick={() => setSevPick(null)} disabled={sevBusy}>
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        {sevMsg && <p className="db-hint" role="status" style={{ marginTop: 8 }}>{sevMsg}</p>}
                         <p className="db-hint" style={{ marginTop: 8 }}>
                           Resolve a hazard that happened and is over — it becomes a
                           historical record. Withdraw one that should never have gone

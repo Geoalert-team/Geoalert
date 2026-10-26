@@ -37,7 +37,7 @@ function inRing(lng, lat, ring) {
 
 /**
  * The purok under a point, or null. The lines aren't clickable, so nothing
- * else on the map (barangays, field marks, drawing tools) loses its clicks
+ * else on the map (barangays, drawing tools) loses its clicks
  * to them; the map asks this instead when the pointer moves.
  */
 export function purokAt(geo, lng, lat) {

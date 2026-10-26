@@ -195,8 +195,8 @@ class IncidentReportCreateSerializer(serializers.ModelSerializer):
                 )
             attrs['location'] = point
 
-        # A fire report is when and where (the BFP log's columns A-F); other
-        # hazards keep no fire fields
+        # Every report is when and where (the BFP log's columns A-F); a flood
+        # or landslide's own pin, if any, is kept
         attrs, errors = prepare_report(attrs, timezone.now(),
                                        lambda barangay: Purok.objects.filter(barangay=barangay).exists())
         if errors:

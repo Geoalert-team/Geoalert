@@ -5,6 +5,11 @@ class Barangay(models.Model):
     id           = models.BigAutoField(primary_key=True, db_column='brgy_id')
     name         = models.CharField(max_length=100, unique=True, db_column='brgy_name')
     municipality = models.CharField(max_length=100, default='Talisay City', db_column='brgy_municipality')
+    # With municipality, where the BFP fire log files a fire (its columns
+    # C-E: region, province / district, city / municipality). Every report
+    # reads them from its barangay rather than storing its own copy.
+    province     = models.CharField(max_length=100, default='Cebu', db_column='brgy_province')
+    region       = models.CharField(max_length=100, default='Region VII (Central Visayas)', db_column='brgy_region')
     boundary     = models.MultiPolygonField(srid=4326, null=True, blank=True, db_column='brgy_boundary')
 
     class Meta:

@@ -1,5 +1,5 @@
 """
-The create serializer hands fire reports to prepare_report and saves their
+The create serializer hands every report to prepare_report and saves its
 puroks. These pin the wiring without a database: the purok lookup, the city
 outline and the clock are stand-ins.
 """
@@ -62,11 +62,16 @@ class ValidateWiringTests(SimpleTestCase):
         self.assertEqual(list(caught.exception.detail), ['puroks'])
         self.assertEqual(str(caught.exception.detail['puroks']), 'Choose the purok or sitio where the fire is.')
 
-    def test_a_flood_keeps_its_pin_and_no_fire_fields(self):
+    def test_a_flood_keeps_its_pin_and_says_when_and_which_puroks(self):
         out = self.validate(attrs('Flood', latitude=10.251, longitude=123.851))
         self.assertAlmostEqual(out['location'].x, 123.851)
-        self.assertNotIn('puroks', out)
-        self.assertNotIn('started_at', out)
+        self.assertEqual(out['puroks'], [SAMBAG, AGOHO])
+        self.assertEqual(out['started_at'], NOW - timedelta(hours=1))
+
+    def test_a_landslide_without_puroks_is_refused_under_puroks(self):
+        with self.assertRaises(serializers.ValidationError) as caught:
+            self.validate(attrs('Landslide', puroks=[]))
+        self.assertEqual(str(caught.exception.detail['puroks']), 'Choose the purok or sitio where the landslide is.')
 
 
 class CreateWiringTests(SimpleTestCase):

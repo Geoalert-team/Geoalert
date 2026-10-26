@@ -1,8 +1,9 @@
 """
-What a fire report must say: when it started and which puroks it is in -
-the BFP fire log's columns A-F. The reporter picks the puroks; the report's
-location is set from them, never from a pin the client sends. Everything
-else is DRRMO's, entered when closing.
+What a report must say: when it started and which puroks it is in - the
+BFP fire log's columns A-F, asked of floods and landslides too. The reporter
+picks the puroks. A fire's location is set from them, never from a pin the
+client sends; a flood or landslide keeps its own pin when it has one.
+Everything else is DRRMO's, entered when closing.
 """
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -35,7 +36,7 @@ class FakeType:
 BRGY = FakeBarangay(19, 'San Roque', square(123.85, 10.25, 123.86, 10.26))
 SAMBAG = FakePurok(3, 19, square(123.85, 10.25, 123.855, 10.255))
 AGOHO = FakePurok(6, 19, square(123.855, 10.255, 123.86, 10.26))
-FIRE, FLOOD = FakeType('Fire'), FakeType('Flood')
+FIRE, FLOOD, LANDSLIDE = FakeType('Fire'), FakeType('Flood'), FakeType('Landslide')
 NOW = datetime(2026, 10, 25, 14, 0, tzinfo=ZoneInfo('Asia/Manila'))
 
 
@@ -92,9 +93,29 @@ class PrepareReportTests(SimpleTestCase):
         self.assertEqual(prepare_report(ok(barangay=None), NOW, yes)[1],
                          {'barangay': 'Choose the barangay where this is happening.'})
 
-    def test_other_hazards_drop_the_fire_fields(self):
-        attrs, errors = prepare_report(ok(hazard_type=FLOOD, location=Point(123.851, 10.251, srid=4326)), NOW, yes)
+    def test_a_flood_or_landslide_needs_a_start_time_and_purok_too(self):
+        self.assertEqual(prepare_report(ok(hazard_type=FLOOD, started_at=None, puroks=[]), NOW, yes)[1], {
+            'started_at': 'Say when the flood started.',
+            'puroks': 'Choose the purok or sitio where the flood is.',
+        })
+        self.assertEqual(prepare_report(ok(hazard_type=LANDSLIDE, started_at=NOW + timedelta(hours=1)), NOW, yes)[1],
+                         {'started_at': "The start time can't be in the future."})
+
+    def test_a_flood_keeps_its_own_pin_and_its_puroks(self):
+        attrs, errors = prepare_report(
+            ok(hazard_type=FLOOD, puroks=[AGOHO, AGOHO], location=Point(123.851, 10.251, srid=4326)), NOW, yes)
+        self.assertEqual(errors, {})
+        self.assertEqual(attrs['location'].x, 123.851)
+        self.assertEqual(attrs['puroks'], [AGOHO])
+        self.assertEqual(attrs['started_at'], NOW - timedelta(hours=1))
+
+    def test_a_landslide_without_a_pin_is_placed_at_its_first_purok(self):
+        attrs, errors = prepare_report(ok(hazard_type=LANDSLIDE, puroks=[AGOHO, SAMBAG]), NOW, yes)
+        self.assertEqual(errors, {})
+        self.assertTrue(AGOHO.boundary.contains(attrs['location']))
+
+    def test_no_hazard_type_keeps_no_when_or_where(self):
+        attrs, errors = prepare_report(ok(hazard_type=None), NOW, yes)
         self.assertEqual(errors, {})
         self.assertNotIn('started_at', attrs)
         self.assertNotIn('puroks', attrs)
-        self.assertEqual(attrs['location'].x, 123.851)  # a flood keeps its own pin

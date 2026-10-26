@@ -329,13 +329,6 @@
   overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
 
-/* Spots checked on the ground, in the zone panel */
-.pm-marks { margin: 12px 0; padding: 10px 12px; border: 1px solid var(--pm-line, #e3e7ee); border-radius: 10px; }
-.pm-marks-title { margin: 0 0 2px; font-size: .78rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--pm-soft, #5b6577); }
-.pm-marks-sum { margin: 0 0 8px; font-size: .86rem; }
-.pm-marks-warn { color: #a12f2f; }
-.pm-marks-hint { margin: 0; font-size: .84rem; font-weight: 600; color: #1c64f2; }
-
 /* Dismiss button inside a status pill */
 .pm-pill-close {
   margin-left: 6px; padding: 0 4px; border: 0; background: none;

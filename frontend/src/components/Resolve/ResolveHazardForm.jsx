@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { hazardsApi } from '../../api/hazardsApi';
+import ZoneReports from './ZoneReports';
+import CloseFireForm from './CloseFireForm';
 
 /**
  * The form DRRMO fills in when a hazard is over. Used in two places —
@@ -8,13 +10,25 @@ import { hazardsApi } from '../../api/hazardsApi';
  * no stylesheet of its own. Outside a .db page, wrap it in .db-scope so
  * the tokens resolve.
  *
+ * It opens with what the barangay reported about the zone (ZoneReports),
+ * so the summary and counts are written with their account in view. A fire
+ * gets CloseFireForm instead: the BFP fire log's columns G to W.
+ *
  * Props:
  *   zoneId            hazard zone UUID
  *   title             what's being resolved, e.g. "Flood · Tabunok"
+ *   hazardType        the zone's hazard type name; 'Fire' opens the fire form
  *   onCancel()        close without doing anything
- *   onResolved(zone)  called with the updated zone after a successful PATCH
+ *   onResolved(zone)  called with the updated zone after it is resolved
  */
-export default function ResolveHazardForm({ zoneId, title, onCancel, onResolved }) {
+export default function ResolveHazardForm({ hazardType, ...props }) {
+  return (hazardType || '').toLowerCase() === 'fire'
+    ? <CloseFireForm {...props} />
+    : <GeneralResolveForm {...props} />;
+}
+
+// Floods, landslides and anything else: a summary and two counts
+function GeneralResolveForm({ zoneId, title, onCancel, onResolved }) {
   const [summary, setSummary] = useState('');
   const [casualties, setCasualties] = useState('');
   const [displaced, setDisplaced] = useState('');
@@ -70,6 +84,8 @@ export default function ResolveHazardForm({ zoneId, title, onCancel, onResolved 
         This removes the zone from the public map and files it as a historical
         record, so it still counts in reports and trend analysis.
       </p>
+
+      <ZoneReports zoneId={zoneId} />
 
       <label className="db-field" htmlFor="db-rz-summary">
         What happened? (archived with the record)

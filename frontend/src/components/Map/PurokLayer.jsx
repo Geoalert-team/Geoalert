@@ -12,7 +12,7 @@ const NOT_THE_MAP = '.leaflet-marker-icon, .leaflet-popup, .leaflet-tooltip, .le
  *
  * The lines aren't interactive: this works out which purok is under the
  * pointer instead, so the barangay underneath keeps its clicks (moving the
- * spot the panel reads) and so do field marks and the drawing tools. Its own
+ * spot the panel reads) and so do the drawing tools. Its own
  * pane, under the barangay outlines (400), keeps the barangay line on top.
  */
 export default function PurokLayer({ geo }) {

@@ -1,10 +1,12 @@
 """
-What a fire report must say before DRRMO sees it.
+What a report must say before DRRMO sees it.
 
-A fire report is when and where: the BFP fire log's columns A-F. When it
-started, and the puroks it is in, picked by the reporter from the
-barangay's list. The reporter doesn't place a pin: the map shows one at
-each purok's centre, and the report's location is set from the first.
+Every report is when and where: the BFP fire log's columns A-F, asked of
+floods and landslides as well as fires. When it started, and the puroks it
+is in, picked by the reporter from the barangay's list. A fire's reporter
+doesn't place a pin: the map shows one at each purok's centre, and the
+report's location is set from the first. A flood or landslide may still
+carry a pin of its own, which wins; without one it is placed the same way.
 Property type, casualties, damage, structures and alarm level are DRRMO's,
 entered when the fire is closed.
 
@@ -18,13 +20,16 @@ CLOCK_SKEW = timedelta(minutes=5)
 MAX_PUROKS = 10
 
 
-def fire_report_errors(attrs, barangay, has_puroks, now):
-    """{field: message} for what is missing or wrong, or {} when the report is fine."""
+def report_errors(attrs, barangay, has_puroks, now, noun='hazard'):
+    """
+    {field: message} for what is missing or wrong, or {} when the report is
+    fine. noun names the hazard in the messages ("Say when the flood started.").
+    """
     errors = {}
 
     started = attrs.get('started_at')
     if started is None:
-        errors['started_at'] = 'Say when the fire started.'
+        errors['started_at'] = f'Say when the {noun} started.'
     elif started > now + CLOCK_SKEW:
         errors['started_at'] = "The start time can't be in the future."
 
@@ -34,7 +39,7 @@ def fire_report_errors(attrs, barangay, has_puroks, now):
     elif len(puroks) > MAX_PUROKS:
         errors['puroks'] = f'Choose at most {MAX_PUROKS} puroks.'
     elif not puroks and has_puroks:
-        errors['puroks'] = 'Choose the purok or sitio where the fire is.'
+        errors['puroks'] = f'Choose the purok or sitio where the {noun} is.'
 
     return errors
 
@@ -49,12 +54,13 @@ def prepare_report(attrs, now, has_puroks):
     (attrs, errors) for a report about to be saved. has_puroks(barangay)
     says whether the barangay has any puroks to choose from.
 
-    Not a fire: the fire fields are dropped, whatever the client sent. A
-    fire: the puroks are de-duplicated, checked, and the location is set
-    from the first purok, or the barangay when it has none.
+    No hazard type: there is nothing to ask when or where of, so those
+    fields are dropped. Otherwise the puroks are de-duplicated and checked,
+    and the location is set from the first purok, or the barangay when it
+    has none - always for a fire, and for other hazards when no pin was sent.
     """
     hazard = attrs.get('hazard_type')
-    if hazard is None or hazard.name.lower() != 'fire':
+    if hazard is None:
         attrs.pop('started_at', None)
         attrs.pop('puroks', None)
         return attrs, {}
@@ -70,7 +76,8 @@ def prepare_report(attrs, now, has_puroks):
             puroks.append(purok)
     attrs['puroks'] = puroks
 
-    errors = fire_report_errors(attrs, barangay, has_puroks(barangay), now)
-    if not errors:
+    noun = hazard.name.lower()
+    errors = report_errors(attrs, barangay, has_puroks(barangay), now, noun)
+    if not errors and (noun == 'fire' or attrs.get('location') is None):
         attrs['location'] = _centre(puroks[0].boundary) if puroks else _centre(barangay.boundary)
     return attrs, errors

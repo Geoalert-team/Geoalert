@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 jest.mock('../../context/AuthContext', () => ({ useAuth: jest.fn() }));
 // The bell polls the API; only where it sits matters here
 jest.mock('./NotificationBell', () => () => <div data-testid="bell" />);
+jest.mock('./ResidentAlertBell', () => () => <div data-testid="alerts" />);
 
 beforeAll(() => { global.IS_REACT_ACT_ENVIRONMENT = true; });
 afterEach(() => { delete window.matchMedia; });
@@ -36,6 +37,19 @@ test('signed out: exactly the public bar, with Log in and no staff buttons', () 
   expect(el.querySelector('.pn-acct-btn')).toBeNull();
   expect(el.querySelector('.pn-acct-links')).toBeNull();
   expect(el.querySelector('[data-testid="bell"]')).toBeNull();
+  expect(el.querySelector('.pn-menu [data-testid="alerts"]')).not.toBeNull();
+});
+
+test('signed in, staff get their own bell and no resident alert bell', () => {
+  const el = render(staff('DRRMO_Officer'));
+  expect(el.querySelector('[data-testid="alerts"]')).toBeNull();
+  expect(render(staff('DRRMO_Officer'), { narrow: true }).querySelector('[data-testid="alerts"]')).toBeNull();
+});
+
+test('narrow screen, signed out: the alert bell stays beside the ☰ button', () => {
+  const el = render({ user: null, logout: jest.fn() }, { narrow: true });
+  expect(el.querySelector('.pn-compact-actions [data-testid="alerts"]')).not.toBeNull();
+  expect(el.querySelector('.pn-menu [data-testid="alerts"]')).toBeNull();
 });
 
 // The wide bar keeps the role's pages in the account menu
@@ -106,6 +120,7 @@ const kind = (c) => {
   if (c.classList.contains('pn-acct')) return 'account';
   if (c.classList.contains('pn-acct-panel')) return 'account';
   if (c.dataset.testid === 'bell') return 'bell';
+  if (c.dataset.testid === 'alerts') return 'alerts';
   return c.className;
 };
 const order = (el) => [...el.querySelector('.pn-menu').children].map(kind);
@@ -117,8 +132,8 @@ test('wide screen: the public links, then one right-hand slot', () => {
   expect(order(render({ user: null, logout: jest.fn() }))).toEqual(['public', 'pn-account']);
 });
 
-test('signed out, the slot holds Log in; signed in, the bell then the account button', () => {
-  expect(slot(render({ user: null, logout: jest.fn() }))).toEqual(['login']);
+test('signed out, the slot holds the alert bell then Log in; signed in, the bell then the account button', () => {
+  expect(slot(render({ user: null, logout: jest.fn() }))).toEqual(['alerts', 'login']);
   expect(slot(render(staff('DRRMO_Officer')))).toEqual(['bell', 'account']);
 });
 

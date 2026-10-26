@@ -249,6 +249,7 @@ class IncidentReportListCreateView(APIView):
     GET  /api/reports/incidents/   → List reports
          Barangay Personnel see only their own submissions.
          DRRMO Officer / System Admin see all submissions.
+         ?hazard_zone=<id> narrows to the reports linked to that zone.
     POST /api/reports/incidents/   → Submit a new report
          Barangay Personnel only.
     """
@@ -270,6 +271,17 @@ class IncidentReportListCreateView(APIView):
         status_filter = request.query_params.get('status')
         if status_filter:
             reports = reports.filter(status=status_filter)
+
+        # The reports a zone was published from or joined, for the resolve
+        # form: DRRMO sees what the barangay sent before closing the zone.
+        zone = request.query_params.get('hazard_zone')
+        if zone:
+            import uuid
+            try:
+                zone = uuid.UUID(zone)
+            except ValueError:
+                return Response({'hazard_zone': 'Not a hazard zone id.'}, status=status.HTTP_400_BAD_REQUEST)
+            reports = reports.filter(hazard_zone_id=zone)
 
         # For drawing a zone around reported spots: only pinned, not
         # rejected, of one hazard type, from the last few hours.

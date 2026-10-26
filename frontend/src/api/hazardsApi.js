@@ -22,14 +22,6 @@ export const hazardsApi = {
   pastZones: ({ type, lat, lng, radius }) =>
     client.get('/api/hazards/past-zones/', { params: { type, lat, lng, ...(radius ? { radius } : {}) } })
       .then((r) => r.data),
-  // Spots checked on the ground for a live zone ("Affected here" / "Clear here")
-  marks: (id) => client.get(`/api/hazards/${id}/marks/`).then((r) => r.data),
-  addMark: (id, { kind, latitude, longitude, note }) =>
-    client.post(`/api/hazards/${id}/marks/`, { kind, latitude, longitude, note }).then((r) => r.data),
-  // Take back a mark dropped by mistake. Answers with the same shape as
-  // marks(), so the panel can re-render from one call instead of two.
-  removeMark: (id, markId) =>
-    client.delete(`/api/hazards/${id}/marks/${markId}/`).then((r) => r.data),
   preview: (payload) => client.post('/api/hazards/preview/', payload).then((r) => r.data),
 
   // Extreme alerts waiting for a second officer, and approving one (sends it).
@@ -43,13 +35,14 @@ export const hazardsApi = {
     client.post(`/api/hazards/${id}/raise/refuse/`, { reason }).then((r) => r.data),
 
   // DRRMO's answer to a dispute: checked, and the zone stays. The note shows
-  // with the dispute on the public map. Withdrawing or reshaping are the
-  // other answers.
+  // with the dispute on the public map. Withdrawing it is the other answer.
   review: (id, note) => client.post(`/api/hazards/${id}/review/`, { note }).then((r) => r.data),
 
-  // Redraw a live zone's outline. Every barangay is asked to confirm again,
-  // and barangays the new shape reaches are told.
-  reshape: (id, geometry) => client.patch(`/api/hazards/${id}/`, { geometry }).then((r) => r.data),
+  // DRRMO: close a fire with the BFP figures (the fire log's columns G-W).
+  // A fire still on the map is put out in the same step: the all-clear goes
+  // and one history record is filed. Answers { zone, record_id }.
+  closeFire: (id, figures) => client.post(`/api/hazards/${id}/close/`, figures).then((r) => r.data),
+
   update: (id, payload) => client.patch(`/api/hazards/${id}/`, payload).then((r) => r.data),
 
   // Ground confirmation from the barangay: status is 'Confirmed' or 'Disputed'.

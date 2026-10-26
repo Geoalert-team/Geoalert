@@ -20,6 +20,11 @@ export const reportsApi = {
   list: (status) =>
     client.get('/api/reports/incidents/', { params: status ? { status } : {} }).then((r) => r.data),
 
+  // DRRMO/Admin: the barangay reports a zone was published from or joined,
+  // shown in the resolve form
+  forZone: (zoneId) =>
+    client.get('/api/reports/incidents/', { params: { hazard_zone: zoneId } }).then((r) => r.data),
+
   // Pinned, non-rejected reports of one hazard type from the last hours, for
   // drawing a zone around where they were seen. DRRMO/Admin.
   located: (hazardTypeName, sinceHours = 72) =>
@@ -31,10 +36,10 @@ export const reportsApi = {
   // photos is an optional array of File objects from an <input type="file" multiple>.
   submit: ({
     barangay, hazard_type, description,
-    agency = '', position = '', severity_estimate = '', photos = [], location = null,
+    agency = '', position = '', photos = [], location = null,
     started_at = null, puroks = [],
   }) => {
-    const body = { barangay, hazard_type, description, agency, position, severity_estimate };
+    const body = { barangay, hazard_type, description, agency, position };
     // Optional map pin [lat, lng]: sent only when one was placed
     if (location) {
       body.latitude = Number(location[0].toFixed(6));

@@ -12,13 +12,13 @@ class BarangayGeoSerializer(GeoFeatureModelSerializer):
     class Meta:
         model     = Barangay
         geo_field = 'boundary'
-        fields    = ['id', 'name', 'municipality']
+        fields    = ['id', 'name', 'municipality', 'province', 'region']
 
 
 class BarangaySerializer(serializers.ModelSerializer):
     class Meta:
         model  = Barangay
-        fields = ['id', 'name', 'municipality']
+        fields = ['id', 'name', 'municipality', 'province', 'region']
 
 
 class PurokGeoSerializer(GeoFeatureModelSerializer):

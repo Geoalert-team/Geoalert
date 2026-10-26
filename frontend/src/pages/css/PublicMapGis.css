@@ -183,6 +183,3 @@
   color: var(--pm-muted, #5b6678);
 }
 
-/* Taking back a field mark dropped on the wrong spot. */
-.pm-mark-pop { margin: 0 0 8px; font-size: .86rem; color: var(--db-body, #1c2433); }
-.pm-mark-pop strong { color: var(--db-heading, #1c2433); }
