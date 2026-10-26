@@ -238,6 +238,22 @@ class OutlineAreasTests(SimpleTestCase):
         self.assertGreaterEqual(outer.num_interior_rings, 1)
         self.assertAlmostEqual(shapes[0].intersection(shapes[1]).area, 0, delta=0.01)
 
+    def test_a_jagged_border_never_hands_an_area_to_its_neighbour(self):
+        # Smoothing moves this border by up to a cell; area 1's outline must still come back as area 1
+        labels = np.array([
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1],
+            [1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1],
+            [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ])
+        shapes = pe.outline_areas(labels)
+        self.assertEqual(set(shapes), {0, 1})
+        self.assertAlmostEqual(shapes[1].area, (labels == 1).sum(), delta=3)
+
     def test_outside_cells_make_no_area(self):
         labels = np.full((5, 5), -1, np.int32)
         labels[1:4, 1:4] = 0
@@ -439,6 +455,92 @@ class PolygonsTests(SimpleTestCase):
         self.assertEqual(len(pe.polygons(a)), 1)
         self.assertEqual(len(pe.polygons(MultiPolygon(a, b))), 2)
         self.assertEqual(len(pe.polygons(GeometryCollection(a, LineString((0, 0), (1, 1))))), 1)
+
+
+class LandmarksFromOsmTests(SimpleTestCase):
+    def test_places_become_points_and_streets_lines(self):
+        elements = [
+            {'type': 'node', 'lat': 10.25, 'lon': 123.85, 'tags': {'name': 'Tapul Elementary School', 'amenity': 'school'}},
+            {'type': 'way', 'center': {'lat': 10.26, 'lon': 123.84},
+             'tags': {'name': 'Santa Cruz Chapel', 'amenity': 'place_of_worship'}},
+            {'type': 'way', 'geometry': [{'lat': 10.25, 'lon': 123.80}, {'lat': 10.25, 'lon': 123.81}],
+             'tags': {'name': 'Burgos Street', 'highway': 'tertiary'}},
+            {'type': 'way', 'geometry': [{'lat': 10.24, 'lon': 123.80}, {'lat': 10.26, 'lon': 123.80}],
+             'tags': {'name': 'Mananga River', 'waterway': 'river'}},
+        ]
+        points, lines = pe.landmarks_from_osm(elements)
+        self.assertEqual(points, [('Tapul Elementary School', 'school', 123.85, 10.25),
+                                  ('Santa Cruz Chapel', 'chapel', 123.84, 10.26)])
+        self.assertEqual([name for name, _ in lines], ['Burgos Street', 'Mananga River'])
+
+    def test_company_suffixes_after_a_comma_are_dropped(self):
+        elements = [{'type': 'node', 'lat': 10.25, 'lon': 123.85, 'tags': {
+            'name': 'Santo Niño Preparatory School of Mohon, Talisay City, Inc.', 'amenity': 'school'}}]
+        self.assertEqual(pe.landmarks_from_osm(elements)[0][0][0], 'Santo Niño Preparatory School of Mohon')
+
+    def test_shops_footpaths_and_generic_names_are_left_out(self):
+        elements = [
+            {'type': 'node', 'lat': 10.25, 'lon': 123.85, 'tags': {'name': 'Sari-sari', 'shop': 'convenience'}},
+            {'type': 'node', 'lat': 10.25, 'lon': 123.85, 'tags': {'name': 'Basketball Court', 'leisure': 'pitch'}},
+            {'type': 'way', 'geometry': [{'lat': 10.25, 'lon': 123.80}, {'lat': 10.25, 'lon': 123.81}],
+             'tags': {'name': 'Lawaan Skywalk', 'highway': 'footway'}},
+        ]
+        self.assertEqual(pe.landmarks_from_osm(elements), ([], []))
+
+
+class AreaNamesTests(SimpleTestCase):
+    """Areas no researched name was found for are named after what's there."""
+
+    # Two areas side by side, each about 1.1 km across
+    WEST = MultiPolygon(Polygon.from_bbox((123.80, 10.25, 123.81, 10.26)), srid=4326)
+    EAST = MultiPolygon(Polygon.from_bbox((123.81, 10.25, 123.82, 10.26)), srid=4326)
+
+    def test_a_landmark_inside_names_the_area_best_kind_first(self):
+        points = [('Santa Cruz Chapel', 'chapel', 123.805, 10.255),
+                  ('Tapul Elementary School', 'school', 123.806, 10.256)]
+        self.assertEqual(pe.area_names([self.WEST], points, []), ['Near Tapul Elementary School'])
+
+    def test_with_no_landmark_inside_the_street_it_holds_most_of(self):
+        lines = [('Burgos Street', LineString((123.801, 10.252), (123.809, 10.252))),
+                 ('Rizal Street', LineString((123.808, 10.258), (123.809, 10.258)))]
+        self.assertEqual(pe.area_names([self.WEST], [], lines), ['Along Burgos Street'])
+
+    def test_a_street_named_after_a_purok_does_not_name_the_area(self):
+        # "Along Purok Siba Street" would read as Purok Siba, which this area isn't known to be
+        lines = [('Purok Siba Street', LineString((123.801, 10.252), (123.809, 10.252))),
+                 ('Rizal Street', LineString((123.808, 10.258), (123.809, 10.258)))]
+        self.assertEqual(pe.area_names([self.WEST], [], lines), ['Along Rizal Street'])
+
+    def test_a_street_names_only_the_area_holding_most_of_it(self):
+        lines = [('Burgos Street', LineString((123.801, 10.252), (123.818, 10.252)))]
+        points = [('Tapul Elementary School', 'school', 123.80, 10.27)]
+        names = pe.area_names([self.WEST, self.EAST], points, lines)
+        self.assertEqual(names[0], 'Along Burgos Street')
+        self.assertTrue(names[1].endswith('of Tapul Elementary School'))
+
+    def test_otherwise_how_far_and_which_way_from_the_nearest_landmark(self):
+        points = [('Camp 4 Barangay Hall', 'hall', 123.805, 10.240),
+                  ('Far School', 'school', 123.70, 10.10)]
+        # The west area's middle is 1.67 km due north of the hall
+        self.assertEqual(pe.area_names([self.WEST], points, []), ['1.7 km north of Camp 4 Barangay Hall'])
+
+    def test_close_by_says_metres(self):
+        points = [('Santa Cruz Chapel', 'chapel', 123.7995, 10.255)]
+        self.assertEqual(pe.area_names([self.WEST], points, []), ['600 m east of Santa Cruz Chapel'])
+
+    def test_no_two_areas_get_the_same_name(self):
+        twin = MultiPolygon(Polygon.from_bbox((123.80, 10.25, 123.81, 10.26)), srid=4326)
+        points = [('Santa Cruz Chapel', 'chapel', 123.7995, 10.255)]
+        names = pe.area_names([self.WEST, twin], points, [])
+        self.assertEqual(len(set(names)), 2)
+
+    def test_names_already_taken_in_the_barangay_are_not_reused(self):
+        points = [('Tapul Elementary School', 'school', 123.806, 10.256)]
+        names = pe.area_names([self.WEST], points, [], taken={'Near Tapul Elementary School'})
+        self.assertNotEqual(names, ['Near Tapul Elementary School'])
+
+    def test_with_nothing_known_nearby_it_stays_numbered(self):
+        self.assertEqual(pe.area_names([self.WEST, self.EAST], [], []), ['Unnamed area 1', 'Unnamed area 2'])
 
 
 class AreaTests(SimpleTestCase):

@@ -5,10 +5,13 @@ import {
 
 // label_point as the API sends it: [lng, lat], rounded to 6 decimals
 const round6 = (n) => Number(n.toFixed(6));
-const square = (id, name, barangay, x0, y0) => ({
+// confidence '' is an area no purok name was found for, named after a landmark
+const square = (id, name, barangay, x0, y0, confidence = 'high') => ({
   type: 'Feature',
   id,
-  properties: { name, barangay, label_point: [round6(x0 + 0.005), round6(y0 + 0.005)] },
+  properties: {
+    name, barangay, source: 'estimated', confidence, label_point: [round6(x0 + 0.005), round6(y0 + 0.005)],
+  },
   geometry: {
     type: 'Polygon',
     coordinates: [[[x0, y0], [x0 + 0.01, y0], [x0 + 0.01, y0 + 0.01], [x0, y0 + 0.01], [x0, y0]]],
@@ -17,8 +20,8 @@ const square = (id, name, barangay, x0, y0) => ({
 const GEO = {
   type: 'FeatureCollection',
   features: [
-    square(5, 'Unnamed area 10', 19, 123.80, 10.20), square(3, 'Purok Sambag', 19, 123.85, 10.25),
-    square(4, 'Unnamed area 2', 19, 123.82, 10.20), square(6, 'Purok Agoho', 19, 123.86, 10.25),
+    square(5, 'Near Tapul Elementary School', 19, 123.80, 10.20, ''), square(3, 'Purok Sambag', 19, 123.85, 10.25),
+    square(4, 'Along Burgos Street', 19, 123.82, 10.20, ''), square(6, 'Purok Agoho', 19, 123.86, 10.25),
     square(7, 'Kimba', 8, 123.90, 10.30),
   ],
 };
@@ -29,15 +32,24 @@ const FIRE = {
 };
 const NOW = new Date('2026-10-25T14:00');
 
-test('options: named first A-Z, then unnamed areas by number', () => {
-  expect(purokOptions(GEO, '19').map((o) => o.label)).toEqual(
-    ['Purok Agoho', 'Purok Sambag', 'Unnamed area 2 (no name yet)', 'Unnamed area 10 (no name yet)'],
-  );
+test('options: named first A-Z, then the areas with no purok name yet, A-Z', () => {
+  expect(purokOptions(GEO, '19').map((o) => o.label)).toEqual([
+    'Purok Agoho', 'Purok Sambag',
+    'Along Burgos Street (no purok name yet)', 'Near Tapul Elementary School (no purok name yet)',
+  ]);
 });
 
 test('options leave out puroks already chosen', () => {
-  expect(purokOptions(GEO, '19', ['3']).map((o) => o.label))
-    .toEqual(['Purok Agoho', 'Unnamed area 2 (no name yet)', 'Unnamed area 10 (no name yet)']);
+  expect(purokOptions(GEO, '19', ['3']).map((o) => o.label)).toEqual([
+    'Purok Agoho', 'Along Burgos Street (no purok name yet)', 'Near Tapul Elementary School (no purok name yet)',
+  ]);
+});
+
+test('numbered puroks sort by number', () => {
+  const geo = { type: 'FeatureCollection', features: [
+    square(1, 'Purok 10', 19, 123.80, 10.20), square(2, 'Purok 2', 19, 123.82, 10.20),
+  ] };
+  expect(purokOptions(geo, '19').map((o) => o.label)).toEqual(['Purok 2', 'Purok 10']);
 });
 
 test('pins sit at each chosen purok, in order', () => {

@@ -57,7 +57,8 @@ class Command(BaseCommand):
     help = ('Split every barangay into estimated purok areas along roads, creeks and ridges, sized by '
             'where its houses are, and write them as GeoJSON for load_puroks. Puroks whose place was '
             'found (data/puroks/purok_points.csv) grow from there and carry their names; the rest are '
-            "unnamed. Stand-in until the Barangay Hall's official purok lines arrive.")
+            'named after a landmark there ("Near Tapul Elementary School"). Stand-in until the '
+            "Barangay Hall's official purok lines arrive.")
 
     def add_arguments(self, parser):
         parser.add_argument('--out', default=str(OUT_FILE), help='GeoJSON to write.')
@@ -87,9 +88,10 @@ class Command(BaseCommand):
         try:
             dem, osm = sus.load_inputs(grid, bbox, log, cache_dir=cache, refresh=options['refresh'])
             buildings = self.buildings(cache, bbox, options['refresh'], log)
+            landmarks = self.landmarks(cache, bbox, options['refresh'], log)
         except Exception as exc:  # network problems are the usual cause
             raise CommandError(f'Download failed: {exc}') from exc
-        log(f'  {len(buildings)} buildings')
+        log(f'  {len(buildings)} buildings; {len(landmarks[0])} landmarks, {len(landmarks[1])} named streets and rivers')
 
         try:
             research = read_research()
@@ -102,7 +104,8 @@ class Command(BaseCommand):
         features = []
         for i, b in enumerate(barangays):
             if b in wanted:
-                features += self.split_one(b, labels == i + 1, grid, step, barrier, houses, dem, research, log)
+                features += self.split_one(b, labels == i + 1, grid, step, barrier, houses, dem, research,
+                                           landmarks, log)
 
         out = Path(options['out'])
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -129,6 +132,18 @@ class Command(BaseCommand):
         saved.write_text(json.dumps(centres))
         return centres
 
+    def landmarks(self, cache, bbox, refresh, log):
+        """Named landmarks, streets and rivers, for naming the areas no purok was found for."""
+        saved = cache / 'osm_landmarks.json'
+        if saved.exists() and not refresh:
+            log('  Using saved landmarks')
+            elements = json.loads(saved.read_text(encoding='utf-8'))
+        else:
+            log('  Downloading landmarks and street names from OpenStreetMap...')
+            elements = sus.overpass(pe.landmark_query(*bbox), sus.make_session(), log)
+            saved.write_text(json.dumps(elements), encoding='utf-8')
+        return pe.landmarks_from_osm(elements)
+
     def costs(self, grid, dem, osm, buildings, log):
         """What crossing each cell costs, and what crossing into it adds (roads, creeks)."""
         res = grid.res
@@ -146,7 +161,7 @@ class Command(BaseCommand):
         barrier = np.maximum(main_roads * pe.MAIN_ROAD_PENALTY_M, water * pe.WATER_PENALTY_M).astype(np.float64)
         return step, barrier, houses
 
-    def split_one(self, barangay, mask, grid, step, barrier, houses, dem, research, log):
+    def split_one(self, barangay, mask, grid, step, barrier, houses, dem, research, landmarks, log):
         rows, cols = np.nonzero(mask)
         if not len(rows):
             log(f'  {barangay.name}: too small for the grid, skipped')
@@ -196,8 +211,9 @@ class Command(BaseCommand):
                 found.append((named[label], area))
             else:
                 unnamed.append(area)
-        # Number the unnamed areas north to south, then west to east, so they stay put between builds
+        # North to south, then west to east, so a landmark shared by two goes the same way every build
         unnamed.sort(key=lambda g: (-round(g.point_on_surface.y, 3), g.point_on_surface.x))
+        described = pe.area_names(unnamed, *landmarks, taken={r['name'] for r, _ in found})
 
         lost = [r['name'] for r in named if r['name'] not in {f['name'] for f, _ in found}]
         log(f'  {barangay.name}: {len(found)} named + {len(unnamed)} unnamed areas (target {n}, from {basis}); '
@@ -211,5 +227,5 @@ class Command(BaseCommand):
 
         return ([feature(g, name=r['name'], kind=r['kind'], parent=r['parent'], confidence=r['confidence'])
                  for r, g in found] +
-                [feature(g, name=f'Unnamed area {k}', kind='purok', parent='', confidence='')
-                 for k, g in enumerate(unnamed, 1)])
+                [feature(g, name=name, kind='purok', parent='', confidence='')
+                 for name, g in zip(described, unnamed)])

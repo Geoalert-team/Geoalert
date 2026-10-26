@@ -89,9 +89,11 @@ describe('purokTooltip', () => {
     expect(html).toContain('location approximate');
   });
 
-  test('an unnamed area says the purok is not identified yet', () => {
-    const html = purokTooltip(feature({ name: 'Unnamed area 3', source: 'estimated', confidence: '', barangay_name: 'Tangke' }));
-    expect(html).toContain('<strong>Unnamed area 3</strong>');
+  test('an area named after a landmark says the purok is not identified yet', () => {
+    const html = purokTooltip(feature({
+      name: 'Near Tanke National High School', source: 'estimated', confidence: '', barangay_name: 'Tangke',
+    }));
+    expect(html).toContain('<strong>Near Tanke National High School</strong>');
     expect(html).toContain('Tangke');
     expect(html).toContain('Purok not identified yet');
   });

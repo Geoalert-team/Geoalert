@@ -6,7 +6,8 @@ estimates (design: docs/superpowers/specs/2026-10-23-purok-boundaries-design.md)
 A barangay is split into as many areas as it has puroks. Each purok whose
 place was found (data/puroks/purok_points.csv) starts there, from its whole
 outline if Wikimapia or OSM has one; puroks nobody could place start at the
-centres of the house clusters left over and stay unnamed. Every area grows
+centres of the house clusters left over and are named after a landmark
+there ("Near Tapul Elementary School") until their name is found. Every area grows
 across the hazard map's grid. Growing is cheap through houses and small
 streets and expensive across main roads, creeks and ridges, so the borders
 between areas settle on them, as real purok borders tend to. Each area stops
@@ -26,7 +27,7 @@ from ctypes import POINTER, c_uint
 
 import numpy as np
 from scipy import ndimage
-from django.contrib.gis.geos import GEOSGeometry, LineString, MultiLineString, MultiPolygon, Polygon
+from django.contrib.gis.geos import GEOSGeometry, LineString, MultiLineString, MultiPolygon, Point, Polygon
 from django.contrib.gis.geos.libgeos import GEOM_PTR
 from django.contrib.gis.geos.prototypes.geom import GeomOutput
 
@@ -414,6 +415,29 @@ def _chaikin(coords, closed, iterations):
     return pts + pts[:1] if closed else pts
 
 
+def _face_label(face, padded, samples=400):
+    """
+    The label most of a rebuilt area's cells carry (padded as in
+    outline_areas). Smoothing moves a border by up to a cell or two, so a
+    single point near the edge can sit on the neighbour's side and hand it the
+    whole area; counting cells (every few, on big areas) settles it.
+    """
+    x0, y0, x1, y1 = face.extent
+    rows = range(math.floor(y0), math.ceil(y1))
+    cols = range(math.floor(x0), math.ceil(x1))
+    stride = max(1, int(math.sqrt(len(rows) * len(cols) / samples)))
+    votes = {}
+    for r in rows[::stride]:
+        for c in cols[::stride]:
+            if face.prepared.contains(Point(c + 0.5, r + 0.5)):
+                v = int(padded[r + 1, c + 1])
+                votes[v] = votes.get(v, 0) + 1
+    if votes:
+        return max(votes, key=votes.get)
+    p = face.point_on_surface  # a sliver no cell centre falls in
+    return int(padded[int(math.floor(p.y)) + 1, int(math.floor(p.x)) + 1])
+
+
 def outline_areas(labels, smooth=2, simplify=0.75):
     """
     Outlines for every labelled area of a grid (label -1 is nobody), in cell
@@ -450,8 +474,7 @@ def outline_areas(labels, smooth=2, simplify=0.75):
 
     by_label = {}
     for face in faces:
-        p = face.point_on_surface
-        label = int(padded[int(math.floor(p.y)) + 1, int(math.floor(p.x)) + 1])
+        label = _face_label(face, padded)
         if label >= 0:
             by_label.setdefault(label, []).append(face)
     return {label: (fs[0] if len(fs) == 1 else MultiPolygon(*fs).unary_union) for label, fs in by_label.items()}
@@ -480,3 +503,137 @@ def area_m2(geom):
     """Area of a lng/lat shape in square metres, close enough at Talisay's size."""
     lat = geom.centroid.y
     return geom.area * METERS_PER_DEGREE * METERS_PER_DEGREE * math.cos(math.radians(lat))
+
+
+# What people give directions by, best first, and the OSM tags that make each
+LANDMARKS = [
+    ('school', 'amenity', ('school', 'kindergarten', 'college', 'university')),
+    ('chapel', 'amenity', ('place_of_worship',)),
+    ('hall', 'amenity', ('townhall', 'community_centre', 'fire_station', 'police')),
+    ('health', 'amenity', ('hospital', 'clinic', 'health_post')),
+    ('market', 'amenity', ('marketplace',)),
+    ('court', 'leisure', ('pitch', 'sports_hall', 'sports_centre', 'park', 'playground')),
+    ('cemetery', 'landuse', ('cemetery',)),
+]
+STREET_TYPES = ('trunk', 'primary', 'secondary', 'tertiary', 'unclassified', 'residential', 'living_street')
+RIVER_TYPES = ('river', 'stream', 'canal')
+# Names that say what a thing is but not which one
+GENERIC_NAMES = {'basketball court', 'covered court', 'court', 'chapel', 'church', 'school', 'park',
+                 'playground', 'gym', 'cemetery', 'barangay hall', 'health center', 'day care center'}
+MIN_STREET_M = 50  # an area must hold this much of a street to be named along it
+# "Along Purok Siba Street" would read as the purok's own name
+NAMES_A_PUROK = re.compile(r'\b(purok|sitio|zone)\b', re.IGNORECASE)
+MAX_NAME = 100  # Purok.name's length
+COMPASS = ['east', 'northeast', 'north', 'northwest', 'west', 'southwest', 'south', 'southeast']
+
+
+def landmark_query(south, west, north, east):
+    """The Overpass query whose answer landmarks_from_osm reads."""
+    bbox = f'{south},{west},{north},{east}'
+    places = ''.join(f'  nwr["name"]["{key}"~"^({"|".join(values)})$"]({bbox});\n' for _, key, values in LANDMARKS)
+    return (f'[out:json][timeout:240];\n(\n{places});\nout tags center;\n(\n'
+            f'  way["name"]["highway"~"^({"|".join(STREET_TYPES)})$"]({bbox});\n'
+            f'  way["name"]["waterway"~"^({"|".join(RIVER_TYPES)})$"]({bbox});\n);\nout tags geom;\n')
+
+
+def landmarks_from_osm(elements):
+    """
+    (points, lines) from an Overpass answer: points are (name, kind, lng, lat)
+    for the schools, chapels, halls and such in LANDMARKS; lines are
+    (name, LineString) for named streets and rivers.
+    """
+    kinds = {(key, value): kind for kind, key, values in LANDMARKS for value in values}
+    points, lines = [], []
+    for el in elements:
+        tags = el.get('tags', {})
+        # "Santo Niño Preparatory School of Mohon, Talisay City, Inc." is known by its first part
+        name = tags.get('name', '').split(',')[0].strip()
+        kind = next((kinds[(k, v)] for k, v in tags.items() if (k, v) in kinds), None)
+        if not name or name.lower() in GENERIC_NAMES:
+            continue
+        if kind:
+            at = el if 'lat' in el else el.get('center')
+            if at:
+                points.append((name, kind, at['lon'], at['lat']))
+        elif tags.get('highway') in STREET_TYPES or tags.get('waterway') in RIVER_TYPES:
+            coords = [(p['lon'], p['lat']) for p in el.get('geometry') or [] if p]
+            if len(coords) >= 2:
+                lines.append((name, LineString(coords, srid=4326)))
+    return points, lines
+
+
+def _offset_m(lng0, lat0, lng1, lat1):
+    """(east, north) metres from the first point to the second."""
+    return ((lng1 - lng0) * METERS_PER_DEGREE * math.cos(math.radians(lat0)),
+            (lat1 - lat0) * METERS_PER_DEGREE)
+
+
+def _how_far(metres):
+    rounded = max(100, round(metres, -2))
+    return f'{rounded:.0f} m' if rounded < 1000 else f'{metres / 1000:.1f} km'
+
+
+def area_names(areas, points, lines, taken=()):
+    """
+    A name for each area no researched purok was found for, from what is on
+    the ground there, so a reporter can still tell them apart. A landmark
+    inside it, best kind first ("Near Tapul Elementary School"); else the
+    street or river it holds most of ("Along Burgos Street"), each going to
+    the area holding most of it; else how far and which way it lies from the
+    nearest landmark ("800 m west of Camp 4 Barangay Hall"). They describe
+    where the area is; they don't claim to be the purok's name.
+
+    areas   lng/lat shapes, in the order to name them
+    points  (name, kind, lng, lat) from landmarks_from_osm
+    lines   (name, LineString) from landmarks_from_osm
+    taken   names already used in the barangay
+    """
+    rank = {kind: i for i, (kind, _, _) in enumerate(LANDMARKS)}
+    used = set(taken)
+    names = [None] * len(areas)
+
+    def free(name):
+        return name not in used and len(name) <= MAX_NAME
+
+    def claim(i, name):
+        names[i] = name
+        used.add(name)
+
+    for i, area in enumerate(areas):
+        inside = sorted((rank[kind], name) for name, kind, lng, lat in points
+                        if area.prepared.contains(Point(lng, lat, srid=area.srid)))
+        unused = [f'Near {name}' for _, name in inside if free(f'Near {name}')]
+        if unused:
+            claim(i, unused[0])
+
+    held = {}
+    for i, area in enumerate(areas):
+        if names[i] is None:
+            for name, line in lines:
+                if not NAMES_A_PUROK.search(name) and area.prepared.intersects(line):
+                    held[(i, name)] = held.get((i, name), 0.0) + area.intersection(line).length * METERS_PER_DEGREE
+    for metres, i, name in sorted(((m, i, n) for (i, n), m in held.items()), reverse=True):
+        if metres >= MIN_STREET_M and names[i] is None and free(f'Along {name}'):
+            claim(i, f'Along {name}')
+
+    for i, area in enumerate(areas):
+        if names[i] is not None:
+            continue
+        p = area.point_on_surface
+        for metres, name, lng, lat in sorted((math.hypot(*_offset_m(lng, lat, p.x, p.y)), name, lng, lat)
+                                             for name, _, lng, lat in points):
+            east, north = _offset_m(lng, lat, p.x, p.y)
+            label = f'{_how_far(metres)} {COMPASS[round(math.degrees(math.atan2(north, east)) / 45) % 8]} of {name}'
+            if free(label):
+                claim(i, label)
+                break
+
+    # Nothing known anywhere near: numbered, as before
+    k = 0
+    for i in range(len(areas)):
+        if names[i] is None:
+            k += 1
+            while f'Unnamed area {k}' in used:
+                k += 1
+            claim(i, f'Unnamed area {k}')
+    return names
