@@ -21,6 +21,7 @@ import { barangaysApi } from '../api/barangaysApi';
 import { historyApi } from '../api/historyApi';
 import {
   LIKELIHOOD, FORECAST_DISCLAIMER, defaultPeriod, likelihoodInfo, periodIn, periodLabel, periodParams, periodYearsText,
+  yearSpan,
 } from '../components/Forecast/forecastLevels';
 import ForecastPeriodPicker from '../components/Forecast/ForecastPeriodPicker';
 import { hazardPuroks, markerSpots } from '../components/Map/hazardPins';
@@ -1266,11 +1267,22 @@ export default function PublicMap() {
                 ))}
               </ul>
               {likely?.error && <p className="pm-legend-note">Could not load the likelihood.</p>}
-              {/* A past month or date: from the years before it, beside what happened */}
-              {likely?.outcome && (
+              {/* The past years the colours come from, so a coming year reads as
+                  the usual pattern; a past period also says what happened */}
+              {likely && !likely.error && (
                 <p className="pm-legend-note">
-                  From the years before it. {likely.outcome.complete ? 'What happened' : 'So far'}:{' '}
-                  {likely.outcome.events} event{likely.outcome.events === 1 ? '' : 's'}.
+                  {likely.years?.length
+                    ? `From ${periodIn(likelyPeriod)} in ${yearSpan(likely.years)}.`
+                    : `Nothing on record for ${periodIn(likelyPeriod)} in past years.`}
+                  {likely.outcome && (likely.outcome.complete
+                    ? ` It is over: ${likely.outcome.events} event${likely.outcome.events === 1 ? '' : 's'} happened.`
+                    : ` It has started: ${likely.outcome.events} event${likely.outcome.events === 1 ? '' : 's'} so far.`)}
+                </p>
+              )}
+              {likely?.limited && likely.years?.length > 0 && (
+                <p className="pm-legend-note">
+                  Only {likely.years.length} past year{likely.years.length === 1 ? '' : 's'} on record, so these
+                  levels are rough.
                 </p>
               )}
               {likely?.basis?.sample_records > 0 && (

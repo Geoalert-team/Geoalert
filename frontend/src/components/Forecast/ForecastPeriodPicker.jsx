@@ -1,5 +1,5 @@
 import React from 'react';
-import { MONTHS, PERIOD_MODES } from './forecastLevels';
+import { FIRST_YEAR, LAST_YEAR, MONTHS, PERIOD_MODES, YEARS } from './forecastLevels';
 
 /**
  * Which time the likelihood is for: a month, a month in a year, or an exact
@@ -11,13 +11,12 @@ import { MONTHS, PERIOD_MODES } from './forecastLevels';
  *   onChange     (next value) => void
  *   fieldClass   each control's wrapper class
  *   labelClass   each control's label class; the map hides them (pm-sr)
- *   now          today, for the years offered
+ *
+ * Years run FIRST_YEAR to LAST_YEAR: past ones to look at what happened,
+ * coming ones to plan for.
  */
-export default function ForecastPeriodPicker({ value, onChange, fieldClass = 'fc-field', labelClass, now = new Date() }) {
+export default function ForecastPeriodPicker({ value, onChange, fieldClass = 'fc-field', labelClass }) {
   const set = (patch) => onChange({ ...value, ...patch });
-  // Ten years back to look at what happened, two ahead to plan for
-  const thisYear = now.getFullYear();
-  const years = Array.from({ length: 13 }, (_, i) => thisYear + 2 - i);
 
   return (
     <>
@@ -31,7 +30,14 @@ export default function ForecastPeriodPicker({ value, onChange, fieldClass = 'fc
         <label className={fieldClass}>
           <span className={labelClass}>Date</span>
           {/* Clearing the field keeps the last date: a forecast needs one */}
-          <input type="date" value={value.date} required onChange={(e) => e.target.value && set({ date: e.target.value })} />
+          <input
+            type="date"
+            value={value.date}
+            min={`${FIRST_YEAR}-01-01`}
+            max={`${LAST_YEAR}-12-31`}
+            required
+            onChange={(e) => e.target.value && set({ date: e.target.value })}
+          />
         </label>
       ) : (
         <label className={fieldClass}>
@@ -45,7 +51,7 @@ export default function ForecastPeriodPicker({ value, onChange, fieldClass = 'fc
         <label className={fieldClass}>
           <span className={labelClass}>Year</span>
           <select value={value.year} onChange={(e) => set({ year: Number(e.target.value) })}>
-            {years.map((y) => <option key={y} value={y}>{y}</option>)}
+            {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
         </label>
       )}

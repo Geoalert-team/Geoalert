@@ -35,18 +35,33 @@ export const PERIOD_MODES = [
   { key: 'date', label: 'Exact date' },
 ];
 
+// The years the period picker offers, oldest first
+export const FIRST_YEAR = 2021;
+export const LAST_YEAR = 2033;
+export const YEARS = Array.from({ length: LAST_YEAR - FIRST_YEAR + 1 }, (_, i) => FIRST_YEAR + i);
+
 const pad = (n) => String(n).padStart(2, '0');
 
 // [year, month, day] from 'YYYY-MM-DD', read as written: no time zone shift
 const dateParts = (iso) => iso.split('-').map(Number);
 
+/** "2025", "2021–2025", or '' for no years */
+export function yearSpan(years) {
+  if (!years?.length) return '';
+  const first = years[0];
+  const last = years[years.length - 1];
+  return first === last ? String(first) : `${first}–${last}`;
+}
+
 /** Next month, as the view has always opened; the other modes start on it this year, and today. */
 export function defaultPeriod(now = new Date()) {
   const month = nextMonth(now);
+  const year = now.getFullYear() + (month === 1 ? 1 : 0);
   return {
     mode: 'month',
     month,
-    year: now.getFullYear() + (month === 1 ? 1 : 0),
+    // Kept to a year the picker offers
+    year: Math.min(Math.max(year, FIRST_YEAR), LAST_YEAR),
     date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
   };
 }
