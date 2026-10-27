@@ -1,11 +1,11 @@
 """Seasonal likelihood: rule-based counts of past months, recent years weighted more."""
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from django.test import SimpleTestCase
 
 from apps.history.forecast import (
-    drop_samples, level_for, likelihood, seasonal_forecast, seasonal_profile, year_weights,
-    years_for_month,
+    drop_samples, level_for, likelihood, period_window, seasonal_forecast, seasonal_profile, year_weights,
+    years_for_month, years_for_period,
 )
 
 TZ = timezone.utc
@@ -108,3 +108,82 @@ class DropSamplesTests(SimpleTestCase):
 
     def test_drops_sample_rows_when_asked(self):
         self.assertEqual(drop_samples(self.events, True), [{'barangay': 'B', 'is_sample': False}])
+
+
+class PeriodWindowTests(SimpleTestCase):
+    def test_a_month_runs_to_the_first_of_the_next(self):
+        self.assertEqual(period_window(2025, 11), (date(2025, 11, 1), date(2025, 12, 1)))
+        self.assertEqual(period_window(2025, 12), (date(2025, 12, 1), date(2026, 1, 1)))
+
+    def test_a_date_is_the_week_around_it(self):
+        self.assertEqual(period_window(2025, 11, 15), (date(2025, 11, 12), date(2025, 11, 19)))
+        # Across the new year, and 29 February in a year without one
+        self.assertEqual(period_window(2025, 12, 30), (date(2025, 12, 27), date(2026, 1, 3)))
+        self.assertEqual(period_window(2025, 2, 29), (date(2025, 2, 25), date(2025, 3, 4)))
+
+    def test_a_date_week_counts_once_it_is_over(self):
+        first = datetime(2022, 1, 1, tzinfo=TZ)
+        # NOW is 19 Oct 2026: the week of 15 Oct ended on the 18th, the week of 17 Oct hasn't
+        self.assertIn(2026, years_for_period(10, 15, NOW.date(), first))
+        self.assertNotIn(2026, years_for_period(10, 17, NOW.date(), first))
+
+
+class PeriodForecastTests(SimpleTestCase):
+    def events(self):
+        return [
+            ev(2021, 1, barangay=9),                                  # starts the record
+            ev(2021, 11), ev(2022, 11), ev(2023, 11),                 # B1 every November to 2023
+            ev(2024, 11, barangay=2), ev(2024, 11, barangay=2),       # 2024: B2, never hit before
+        ]
+
+    def test_a_month_and_year_reads_only_the_years_before_it(self):
+        out = seasonal_forecast(self.events(), 11, NOW, year=2024)
+        self.assertEqual(out['years'], [2021, 2022, 2023])
+        b1 = next(r for r in out['results'] if r['barangay'] == 'B1')
+        self.assertEqual((b1['level'], b1['years_hit'], b1['actual']), ('High', 3, 0))
+
+    def test_a_past_month_and_year_shows_what_happened(self):
+        out = seasonal_forecast(self.events(), 11, NOW, year=2024)
+        self.assertEqual(out['outcome'], {'complete': True, 'events': 2})
+        # B2 wasn't expected, but it happened: it is listed with what happened
+        b2 = next(r for r in out['results'] if r['barangay'] == 'B2')
+        self.assertEqual((b2['level'], b2['actual']), ('None', 2))
+
+    def test_a_future_month_and_year_is_the_plain_month(self):
+        plain = seasonal_forecast(self.events(), 11, NOW)
+        future = seasonal_forecast(self.events(), 11, NOW, year=2027)
+        self.assertEqual(future['years'], plain['years'])
+        self.assertEqual([(r['barangay'], r['level']) for r in future['results']],
+                         [(r['barangay'], r['level']) for r in plain['results']])
+        self.assertIsNone(future['outcome'])
+        self.assertNotIn('actual', future['results'][0])
+
+    def test_an_exact_date_counts_the_week_around_it(self):
+        events = [ev(2021, 1, barangay=9),
+                  {**ev(2022, 11), 'when': datetime(2022, 11, 14, tzinfo=TZ)},   # in the week of the 15th
+                  {**ev(2023, 11), 'when': datetime(2023, 11, 25, tzinfo=TZ)}]   # same month, not that week
+        out = seasonal_forecast(events, 11, NOW, day=15, year=2027)
+        b1 = next(r for r in out['results'] if r['barangay'] == 'B1')
+        self.assertEqual((b1['years_hit'], b1['years_considered']), (1, 5))
+        self.assertEqual(out['window'], {'start': date(2027, 11, 12), 'end': date(2027, 11, 18)})
+
+    def test_the_profile_for_a_year_reads_only_the_years_before_it(self):
+        before = seasonal_profile(self.events(), NOW, barangay_id=2, hazard='Flood', year=2024)
+        after = seasonal_profile(self.events(), NOW, barangay_id=2, hazard='Flood')
+        self.assertEqual(before[10]['level'], 'None')   # B2 had never flooded before 2024
+        self.assertNotEqual(after[10]['level'], 'None')
+
+
+class ForecastViewParamTests(SimpleTestCase):
+    def get(self, **params):
+        from rest_framework.test import APIRequestFactory
+        from apps.history.views import HistoricalForecastView
+        return HistoricalForecastView.as_view()(APIRequestFactory().get('/', params))
+
+    def test_bad_periods_are_refused_before_reading_anything(self):
+        for params, word in [({'date': '2026-13-01'}, 'date'), ({'date': 'soon'}, 'date'),
+                             ({'month': '11', 'year': 'next'}, 'year'), ({'month': '11', 'year': '1800'}, 'year')]:
+            with self.subTest(params=params):
+                response = self.get(**params)
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(word, response.data['error'])

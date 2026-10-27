@@ -71,5 +71,5 @@ class FireDecisionTests(SimpleTestCase):
             decision_error(Fake(hazard_type=fire, status='Rejected', hazard_zone_id=None,
                                 reviewed_by=officer, reviewed_at=at)),
             'Already decided by Ana Cruz at 08:20.')
-        self.assertEqual(decision_error(Fake(hazard_type=Fake(name='Flood'), status='Pending', hazard_zone_id=None)),
-                         'Only fire reports are decided here.')
+        # Floods and landslides are pushed the same way as fires
+        self.assertIsNone(decision_error(Fake(hazard_type=Fake(name='Flood'), status='Pending', hazard_zone_id=None)))

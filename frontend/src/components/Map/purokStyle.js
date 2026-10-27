@@ -28,6 +28,9 @@ export const PUROK_HOVER = { weight: 3, fill: true, fillColor: PUROK_COLOR, fill
 // Laid over purokStyle for the purok whose past hazards the panel shows
 export const PUROK_SELECTED = { weight: 3.5, dashArray: null };
 
+// Laid over purokStyle for the puroks of the hazard whose panel is open
+export const PUROK_OF_HAZARD = { weight: 3.5, dashArray: null, fill: true, fillColor: PUROK_COLOR, fillOpacity: 0.12 };
+
 function inRing(lng, lat, ring) {
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {

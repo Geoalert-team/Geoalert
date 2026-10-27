@@ -26,9 +26,80 @@ export function yearsText(row, monthName) {
   return `${row.years_hit} of ${n} past ${monthName}${n === 1 ? '' : 's'}`;
 }
 
+// The time a likelihood is for. 'month': that month, from every past one;
+// 'monthYear': that month in that year, from the years before it, with what
+// happened once it has started; 'date': the week around that day, likewise.
+export const PERIOD_MODES = [
+  { key: 'month', label: 'Month' },
+  { key: 'monthYear', label: 'Month and year' },
+  { key: 'date', label: 'Exact date' },
+];
+
+const pad = (n) => String(n).padStart(2, '0');
+
+// [year, month, day] from 'YYYY-MM-DD', read as written: no time zone shift
+const dateParts = (iso) => iso.split('-').map(Number);
+
+/** Next month, as the view has always opened; the other modes start on it this year, and today. */
+export function defaultPeriod(now = new Date()) {
+  const month = nextMonth(now);
+  return {
+    mode: 'month',
+    month,
+    year: now.getFullYear() + (month === 1 ? 1 : 0),
+    date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
+  };
+}
+
+/** GET /api/history/forecast/'s params for a period */
+export function periodParams(p) {
+  if (p.mode === 'date') return { date: p.date };
+  if (p.mode === 'monthYear') return { month: p.month, year: p.year };
+  return { month: p.month };
+}
+
+/** 1-12, the month the period falls in */
+export const periodMonth = (p) => (p.mode === 'date' ? dateParts(p.date)[1] : p.month);
+
+/** The same period moved to another month (a date keeps its day, or the month's last) */
+export function withMonth(p, month) {
+  if (p.mode !== 'date') return { ...p, month };
+  const [y, , d] = dateParts(p.date);
+  const last = new Date(y, month, 0).getDate();
+  return { ...p, date: `${y}-${pad(month)}-${pad(Math.min(d, last))}` };
+}
+
+/** "November", "November 2027", "November 15, 2027" */
+export function periodLabel(p) {
+  if (p.mode === 'date') {
+    const [y, m, d] = dateParts(p.date);
+    return `${MONTHS[m - 1]} ${d}, ${y}`;
+  }
+  return p.mode === 'monthYear' ? `${MONTHS[p.month - 1]} ${p.year}` : MONTHS[p.month - 1];
+}
+
+/** Where in past years the counts come from: "November", "the week of Nov 15" */
+export function periodIn(p) {
+  if (p.mode !== 'date') return MONTHS[p.month - 1];
+  const [, m, d] = dateParts(p.date);
+  return `the week of ${MONTHS[m - 1].slice(0, 3)} ${d}`;
+}
+
+/** The table's column: "Past Novembers", "Past years, week of Nov 15" */
+export function periodPastHeader(p) {
+  return p.mode === 'date' ? `Past years, ${periodIn(p).replace('the ', '')}` : `Past ${MONTHS[p.month - 1]}s`;
+}
+
+/** "3 of 4 past Novembers", "3 of 4 past years" for the week around a date */
+export function periodYearsText(row, p) {
+  if (p.mode !== 'date') return yearsText(row, MONTHS[p.month - 1]);
+  const n = row.years_considered;
+  return `${row.years_hit} of ${n} past year${n === 1 ? '' : 's'}`;
+}
+
 export const SEVERITY_WORD = { Red: 'Extreme', Orange: 'Moderate', Green: 'Low' };
 
 export const FORECAST_DISCLAIMER =
-  'Based on how often this happened in the same month in past years. '
+  'Based on how often this happened at the same time of year in past years. '
   + 'It is a heads-up for preparing, not a warning that a hazard is coming. '
   + 'Live alerts come only from the DRRMO.';

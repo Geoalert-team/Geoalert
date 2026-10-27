@@ -206,21 +206,6 @@
 .pub-method.is-active { border-width: 2px; border-color: var(--db-navy); }
 .pub-method:disabled { opacity: .45; cursor: default; }
 
-/* Safety cordon around a fire: a toggle and a width in meters */
-.pub-cordon { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--db-line, #e3e7ee); }
-.pub-cordon-toggle,
-.pub-cordon-width {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: .8rem; font-weight: 600; color: var(--db-heading);
-}
-.pub-cordon-width { margin-left: 12px; }
-.pub-cordon-width input {
-  width: 64px; padding: 4px 6px;
-  border: 1px solid var(--db-line, #cfd6e1); border-radius: 6px;
-  font: inherit; font-size: .8rem;
-}
-.pub-cordon-width input[aria-invalid] { border-color: #d9534f; }
-
 /* Generating methods: water depth, past zone choice, notes, map check */
 .pub-depth { margin-top: 8px; }
 .pub-depth-label { display: block; font-size: .78rem; font-weight: 600; color: var(--db-heading); }

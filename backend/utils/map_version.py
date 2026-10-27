@@ -73,9 +73,9 @@ def cached_body(etag, build):
 
     A 304 only helps a browser that already has the current version. Right
     after a change every open map has the old one, so each would rebuild the
-    same GeoJSON, cordon buffers and all, at its next refresh. Keyed on the
-    tag, which already covers the version, the five-minute bucket and the
-    full query, so the first map rebuilds and the rest are handed its copy.
+    same GeoJSON at its next refresh. Keyed on the tag, which already covers
+    the version, the five-minute bucket and the full query, so the first map
+    rebuilds and the rest are handed its copy.
 
     `build` returns a plain dict. Use only on endpoints that answer every
     caller the same way.

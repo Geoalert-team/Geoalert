@@ -2,7 +2,7 @@
 .fc { display: flex; flex-direction: column; gap: 12px; }
 .fc-controls { display: flex; flex-wrap: wrap; gap: 12px; }
 .fc-field { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; font-weight: 600; color: var(--db-heading, #1c2e4a); }
-.fc-field select {
+.fc-field select, .fc-field input {
   min-width: 150px; padding: 6px 8px;
   border: 1px solid var(--db-line, #cfd6e1); border-radius: 6px;
   font: inherit; font-weight: 400; background: var(--db-white, #fff);

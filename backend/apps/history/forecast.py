@@ -8,6 +8,12 @@ same month in each past year the record covers and asks two things:
   * In how many of those Novembers did at least one event happen?
   * How many events were there on average?
 
+The period can also be a month in a given year (November 2024), which reads
+only the years before it and, once it has started, sets what actually
+happened beside the estimate; or an exact date, read as the week around it
+(DAY_WINDOW days either side) in each past year, since one day alone holds
+too few records to mean anything.
+
 Recent years count more than old ones. A year's weight halves every
 HALF_LIFE_YEARS, the same half-life the map's history shading uses, so a
 barangay that flooded every November until a drainage project three years
@@ -26,8 +32,9 @@ Too little history makes a share meaningless (one year out of one is
 `limited`, and the page says so instead of hiding it.
 """
 
+from calendar import monthrange
 from collections import Counter, defaultdict
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 HALF_LIFE_YEARS = 3.0
 MAX_YEARS = 10
@@ -35,6 +42,7 @@ MIN_YEARS = 3
 HIGH_SHARE = 0.6
 MODERATE_SHARE = 0.3
 EXPECTED_HIGH = 2.0
+DAY_WINDOW = 3  # days either side of an exact date
 
 LEVELS = ['None', 'Low', 'Moderate', 'High']
 SEVERITY_RANK = {'Green': 1, 'Orange': 2, 'Red': 3}
@@ -47,28 +55,48 @@ def drop_samples(events, exclude):
     return [e for e in events if not e['is_sample']] if exclude else events
 
 
-def years_for_month(month, now, first_event, max_years=MAX_YEARS):
+def period_window(year, month, day=None):
     """
-    The past years whose `month` is fully in the record, newest first.
+    The period in `year` as dates [start, end): the whole month, or with a
+    `day` the week around it, DAY_WINDOW days either side. A day past the
+    month's end (29 February in a common year) is its last day.
+    """
+    if day is None:
+        start = date(year, month, 1)
+        return start, date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+    centre = date(year, month, min(day, monthrange(year, month)[1]))
+    return centre - timedelta(days=DAY_WINDOW), centre + timedelta(days=DAY_WINDOW + 1)
 
-    A year counts only once that month has ended (this year's November is
-    not evidence before December) and only if the record had started by
-    then, so the months before the first record are not read as "nothing
-    happened".
+
+def years_for_period(month, day, cutoff, first_event, max_years=MAX_YEARS):
+    """
+    The past years whose period (see period_window) is fully in the record,
+    newest first.
+
+    A year counts only once its period is over by `cutoff`, a date (this
+    year's November is not evidence before December), and only if the record
+    had started by then, so the time before the first record is not read as
+    "nothing happened".
     """
     if first_event is None:
         return []
-    first_month = (first_event.year, first_event.month)
+    record_start = date(first_event.year, first_event.month, 1)
     years = []
-    for year in range(now.year, first_event.year - 1, -1):
-        if (year, month) >= (now.year, now.month):
+    for year in range(cutoff.year, first_event.year - 1, -1):
+        start, end = period_window(year, month, day)
+        if end > cutoff:
             continue  # not over yet
-        if (year, month) < first_month:
+        if start < record_start:
             continue  # before the record started
         years.append(year)
         if len(years) >= max_years:
             break
     return years
+
+
+def years_for_month(month, now, first_event, max_years=MAX_YEARS):
+    """The past years whose `month` is over by `now` and fully in the record, newest first."""
+    return years_for_period(month, None, now.date(), first_event, max_years)
 
 
 def year_weights(years):
@@ -112,38 +140,63 @@ def _typical_severity(severities):
     return max(counts, key=lambda s: (counts[s], SEVERITY_RANK.get(s, 0)))
 
 
-def seasonal_forecast(events, month, now, max_years=MAX_YEARS):
+def seasonal_forecast(events, month, now, max_years=MAX_YEARS, day=None, year=None):
     """
     events: iterable of dicts with
         barangay_id, barangay, hazard, when (local datetime), severity
     month:  1-12
     now:    local datetime
+    day:    with it, the week around that date instead of the whole month
+    year:   the year the period is in. Only the years before it are read, so
+            a past period shows what the record said beforehand. Once the
+            period has started, each row has `actual`, its events in the
+            period, and what happened without being expected is listed too.
+            Without a year: the period's next turn, from every year so far.
 
     Returns a dict ready to serve: the years considered and one row per
-    barangay and hazard type that has ever been hit in that month.
+    barangay and hazard type that has ever been hit in that period.
     """
     events = [e for e in events if e.get('when') is not None]
     first = min((e['when'] for e in events), default=None)
-    years = years_for_month(month, now, first, max_years)
+    today = now.date()
+    target = period_window(year, month, day) if year is not None else None
+    cutoff = min(today, target[0]) if target else today
+    years = years_for_period(month, day, cutoff, first, max_years)
     weights = year_weights(years)
-    in_window = set(years)
+    windows = {y: period_window(y, month, day) for y in years}
+
+    def year_of(when):
+        d = when.date()
+        return next((y for y, (start, end) in windows.items() if start <= d < end), None)
 
     grouped = defaultdict(lambda: {'counts': Counter(), 'severities': [], 'last': None})
     for e in events:
         when = e['when']
-        if when.month != month or when.year not in in_window:
+        y = year_of(when)
+        if y is None:
             continue
         key = (e.get('barangay_id'), e.get('barangay'), e.get('hazard'))
         g = grouped[key]
-        g['counts'][when.year] += 1
+        g['counts'][y] += 1
         g['severities'].append(e.get('severity'))
         if g['last'] is None or when > g['last']:
             g['last'] = when
 
+    # What happened in the period itself, once it has started
+    started = target is not None and target[0] <= today
+    actual = Counter()
+    if started:
+        for e in events:
+            if target[0] <= e['when'].date() < target[1]:
+                actual[(e.get('barangay_id'), e.get('barangay'), e.get('hazard'))] += 1
+
     rows = []
-    for (barangay_id, barangay, hazard), g in grouped.items():
+    unexpected = [k for k in actual if k not in grouped]
+    for key in [*grouped, *unexpected]:
+        barangay_id, barangay, hazard = key
+        g = grouped[key]
         share, expected, hit = likelihood(g['counts'], weights)
-        rows.append({
+        row = {
             'barangay_id': barangay_id,
             'barangay': barangay or 'Unknown barangay',
             'hazard_type': hazard or 'Unknown',
@@ -156,12 +209,20 @@ def seasonal_forecast(events, month, now, max_years=MAX_YEARS):
             'typical_severity': _typical_severity(g['severities']),
             'events': sum(g['counts'].values()),
             'last_occurred': g['last'],
-        })
+        }
+        if started:
+            row['actual'] = actual[key]
+        rows.append(row)
     rows.sort(key=lambda r: (-LEVELS.index(r['level']), -r['probability'], -r['expected_events'], r['barangay']))
 
     return {
         'month': month,
         'month_name': MONTH_NAMES[month - 1],
+        'day': day,
+        'year': year,
+        # The period's own dates, the end included, when it has a year
+        'window': {'start': target[0], 'end': target[1] - timedelta(days=1)} if target else None,
+        'outcome': {'complete': target[1] <= today, 'events': sum(actual.values())} if started else None,
         'years': sorted(years),
         'limited': len(years) < MIN_YEARS,
         'results': rows,
@@ -195,11 +256,13 @@ def summarize_by_barangay(rows):
     return out
 
 
-def seasonal_profile(events, now, barangay_id=None, hazard=None, max_years=MAX_YEARS):
+def seasonal_profile(events, now, barangay_id=None, hazard=None, max_years=MAX_YEARS, year=None):
     """
     The likelihood for each month of the year, January first, for one
     barangay (or the whole city when barangay_id is None) and one hazard
     type (or all of them). For the "when is the risky season here" chart.
+    With a year, each month reads only the years before that year's, as
+    seasonal_forecast does.
     """
     picked = [
         e for e in events
@@ -208,9 +271,11 @@ def seasonal_profile(events, now, barangay_id=None, hazard=None, max_years=MAX_Y
         and (hazard is None or (e.get('hazard') or '').lower() == hazard.lower())
     ]
     first_all = min((e['when'] for e in events if e.get('when')), default=None)
+    today = now.date()
     months = []
     for m in range(1, 13):
-        years = years_for_month(m, now, first_all, max_years)
+        cutoff = today if year is None else min(today, period_window(year, m)[0])
+        years = years_for_period(m, None, cutoff, first_all, max_years)
         weights = year_weights(years)
         counts = Counter(e['when'].year for e in picked if e['when'].month == m and e['when'].year in weights)
         share, expected, hit = likelihood(counts, weights)

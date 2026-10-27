@@ -63,7 +63,40 @@ test('likelihood takes its hazard from outside and can leave samples out', async
   expect(historyApi.forecast).toHaveBeenCalledWith(expect.objectContaining({
     hazard_type_name: 'Flood', exclude_samples: 'true',
   }));
-  expect(el.querySelectorAll('select')).toHaveLength(1); // the month picker only
+  // The period picker only: what kind of period, and the month
+  expect([...el.querySelectorAll('select')].map((s) => s.closest('label').querySelector('span').textContent))
+    .toEqual(['Period', 'Month']);
+});
+
+const pick = (el, label, value) => act(async () => {
+  const field = [...el.querySelectorAll('label')].find((l) => l.textContent.startsWith(label));
+  const input = field.querySelector('select, input');
+  const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(input), 'value').set;
+  setter.call(input, value);
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+});
+
+test('an exact date asks for the week around it', async () => {
+  historyApi.forecast.mockResolvedValue(forecast(''));
+  const el = await render(<BarangayLikelihood />);
+  await pick(el, 'Period', 'date');
+  await pick(el, 'Date', '2027-11-15');
+  expect(historyApi.forecast).toHaveBeenLastCalledWith({ date: '2027-11-15' });
+  expect(el.querySelector('th:nth-child(4)').textContent).toBe('Past years, week of Nov 15');
+});
+
+test('a past month and year shows what happened beside the likelihood', async () => {
+  historyApi.forecast.mockResolvedValue({
+    ...forecast(''), year: 2024, years: [2021, 2022, 2023], outcome: { complete: true, events: 3 },
+    results: [{ ...row(1), actual: 3 }, { ...row(2), actual: 0 }],
+  });
+  const el = await render(<BarangayLikelihood />);
+  await pick(el, 'Period', 'monthYear');
+  await pick(el, 'Year', '2024');
+  expect(historyApi.forecast).toHaveBeenLastCalledWith(expect.objectContaining({ year: 2024 }));
+  expect([...el.querySelectorAll('th')].map((th) => th.textContent)).toContain('What happened');
+  expect([...el.querySelectorAll('tbody tr')].map((tr) => tr.children[4].textContent)).toEqual(['3 events', 'None']);
+  expect(el.textContent).toContain('It is over: 3 events happened.');
 });
 
 test('the dashboard card sends the rest to Analytics, not History', async () => {

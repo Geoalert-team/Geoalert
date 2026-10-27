@@ -1,13 +1,9 @@
-import json
-
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from rest_framework_gis.fields import GeometryField
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from apps.barangays.models import Barangay
-from apps.hazards.geometry import (
-    CORDON_MAX_M, CORDON_MIN_M, city_outline, clip_to_city, cordon_ring, main_barangay, with_cordon,
-)
+from apps.hazards.geometry import city_outline, clip_to_city, main_barangay
 from apps.hazards.models import HazardType, HazardZone, HazardAlert, HazardVerification
 from apps.accounts.serializers import UserSerializer
 
@@ -54,49 +50,17 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
     # With ?bbox=: 'whole' when the zone lies entirely inside the box
     # (ST_Within), 'partial' when it crosses the edge. Null without a bbox.
     in_view = serializers.SerializerMethodField()
-    # The area the zone reaches with its cordon, as GeoJSON, or null when it
-    # has none. The same shape the alert was routed on, so the ring the map
-    # draws is exactly the area whose barangays were told.
-    cordon = serializers.SerializerMethodField()
-    # The same cordon without the hazard inside it, for drawing: the map
-    # hatches this ring so it never looks like a hazard level of its own.
-    cordon_ring = serializers.SerializerMethodField()
     pins = serializers.SerializerMethodField()
-
-    def _reach(self, obj):
-        """The zone grown by its cordon, buffered once per zone per response."""
-        if not obj.cordon_m or obj.geometry is None:
-            return None
-        memo = self.context.setdefault('reach', {})
-        if obj.pk not in memo:
-            city = self.context.get('city')
-            if city is None and 'city' not in self.context:
-                # Looked up once per response, not once per zone
-                city = self.context['city'] = city_outline()
-            try:
-                memo[obj.pk] = with_cordon(obj.geometry, obj.cordon_m, city)
-            except Exception:
-                memo[obj.pk] = None
-        return memo[obj.pk]
-
-    def get_cordon(self, obj):
-        reach = self._reach(obj)
-        return json.loads(reach.geojson) if reach is not None else None
-
-    def get_cordon_ring(self, obj):
-        ring = cordon_ring(obj.geometry, self._reach(obj))
-        return json.loads(ring.geojson) if ring is not None else None
 
     def get_pins(self, obj):
         """
-        [{lat, lng, purok_name}] for a fire made from reports: one per purok
-        its reports name (a point inside each), or the report's own location
-        when it names none. [] for a zone drawn by an officer, and for any
-        flood or landslide: those keep their drawn area even when published
-        from a pinned report.
+        [{lat, lng, purok_id, purok_name}] for a zone made from reports,
+        whatever its type: one per purok its reports name (a point inside
+        each), or the report's own location when it names none (no purok).
+        [] for a zone drawn by an officer with no report; the map places that
+        one itself. purok_id lets the map outline the purok while the
+        hazard's panel is open.
         """
-        if (obj.hazard_type.name if obj.hazard_type else '').lower() != 'fire':
-            return []
         pins, seen = [], set()
         for report in obj.incidentreport_set.all():
             puroks = list(report.puroks.all())
@@ -105,10 +69,11 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
                     continue
                 seen.add(purok.id)
                 p = purok.boundary.point_on_surface
-                pins.append({'lat': round(p.y, 6), 'lng': round(p.x, 6), 'purok_name': purok.name})
+                pins.append({'lat': round(p.y, 6), 'lng': round(p.x, 6),
+                             'purok_id': purok.id, 'purok_name': purok.name})
             if not puroks and report.location is not None:
                 pins.append({'lat': round(report.location.y, 6), 'lng': round(report.location.x, 6),
-                             'purok_name': None})
+                             'purok_id': None, 'purok_name': None})
         return pins
 
     def get_in_view(self, obj):
@@ -137,9 +102,6 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
             # A raise to Extreme waiting for a second officer
             'pending_severity', 'pending_at',
             'in_view',
-            # Safety cordon: its width, the area it reaches, and that area
-            # less the hazard
-            'cordon_m', 'cordon', 'cordon_ring',
             # A fire made from reports: one pin per purok, drawn instead of
             # the zone's shading and outline
             'pins',
@@ -186,7 +148,6 @@ class HazardZoneSerializer(serializers.ModelSerializer):
             'verifications', 'review_note', 'reviewed_at', 'reviewed_by_name',
             # A raise to Extreme waiting for a second officer
             'pending_severity', 'pending_at',
-            'cordon_m',
         ]
 
 
@@ -232,11 +193,7 @@ class HazardZoneCreateSerializer(serializers.ModelSerializer):
 
         {"hazard_type": 1, "barangay": 7, "severity": "Orange",
          "description": "...",
-         "geometry": {"type": "Polygon", "coordinates": [[[lng, lat], ...]]},
-         "cordon_m": 30}
-
-    cordon_m is optional: a safety ring that many meters wide around the
-    drawn area. The geometry stays the hazard itself; see HazardZone.cordon_m.
+         "geometry": {"type": "Polygon", "coordinates": [[[lng, lat], ...]]}}
     """
 
     # Declared explicitly on purpose. A plain ModelSerializer can only build
@@ -246,20 +203,12 @@ class HazardZoneCreateSerializer(serializers.ModelSerializer):
     # raising while the serializer's fields are being built — which surfaces
     # as a 500 rather than a validation error.
     geometry = GeometryField()
-    cordon_m = serializers.IntegerField(
-        required=False, allow_null=True,
-        min_value=CORDON_MIN_M, max_value=CORDON_MAX_M,
-        error_messages={
-            'min_value': f'A cordon is at least {CORDON_MIN_M} m wide. Leave it off for none.',
-            'max_value': f'A cordon is at most {CORDON_MAX_M} m wide. Draw a larger zone instead.',
-        },
-    )
 
     class Meta:
         model  = HazardZone
         fields = [
             'barangay', 'hazard_type', 'severity',
-            'geometry', 'description', 'cordon_m',
+            'geometry', 'description',
         ]
 
     def validate_geometry(self, value):

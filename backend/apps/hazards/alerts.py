@@ -18,7 +18,6 @@ from django.utils import timezone
 from apps.accounts.models import User
 from apps.admin_dashboard.models import AuditLog
 from apps.barangays.models import Barangay
-from apps.hazards.geometry import with_cordon
 from apps.hazards.models import HazardAlert, HazardZone
 from apps.notifications.models import Notification
 
@@ -120,7 +119,7 @@ def apply_raise(zone, approver=None, auto=False):
     return alert, barangays, recipients
 
 
-def affected_barangays(zone_or_geometry, manual_ids=None, cordon_m=None):
+def affected_barangays(zone_or_geometry, manual_ids=None):
     """
     Which barangays a hazard zone actually touches.
 
@@ -128,14 +127,6 @@ def affected_barangays(zone_or_geometry, manual_ids=None, cordon_m=None):
     geometry rather than from the single barangay the officer happened to
     tap: a 1 km zone can cross three of them, and only notifying one leaves
     the rest uninformed.
-
-    THE CORDON COUNTS. Decided deliberately: the people inside a cordon are
-    the ones being told to leave, so they must be alerted. A barangay that
-    only the cordon reaches, not the burning block itself, is still
-    affected, and testing ST_Intersects on the bare block would miss it. So
-    the test runs on the block grown by its cordon (with_cordon), never on
-    zone.geometry alone. A saved zone supplies its own cordon_m; a bare
-    geometry (the publish preview) passes cordon_m explicitly.
 
     manual_ids is the fallback the spec asks for when the GIS data can't
     answer - the officer names the barangays and we use those instead.
@@ -147,11 +138,8 @@ def affected_barangays(zone_or_geometry, manual_ids=None, cordon_m=None):
 
     zone = zone_or_geometry if isinstance(zone_or_geometry, HazardZone) else None
     geometry = zone.geometry if zone else zone_or_geometry
-    if zone is not None:
-        cordon_m = zone.cordon_m
     try:
-        reach = with_cordon(geometry, cordon_m)
-        found = list(Barangay.objects.filter(boundary__intersects=reach))
+        found = list(Barangay.objects.filter(boundary__intersects=geometry))
     except Exception:
         # A malformed boundary shouldn't stop an alert going out
         found = []

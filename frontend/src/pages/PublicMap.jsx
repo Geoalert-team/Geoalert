@@ -9,10 +9,9 @@ import LayerControl from '../components/Map/LayerControl';
 import HazardPanel, { clearHistoryCache } from '../components/Map/HazardPanel';
 import BarangayPanel from '../components/Map/BarangayPanel';
 import { useSusceptibility } from '../components/Map/susceptibility';
-import { CordonPatterns, DRAFT_COLOR, cordonRingStyle } from '../components/Map/CordonLayer';
 import PurokLayer from '../components/Map/PurokLayer';
 import PurokHistoryLayer from '../components/Map/PurokHistoryLayer';
-import { hasEstimates, purokAt, purokTooltip, puroksOf } from '../components/Map/purokStyle';
+import { PUROK_OF_HAZARD, hasEstimates, purokAt, purokStyle, purokTooltip, puroksOf } from '../components/Map/purokStyle';
 import { PUROK_LEVELS, byPurok, historyLine, thresholdText } from '../components/Map/purokLevels';
 import { HAZARD_TYPES, SEVERITY, severityInfo, hazardKey, hazardIconPath, hazardColor } from '../components/Map/hazardInfo';
 import { MIN_CORNERS, middleOf } from '../utils/drawnZone';
@@ -20,8 +19,11 @@ import { boundaryRings, snapPoint } from '../utils/snap';
 import { hazardsApi } from '../api/hazardsApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { historyApi } from '../api/historyApi';
-import { LIKELIHOOD, MONTHS, FORECAST_DISCLAIMER, likelihoodInfo, nextMonth, yearsText } from '../components/Forecast/forecastLevels';
-import { markerSpots } from '../components/Map/hazardPins';
+import {
+  LIKELIHOOD, FORECAST_DISCLAIMER, defaultPeriod, likelihoodInfo, periodIn, periodLabel, periodParams, periodYearsText,
+} from '../components/Forecast/forecastLevels';
+import ForecastPeriodPicker from '../components/Forecast/ForecastPeriodPicker';
+import { hazardPuroks, markerSpots } from '../components/Map/hazardPins';
 import './css/PublicMap.css';
 import './css/PublicMapGis.css';
 import './css/PublicMapLayers.css';
@@ -121,8 +123,6 @@ function featureToItem(feature) {
     approvedByName: p.approved_by_name,
     // 'Red' while a raise to Extreme waits for a second officer
     pendingSeverity: p.pending_severity || '',
-    // Safety cordon width in metres, or null for none
-    cordonM: p.cordon_m || null,
     // A fire made from reports: one pin per purok, shown instead of the
     // zone's shading and outline (see components/Map/hazardPins.js)
     pins: p.pins || [],
@@ -249,7 +249,8 @@ export default function PublicMap() {
   const [purokLevels, setPurokLevels] = useState(null);
   const [view, setView] = useState('past'); // 'past' | 'likely'
   // Seasonal likelihood for the 'likely' view: which month, and the answer
-  const [likelyMonth, setLikelyMonth] = useState(nextMonth());
+  // The time the likelihood is for: a month, a month in a year, or a date
+  const [likelyPeriod, setLikelyPeriod] = useState(defaultPeriod);
   const [likely, setLikely] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -269,9 +270,6 @@ export default function PublicMap() {
   // generating method (water depth, past zone), which then hands back corners.
   const [draftSeed, setDraftSeed] = useState(null);
   const [publishNotice, setPublishNotice] = useState('');
-  // Publishing from a validated incident report: its type, description and
-  // id, so the form starts filled in and the report is linked to the zone.
-  const [publishPrefill, setPublishPrefill] = useState(null);
   // The shape as the server will save it (cut at the city boundary), shown
   // while the officer checks the summary before sending
   const [previewShape, setPreviewShape] = useState(null);
@@ -522,6 +520,11 @@ export default function PublicMap() {
   );
 
   const selectedHazard = hazards.find((h) => h.id === selectedHazardId) || null;
+  // The puroks of the hazard whose panel is open, outlined on the map
+  const selectedHazardPuroks = useMemo(
+    () => (panelOpen && selectedHazard ? hazardPuroks(selectedHazard, purokGeo) : null),
+    [panelOpen, selectedHazard, purokGeo],
+  );
   const stack = useMemo(
     () => stackIds.map((id) => hazards.find((h) => h.id === id)).filter(Boolean),
     [stackIds, hazards],
@@ -562,30 +565,6 @@ export default function PublicMap() {
     setSearchParams(searchParams, { replace: true });
   }, [loading, hazards, searchParams, setSearchParams]);   // eslint-disable-line react-hooks/exhaustive-deps
 
-  // "Publish hazard here" on a validated report links to
-  // /map?publish=report&report=<id>&type=<name>&barangay=<id>&desc=<text>.
-  // Zoom to the report's barangay and start outlining, with the form filled in.
-  const reportLinked = useRef(false);
-  useEffect(() => {
-    if (reportLinked.current || !map || !canPublish || !barangays.length) return;
-    if (searchParams.get('publish') !== 'report') return;
-    reportLinked.current = true;
-    const home = barangays.find((b) => String(b.id) === String(searchParams.get('barangay')));
-    hasFitted.current = true;
-    if (home?.feature) {
-      try { map.fitBounds(L.geoJSON(home.feature).getBounds(), { padding: [40, 40] }); } catch { /* keep the view */ }
-    }
-    startPublish();
-    setPublishPrefill({
-      reportId: searchParams.get('report'),
-      typeName: searchParams.get('type') || '',
-      description: searchParams.get('desc') || '',
-      barangayName: home?.name || '',
-    });
-    ['publish', 'report', 'type', 'barangay', 'desc'].forEach((k) => searchParams.delete(k));
-    setSearchParams(searchParams, { replace: true });
-  }, [map, canPublish, barangays, searchParams, setSearchParams]);   // eslint-disable-line react-hooks/exhaustive-deps
-
   // Paddings that keep a zoomed area clear of the details panel and search bar
   function panelPadding() {
     return isDesktop()
@@ -612,8 +591,10 @@ export default function PublicMap() {
     setQuery('');
     if (!map) return;
 
-    // Zoom to the area around the pin, beside the panel
-    const bounds = L.latLng(item.position).toBounds(SAMPLE_ZOOM_RADIUS * 2);
+    // Zoom to its puroks, or the area around the pin, beside the panel
+    const puroks = hazardPuroks(item, purokGeo);
+    let bounds = L.latLng(item.position).toBounds(SAMPLE_ZOOM_RADIUS * 2);
+    try { if (puroks) bounds = L.geoJSON(puroks).getBounds(); } catch { /* the pin's area */ }
     map.flyToBounds(bounds, { ...panelPadding(), maxZoom: 17, duration: 0.8 });
   }
 
@@ -758,7 +739,6 @@ export default function PublicMap() {
     setPublishMode('off');
     setDraftPoints([]);
     setDraftSeed(null);
-    setPublishPrefill(null);
     setPreviewShape(null);
   }
 
@@ -829,11 +809,11 @@ export default function PublicMap() {
   useEffect(() => {
     if (view !== 'likely') return undefined;
     let cancelled = false;
-    historyApi.forecast({ month: likelyMonth })
+    historyApi.forecast(periodParams(likelyPeriod))
       .then((d) => { if (!cancelled) setLikely(d); })
       .catch(() => { if (!cancelled) setLikely({ error: true, results: [] }); });
     return () => { cancelled = true; };
-  }, [view, likelyMonth]);
+  }, [view, likelyPeriod]);
 
   // Per barangay: its rows for the hazard types shown, worst first. The
   // layer checkboxes apply here too, so "Fire only" shows fire likelihood.
@@ -902,7 +882,6 @@ export default function PublicMap() {
 
   return (
     <div className="pm">
-      <CordonPatterns />
       <PublicNavbar />
 
       <div
@@ -954,6 +933,19 @@ export default function PublicMap() {
             tooltipFor={purokTip}
           />
 
+          {/* The puroks of the hazard the panel shows: bold and lightly
+              filled, over the past-hazard fills, under the barangay lines */}
+          {selectedHazardPuroks && (
+            <Pane name="hazard-puroks" style={{ zIndex: 380, pointerEvents: 'none' }}>
+              <GeoJSON
+                key={`hazard-puroks-${selectedHazardId}-${selectedHazardPuroks.features.map((f) => f.id).join(',')}`}
+                data={selectedHazardPuroks}
+                style={(f) => ({ ...purokStyle(f), ...PUROK_OF_HAZARD })}
+                interactive={false}
+              />
+            </Pane>
+          )}
+
           {/* Street and place names above the hazard layer */}
           {BASEMAPS[basemap].labels && (
             <Pane name="basemap-labels" style={{ zIndex: 450, pointerEvents: 'none' }}>
@@ -969,7 +961,7 @@ export default function PublicMap() {
           {/* Barangay boundaries: hover for the name, click for barangay-specific hazards */}
           {barangayGeo && (
             <GeoJSON
-              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}-${publishMode}-${view}-${likelyMonth}-${likely?.results?.length ?? 0}-${[...activeTypes].join('')}-${!!selectedPuroks}`}
+              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}-${publishMode}-${view}-${periodLabel(likelyPeriod)}-${likely?.results?.length ?? 0}-${[...activeTypes].join('')}-${!!selectedPuroks}`}
               data={barangayGeo}
               style={barangayStyle}
               bubblingMouseEvents={false}
@@ -980,12 +972,13 @@ export default function PublicMap() {
                 let tip = name;
                 if (view === 'likely') {
                   const rows = likelyByBarangay.get(String(featureId(feature))) || [];
-                  const monthName = MONTHS[likelyMonth - 1];
+                  // A past period also says what happened in it
+                  const happened = (r) => (r.actual == null ? '' : `; ${r.actual || 'none'} happened`);
                   tip = rows.length
                     ? `<strong>${name}</strong><br>${rows.slice(0, 3)
-                      .map((r) => `${r.hazard_type}: ${likelihoodInfo(r.level).label} (${yearsText(r, monthName)})`)
+                      .map((r) => `${r.hazard_type}: ${likelihoodInfo(r.level).label} (${periodYearsText(r, likelyPeriod)}${happened(r)})`)
                       .join('<br>')}`
-                    : `<strong>${name}</strong><br>Nothing on record in past ${monthName}s`;
+                    : `<strong>${name}</strong><br>Nothing on record in ${periodIn(likelyPeriod)} in past years`;
                 }
                 layer.bindTooltip(tip, {
                   sticky: true,
@@ -1038,16 +1031,7 @@ export default function PublicMap() {
               key={JSON.stringify(previewShape).length}
               data={previewShape}
               interactive={false}
-              style={(f) => {
-                if (f?.properties?.part !== 'cordon') {
-                  return { color: DRAFT_COLOR, weight: 2, fillColor: '#1f9d55', fillOpacity: 0.35 };
-                }
-                // Hatched like the public map will show it; the whole cordon
-                // (an older server without the ring) only gets its edge
-                return f.properties.ring
-                  ? cordonRingStyle('Draft', DRAFT_COLOR)
-                  : { color: DRAFT_COLOR, weight: 2, dashArray: '6 5', fill: false };
-              }}
+              style={{ color: '#0b6b3a', weight: 2, fillColor: '#1f9d55', fillOpacity: 0.35 }}
             />
           )}
 
@@ -1182,12 +1166,12 @@ export default function PublicMap() {
             </div>
 
             {view === 'likely' && (
-              <label className="pm-chip pm-likely-month">
-                <span className="pm-sr">Month</span>
-                <select value={likelyMonth} onChange={(e) => setLikelyMonth(Number(e.target.value))}>
-                  {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
-                </select>
-              </label>
+              <ForecastPeriodPicker
+                value={likelyPeriod}
+                onChange={setLikelyPeriod}
+                fieldClass="pm-chip pm-likely-month"
+                labelClass="pm-sr"
+              />
             )}
 
             <button
@@ -1268,7 +1252,7 @@ export default function PublicMap() {
           {view === 'likely' ? (
             <>
               <p className="pm-legend-title">
-                Likely in {MONTHS[likelyMonth - 1]}: {layerName.toLowerCase()}
+                Likely in {periodLabel(likelyPeriod)}: {layerName.toLowerCase()}
               </p>
               <ul>
                 {['High', 'Moderate', 'Low', 'None'].map((k) => (
@@ -1282,6 +1266,13 @@ export default function PublicMap() {
                 ))}
               </ul>
               {likely?.error && <p className="pm-legend-note">Could not load the likelihood.</p>}
+              {/* A past month or date: from the years before it, beside what happened */}
+              {likely?.outcome && (
+                <p className="pm-legend-note">
+                  From the years before it. {likely.outcome.complete ? 'What happened' : 'So far'}:{' '}
+                  {likely.outcome.events} event{likely.outcome.events === 1 ? '' : 's'}.
+                </p>
+              )}
               {likely?.basis?.sample_records > 0 && (
                 <p className="pm-legend-note">
                   Includes {likely.basis.sample_records} sample records made for testing.
@@ -1392,11 +1383,7 @@ export default function PublicMap() {
         )}
         {publishMode === 'placing' && (
           <div className="pub-hint">
-            <span>
-              {publishPrefill
-                ? `Outline the ${publishPrefill.typeName.toLowerCase() || 'hazard'} area from the report${publishPrefill.barangayName ? ` in ${publishPrefill.barangayName}` : ''}`
-                : 'Tap the map to start outlining the affected area'}
-            </span>
+            <span>Tap the map to start outlining the affected area</span>
             <button type="button" onClick={cancelPublish}>Cancel</button>
           </div>
         )}
@@ -1411,7 +1398,6 @@ export default function PublicMap() {
             boundariesReady={barangays.length > 0}
             onCancel={cancelPublish}
             onPublished={handlePublished}
-            prefill={publishPrefill}
             onPreviewShape={setPreviewShape}
             onReplacePoints={setDraftPoints}
             onMethodChange={setDraftMethod}

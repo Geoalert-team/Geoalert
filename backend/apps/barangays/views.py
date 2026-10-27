@@ -7,7 +7,6 @@ from rest_framework.permissions import AllowAny
 from rest_framework import status
 
 from apps.barangays.models import Barangay, Purok
-from apps.hazards.geometry import with_cordon
 from apps.hazards.models import HazardZone
 from apps.barangays.serializers import BarangayGeoSerializer, BarangaySerializer, PurokGeoSerializer
 
@@ -89,34 +88,6 @@ class BarangayHazardsView(APIView):
             .exclude(id__in=inside)
             .values_list('id', flat=True)
         )
-
-        # A cordon counts here for the same reason it counts in
-        # affected_barangays: it is the ground people are told to leave.
-        # Without this, a fire across the boundary alerts this barangay's
-        # personnel (routing grows the block by its cordon) while their own
-        # hazard list stays empty, because the queries above test the block
-        # alone — an alert for a hazard the panel says isn't there.
-        #
-        # Done per zone in Python rather than in the filter because each
-        # zone carries its own cordon width. Only zones with a cordon are
-        # loaded, and only the ones not already matched, so the indexed
-        # queries above still do the work for everything else.
-        seen = set(inside) | set(crossing)
-        reaching = (
-            active.filter(cordon_m__gt=0)
-            .exclude(id__in=seen)
-            .only('id', 'geometry', 'cordon_m')
-        )
-        for zone in reaching:
-            try:
-                reach = with_cordon(zone.geometry, zone.cordon_m)
-            except Exception:
-                # A cordon that can't be measured shouldn't empty the list
-                continue
-            # Reaching in by cordon is shared with a neighbour by
-            # definition, so it is never "inside".
-            if reach is not None and reach.intersects(barangay.boundary):
-                crossing.append(zone.id)
 
         return Response({
             'barangay': barangay.id,

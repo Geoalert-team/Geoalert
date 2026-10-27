@@ -556,6 +556,27 @@
 }
 .pm-area-title { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
 .pm-area-puroks button:focus-visible, .pm-area-back:focus-visible { outline: 3px solid #7aa7ff; outline-offset: 2px; }
+/* Each past hazard opens in full */
+.pm-history-open {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 4px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-history-open:hover { background: var(--pm-mist); }
+.pm-history-open:focus-visible { outline: 3px solid #7aa7ff; outline-offset: 2px; }
+.pm-timeline .pm-history-event { flex: 1; min-width: 0; color: inherit; font-size: inherit; }
+.pm-timeline .pm-history-chevron { align-self: center; font-size: 1.3rem; line-height: 1; }
+/* Over the map panel (1001) and the navbar (1100), so its close button
+   is never under the navbar */
+.pm-record-layer .db-modal-backdrop { z-index: 1200; }
 
 /* =========================================================
    Mobile: search on top, panel becomes a bottom sheet

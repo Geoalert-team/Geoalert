@@ -211,22 +211,6 @@
 .pm-overlap-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .pm-overlap p { margin: 4px 0 0; color: #5b6878; }
 
-/* ---------- Safety cordon: the hatched ring, in words ---------- */
-.pm-cordon-note {
-  margin: 14px 0;
-  padding: 12px 14px;
-  border-left: 4px dashed;
-  border-radius: 0 10px 10px 0;
-  background: repeating-linear-gradient(45deg, #f6f7f9 0 6px, #eceff4 6px 9px);
-  font-size: .86rem;
-}
-.pm-cordon-note strong { display: block; color: #1c2e4a; }
-.pm-cordon-note p { margin: 4px 0 0; color: #3f4b5c; }
-
-/* The stripe patterns for cordons: present for fills to point at, no space taken */
-.gx-cordon-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
-.pm-legend-cordon { display: block; }
-
 /* ---------- Hazards at one spot: step through overlapping zones ---------- */
 .pm-stack {
   margin-top: 16px;
@@ -320,7 +304,7 @@
 }
 /* "Likely by month" view: month picker beside the shading switch */
 .pm-likely-month { display: inline-flex; align-items: center; padding: 0 6px 0 12px; }
-.pm-likely-month select {
+.pm-likely-month select, .pm-likely-month input {
   border: 0; background: transparent; font: inherit; font-weight: 700;
   color: inherit; cursor: pointer; min-height: 38px;
 }

@@ -19,6 +19,16 @@ class HistoricalRecordSerializer(serializers.ModelSerializer):
         ]
 
 
+# Off the public map, as in apps/history/area.py: the BFP's address, the
+# damage, the injured and dead by sex, and the zone whose barangay reports
+# (names, photos) only DRRMO can open. The totals stay public.
+STAFF_ONLY_FIELDS = (
+    'location_text', 'damage_cost', 'hazard_zone',
+    'injured_ff_male', 'injured_ff_female', 'injured_civ_male', 'injured_civ_female',
+    'fatal_ff_male', 'fatal_ff_female', 'fatal_civ_male', 'fatal_civ_female',
+)
+
+
 class HistoricalRecordDetailSerializer(HistoricalRecordSerializer):
     """
     One record in full, for the history page's details window: the list's

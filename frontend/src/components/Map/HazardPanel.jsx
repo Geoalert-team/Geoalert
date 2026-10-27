@@ -423,16 +423,6 @@ export default function HazardPanel({
                 <div className="pm-callout" style={{ background: sev.tint, borderColor: sev.color, color: sev.text }}>
                   <strong>{sev.label}:</strong> {sev.advice}
                 </div>
-                {/* The hatched ring on the map, said in words */}
-                {item.cordonM && (
-                  <div className="pm-cordon-note" style={{ borderColor: sev.color }}>
-                    <strong>Cordon: keep clear within {item.cordonM} m</strong>
-                    <p>
-                      The hatched ring around this {item.type.toLowerCase()} is a safety cordon.
-                      Leave it and stay out until officials say it is safe.
-                    </p>
-                  </div>
-                )}
                 {others.length > 0 && (
                   <div className="pm-overlap">
                     <strong>

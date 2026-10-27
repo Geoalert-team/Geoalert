@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, timedelta
 
 from django.utils import timezone
 from rest_framework.views import APIView
@@ -8,7 +8,7 @@ from django.db.models import Count
 from django.db.models.functions import TruncMonth
 
 from apps.history.models import HistoricalRecord
-from apps.history.serializers import HistoricalRecordDetailSerializer, HistoricalRecordSerializer
+from apps.history.serializers import STAFF_ONLY_FIELDS, HistoricalRecordDetailSerializer, HistoricalRecordSerializer
 from utils.sampling import TRUTHY
 
 
@@ -111,11 +111,14 @@ class HistoricalRecordListView(APIView):
 class HistoricalRecordDetailView(APIView):
     """
     GET /api/history/<id>/
-    Returns a single historical record. Public access.
+    Returns a single historical record. Public access, opened from the
+    map's past hazards; DRRMO staff also get STAFF_ONLY_FIELDS.
     """
     permission_classes = [AllowAny]
 
     def get(self, request, pk):
+        from utils.permissions import IsDRRMOOfficer
+
         try:
             record = (HistoricalRecord.objects
                       .select_related('barangay', 'hazard_type')
@@ -127,7 +130,11 @@ class HistoricalRecordDetailView(APIView):
                 status=404
             )
         # In full: the BFP figures, the puroks and the exact location too
-        return Response(HistoricalRecordDetailSerializer(record).data)
+        data = HistoricalRecordDetailSerializer(record).data
+        if not IsDRRMOOfficer().has_permission(request, self):
+            for name in STAFF_ONLY_FIELDS:
+                data.pop(name, None)
+        return Response(data)
 
 
 class HistoricalTrendsView(APIView):
@@ -284,6 +291,10 @@ class HistoricalForecastView(APIView):
     that month was hit in past years, recent years counting more.
 
       ?month=1-12            defaults to next month
+      ?year=2024             with month: that month in that year, read from
+                             the years before it; once it has started, each
+                             row also has `actual`, what happened in it
+      ?date=2027-11-15       instead of month: the week around that date
       ?hazard_type_name=Flood
       ?barangay=7            also returns that barangay's 12-month profile
       ?years=10              how many past years to read (1-10)
@@ -301,12 +312,29 @@ class HistoricalForecastView(APIView):
         )
 
         now = timezone.localtime()
-        try:
-            month = int(request.query_params.get('month') or (now.month % 12 + 1))
-            if not 1 <= month <= 12:
-                raise ValueError
-        except (TypeError, ValueError):
-            return Response({'error': 'month must be a number from 1 to 12.'}, status=400)
+        day = year = None
+        if request.query_params.get('date'):
+            try:
+                on = date.fromisoformat(request.query_params['date'])
+            except ValueError:
+                return Response({'error': 'date must be a real date, like 2027-11-15.'}, status=400)
+            month, day, year = on.month, on.day, on.year
+        else:
+            try:
+                month = int(request.query_params.get('month') or (now.month % 12 + 1))
+                if not 1 <= month <= 12:
+                    raise ValueError
+            except (TypeError, ValueError):
+                return Response({'error': 'month must be a number from 1 to 12.'}, status=400)
+            if request.query_params.get('year'):
+                try:
+                    year = int(request.query_params['year'])
+                    if not 1900 <= year <= 2100:
+                        raise ValueError
+                except ValueError:
+                    return Response({'error': 'year must be a year from 1900 to 2100.'}, status=400)
+        if year is not None and not 1900 <= year <= 2100:
+            return Response({'error': 'date must be in a year from 1900 to 2100.'}, status=400)
         try:
             years = min(max(int(request.query_params.get('years', MAX_YEARS)), 1), MAX_YEARS)
         except (TypeError, ValueError):
@@ -340,14 +368,15 @@ class HistoricalForecastView(APIView):
         )
         picked = [e for e in events if not hazard or (e['hazard'] or '').lower() == hazard.lower()]
 
-        result = seasonal_forecast(picked, month, now, max_years=years)
-        result['profile'] = seasonal_profile(events, now, barangay_id=barangay, hazard=hazard, max_years=years)
+        result = seasonal_forecast(picked, month, now, max_years=years, day=day, year=year)
+        result['profile'] = seasonal_profile(events, now, barangay_id=barangay, hazard=hazard, max_years=years,
+                                             year=year)
         result['profile_barangay'] = barangay
         result['hazard_type'] = hazard
         result['basis'] = {
             'records': len(picked),
             'sample_records': sum(1 for e in picked if e['is_sample']),
-            'method': 'Share of past years with an event in this month; '
+            'method': f'Share of past years with an event in {"the week around this date" if day else "this month"}; '
                       'a year counts half as much every 3 years back. Rule-based, no AI.',
         }
         return Response(result)

@@ -70,6 +70,21 @@ test('a flood record has no BFP section and no barangay report without a zone', 
   expect(reportsApi.forZone).not.toHaveBeenCalled();
 });
 
+test('a public copy drops the rows the server left out, not as "not counted"', async () => {
+  const publicCopy = { ...FIRE };
+  ['location_text', 'damage_cost', 'hazard_zone', 'injured_ff_male', 'injured_ff_female', 'injured_civ_male',
+    'injured_civ_female', 'fatal_ff_male', 'fatal_ff_female', 'fatal_civ_male', 'fatal_civ_female']
+    .forEach((k) => { delete publicCopy[k]; });
+  const el = await render(() => Promise.resolve(publicCopy));
+  expect(dl(section(el, 'When and where')).Location).toBe('Roseville, Lawaan I');
+  expect(dl(section(el, 'BFP fire figures'))).toEqual({
+    'Property type': 'RESIDENTIAL – SINGLE AND TWO FAMILY DWELLING', Alarm: '2ND ALARM', Structures: '76',
+  });
+  expect(el.querySelector('.db-bfp-table')).toBeNull();
+  expect(dl(section(el, 'Counts')).Casualties).toBe('7');
+  expect(reportsApi.forZone).not.toHaveBeenCalled();
+});
+
 test('Escape and the close button close it; a failed load can be tried again', async () => {
   const onClose = jest.fn();
   const el = await render(() => Promise.reject(new Error('offline')), onClose);

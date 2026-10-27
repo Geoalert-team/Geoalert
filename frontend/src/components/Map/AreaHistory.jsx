@@ -1,7 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { historyApi } from '../../api/historyApi';
+import RecordDetail from '../History/RecordDetail';
 import { severityInfo } from './hazardInfo';
 import { areaTitle, levelLabel } from './purokLevels';
+import '../../pages/css/Dashboard.css';
 
 const PAGE = 5; // events shown per "Show more"
 
@@ -33,6 +36,9 @@ function Level({ level }) {
  *              'none' for the barangay's records that name no purok
  * types        the hazard types ticked in Layers; nothing is fetched for none
  * onPickPurok  (id | 'none' | null) when a row or the way back is chosen
+ *
+ * Each event opens in full (RecordDetail). The window goes to document.body:
+ * the panel slides with a transform, which would pin a fixed window to it.
  */
 export default function AreaHistory({ barangay, purokId, types, onPickPurok }) {
   const [area, setArea] = useState(null);
@@ -40,6 +46,13 @@ export default function AreaHistory({ barangay, purokId, types, onPickPurok }) {
   const [shown, setShown] = useState(PAGE);
   const [attempt, setAttempt] = useState(0);
   const typeList = types.join(',');
+  // The event open in full, and the row to return focus to on close
+  const [openId, setOpenId] = useState(null);
+  const opener = useRef(null);
+  const closeRecord = useCallback(() => {
+    setOpenId(null);
+    opener.current?.focus();
+  }, []);
 
   useEffect(() => {
     setArea(null);
@@ -118,15 +131,22 @@ export default function AreaHistory({ barangay, purokId, types, onPickPurok }) {
         <ul className="pm-timeline pm-history-list">
           {area.events.slice(0, shown).map((e) => (
             <li key={e.id}>
-              <span className="pm-timeline-dot" />
-              <div>
-                <strong>{formatDate(e.date)}</strong>
-                <span>{[e.type, e.alarm_level, e.property_subcategory || e.property_category].filter(Boolean).join(' · ')}</span>
-                {purokId == null && e.puroks.length > 0 && (
-                  <span className="pm-history-counts">{e.puroks.join(', ')}</span>
-                )}
-                {e.location_text && <span className="pm-history-counts">{e.location_text}</span>}
-              </div>
+              <button
+                type="button"
+                className="pm-history-open"
+                onClick={(ev) => { opener.current = ev.currentTarget; setOpenId(e.id); }}
+              >
+                <span className="pm-timeline-dot" />
+                <span className="pm-history-event">
+                  <strong>{formatDate(e.date)}</strong>
+                  <span>{[e.type, e.alarm_level, e.property_subcategory || e.property_category].filter(Boolean).join(' · ')}</span>
+                  {purokId == null && e.puroks.length > 0 && (
+                    <span className="pm-history-counts">{e.puroks.join(', ')}</span>
+                  )}
+                  {e.location_text && <span className="pm-history-counts">{e.location_text}</span>}
+                </span>
+                <span className="pm-history-chevron" aria-hidden="true">›</span>
+              </button>
             </li>
           ))}
         </ul>
@@ -136,6 +156,13 @@ export default function AreaHistory({ barangay, purokId, types, onPickPurok }) {
         <button type="button" className="pm-history-more" onClick={() => setShown((n) => n + PAGE)}>
           Show more
         </button>
+      )}
+
+      {openId && createPortal(
+        <div className="db-scope pm-record-layer">
+          <RecordDetail recordId={openId} onClose={closeRecord} />
+        </div>,
+        document.body,
       )}
     </div>
   );

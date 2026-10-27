@@ -1,13 +1,14 @@
 """
-Deciding a fire report: approve it as a new fire, attach it to one nearby,
-or reject it.
+Deciding a report (the DRRMO's "Validate and push"): approve it as a new
+hazard, attach it to a live one of its type nearby, or reject it. Fires,
+floods and landslides alike; nobody draws an area.
 
-A fire report names its puroks; its pins are their centres (a point inside
-each). An approved fire is a HazardZone whose geometry is a small circle
+A report names its puroks; its pins are their centres (a point inside
+each). An approved report is a HazardZone whose geometry is a small circle
 round each pin, used only to find the barangays to alert - the public map
 shows the pins, not the circles. Its level is the highest level among the
-puroks' fire history (apps/history/purok_levels.py); the officer doesn't
-choose one.
+puroks' history of that hazard type (apps/history/purok_levels.py); the
+officer doesn't choose one.
 
 Plain functions so they test without the database; the decide view does the
 lookups, the alerts and the one transaction.
@@ -17,7 +18,7 @@ from django.utils import timezone
 
 
 PIN_RADIUS_M = 25     # a burning block plus a little; only decides who is alerted
-NEARBY_M = 500        # an active fire this close may be the same fire
+NEARBY_M = 500        # a live hazard of the same type this close may be the same event
 METRIC_SRID = 32651   # UTM 51N, metres, covers Talisay
 
 
@@ -27,6 +28,21 @@ def report_pins(report):
     if puroks:
         return [p.boundary.point_on_surface for p in puroks]
     return [report.location] if report.location is not None else []
+
+
+def zone_puroks(zone):
+    """
+    The distinct puroks a zone's reports named, in the order first named.
+    What its history record counts in when it closes: its pin circles can
+    spill over a purok's edge, the puroks named can't.
+    """
+    seen, puroks = set(), []
+    for report in zone.incidentreport_set.prefetch_related('puroks').order_by('created_at'):
+        for purok in report.puroks.all():
+            if purok.id not in seen:
+                seen.add(purok.id)
+                puroks.append(purok)
+    return puroks
 
 
 def fire_geometry(points, radius_m=PIN_RADIUS_M):
@@ -51,8 +67,6 @@ def is_nearby(geometry, points, metres=NEARBY_M):
 
 def decision_error(report):
     """Why this report can't be decided now, or None when it can."""
-    if (getattr(report.hazard_type, 'name', '') or '').lower() != 'fire':
-        return 'Only fire reports are decided here.'
     decided = report.status == 'Rejected' or (report.status == 'Validated' and report.hazard_zone_id)
     if not decided:
         return None  # Pending, or validated before this flow and never put on the map

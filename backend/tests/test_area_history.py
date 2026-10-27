@@ -13,7 +13,8 @@ from rest_framework.test import APIRequestFactory, force_authenticate
 from apps.barangays.models import Purok
 from apps.history.models import HistoricalRecord
 from apps.history.purok_levels import purok_counts
-from apps.history.views import AreaHistoryView, HistoricalRecordListView, PurokLevelsView
+from apps.history.serializers import STAFF_ONLY_FIELDS
+from apps.history.views import AreaHistoryView, HistoricalRecordDetailView, HistoricalRecordListView, PurokLevelsView
 from tests.fire_setup import FireSetupMixin, box
 
 
@@ -120,6 +121,26 @@ class AreaHistoryTests(RecordMixin, TestCase):
         self.record(self.home, self.near, location_text='SAMBAG, BRGY HOME', damage_cost='1500.00')
         event = self.area(self.officer, barangay=self.home.id).data['events'][0]
         self.assertEqual((event['location_text'], event['damage_cost']), ('SAMBAG, BRGY HOME', '1500.00'))
+
+    def test_a_record_opened_from_the_map_keeps_the_same_split(self):
+        r = self.record(self.home, self.near, location_text='SAMBAG, BRGY HOME', damage_cost='1500.00',
+                        alarm_level='1ST ALARM', injured_civ_male=2, total_casualties=2)
+
+        def detail(user=None):
+            request = APIRequestFactory().get('/')
+            if user:
+                force_authenticate(request, user=user)
+            return HistoricalRecordDetailView.as_view()(request, pk=r.id).data
+
+        public = detail()
+        for name in STAFF_ONLY_FIELDS:
+            self.assertNotIn(name, public)
+        self.assertEqual((public['alarm_level'], public['puroks'], public['total_casualties']),
+                         ('1ST ALARM', ['Purok Near'], 2))
+        self.assertNotIn('location_text', detail(self.reporter))
+        staff = detail(self.officer)
+        self.assertEqual((staff['location_text'], staff['damage_cost'], staff['injured_civ_male']),
+                         ('SAMBAG, BRGY HOME', '1500.00', 2))
 
     def test_bad_purok_is_a_400(self):
         self.assertEqual(self.area(barangay=self.home.id, purok='abc').data,

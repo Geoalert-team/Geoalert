@@ -558,6 +558,7 @@ export default function BarangayDashboard() {
                     value={form.location}
                     onChange={(v) => set('location', v)}
                     barangay={barangayShapes.get(String(form.barangay)) || null}
+                    puroks={chosenPuroks}
                   />
                   {errors.location && <p className="adm-field-error">{errors.location}</p>}
                 </div>

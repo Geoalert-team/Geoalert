@@ -3,7 +3,8 @@ import { createRoot } from 'react-dom/client';
 import AreaHistory from './AreaHistory';
 import { historyApi } from '../../api/historyApi';
 
-jest.mock('../../api/historyApi', () => ({ historyApi: { area: jest.fn() } }));
+jest.mock('../../api/historyApi', () => ({ historyApi: { area: jest.fn(), detail: jest.fn() } }));
+jest.mock('../../api/reportApi', () => ({ reportsApi: { forZone: jest.fn() } }));
 
 beforeAll(() => { global.IS_REACT_ACT_ENVIRONMENT = true; });
 beforeEach(() => { jest.clearAllMocks(); });
@@ -79,6 +80,26 @@ test('a new barangay starts on its whole history', async () => {
     root.render(<AreaHistory {...props} barangay={{ id: 5, name: 'Cansojong' }} purokId={null} />);
   });
   expect(historyApi.area).toHaveBeenLastCalledWith({ barangay: 5, types: 'Fire' });
+});
+
+test('a past hazard opens in full over the page, and closing hands focus back', async () => {
+  historyApi.area.mockResolvedValue(AREA);
+  historyApi.detail.mockResolvedValue({
+    id: 'e1', hazard_type_detail: { name: 'Fire' }, barangay_detail: { name: 'San Roque' },
+    occurred_at: '2026-03-02T08:00:00Z', puroks: ['Purok Sambag'], description: 'Kitchen fire',
+  });
+  const { el } = await render();
+  const row = events(el)[1].querySelector('button');
+  await act(async () => { row.click(); });
+  expect(historyApi.detail).toHaveBeenCalledWith('e1');
+  // Outside the panel, which slides with a transform, and inside .db-scope
+  const dialog = document.body.querySelector('.pm-record-layer [role="dialog"]');
+  expect(el.contains(dialog)).toBe(false);
+  expect(dialog.closest('.db-scope')).not.toBeNull();
+  expect(dialog.querySelector('h2').textContent).toBe('Fire · San Roque');
+  act(() => { dialog.querySelector('.db-modal-close').click(); });
+  expect(document.body.querySelector('.pm-record-layer')).toBeNull();
+  expect(document.activeElement).toBe(row);
 });
 
 test('asks for a ticked type when none is', async () => {
