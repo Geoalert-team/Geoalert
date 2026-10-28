@@ -11,6 +11,7 @@ from django.test import SimpleTestCase
 
 from apps.history import bfp
 from apps.history.bfp_import import plan_import
+from apps.history.bfp_link import LinkIndex
 
 MNL = ZoneInfo('Asia/Manila')
 
@@ -48,6 +49,14 @@ class PlanImportTests(SimpleTestCase):
         self.assertEqual(rec['occurred_at'], datetime(2023, 2, 6, 22, 42, tzinfo=MNL))
         self.assertTrue(rec['source_ref'].startswith('bfp:'))
         self.assertEqual((report['imported'], report['linked']), (1, 1))
+
+    def test_report_counts_links_by_rule(self):
+        index = LinkIndex()
+        index.add('San Roque', 'macopa', 'Sitio Laray', 'sitio')
+        rows = [row(row=5, location='PUROK SAMBAG, LARAY, BRGY SAN ROQUE'),
+                row(row=6, location='Purok Macopa, San Roque, Talisay City Cebu')]
+        _, report = plan_import(rows, set(), [ROQUE], {ROQUE.id: ['Purok Sambag', 'Sitio Laray']}, index)
+        self.assertEqual(report['linked_by'], {'purok': 1, 'sitio': 1})
 
     def test_existing_refs_are_skipped(self):
         r = row()

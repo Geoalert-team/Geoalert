@@ -25,6 +25,9 @@ OUTLINES_FILE = DATA_DIR / 'community_outlines.geojson'
 # Talisay Barangay Profiles (2010); elsewhere households (PSA 2015 census) / 175,
 # the median households per sitio in those profiles
 COUNTS_FILE = DATA_DIR / 'barangay_counts.csv'
+# Written beside the outlines: the area each landmark stands in and each street mostly runs through,
+# for linking fire addresses (apps/history/bfp_link.load_link_index)
+PLACES_NAME = 'place_areas.csv'
 
 # Microsoft Global ML Building Footprints (ODbL): one file per zoom-9 tile;
 # 132330002 covers all of Talisay
@@ -101,16 +104,31 @@ class Command(BaseCommand):
         step, barrier, houses = self.costs(grid, dem, osm, buildings, log)
         labels = sus.draw_polygons(grid, [(i + 1, [list(r.coords) for r in poly])
                                           for i, b in enumerate(barangays) for poly in b.boundary])
-        features = []
+        features, places = [], []
         for i, b in enumerate(barangays):
             if b in wanted:
-                features += self.split_one(b, labels == i + 1, grid, step, barrier, houses, dem, research,
-                                           landmarks, log)
+                found, rows = self.split_one(b, labels == i + 1, grid, step, barrier, houses, dem, research,
+                                             landmarks, log)
+                features += found
+                places += [{'barangay': b.name, **r} for r in rows]
 
         out = Path(options['out'])
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps({'type': 'FeatureCollection', 'features': features}), encoding='utf-8')
         self.stdout.write(self.style.SUCCESS(f'Wrote {len(features)} estimated purok areas to {out}'))
+        self.write_places(out.parent / PLACES_NAME, places, {canonical(b.name) for b in wanted})
+
+    def write_places(self, path, rows, rebuilt):
+        """place_areas.csv beside the outlines: rows for the barangays not rebuilt this time are kept."""
+        kept = []
+        if path.exists():
+            with open(path, encoding='utf-8', newline='') as fh:
+                kept = [r for r in csv.DictReader(fh) if canonical(r['barangay']) not in rebuilt]
+        with open(path, 'w', encoding='utf-8', newline='') as fh:
+            writer = csv.DictWriter(fh, fieldnames=['barangay', 'place', 'kind', 'area', 'share'], lineterminator='\n')
+            writer.writeheader()
+            writer.writerows(sorted(kept + rows, key=lambda r: (r['barangay'], r['kind'], r['place'])))
+        self.stdout.write(f'Wrote {len(rows)} landmark and street places to {path}')
 
     def buildings(self, cache, bbox, refresh, log):
         """Building centres from Microsoft's footprints, saved after the first download."""
@@ -134,7 +152,8 @@ class Command(BaseCommand):
 
     def landmarks(self, cache, bbox, refresh, log):
         """Named landmarks, streets and rivers, for naming the areas no purok was found for."""
-        saved = cache / 'osm_landmarks.json'
+        # v2 also holds the bridges and malls fire addresses name (pe.LINK_PLACES)
+        saved = cache / 'osm_landmarks_v2.json'
         if saved.exists() and not refresh:
             log('  Using saved landmarks')
             elements = json.loads(saved.read_text(encoding='utf-8'))
@@ -165,7 +184,7 @@ class Command(BaseCommand):
         rows, cols = np.nonzero(mask)
         if not len(rows):
             log(f'  {barangay.name}: too small for the grid, skipped')
-            return []
+            return [], []
         r0, r1 = max(rows.min() - 4, 0), min(rows.max() + 5, grid.height)
         c0, c1 = max(cols.min() - 4, 0), min(cols.max() + 5, grid.width)
         win = (slice(r0, r1), slice(c0, c1))
@@ -173,51 +192,84 @@ class Command(BaseCommand):
 
         points, outlines, counts = research
         key = canonical(barangay.name)
-        names = points.get(key, [])
-        named, leaves = pe.area_points(names)
+        names = self.pulled_inside(points.get(key, []), key, outlines)
+        top, leaves = pe.name_tree(names)
         official, households = counts.get(key, (None, 0))
         n, basis = pe.purok_count(official, households, leaves)
-        n = max(n, len(named))
+        placed = sum(1 for r in names if r['lat'] and r['lng'])
+        n = max(n, placed)
 
         def to_cell(row):
             col, r = grid.to_cell(float(row['lng']), float(row['lat']))
             return int(r) - r0, int(col) - c0
 
         # Names with an outline on Wikimapia or OSM start from all of it
-        drawn = [(i + 1, [list(ring.coords) for ring in poly])
-                 for i, row in enumerate(named) if (key, row['name']) in outlines
-                 for poly in pe.polygons(outlines[(key, row['name'])])]
-        preset = sus.draw_polygons(grid, drawn)[win] - 1 if drawn else None
-        # Names placed only from outage notices are roughly right: they may start at a nearby house cluster
-        owner = pe.split_named(inside, houses[win], step[win], n, [to_cell(r) for r in named], preset=preset,
-                               barrier=barrier[win], dem=dem[win].astype(np.float64),
-                               loose=[r['confidence'] == 'low' for r in named], loose_reach=pe.LOOSE_REACH_M / grid.res)
+        drawn = {}
+
+        def preset_for(row):
+            if (key, row['name']) not in outlines:
+                return None
+            if row['name'] not in drawn:
+                rings = [(1, [list(ring.coords) for ring in poly]) for poly in pe.polygons(outlines[(key, row['name'])])]
+                drawn[row['name']] = sus.draw_polygons(grid, rings)[win] == 1
+            return drawn[row['name']]
+
         # Cut-off bits smaller than a tenth of a typical area (or 0.1 ha) join their surroundings
         min_cells = max(pe.MIN_PIECE_HA * 10_000 / grid.res ** 2, inside.sum() / n / 10)
-        owner = pe.tidy(owner, inside, min_cells=min_cells)
-        shapes = pe.outline_areas(pe.extend(owner))
+        # Names placed only from outage notices are roughly right: they may start at a nearby house cluster
+        named, unnamed_cells = pe.split_nested(inside, houses[win], step[win], n, top, to_cell, preset_for,
+                                               barrier=barrier[win], dem=dem[win].astype(np.float64),
+                                               loose_reach=pe.LOOSE_REACH_M / grid.res, min_cells=min_cells)
+        # One grid to draw from: each cell goes to the deepest name holding it, so a sitio's
+        # own label is the part of it none of its puroks cover
+        labels = np.full(inside.shape, -1, np.int32)
+        for i, (_, cells, _) in enumerate(named):
+            labels[cells] = i
+        for j, cells in enumerate(unnamed_cells):
+            labels[cells] = len(named) + j
+        shapes = pe.outline_areas(pe.extend(labels))
 
         def to_lnglat(x, y):
             return sus.px_to_lnglat(grid.px0 + c0 + x, grid.py0 + r0 + y, grid.zoom)
 
-        found, unnamed = [], []
+        own = {}
         for label, shape in shapes.items():
             geom = pe.to_map(shape, to_lnglat).intersection(barangay.boundary)
             pieces = [g for g in pe.polygons(geom) if pe.area_m2(g) >= pe.MIN_PIECE_HA * 10_000]
-            if not pieces:
-                continue
-            area = MultiPolygon(*pieces, srid=4326)
-            if label < len(named):
-                found.append((named[label], area))
-            else:
-                unnamed.append(area)
+            if pieces:
+                own[label] = MultiPolygon(*pieces, srid=4326)
+        index_of = {id(row): i for i, (row, _, _) in enumerate(named)}
+
+        def whole(node):
+            """A name's area with all of its puroks': a sitio's outline goes around them."""
+            parts = [own[index_of[id(node.row)]]] if index_of[id(node.row)] in own else []
+            parts += [g for g in (whole(c) for c in node.children) if g is not None]
+            if not parts:
+                return None
+            union = parts[0]
+            for part in parts[1:]:
+                union = union.union(part)
+            return MultiPolygon(*pe.polygons(union), srid=4326)
+
+        found = []  # (row, area, members), sitios before their puroks
+
+        def collect(node):
+            area = whole(node) if node.children else own.get(index_of[id(node.row)])
+            if area is not None:
+                found.append((node.row, area, len(node.children)))
+            for child in node.children:
+                collect(child)
+        for node in top:
+            collect(node)
+        unnamed = [own[len(named) + j] for j in range(len(unnamed_cells)) if len(named) + j in own]
         # North to south, then west to east, so a landmark shared by two goes the same way every build
         unnamed.sort(key=lambda g: (-round(g.point_on_surface.y, 3), g.point_on_surface.x))
-        described = pe.area_names(unnamed, *landmarks, taken={r['name'] for r, _ in found})
+        described = pe.area_names(unnamed, *landmarks, taken={r['name'] for r, _, _ in found})
 
-        lost = [r['name'] for r in named if r['name'] not in {f['name'] for f, _ in found}]
-        log(f'  {barangay.name}: {len(found)} named + {len(unnamed)} unnamed areas (target {n}, from {basis}); '
-            f'{sum(1 for r in names if not r["lat"])} names still to place')
+        lost = [r['name'] for r, _, _ in named if r['name'] not in {f['name'] for f, _, _ in found}]
+        sitios = sum(1 for _, _, members in found if members)
+        log(f'  {barangay.name}: {len(found)} named ({sitios} sitios) + {len(unnamed)} unnamed areas '
+            f'(target {n}, from {basis}); {len(names) - placed} names still to place')
         if lost:
             log(f'      no area left for {", ".join(lost)}')
 
@@ -225,7 +277,22 @@ class Command(BaseCommand):
             return {'type': 'Feature', 'geometry': json.loads(geom.json),
                     'properties': {'barangay': barangay.name, 'source': 'estimated', **props}}
 
-        return ([feature(g, name=r['name'], kind=r['kind'], parent=r['parent'], confidence=r['confidence'])
-                 for r, g in found] +
-                [feature(g, name=name, kind='purok', parent='', confidence='')
-                 for name, g in zip(described, unnamed)])
+        places = pe.place_areas([(r['name'], g) for r, g, members in found if not members] +
+                                list(zip(described, unnamed)),
+                                [(r['name'], g) for r, g, members in found if members], *landmarks)
+        return ([feature(g, name=r['name'], kind=r['kind'], parent=r['parent'], confidence=r['confidence'],
+                         members=members) for r, g, members in found] +
+                [feature(g, name=name, kind='purok', parent='', confidence='', members=0)
+                 for name, g in zip(described, unnamed)]), places
+
+    @staticmethod
+    def pulled_inside(names, key, outlines):
+        """The names, with each one placed only roughly moved inside its sitio's drawn outline."""
+        out = []
+        for row in names:
+            outline = outlines.get((key, row.get('parent') or ''))
+            if outline is not None and row['confidence'] == 'low' and row['lat'] and row['lng']:
+                lng, lat = pe.pull_inside(float(row['lng']), float(row['lat']), outline)
+                row = {**row, 'lng': f'{lng:.6f}', 'lat': f'{lat:.6f}'}
+            out.append(row)
+        return out

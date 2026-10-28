@@ -48,3 +48,15 @@ class Purok(models.Model):
 
     def __str__(self):
         return f'{self.name}, {self.barangay}'
+
+    @classmethod
+    def member_counts(cls):
+        """
+        {(barangay id, name): how many puroks name it as parent}. A purok in it
+        is a sitio drawn around its puroks, so its outline overlaps theirs.
+        """
+        from django.db.models import Count
+        rows = (cls.objects.exclude(parent='').values('barangay_id', 'parent')
+                .annotate(n=Count('id')).order_by())
+        names = set(cls.objects.values_list('barangay_id', 'name'))
+        return {(r['barangay_id'], r['parent']): r['n'] for r in rows if (r['barangay_id'], r['parent']) in names}

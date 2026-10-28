@@ -8,6 +8,7 @@
  * same green / orange / red as the pins. A purok with none isn't filled.
  */
 import { SEVERITY } from './hazardInfo';
+import { isContainer } from './purokStyle';
 
 const RANK = { Green: 1, Orange: 2, Red: 3 };
 const LABEL = { Green: 'Low', Orange: 'Moderate', Red: 'Extreme' };
@@ -47,6 +48,15 @@ export function filledPuroks(geo, levels, types) {
     .filter(({ level }) => level)
     .map(({ f, level }) => ({ ...f, properties: { ...f.properties, level } }));
   return features.length ? { type: 'FeatureCollection', features } : null;
+}
+
+// Filled sitios apart from filled puroks, so a sitio's colour can sit under its puroks' own
+export function splitFills(filled) {
+  const collect = (keep) => {
+    const features = (filled?.features || []).filter(keep);
+    return features.length ? { type: 'FeatureCollection', features } : null;
+  };
+  return { sitios: collect(isContainer), puroks: collect((f) => !isContainer(f)) };
 }
 
 export function purokFillStyle(feature) {

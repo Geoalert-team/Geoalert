@@ -1,4 +1,4 @@
-import { byPurok, filledPuroks, historyLine, purokLevel, thresholdText, typeNoun, areaTitle } from './purokLevels';
+import { byPurok, filledPuroks, historyLine, purokLevel, splitFills, thresholdText, typeNoun, areaTitle } from './purokLevels';
 
 const T = { years: 5, moderate: 3, extreme: 5 };
 const RESULTS = [
@@ -21,6 +21,16 @@ test('only puroks with a level are filled', () => {
   const filled = filledPuroks(geo, byPurok(RESULTS), ['Fire']);
   expect(filled.features.map((f) => [f.id, f.properties.level])).toEqual([[7, 'Green'], [9, 'Red']]);
   expect(filledPuroks(geo, byPurok(RESULTS), [])).toBeNull();
+});
+
+test('sitio fills are split from purok fills so they can sit underneath', () => {
+  const sitio = { ...feature(9), properties: { id: 9, name: 'Sitio Laray', members: 2 } };
+  const geo = { type: 'FeatureCollection', features: [feature(7), sitio] };
+  const { sitios, puroks } = splitFills(filledPuroks(geo, byPurok(RESULTS), ['Fire']));
+  expect(sitios.features.map((f) => f.id)).toEqual([9]);
+  expect(puroks.features.map((f) => f.id)).toEqual([7]);
+  expect(splitFills(null)).toEqual({ sitios: null, puroks: null });
+  expect(splitFills({ type: 'FeatureCollection', features: [feature(7)] }).sitios).toBeNull();
 });
 
 test('the hover line and the copy', () => {

@@ -1,4 +1,4 @@
-import { PUROK_COLOR, PUROK_HOVER, PUROK_SELECTED, hasEstimates, purokAt, purokStyle, purokTooltip, puroksOf } from './purokStyle';
+import { PUROK_COLOR, PUROK_HOVER, PUROK_SELECTED, hasEstimates, isContainer, purokAt, purokStyle, purokTooltip, puroksOf } from './purokStyle';
 
 const feature = (props) => ({ type: 'Feature', properties: props, geometry: null });
 
@@ -76,6 +76,42 @@ describe('purokAt', () => {
   test('nothing outside every purok', () => {
     expect(at(15, 5)).toBeNull();
     expect(purokAt(null, 1, 1)).toBeNull();
+  });
+
+  test('a purok wins over the sitio drawn around it; the sitio has its own part', () => {
+    const nested = {
+      type: 'FeatureCollection',
+      features: [
+        { type: 'Feature', properties: { name: 'Sitio Laray', members: 2 },
+          geometry: { type: 'MultiPolygon', coordinates: [[square(0, 0, 30, 10)]] } },
+        { type: 'Feature', properties: { name: 'Purok Sambag', members: 0 },
+          geometry: { type: 'MultiPolygon', coordinates: [[square(0, 0, 10, 10)]] } },
+      ],
+    };
+    expect(purokAt(nested, 5, 5).properties.name).toBe('Purok Sambag');
+    expect(purokAt(nested, 25, 5).properties.name).toBe('Sitio Laray');
+  });
+});
+
+describe('sitios drawn around their puroks', () => {
+  const sitio = { properties: { name: 'Sitio Laray', members: 3, source: 'estimated', confidence: 'high' } };
+  const purok = { properties: { name: 'Purok Sambag', members: 0, source: 'estimated', confidence: 'low' } };
+
+  test('isContainer', () => {
+    expect(isContainer(sitio)).toBe(true);
+    expect(isContainer(purok)).toBe(false);
+    expect(isContainer({ properties: {} })).toBe(false);
+  });
+
+  test('a sitio gets a thicker line and no fill', () => {
+    expect(purokStyle(sitio)).toMatchObject({ weight: 3, fill: false });
+    expect(purokStyle(purok).weight).toBe(1.5);
+  });
+
+  test('its tooltip says how many puroks it holds', () => {
+    expect(purokTooltip(sitio)).toContain('3 puroks inside');
+    expect(purokTooltip({ properties: { ...sitio.properties, members: 1 } })).toContain('1 purok inside');
+    expect(purokTooltip(purok)).not.toContain('inside');
   });
 });
 

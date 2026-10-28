@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-from django.contrib.gis.geos import GeometryCollection, LineString, MultiPolygon, Polygon
+from django.contrib.gis.geos import GeometryCollection, LineString, MultiPolygon, Point, Polygon
 from django.test import SimpleTestCase
 
 from apps.barangays import purok_estimate as pe
@@ -341,6 +341,20 @@ class SplitNamedTests(SimpleTestCase):
                                 loose=[False, True], loose_reach=3)
         self.assertEqual(int(labels[18, 20]), 1)
 
+    def test_crowded_rough_names_each_keep_an_area(self):
+        # Lagtang: an outage notice lists many names along one road. Here four
+        # rough names share one spot inside a ring of eight placed names, with
+        # no free house cluster taken. The reach is about 2.7 typical radii, as
+        # in the build (500 m against Lagtang's ~185 m)
+        inside, houses = np.ones((30, 30), bool), np.ones((30, 30))
+        ring = [(11, 15), (19, 15), (15, 11), (15, 19), (12, 12), (12, 18), (18, 12), (18, 18)]
+        seeds = ring + [(15, 15)] * 4
+        labels = pe.split_named(inside, houses, grid(30, 30, 9), n=12, seeds=seeds,
+                                loose=[False] * 8 + [True] * 4, loose_reach=13)
+        labels = pe.tidy(labels, inside, min_cells=10)
+        for i in range(8, 12):
+            self.assertGreaterEqual(int((labels == i).sum()), 10, i)
+
     def test_an_outline_stays_with_its_name(self):
         preset = np.full((20, 40), -1, np.int32)
         preset[0:4, 15:25] = 0
@@ -348,29 +362,97 @@ class SplitNamedTests(SimpleTestCase):
         self.assertTrue((labels[0:4, 15:25] == 0).all())
 
 
-class AreaPointsTests(SimpleTestCase):
-    def row(self, name, parent='', placed=True):
-        return {'name': name, 'parent': parent, 'lat': '10.25' if placed else '', 'lng': '123.85' if placed else ''}
+def research_row(name, parent='', cell=(0, 0), confidence='high', placed=True):
+    return {'name': name, 'parent': parent, 'lat': '10.25' if placed else '', 'lng': '123.85' if placed else '',
+            'confidence': confidence if placed else '', 'cell': cell}
 
-    def test_a_sitio_whose_purok_is_placed_gives_way_to_it(self):
-        rows = [self.row('Sitio Laray'), self.row('Purok Sambag', parent='Sitio Laray')]
-        points, _ = pe.area_points(rows)
-        self.assertEqual([r['name'] for r in points], ['Purok Sambag'])
 
-    def test_a_sitio_whose_puroks_are_not_placed_keeps_its_area(self):
-        rows = [self.row('Sitio Laray'), self.row('Purok Sambag', parent='Sitio Laray', placed=False)]
-        points, _ = pe.area_points(rows)
-        self.assertEqual([r['name'] for r in points], ['Sitio Laray'])
+class NameTreeTests(SimpleTestCase):
+    def test_name_tree_nests_placed_rows_under_placed_parents(self):
+        rows = [research_row('Sitio Laray'), research_row('Purok Sambag', parent='Sitio Laray'),
+                research_row('Purok Macopa', parent='Sitio Laray', placed=False),
+                research_row('Lower Mahayahay', placed=False),
+                research_row('Purok Kamunggay', parent='Lower Mahayahay')]
+        top, _ = pe.name_tree(rows)
+        self.assertEqual([n.row['name'] for n in top], ['Sitio Laray', 'Purok Kamunggay'])
+        self.assertEqual([c.row['name'] for c in top[0].children], ['Purok Sambag'])
 
-    def test_names_without_a_point_get_no_area(self):
-        points, _ = pe.area_points([self.row('Sitio Tubod', placed=False)])
-        self.assertEqual(points, [])
+    def test_names_without_a_point_get_no_node(self):
+        top, _ = pe.name_tree([research_row('Sitio Tubod', placed=False)])
+        self.assertEqual(top, [])
 
     def test_leaves_count_every_name_that_is_nobodys_parent(self):
-        rows = [self.row('Sitio Laray'), self.row('Purok Sambag', parent='Sitio Laray'),
-                self.row('Purok Macopa', parent='Sitio Laray', placed=False), self.row('Sitio Ughay')]
-        _, leaves = pe.area_points(rows)
+        rows = [research_row('Sitio Laray'), research_row('Purok Sambag', parent='Sitio Laray'),
+                research_row('Purok Macopa', parent='Sitio Laray', placed=False), research_row('Sitio Ughay')]
+        _, leaves = pe.name_tree(rows)
         self.assertEqual(leaves, 3)
+
+
+class PullInsideTests(SimpleTestCase):
+    OUTLINE = MultiPolygon(Polygon.from_bbox((123.80, 10.25, 123.81, 10.26)), srid=4326)
+
+    def test_pull_inside_moves_a_rough_point_into_the_outline_and_leaves_one_inside_alone(self):
+        self.assertEqual(pe.pull_inside(123.805, 10.255, self.OUTLINE), (123.805, 10.255))
+        lng, lat = pe.pull_inside(123.82, 10.255, self.OUTLINE)
+        self.assertTrue(self.OUTLINE.contains(Point(lng, lat, srid=4326)))
+        self.assertAlmostEqual(lng, 123.81, places=3)  # the nearest edge, just inside
+        self.assertAlmostEqual(lat, 10.255, places=4)
+
+
+class NestedSplitTests(SimpleTestCase):
+    """A sitio's territory is split first, then its puroks share it out."""
+
+    def setUp(self):
+        self.inside = np.ones((20, 40), bool)
+        self.houses = np.ones((20, 40))
+        self.step = grid(20, 40, 9)
+
+    def split(self, rows, n):
+        top, _ = pe.name_tree(rows)
+        named, unnamed = pe.split_nested(self.inside, self.houses, self.step, n, top,
+                                         to_cell=lambda r: r['cell'], preset_for=lambda r: None)
+        return {row['name']: (mask, members) for row, mask, members in named}, unnamed
+
+    def laray(self, *extra):
+        return [research_row('Sitio Laray', cell=(10, 8)), research_row('Purok Sambag', 'Sitio Laray', (10, 3)),
+                research_row('Purok Avocado', 'Sitio Laray', (10, 13)), research_row('Sitio Ughay', cell=(10, 35)),
+                *extra]
+
+    def test_a_sitios_territory_holds_its_puroks(self):
+        named, _ = self.split(self.laray(), n=4)
+        laray, members = named['Sitio Laray']
+        self.assertEqual(members, 2)
+        for purok in ('Purok Sambag', 'Purok Avocado'):
+            self.assertFalse((named[purok][0] & ~laray).any(), purok)
+        self.assertEqual(named['Sitio Ughay'][1], 0)
+
+    def test_the_sitio_keeps_a_leftover_of_its_own(self):
+        named, _ = self.split(self.laray(), n=4)
+        leftover = named['Sitio Laray'][0] & ~named['Purok Sambag'][0] & ~named['Purok Avocado'][0]
+        self.assertTrue(leftover.any())
+
+    def test_a_sitio_takes_in_a_medium_purok_far_away(self):
+        rows = [research_row('Sitio Laray', cell=(3, 3)), research_row('Purok Far', 'Sitio Laray', (17, 37), 'medium'),
+                research_row('Sitio Ughay', cell=(3, 37))]
+        named, _ = self.split(rows, n=3)
+        self.assertTrue(named['Sitio Laray'][0][17, 37])
+        self.assertTrue(named['Purok Far'][0][17, 37])
+
+    def test_shares_count_the_whole_subtree(self):
+        named, _ = self.split(self.laray(), n=4)
+        share = named['Sitio Laray'][0].sum() / self.inside.sum()
+        self.assertGreater(share, 0.6)
+        self.assertLess(share, 0.9)
+
+    def test_each_row_comes_out_once(self):
+        named, unnamed = self.split(self.laray(), n=6)
+        self.assertEqual(sorted(named), ['Purok Avocado', 'Purok Sambag', 'Sitio Laray', 'Sitio Ughay'])
+        self.assertEqual(len(unnamed), 2)
+        everything = sum(m.astype(int) for name, (m, members) in named.items() if not members) + sum(
+            u.astype(int) for u in unnamed)
+        leftover = named['Sitio Laray'][0] & ~named['Purok Sambag'][0] & ~named['Purok Avocado'][0]
+        # Leaves, unnamed areas and the sitio's own part cover the barangay once
+        self.assertTrue(((everything + leftover) == 1).all())
 
 
 class TidyTests(SimpleTestCase):
@@ -486,6 +568,75 @@ class LandmarksFromOsmTests(SimpleTestCase):
              'tags': {'name': 'Lawaan Skywalk', 'highway': 'footway'}},
         ]
         self.assertEqual(pe.landmarks_from_osm(elements), ([], []))
+
+
+class LinkPlacesTests(SimpleTestCase):
+    def test_bridges_are_kept_only_when_named_as_bridges(self):
+        elements = [
+            {'type': 'way', 'center': {'lat': 10.25, 'lon': 123.84},
+             'tags': {'name': 'Mananga Bridge II', 'bridge': 'yes', 'highway': 'primary'}},
+            {'type': 'way', 'center': {'lat': 10.32, 'lon': 123.82},
+             'tags': {'name': 'Toledo - Tabunok Road', 'bridge': 'yes', 'highway': 'secondary'}},
+            {'type': 'way', 'center': {'lat': 10.26, 'lon': 123.84}, 'tags': {'name': 'South Town Centre', 'shop': 'mall'}},
+        ]
+        points, _ = pe.landmarks_from_osm(elements)
+        self.assertEqual(points, [('Mananga Bridge II', 'bridge', 123.84, 10.25),
+                                  ('South Town Centre', 'mall', 123.84, 10.26)])
+
+    def test_bridges_and_malls_do_not_name_areas(self):
+        west = MultiPolygon(Polygon.from_bbox((123.80, 10.25, 123.81, 10.26)), srid=4326)
+        names = pe.area_names([west], [('South Town Centre', 'mall', 123.805, 10.255)], [])
+        self.assertNotIn('South Town Centre', names[0])
+
+
+class PlaceAreasTests(SimpleTestCase):
+    """Which area each landmark stands in and which area holds each street, for linking fire addresses."""
+
+    WEST = MultiPolygon(Polygon.from_bbox((123.80, 10.25, 123.81, 10.26)), srid=4326)
+    EAST = MultiPolygon(Polygon.from_bbox((123.81, 10.25, 123.82, 10.26)), srid=4326)
+    # A sitio around both, with a leftover to the east of them
+    SITIO = MultiPolygon(Polygon.from_bbox((123.80, 10.25, 123.83, 10.26)), srid=4326)
+
+    def leaves(self):
+        return [('Purok West', self.WEST), ('Purok East', self.EAST)]
+
+    def test_a_landmark_goes_to_the_leaf_it_stands_in(self):
+        rows = pe.place_areas(self.leaves(), [], [('Tapul Elementary School', 'school', 123.805, 10.255)], [])
+        self.assertEqual(rows, [{'place': 'Tapul Elementary School', 'kind': 'landmark', 'area': 'Purok West',
+                                 'share': 1.0}])
+
+    def test_a_point_in_a_sitio_leftover_goes_to_the_sitio(self):
+        rows = pe.place_areas(self.leaves(), [('Sitio Laray', self.SITIO)],
+                              [('Laray Elementary School', 'school', 123.825, 10.255)], [])
+        self.assertEqual([r['area'] for r in rows], ['Sitio Laray'])
+
+    def test_the_barangay_hall_gets_its_alias(self):
+        rows = pe.place_areas(self.leaves(), [], [('Mohon Barangay Hall', 'hall', 123.815, 10.255)], [])
+        self.assertEqual({(r['place'], r['area']) for r in rows},
+                         {('Mohon Barangay Hall', 'Purok East'), ('Barangay Hall', 'Purok East')})
+
+    def test_a_street_mostly_in_one_area_gets_its_share(self):
+        # Two OSM pieces of one street: 0.009 of it in the west, 0.001 in the east
+        lines = [('Burgos Street', LineString((123.801, 10.252), (123.806, 10.252), srid=4326)),
+                 ('Burgos Street', LineString((123.806, 10.252), (123.811, 10.252), srid=4326))]
+        [row] = pe.place_areas(self.leaves(), [], [], lines)
+        self.assertEqual((row['place'], row['kind'], row['area']), ('Burgos Street', 'street', 'Purok West'))
+        self.assertAlmostEqual(row['share'], 0.9, places=2)
+
+    def test_a_street_across_two_puroks_of_one_sitio_goes_to_the_sitio(self):
+        lines = [('Rizal Street', LineString((123.805, 10.252), (123.815, 10.252), srid=4326))]
+        [row] = pe.place_areas(self.leaves(), [('Sitio Laray', self.SITIO)], [], lines)
+        self.assertEqual(row['area'], 'Sitio Laray')
+        self.assertAlmostEqual(row['share'], 1.0, places=2)
+
+    def test_two_landmarks_with_one_name_give_no_row(self):
+        points = [('Elementary School Annex', 'school', 123.805, 10.255),
+                  ('Elementary School Annex', 'school', 123.815, 10.255)]
+        self.assertEqual(pe.place_areas(self.leaves(), [], points, []), [])
+
+    def test_streets_named_after_a_purok_are_skipped(self):
+        lines = [('Purok Siba Street', LineString((123.801, 10.252), (123.809, 10.252), srid=4326))]
+        self.assertEqual(pe.place_areas(self.leaves(), [], [], lines), [])
 
 
 class AreaNamesTests(SimpleTestCase):

@@ -23,6 +23,7 @@ import json
 import math
 import re
 import unicodedata
+from collections import namedtuple
 from ctypes import POINTER, c_uint
 
 import numpy as np
@@ -242,21 +243,137 @@ def fill_gaps(owner, inside, step, barrier=None, dem=None):
     return out
 
 
-def area_points(rows):
+Node = namedtuple('Node', 'row children')
+
+
+def _placed(row):
+    return bool(str(row.get('lat') or '').strip() and str(row.get('lng') or '').strip())
+
+
+def name_tree(rows):
     """
-    (names that get an area of their own, how many puroks the names stand for).
+    (top-level names as Nodes, how many puroks the names stand for).
 
     rows are one barangay's researched names (purok_points.csv); a name needs
-    a lat/lng to get an area. A sitio whose purok was placed gives way to it,
-    and the purok's label carries the sitio's name instead ("Purok Sambag ·
-    Sitio Laray"). The count is every name that is nobody's parent, placed or
-    not, since each is a purok on the ground.
+    a lat/lng to get an area. A placed name sits under its parent when the
+    parent is placed too ("Purok Sambag, Sitio Laray"): on the ground a sitio
+    holds its puroks. Under an unplaced parent it stands alone, its label
+    still naming the sitio. The count is every name that is nobody's parent,
+    placed or not, since each is a purok on the ground.
     """
-    placed = [r for r in rows if str(r.get('lat') or '').strip() and str(r.get('lng') or '').strip()]
-    has_placed_child = {r['parent'] for r in placed if r.get('parent')}
+    placed = [r for r in rows if _placed(r)]
+    nodes = {r['name']: Node(r, []) for r in placed}
+    top = []
+    for r in placed:
+        parent = nodes.get(r.get('parent') or '')
+        if parent is not None and parent.row is not r:
+            parent.children.append(nodes[r['name']])
+        else:
+            top.append(nodes[r['name']])
+    # A loop of parents (a typo in the research) would hide its names: they stand alone instead
+    reached = set()
+
+    def walk(node):
+        if id(node) not in reached:
+            reached.add(id(node))
+            for child in node.children:
+                walk(child)
+    for node in top:
+        walk(node)
+    for r in placed:
+        if id(nodes[r['name']]) not in reached:
+            top.append(nodes[r['name']])
+            walk(nodes[r['name']])
     parents = {r['parent'] for r in rows if r.get('parent')}
-    points = [r for r in placed if r['name'] not in has_placed_child]
-    return points, sum(1 for r in rows if r['name'] not in parents)
+    return top, sum(1 for r in rows if r['name'] not in parents)
+
+
+def pull_inside(lng, lat, outline):
+    """
+    The point if outline holds it; otherwise the nearest point about 5 m
+    inside the outline. A purok placed only roughly (outage notices) whose
+    sitio has a drawn outline belongs in the outline.
+    """
+    point = Point(lng, lat, srid=4326)
+    if outline.contains(point):
+        return lng, lat
+    inner = outline.buffer(-0.00005)
+    target = inner if not inner.empty and inner.area > 0 else outline
+    edge = target.boundary
+    try:
+        near = edge.interpolate(edge.project(point))
+    except Exception:  # GEOS can't project onto this edge: any point inside will do
+        near = target.point_on_surface
+    return near.x, near.y
+
+
+def _subtree(node):
+    yield node.row
+    for child in node.children:
+        yield from _subtree(child)
+
+
+def _split_level(mask, houses, step, n, groups, to_cell, preset_for, barrier, dem, loose_reach, min_cells):
+    """
+    One split_named over every name in groups (a list of row lists), each name
+    its own seed, then each seed handed to its group. Returns (labels, number
+    of unnamed areas): 0 .. len(groups) - 1 the groups, then the unnamed.
+    """
+    rows = [(row, g) for g, members in enumerate(groups) for row in members]
+    preset = None
+    for i, (row, _) in enumerate(rows):
+        cells = preset_for(row)
+        if cells is not None:
+            if preset is None:
+                preset = np.full(mask.shape, -1, np.int32)
+            preset[cells & mask] = i  # parents come first, so a purok's own outline wins inside its sitio's
+    owner = split_named(mask, houses, step, n, [to_cell(r) for r, _ in rows], preset=preset, barrier=barrier,
+                        dem=dem, loose=[r.get('confidence') == 'low' for r, _ in rows], loose_reach=loose_reach)
+    labels = np.full(owner.shape, -1, np.int32)
+    lookup = np.asarray([g for _, g in rows] + list(range(len(groups), len(groups) + n)), np.int32)
+    labels[owner >= 0] = lookup[owner[owner >= 0]]
+    labels[~mask] = -1
+    return tidy(labels, mask, min_cells=min_cells), max(n - len(rows), 0)
+
+
+def split_nested(inside, houses, step, n, top, to_cell, preset_for, barrier=None, dem=None,
+                 loose_reach=math.inf, min_cells=0):
+    """
+    Split one barangay as it is on the ground: sitios first, then each sitio
+    among its puroks. (named, unnamed): named is [(row, mask, members)] for
+    every placed name, parents before their puroks, members how many puroks
+    it holds; a sitio's mask is its whole territory. unnamed are the masks of
+    the areas no name was found for.
+
+    The first split takes every placed name as a seed with one share each, so
+    a sitio grows from its own point and its puroks' points together, sized
+    for all of them. Inside a sitio its puroks and its own point (its
+    leftover) split the territory again, sized by the houses there.
+
+    to_cell(row) gives a name's cell, preset_for(row) the cells of its drawn
+    outline (or None).
+    """
+    named = []
+    level, extra = _split_level(inside, houses, step, max(n, sum(1 for t in top for _ in _subtree(t))),
+                                [list(_subtree(t)) for t in top], to_cell, preset_for, barrier, dem,
+                                loose_reach, min_cells)
+
+    def emit(node, territory):
+        named.append((node.row, territory, len(node.children)))
+        if not node.children or not territory.any():
+            return
+        # The sitio's own point has no outline here: its outline already shaped the territory
+        groups = [[node.row]] + [list(_subtree(c)) for c in node.children]
+        sub, _ = _split_level(territory, houses, step, sum(len(g) for g in groups), groups, to_cell,
+                              lambda row: None if row is node.row else preset_for(row), barrier, dem,
+                              loose_reach, min_cells)
+        for c, child in enumerate(node.children, start=1):
+            emit(child, sub == c)
+
+    for t, node in enumerate(top):
+        emit(node, level == t)
+    unnamed = [m for m in (level == len(top) + j for j in range(extra)) if m.any()]
+    return named, unnamed
 
 
 def split_named(inside, houses, step, n, seeds, preset=None, barrier=None, dem=None, loose=None, loose_reach=math.inf):
@@ -308,6 +425,28 @@ def split_named(inside, houses, step, n, seeds, preset=None, barrier=None, dem=N
     for i in range(len(seeds)):
         if loose[i] and i not in moved:  # no free cluster near: keep its point
             take_nearest(seeds[i])
+    # A rough name still on top of others (a notice listing many names along one road) would be
+    # hemmed in to a sliver: it starts at the house in reach farthest from every other start instead
+    crowd = math.sqrt(inside.sum() / n / math.pi)  # a typical area's radius
+    houses_at = np.argwhere(inside & (houses > 0))
+    for i in range(len(seeds)):
+        if not loose[i] or i in moved or not len(houses_at):
+            continue
+        others = np.asarray([s for j, s in enumerate(starts) if j != i] + centres, dtype=np.float64)
+        if not len(others):
+            continue
+
+        def room(cells):
+            return np.sqrt(((cells[:, None, :] - others[None, :, :]) ** 2).sum(2)).min(1)
+
+        here = room(np.asarray([starts[i]], dtype=np.float64))[0]
+        if here >= crowd:
+            continue
+        near = houses_at[np.hypot(houses_at[:, 0] - seeds[i][0], houses_at[:, 1] - seeds[i][1]) <= loose_reach]
+        if len(near):
+            space = room(near.astype(np.float64))
+            if space.max() > here:
+                starts[i] = tuple(int(v) for v in near[int(np.argmax(space))])
     # The clusters left over start the unnamed areas
     seeds = starts + centres
     k = len(seeds)
@@ -515,12 +654,20 @@ LANDMARKS = [
     ('court', 'leisure', ('pitch', 'sports_hall', 'sports_centre', 'park', 'playground')),
     ('cemetery', 'landuse', ('cemetery',)),
 ]
+# Also asked for, only to place fire addresses that name them ("Mananga Bridge II", "South Town Centre");
+# they don't name areas, since a bridge or a mall isn't how a purok is told apart
+LINK_PLACES = [
+    ('bridge', 'bridge', ('yes',)),
+    ('mall', 'shop', ('mall', 'department_store', 'supermarket')),
+]
+BARANGAY_HALL = re.compile(r'barangay hall|bulwagang|bahay pamahalaan', re.IGNORECASE)
 STREET_TYPES = ('trunk', 'primary', 'secondary', 'tertiary', 'unclassified', 'residential', 'living_street')
 RIVER_TYPES = ('river', 'stream', 'canal')
 # Names that say what a thing is but not which one
 GENERIC_NAMES = {'basketball court', 'covered court', 'court', 'chapel', 'church', 'school', 'park',
                  'playground', 'gym', 'cemetery', 'barangay hall', 'health center', 'day care center'}
 MIN_STREET_M = 50  # an area must hold this much of a street to be named along it
+STREET_SHARE = 0.75  # a fire on a street links to an area only when the area holds this much of the street
 # "Along Purok Siba Street" would read as the purok's own name
 NAMES_A_PUROK = re.compile(r'\b(purok|sitio|zone)\b', re.IGNORECASE)
 MAX_NAME = 100  # Purok.name's length
@@ -530,7 +677,8 @@ COMPASS = ['east', 'northeast', 'north', 'northwest', 'west', 'southwest', 'sout
 def landmark_query(south, west, north, east):
     """The Overpass query whose answer landmarks_from_osm reads."""
     bbox = f'{south},{west},{north},{east}'
-    places = ''.join(f'  nwr["name"]["{key}"~"^({"|".join(values)})$"]({bbox});\n' for _, key, values in LANDMARKS)
+    places = ''.join(f'  nwr["name"]["{key}"~"^({"|".join(values)})$"]({bbox});\n'
+                     for _, key, values in LANDMARKS + LINK_PLACES)
     return (f'[out:json][timeout:240];\n(\n{places});\nout tags center;\n(\n'
             f'  way["name"]["highway"~"^({"|".join(STREET_TYPES)})$"]({bbox});\n'
             f'  way["name"]["waterway"~"^({"|".join(RIVER_TYPES)})$"]({bbox});\n);\nout tags geom;\n')
@@ -542,13 +690,15 @@ def landmarks_from_osm(elements):
     for the schools, chapels, halls and such in LANDMARKS; lines are
     (name, LineString) for named streets and rivers.
     """
-    kinds = {(key, value): kind for kind, key, values in LANDMARKS for value in values}
+    kinds = {(key, value): kind for kind, key, values in LANDMARKS + LINK_PLACES for value in values}
     points, lines = [], []
     for el in elements:
         tags = el.get('tags', {})
         # "Santo Niño Preparatory School of Mohon, Talisay City, Inc." is known by its first part
         name = tags.get('name', '').split(',')[0].strip()
         kind = next((kinds[(k, v)] for k, v in tags.items() if (k, v) in kinds), None)
+        if kind == 'bridge' and 'bridge' not in name.lower():
+            kind = None  # a bridge carrying a road's name is just that road
         if not name or name.lower() in GENERIC_NAMES:
             continue
         if kind:
@@ -589,6 +739,7 @@ def area_names(areas, points, lines, taken=()):
     taken   names already used in the barangay
     """
     rank = {kind: i for i, (kind, _, _) in enumerate(LANDMARKS)}
+    points = [p for p in points if p[1] in rank]
     used = set(taken)
     names = [None] * len(areas)
 
@@ -637,3 +788,65 @@ def area_names(areas, points, lines, taken=()):
                 k += 1
             claim(i, f'Unnamed area {k}')
     return names
+
+
+def place_areas(leaves, containers, points, lines):
+    """
+    Where a fire address that names a landmark or a street lies, for
+    linking it: [{'place', 'kind', 'area', 'share'}].
+
+    leaves      [(name, shape)]: the areas that hold no others
+    containers  [(name, shape)]: sitios drawn around their puroks
+    points      (name, kind, lng, lat) from landmarks_from_osm
+    lines       (name, LineString) from landmarks_from_osm
+
+    A landmark goes to the leaf it stands in, or the sitio when it stands in
+    a sitio's own part. A barangay hall is also "Barangay Hall", as fire
+    addresses write it. A name two landmarks share says nothing, so it gets
+    no row. A street goes to the leaf holding the most of its length in the
+    barangay, or to a sitio when no leaf holds STREET_SHARE but a sitio does;
+    share says how much. Streets named after a purok are left out.
+    """
+    shapes = leaves + containers
+    if not shapes:
+        return []
+    cover = shapes[0][1]
+    for _, shape in shapes[1:]:
+        cover = cover.union(shape)
+
+    def where(lng, lat):
+        p = Point(lng, lat, srid=4326)
+        return next((name for name, shape in shapes if shape.contains(p)), None)
+
+    found = {}
+    for name, kind, lng, lat in points:
+        if not cover.prepared.contains(Point(lng, lat, srid=4326)):
+            continue
+        area = where(lng, lat)
+        found.setdefault(name, []).append(area)
+        if kind == 'hall' and BARANGAY_HALL.search(name):
+            found.setdefault('Barangay Hall', []).append(area)
+    rows = [{'place': place, 'kind': 'landmark', 'area': areas[0], 'share': 1.0}
+            for place, areas in found.items() if len(areas) == 1 and areas[0]]
+
+    streets = {}
+    for name, line in lines:
+        if not NAMES_A_PUROK.search(name) and cover.prepared.intersects(line):
+            streets.setdefault(name, []).append(line)
+    for name, pieces in streets.items():
+        total = sum(cover.intersection(p).length for p in pieces)
+        if not total:
+            continue
+
+        def best(group):
+            held = [(sum(shape.intersection(p).length for p in pieces) / total, area) for area, shape in group]
+            return max(held, default=(0.0, None))
+
+        share, area = best(leaves)
+        if share < STREET_SHARE and containers:
+            outer = best(containers)
+            if outer[0] >= STREET_SHARE:
+                share, area = outer
+        if area:
+            rows.append({'place': name, 'kind': 'street', 'area': area, 'share': round(share, 3)})
+    return rows

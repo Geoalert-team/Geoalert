@@ -11,11 +11,14 @@
 
 export const PUROK_COLOR = '#7c3aed';
 
+// A sitio drawn around its puroks (members: how many it holds), as it is on the ground
+export const isContainer = (feature) => (feature?.properties?.members || 0) > 0;
+
 export function purokStyle(feature) {
   const official = feature?.properties?.source === 'official';
   return {
     color: PUROK_COLOR,
-    weight: 1.5,
+    weight: isContainer(feature) ? 3 : 1.5,
     opacity: 0.9,
     dashArray: official ? null : '5 4',
     fill: false,
@@ -41,17 +44,30 @@ function inRing(lng, lat, ring) {
   return inside;
 }
 
+function ringArea(ring) {
+  let twice = 0;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) twice += (ring[j][0] + ring[i][0]) * (ring[j][1] - ring[i][1]);
+  return Math.abs(twice) / 2;
+}
+
+function polygonsOf(feature) {
+  const g = feature?.geometry;
+  return g?.type === 'Polygon' ? [g.coordinates] : g?.type === 'MultiPolygon' ? g.coordinates : [];
+}
+
 /**
  * The purok under a point, or null. The lines aren't clickable, so nothing
  * else on the map (barangays, drawing tools) loses its clicks
- * to them; the map asks this instead when the pointer moves.
+ * to them; the map asks this instead when the pointer moves. A sitio is
+ * drawn around its puroks, so a purok under the point wins over its sitio;
+ * the sitio only answers on its own part.
  */
 export function purokAt(geo, lng, lat) {
-  return (geo?.features || []).find((f) => {
-    const g = f.geometry;
-    const polygons = g?.type === 'Polygon' ? [g.coordinates] : g?.type === 'MultiPolygon' ? g.coordinates : [];
-    return polygons.some(([outer, ...holes]) => inRing(lng, lat, outer) && !holes.some((h) => inRing(lng, lat, h)));
-  }) || null;
+  const under = (geo?.features || []).filter((f) => polygonsOf(f)
+    .some(([outer, ...holes]) => inRing(lng, lat, outer) && !holes.some((h) => inRing(lng, lat, h))));
+  const size = (f) => polygonsOf(f).reduce((sum, [outer]) => sum + ringArea(outer), 0);
+  under.sort((a, b) => (isContainer(a) - isContainer(b)) || (size(a) - size(b)));
+  return under[0] || null;
 }
 
 // The selected barangay's puroks as a FeatureCollection, or null for none
@@ -78,7 +94,8 @@ export function purokTooltip(feature) {
       : isUnidentified(p) ? 'Purok not identified yet'
         : p.confidence === 'low' ? 'Estimated outline · location approximate'
           : 'Estimated outline';
-  return `<strong>${escape(p.name)}</strong><br>${where}${note ? `<br>${note}` : ''}`;
+  const holds = isContainer(feature) ? `<br>${p.members} ${p.members === 1 ? 'purok' : 'puroks'} inside` : '';
+  return `<strong>${escape(p.name)}</strong><br>${where}${holds}${note ? `<br>${note}` : ''}`;
 }
 
 // Credit for what the estimated outlines are built from, shown while the layer is

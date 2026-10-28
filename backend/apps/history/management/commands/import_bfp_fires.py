@@ -9,12 +9,11 @@ from apps.barangays.models import Barangay, Purok
 from apps.hazards.models import HazardType
 from apps.history import bfp
 from apps.history.bfp_import import plan_import
-from apps.history.bfp_link import link_address, load_variants
+from apps.history.bfp_link import link_address, load_link_index
 from apps.history.models import HistoricalRecord
 
+# Other spellings, unplaced puroks' sitios, and landmarks and streets by area (load_link_index)
 PUROK_DATA = Path(__file__).resolve().parents[3] / 'barangays' / 'data' / 'puroks'
-# Other spellings of purok names (barangay,variant,name), hand-edited
-VARIANTS_FILE = PUROK_DATA / 'name_variants.csv'
 
 
 class Command(BaseCommand):
@@ -37,7 +36,7 @@ class Command(BaseCommand):
         if fire is None:
             raise CommandError('No "Fire" hazard type.')
         barangays = list(Barangay.objects.all())
-        variants = load_variants(VARIANTS_FILE) if VARIANTS_FILE.exists() else {}
+        variants = load_link_index(PUROK_DATA)
 
         if options['relink']:
             self.relink(barangays, variants, options['dry_run'])
@@ -113,6 +112,8 @@ class Command(BaseCommand):
     def print_report(self, report):
         for key in ('read', 'imported', 'skipped_existing', 'linked', 'barangay_only'):
             self.stdout.write(f'{key} {report[key]}')
+        by = report.get('linked_by', {})
+        self.stdout.write('linked by: ' + ', '.join(f'{r} {by.get(r, 0)}' for r in ('purok', 'sitio', 'landmark', 'street')))
         for key, label in (('outside_city', 'outside city'), ('duplicates', 'duplicates'),
                            ('bad_date', 'bad dates'), ('no_barangay', 'no barangay')):
             self.stdout.write(f'{label}: {report[key]}')

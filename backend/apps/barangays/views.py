@@ -36,7 +36,7 @@ class PurokListView(APIView):
 
     def get(self, request):
         puroks = Purok.objects.select_related('barangay').order_by('barangay__name', 'name')
-        return Response(PurokGeoSerializer(puroks, many=True).data)
+        return Response(PurokGeoSerializer(puroks, many=True, context={'members': Purok.member_counts()}).data)
 
 
 class BarangayDetailView(APIView):

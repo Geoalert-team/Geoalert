@@ -143,7 +143,10 @@ def overlapping_puroks(geometry):
     """
     The puroks a zone's area overlaps, for its history record when resolved:
     the zone counts once in each. A purok that only shares a border with it
-    doesn't count.
+    doesn't count, nor does a sitio drawn around puroks: the zone counts in
+    those puroks instead, not twice.
     """
     from apps.barangays.models import Purok
-    return Purok.objects.filter(boundary__intersects=geometry).exclude(boundary__touches=geometry)
+    sitios = Purok.member_counts()
+    found = Purok.objects.filter(boundary__intersects=geometry).exclude(boundary__touches=geometry)
+    return found.exclude(pk__in=[p.pk for p in found if (p.barangay_id, p.name) in sitios])

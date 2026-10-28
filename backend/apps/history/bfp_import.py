@@ -11,12 +11,12 @@ from collections import Counter
 
 from apps.barangays.purok_estimate import norm_name
 from apps.history import bfp
-from apps.history.bfp_link import link_address, split_address
+from apps.history.bfp_link import explain_link, split_address
 
 
 def _new_report(read):
     return {'read': read, 'imported': 0, 'skipped_existing': 0, 'linked': 0, 'barangay_only': 0,
-            'duplicates': [], 'outside_city': [], 'bad_date': [], 'no_barangay': [],
+            'linked_by': Counter(), 'duplicates': [], 'outside_city': [], 'bad_date': [], 'no_barangay': [],
             'unknown_alarms': Counter(), 'unlinked': {}}
 
 
@@ -111,11 +111,12 @@ def plan_import(rows, existing_refs, barangays, puroks_by_barangay, variants):
 
         if not bfp.severity_for_alarm(row['alarm'])[1]:
             report['unknown_alarms'][row['alarm']] += 1
-        barangay, purok_name = link_address(row['location'], barangays, puroks_by_barangay, variants)
+        barangay, purok_name, rule = explain_link(row['location'], barangays, puroks_by_barangay, variants)
         if barangay is None:
             report['no_barangay'].append(row['row'])
         elif purok_name:
             report['linked'] += 1
+            report['linked_by'][rule] += 1
         else:
             report['barangay_only'] += 1
             _note_unlinked(report, row, barangay, puroks_by_barangay.get(barangay.id, []))
@@ -123,4 +124,5 @@ def plan_import(rows, existing_refs, barangays, puroks_by_barangay, variants):
 
     report['imported'] = len(records)
     report['unknown_alarms'] = dict(report['unknown_alarms'])
+    report['linked_by'] = dict(report['linked_by'])
     return records, report

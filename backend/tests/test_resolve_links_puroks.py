@@ -35,6 +35,17 @@ class ResolveLinksPuroksTests(FireSetupMixin, TestCase):
         self.assertEqual(list(HistoricalRecord.objects.get(hazard_zone=inside).puroks.all()), [self.near])
         self.assertEqual(list(HistoricalRecord.objects.get(hazard_zone=touching).puroks.all()), [])
 
+    def test_a_flood_never_counts_in_a_sitio_around_its_puroks(self):
+        sitio = Purok.objects.create(barangay=self.home, name='Sitio Around', kind='sitio', source='estimated',
+                                     boundary=MultiPolygon(box(-300, -300, 300, 300), srid=4326))
+        self.near.parent = 'Sitio Around'
+        self.near.save(update_fields=['parent'])
+        zone = self.zone(self.near, hazard_type=self.flood, geometry=MultiPolygon(box(-50, -50, 50, 50), srid=4326))
+        self.assertEqual(self.resolve(zone).status_code, 200)
+        self.assertEqual(list(HistoricalRecord.objects.get(hazard_zone=zone).puroks.all()), [self.near])
+        self.assertEqual(Purok.member_counts(), {(self.home.id, 'Sitio Around'): 1})
+        self.assertTrue(Purok.objects.filter(pk=sitio.pk).exists())
+
     def test_a_flood_made_from_reports_counts_in_the_puroks_they_named(self):
         # Its pin circle near the edge of Purok Near spills into the purok beside it
         beside = Purok.objects.create(barangay=self.home, name='Purok Beside', kind='purok', source='estimated',

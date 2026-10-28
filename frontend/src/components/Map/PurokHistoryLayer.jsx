@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { GeoJSON, Pane } from 'react-leaflet';
-import { filledPuroks, purokFillStyle } from './purokLevels';
+import { filledPuroks, purokFillStyle, splitFills } from './purokLevels';
 import usePurokHover from './usePurokHover';
 
 /**
@@ -26,11 +26,22 @@ export default function PurokHistoryLayer({ geo, levels, types, tooltipFor, skip
   usePurokHover(hoverable, tooltipFor, 'pm-on-past-purok');
 
   if (!filled) return null;
+  // A sitio is drawn around its puroks: its colour goes underneath, showing where a purok has none of its own
+  const { sitios, puroks } = splitFills(filled);
   // react-leaflet's GeoJSON only reads its data once: remount when the fills change
-  const key = filled.features.map((f) => `${f.id ?? f.properties.id}:${f.properties.level}`).join('|');
+  const keyOf = (fc) => fc.features.map((f) => `${f.id ?? f.properties.id}:${f.properties.level}`).join('|');
   return (
-    <Pane name="purok-fills" style={{ zIndex: 360, pointerEvents: 'none' }}>
-      <GeoJSON key={key} data={filled} style={purokFillStyle} interactive={false} />
-    </Pane>
+    <>
+      {sitios && (
+        <Pane name="sitio-fills" style={{ zIndex: 355, pointerEvents: 'none' }}>
+          <GeoJSON key={keyOf(sitios)} data={sitios} style={purokFillStyle} interactive={false} />
+        </Pane>
+      )}
+      {puroks && (
+        <Pane name="purok-fills" style={{ zIndex: 360, pointerEvents: 'none' }}>
+          <GeoJSON key={keyOf(puroks)} data={puroks} style={purokFillStyle} interactive={false} />
+        </Pane>
+      )}
+    </>
   );
 }

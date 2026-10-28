@@ -160,6 +160,17 @@ class PurokSerializerTests(SimpleTestCase):
         lng, lat = props['label_point']
         self.assertTrue(123.84 < lng < 123.842 and 10.25 < lat < 10.252)
 
+    def test_feature_carries_its_member_count(self):
+        brgy = Barangay(id=1, name='San Roque')
+        shape = MultiPolygon(square(123.85, 10.25, 123.852, 10.252), srid=4326)
+        laray = Purok(id=7, barangay=brgy, name='Sitio Laray', kind='sitio', source='estimated', boundary=shape)
+        sambag = Purok(id=8, barangay=brgy, name='Purok Sambag', kind='purok', parent='Sitio Laray',
+                       source='estimated', boundary=shape)
+        context = {'members': {(1, 'Sitio Laray'): 2}}
+        self.assertEqual(PurokGeoSerializer(laray, context=context).data['properties']['members'], 2)
+        self.assertEqual(PurokGeoSerializer(sambag, context=context).data['properties']['members'], 0)
+        self.assertEqual(PurokGeoSerializer(sambag).data['properties']['members'], 0)
+
     def test_coordinates_are_rounded_to_keep_the_download_small(self):
         # 300 outlines at full precision is over a megabyte; 6 decimals is about 0.1 m
         brgy = Barangay(id=21, name='Tangke')

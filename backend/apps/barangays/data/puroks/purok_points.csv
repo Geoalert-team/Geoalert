@@ -23,7 +23,9 @@ Biasong,Pueblo San Ricardo,subdivision,,10.248027,123.831788,OpenStreetMap outli
 Biasong,Puerto del Sol Subdivision,subdivision,,10.240120,123.826748,Wikimapia outline,high,Wikimapia,
 Bulacao,Sitio Alegre,sitio,,,,,,fire log,
 Bulacao,Sitio Paglaum,sitio,,10.267129,123.847965,Wikimapia place,high,fire log; Visayan Electric,also spelled Paglaom
-Bulacao,Upper Kabanayan,sitio,,,,,,fire log; SunStar 2014 hazard list; news 2025-2026,news also spells it Cabanayan
+Bulacao,Upper Kabanayan,sitio,Sitio Kabanayan,,,,,fire log; SunStar 2014 hazard list; news 2025-2026,news also spells it Cabanayan
+Bulacao,Sitio Kabanayan,sitio,,10.273698,123.843391,"Overture place ""Cabanayan, Bulacao"", with 5 more listings",medium,Overture Maps; Visayan Electric; SunStar 2023,also spelled Cabanayan
+Bulacao,Lower Kabanayan,sitio,Sitio Kabanayan,10.272346,123.843987,"Overture addresses (4) ""Lower Kabanayan""",medium,Overture Maps; Visayan Electric; SunStar 2023,"SunStar 2023: Lower Kabanayan, Sta. Lucia Road"
 Bulacao,Crosan,sitio,,10.274421,123.846299,Wikimapia place,high,fire log; Visayan Electric; news 2025-2026,notices spell it Cruzan
 Bulacao,Purok Malinawon,purok,,,,,,Visayan Electric,its notices name no road found on the map in Bulacao
 Bulacao,Purok Mangihatagon,purok,,,,,,Visayan Electric,its notices name no road found on the map in Bulacao
@@ -37,31 +39,36 @@ Bulacao,Sitio Villabusca,sitio,,10.268480,123.846120,"Overture place ""Sitio Vil
 Bulacao,Villa Verna IV Subdivision,subdivision,,10.273237,123.845161,Wikimapia outline,high,Wikimapia,
 Bulacao,Mighty Villa Subdivision,subdivision,,10.268010,123.850969,Wikimapia outline,high,Wikimapia; OpenStreetMap,OSM has its Mighty Villa Street
 Bulacao,Purok Matinabangon,purok,,10.262143,123.850092,"OpenStreetMap place ""Matinabangon"", tagged a purok of Bulacao",high,OpenStreetMap; Overture Maps,"an Overture address 160 m west, across the Tabunok line, had placed it in Tabunok"
-Cadulawan,Lower Mahayahay,sitio,,,,,,fire log,
-Cadulawan,Upper Mahayahay,sitio,,,,,,fire log,
+Cadulawan,Lower Mahayahay,sitio,Sitio Mahayahay,10.276298,123.843254,"Overture place ""Mahayahay Manggahan"", 200 m from its Purok Kamunggay",low,fire log; Overture Maps,
+Cadulawan,Upper Mahayahay,sitio,Sitio Mahayahay,,,,,fire log,
 Cadulawan,Purok Kamunggay,purok,Lower Mahayahay,10.276130,123.845200,"Overture address ""Purok Kamungay, Candulawan""",low,fire log; Overture Maps,
 Cadulawan,Zone II (Lower),zone,,,,,,fire log; city profile 2010,"fire log: ""Lower Candulawan""; its notices name no road found on the map in Cadulawan"
 Cadulawan,Purok Mangga,purok,Zone II (Lower),,,,,fire log,its notices name no road found on the map in Cadulawan
-Cadulawan,Purok Boongon,purok,,,,,,fire log,
+Cadulawan,Purok Boongon,purok,,10.278797,123.843461,"OpenStreetMap: Candulawan Barangay Hall, which stands in it",medium,fire log; CDN 2024; OpenStreetMap,"CDN 2024: ""barangay hall at Purok Boongon"""
+Cadulawan,Purok Nangka,purok,,,,,,CDN 2024,
 Cadulawan,Purok Chicos,purok,,,,,,Visayan Electric,its notices name no road found on the map in Cadulawan
 Cadulawan,Sitio Tubod,sitio,,,,,,Visayan Electric,its notices name no road found on the map in Cadulawan
 Cadulawan,Zone I,zone,,,,,,city profile 2010; SunStar 2014 hazard list,
+Cadulawan,Sitio Mahayahay,sitio,,10.279288,123.842392,"Overture address ""Mahayahay, Candulawan"", 90 m from the barangay hall",medium,fire log; Visayan Electric; Overture Maps,Upper and Lower Mahayahay are its parts
 Cadulawan,Sitio Little Bamboo,sitio,,,,,,SunStar 2014 hazard list,
 Cadulawan,Zone IV (Proper),zone,,,,,,city profile 2010,
 Cadulawan,Zone V (Upper),zone,,,,,,city profile 2010,
 Cadulawan,Vista Grande,subdivision,,10.279777,123.836265,OpenStreetMap outline,high,Visayan Electric; OpenStreetMap,
 Cadulawan,Purok Miracle,purok,,10.279460,123.841800,"Overture address ""Purok Miracle, Candulawan""",low,Overture Maps,
 Cadulawan,Purok Tambis,purok,,10.279000,123.840540,"Overture addresses (2) ""Purok Tambis, Candulawan""",medium,Overture Maps,
-Camp IV,Purok Sambag,purok,,,,,,fire log,
-Camp IV,Cambawog Upper,sitio,,,,,,fire log,
+Camp IV,Purok Sambag,purok,Sitio Proper,,,,,fire log; camp4talisay.com,
+Camp IV,Sitio Proper,sitio,,10.320908,123.820364,"OpenStreetMap: Camp 4 Barangay Hall (""Proper"" is the barangay centre)",low,camp4talisay.com; OpenStreetMap,"camp4talisay.com: hanging bridge at ""Purok Sambag, Sitio Proper"""
+Camp IV,Cambawog Upper,sitio,,10.309506,123.816231,"Overture listing ""Cambawog, Camp 3, Talisay City""; the point lies in Camp IV",low,fire log; Visayan Electric; Overture Maps,notices list Cambawog with Purok Pinya and Purok Chicos
 Camp IV,Purok Pinya,purok,Cambawog Upper,,,,,fire log,its notices name no road found on the map in Camp IV
-Camp IV,Purok Santol,purok,,,,,,fire log,
+Camp IV,Purok Santol,purok,,,,,,fire log,SunStar 2024: a cliff on the road where an SUV fell
 Camp IV,Sitio Caolong,sitio,,,,,,fire log; news 2025-2026,
 Camp IV,Purok Lubi,purok,Sitio Caolong,10.326540,123.815529,"Overture address ""Puron Lubi, Camp 4""",low,fire log; news 2025-2026; Overture Maps,
 Camp IV,Sitio Languyon,sitio,,,,,,city profile 2010,
 Camp IV,Sitio Pangi,sitio,,10.333760,123.804977,Wikimapia outline,high,Wikimapia,
 Camp IV,Sitio Nangka,sitio,,,,,,news 2025-2026,hanging bridge lost to Typhoon Tino; its notices name no road found on the map in Camp IV
 Camp IV,Sitio Camp 5,sitio,,,,,,SunStar 2014 hazard list,SunStar also lists a Camp 5 in Manipis
+Camp IV,Sitio Curba,sitio,,,,,,landslide log; CDN 2021,a landslide spot on the Manipis road
+Camp IV,Purok Saging,purok,,,,,,Bombo Radyo 2026,
 Cansojong,Kimba,sitio,,10.256855,123.850629,street in its address (Rafael Rabaya Street),medium,Wikipedia 2017; fire log; Inquirer,"fire log also lists ""Kimba, San Roque"""
 Cansojong,Sitio Atisan,sitio,,10.248821,123.855913,street in its address (Base Street),medium,Wikipedia 2017; fire log,also spelled Antisan
 Cansojong,Sitio Mahayahay,sitio,,10.247666,123.855460,Wikimapia outline,high,Wikimapia; Wikipedia 2017; fire log,
@@ -90,7 +97,8 @@ Cansojong,Garden Village,subdivision,,10.247436,123.848994,Wikimapia outline,hig
 Dumlog,Zone 3,zone,,10.247873,123.841492,street in its address (J. P. Rizal Street),medium,fire log,
 Dumlog,Zone 5,zone,,10.240280,123.840190,"Overture addresses (3) ""Zone 5, Dumlog""",low,fire log; Overture Maps,
 Dumlog,Purok Saging,purok,Zone 5,,,,,fire log,
-Dumlog,Sitio Paglaom,sitio,,,,,,fire log,
+Dumlog,Sitio Paglaom,sitio,,10.245646,123.834572,"Overture ""Tulay sa Kinabuhi"", Burgos St., ""Sitio Paglaum, Dumlog""",low,fire log; flood log; Overture Maps,also spelled Paglaum
+Dumlog,Sitio Bahala,sitio,,10.252728,123.835667,estimated: the Dumlog bank opposite Purok Isla Verde,low,flood log; Philstar 2025; Visayan Electric,Philstar 2025 names Purok Isla Verde and Sitio Bahala as two riverside communities; position approximate
 Dumlog,Sitio Tugas,sitio,,,,,,fire log,
 Dumlog,Ramona 1,sitio,,10.251060,123.840564,"OpenStreetMap street ""Ramona Village Street""",low,fire log; OpenStreetMap,
 Dumlog,Purok Kamatis,purok,Ramona 1,,,,,fire log,
@@ -219,6 +227,8 @@ Maghaway,Purok Kulo 3,purok,,10.268760,123.823810,"Overture address ""Purok Kulo
 Maghaway,San Jose Maria,subdivision,,10.274087,123.820671,"Overture place ""San Josemaria Village"", Maghaway Rd",medium,fire log; Overture Maps,
 Manipis,Purok Bamboo,purok,,,,,,GMA News,
 Manipis,Purok Kaimito,purok,,,,,,GMA News,
+Manipis,Camp 6,sitio,,10.320982,123.786523,"OpenStreetMap: Manipis Elementary School, formerly Camp 6 Elementary School",high,landslide log; OpenStreetMap,OSM addr:neighbourhood=Camp 6; the barangay hall is beside it
+Manipis,Sitio Langoyon,sitio,,,,,,landslide log; ABS-CBN 2022; CDN 2021,CDN spells it Languyon; a landslide spot on the Manipis road
 Manipis,Camp 8,sitio,,10.315027,123.789380,OpenStreetMap place,high,OpenStreetMap,
 Manipis,Sitio Camp 5,sitio,,10.315124,123.789116,street named after it (Camp 8 Road),medium,SunStar 2014 hazard list,SunStar also lists a Camp 5 in Camp IV
 Manipis,Nagoyon,sitio,,,,,,SunStar 2014 hazard list,"SunStar: ""Proper Nagoyon""; spelling unconfirmed"
@@ -296,7 +306,7 @@ San Roque,Sitio Laray,sitio,,10.260217,123.856208,Wikimapia outline,high,Visayan
 San Roque,Purok Sambag,purok,Sitio Laray,10.256578,123.859258,outage notices (14) along Cebu South Coastal Road,low,fire log,
 San Roque,Purok Macopa,purok,Sitio Laray,,,,,Visayan Electric; fire log,its notices name no road found on the map in San Roque
 San Roque,Purok Kabayoan 2,purok,Sitio Laray,,,,,fire log; Visayan Electric,
-San Roque,Sitio Ughay,sitio,,10.256578,123.859258,"outage notices (2) along Cebu South Coastal Road, F. Jaca Street, Rafael Rabaya Street, Vicente H. Garces Street",low,fire log; Visayan Electric,also spelled Ughai; order along road unknown; position along road approximate
+San Roque,Sitio Ughay,sitio,,10.255580,123.858710,"Wikimapia place ""Ughai Subdivision"", with Overture ""Ughai 2 Subdivision"" and 4 listings",medium,fire log; Visayan Electric; Wikimapia; Overture Maps,also spelled Ughai
 San Roque,Purok Calachuchi,purok,Sitio Ughay,10.254472,123.854574,outage notices (5) along Rafael Rabaya Street,low,Visayan Electric; fire log,"""Ughay 1""; position along road approximate"
 San Roque,Sitio Ramona,sitio,,10.261107,123.849375,street in its address (Dawis Road),medium,fire log,Dawis Rd
 San Roque,Purok Ilang-Ilang,purok,,10.253073,123.856868,outage notices (5) along Rafael Rabaya Street,low,Visayan Electric; fire log,

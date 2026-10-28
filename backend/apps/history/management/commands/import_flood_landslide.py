@@ -6,7 +6,7 @@ from django.db import transaction
 from apps.barangays.models import Barangay, Purok
 from apps.hazards.models import HazardType
 from apps.history import flood_landslide as fl
-from apps.history.bfp_link import load_variants
+from apps.history.bfp_link import load_link_index
 from apps.history.models import HistoricalRecord
 
 PUROK_DATA = Path(__file__).resolve().parents[3] / 'barangays' / 'data' / 'puroks'
@@ -42,7 +42,7 @@ class Command(BaseCommand):
             raise CommandError(str(e))
 
         barangays = list(Barangay.objects.all())
-        variants = load_variants(VARIANTS_FILE) if VARIANTS_FILE.exists() else {}
+        variants = load_link_index(PUROK_DATA)
         by_barangay, ids = {}, {}
         for pk, barangay_id, name in Purok.objects.values_list('id', 'barangay_id', 'name'):
             by_barangay.setdefault(barangay_id, []).append(name)
