@@ -153,7 +153,7 @@ export default function AnalyticsPanel() {
       <div className="db-card">
         <h2>Likelihood by barangay</h2>
         <p className="db-card-sub">
-          Which barangays a month has tended to hit, from the same month in past years
+          Which barangays a month, a month and year, or a date has tended to hit, from the same time of year in past years
         </p>
         <BarangayLikelihood hazard={pickedName || ''} excludeSamples={!includeSamples} />
       </div>

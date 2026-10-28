@@ -20,9 +20,16 @@ export const historyApi = {
   forecast: (params) =>
     client.get('/api/history/forecast/', { params }).then((r) => r.data),
 
-  // Where past hazards happened (centre, radius, severity, date), for the map's heat shading
-  heat: (years) =>
-    client.get('/api/history/heat/', { params: years ? { years } : {} }).then((r) => r.data),
+  // Per purok and hazard type: past events in the period and their level,
+  // { thresholds, results: [{ purok, type, count, level }] }. types: names, all when omitted.
+  purokLevels: (types) =>
+    client.get('/api/history/purok-levels/', { params: types?.length ? { types: types.join(',') } : {} })
+      .then((r) => r.data),
+
+  // One barangay's past hazards, or one purok's in it. params: barangay,
+  // purok (id or 'none'), types ('Fire,Flood'), period ('all' for all time)
+  area: (params) =>
+    client.get('/api/history/area/', { params }).then((r) => r.data),
 
   // DRRMO: the fire close form's lists, { property_types: {category: [sub]}, alarm_levels: [...] }
   bfpOptions: () => client.get('/api/history/bfp-options/').then((r) => r.data),

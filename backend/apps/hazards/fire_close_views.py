@@ -26,6 +26,7 @@ from apps.hazards.models import HazardZone
 from apps.hazards.serializers import HazardZoneSerializer
 from apps.history.bfp import ALARM_LEVELS, PROPERTY_TYPES, close_fields, exact_location
 from apps.history.models import HistoricalRecord
+from apps.reports.decide import zone_puroks
 from utils.audit import log_event
 from utils.permissions import IsDRRMOOfficer
 
@@ -37,17 +38,6 @@ def _is_fire(zone):
 def _locked_fire(pk):
     return (HazardZone.objects.select_for_update(of=('self',))
             .select_related('hazard_type', 'barangay').filter(pk=pk).first())
-
-
-def _puroks(zone):
-    """The distinct puroks the zone's reports named, in the order first named."""
-    seen, puroks = set(), []
-    for report in zone.incidentreport_set.prefetch_related('puroks').order_by('created_at'):
-        for purok in report.puroks.all():
-            if purok.id not in seen:
-                seen.add(purok.id)
-                puroks.append(purok)
-    return puroks
 
 
 def _put_out(zone, user, note, reporter_text):
@@ -110,7 +100,7 @@ class FireCloseView(APIView):
                 put_out = _put_out(zone, request.user, summary,
                                    'The fire you reported at {where} is out and has been filed in history.')
 
-            puroks = _puroks(zone)
+            puroks = zone_puroks(zone)
             started = [r.started_at for r in zone.incidentreport_set.all() if r.started_at]
             record = HistoricalRecord.objects.create(
                 hazard_zone=zone,
@@ -155,7 +145,7 @@ class FiguresDueView(APIView):
             out.append({
                 **HazardZoneSerializer(zone).data,
                 'barangay_name': zone.barangay.name if zone.barangay else None,
-                'puroks': [p.name for p in _puroks(zone)],
+                'puroks': [p.name for p in zone_puroks(zone)],
                 'started_at': min(started) if started else zone.activated_at,
             })
         return Response(out)

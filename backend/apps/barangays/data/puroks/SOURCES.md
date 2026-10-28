@@ -14,7 +14,7 @@ draws estimated outlines from the files here, and `manage.py load_puroks` loads 
 | `notices.json` | The Visayan Electric outage notices that place names along roads (evidence for the `low` rows). |
 | `talisay_puroks_estimated.geojson` | The built outlines. Generated; don't edit by hand. |
 | `name_variants.csv` | Other spellings of a purok's name (`barangay,variant,name`), so a BFP address like "Ilan-ilang, San Roque" still finds Purok Ilang-Ilang. Read by `manage.py import_bfp_fires`. Hand-editable. |
-| `needs_barangay_check.csv` | Names from the BFP fire log that no source could place, with their fire count, one example address and what was searched. For the Barangay Hall: a location for any of them names one of the unnamed areas. |
+| `needs_barangay_check.csv` | Names from the BFP fire log that no source could place, with their fire count, one example address and what was searched. For the Barangay Hall: a location for any of them names one of the areas still named after a landmark. |
 
 ## Confidence
 
@@ -26,8 +26,15 @@ draws estimated outlines from the files here, and `manage.py load_puroks` loads 
   map these start from the nearest free house cluster within 500 m, and hovering one
   says the location is approximate.
 
-Areas called "Unnamed area k" stand for puroks the research couldn't place. The
-barangay's purok count says they exist, but not where.
+Areas named after a landmark ("Near Tapul Elementary School", "Along Burgos Street",
+"800 m west of Camp 4 Barangay Hall") stand for puroks the research couldn't place: the
+barangay's purok count says they exist, but not where or what they're called. The build
+names each from the OpenStreetMap schools, chapels, halls, courts, streets and rivers in
+or near it; these describe the place and aren't purok names. A street named after a
+purok ("Purok Siba Street") never names one, so it isn't mistaken for that purok. The
+map says the purok isn't identified yet, and the report form lists these areas after the
+named puroks. The landmarks are downloaded once and kept in `.hazard_cache`
+(`--refresh` downloads them again).
 
 ## Sources
 
@@ -38,8 +45,8 @@ barangay's purok count says they exist, but not where.
 | Visayan Electric service interruption notices, 2024–2026 (visayanelectric.com) | Names with barangay and roads | Public notices | 2026-10-23 |
 | Wikipedia, 2017 revisions of the barangay articles | Sitio lists for Cansojong and Lawaan II | CC BY-SA 4.0 | 2026-10-23 |
 | DSWD DROMIC fire reports for Talisay (dromic.dswd.gov.ph) | Names | Public record | 2026-10-23 |
-| Wikimapia (wikimapia.org, public API) | Places and outlines | CC BY-SA 3.0 | 2026-10-23 |
-| OpenStreetMap (Overpass API, Nominatim search) | Places, landmarks, named areas, streets | ODbL 1.0 | 2026-10-23, 2026-10-25 |
+| Wikimapia (wikimapia.org, public API; on 2026-10-26 a scan of every place in the city) | Places and outlines | CC BY-SA 3.0 | 2026-10-23, 2026-10-26 |
+| OpenStreetMap (Overpass API, Nominatim search) | Places, landmarks, named areas, streets; the landmarks, streets and rivers that name the areas no purok was found for | ODbL 1.0 | 2026-10-23, 2026-10-25, 2026-10-26 |
 | Overture Maps places, release 2026-10-21.0 | Places and addresses naming a sitio or purok | CDLA Permissive 2.0 | 2026-10-25 |
 | SunStar, "3,000 families in disaster-prone areas in Talisay" (2014) | Landslide-prone sitio names | News report | 2026-10-25 |
 | Philstar/The Freeman, SunStar and GMA reports, 2025–2026 (Typhoon Tino, fires) | Names (Sitio Nangka, Camp IV, and others) | News reports | 2026-10-25 |

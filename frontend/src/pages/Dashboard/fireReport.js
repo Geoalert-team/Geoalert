@@ -11,13 +11,12 @@
 // The server checks the same rules (apps/reports/fire_report.py) with the
 // same words.
 
-import { puroksOf } from '../../components/Map/purokStyle';
+import { isUnidentified, puroksOf } from '../../components/Map/purokStyle';
 
 export const MAX_PUROKS = 10;
 
 // A phone clock a few minutes fast is not a start time in the future
 const CLOCK_SKEW_MS = 5 * 60 * 1000;
-const UNNAMED = /^Unnamed area (\d+)$/;
 // Errors that belong to one hazard type's fields, cleared when it changes
 const HAZARD_FIELD_ERRORS = ['started_at', 'puroks', 'location'];
 
@@ -39,18 +38,17 @@ export function localNow(now = new Date()) {
 }
 
 // The barangay's puroks not chosen yet, for "+ Add another": named ones
-// A-Z, then the unnamed areas in number order, marked as having no name yet
+// A-Z, then the areas no purok name was found for (named after a landmark
+// there), also A-Z and marked as having no purok name yet
 export function purokOptions(geo, barangayId, chosen = []) {
   const taken = new Set(chosen.map(String));
   const all = (puroksOf(geo, barangayId)?.features || [])
-    .map((f) => ({ id: String(f.id), name: f.properties?.name || '' }))
-    .filter((p) => !taken.has(p.id));
-  const named = all.filter((p) => !UNNAMED.test(p.name)).sort((a, b) => a.name.localeCompare(b.name));
-  const unnamed = all.filter((p) => UNNAMED.test(p.name))
-    .sort((a, b) => Number(a.name.match(UNNAMED)[1]) - Number(b.name.match(UNNAMED)[1]));
+    .map((f) => ({ id: String(f.id), name: f.properties?.name || '', unnamed: isUnidentified(f.properties) }))
+    .filter((p) => !taken.has(p.id))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
   return [
-    ...named.map((p) => ({ id: p.id, label: p.name })),
-    ...unnamed.map((p) => ({ id: p.id, label: `${p.name} (no name yet)` })),
+    ...all.filter((p) => !p.unnamed).map((p) => ({ id: p.id, label: p.name })),
+    ...all.filter((p) => p.unnamed).map((p) => ({ id: p.id, label: `${p.name} (no purok name yet)` })),
   ];
 }
 

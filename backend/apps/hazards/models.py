@@ -66,12 +66,9 @@ class HazardZone(models.Model):
     # the coastline with hundreds of corners nobody could drag.
     outline      = models.PolygonField(srid=4326, null=True, blank=True, db_column='hzzn_outline')
     description  = models.TextField(blank=True, db_column='hzzn_desc')
-    # Safety cordon around the hazard, in meters, or null for none. Metadata
-    # on this one zone rather than a second zone: one hazard stays one zone,
-    # one alert and one retraction. `geometry` is the hazard itself (the
-    # burning block); the cordon is derived from it on demand, see
-    # apps/hazards/geometry.py with_cordon(). It counts for who is alerted
-    # and is drawn one level below the published severity.
+    # Unused: the safety cordon was removed (2026-10-27). Zones published
+    # before then may still hold a width here; nothing reads it, and alerts
+    # go to the barangays `geometry` touches. Kept so no migration is needed.
     cordon_m     = models.IntegerField(null=True, blank=True, db_column='hzzn_cordon_m')
     activated_at = models.DateTimeField(auto_now_add=True, db_column='hzzn_activated_at')
     resolved_at  = models.DateTimeField(null=True, blank=True, db_column='hzzn_resolved_at')

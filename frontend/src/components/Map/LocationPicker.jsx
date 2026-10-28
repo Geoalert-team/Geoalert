@@ -19,13 +19,13 @@ function ClickToPlace({ onPick }) {
   return null;
 }
 
-// Keeps the view on the chosen barangay when it changes
-function FitTo({ feature }) {
+// Keeps the view on the chosen puroks, else the barangay, when they change
+function FitTo({ data }) {
   const map = useMap();
   useEffect(() => {
-    if (!feature?.geometry) return;
-    try { map.fitBounds(L.geoJSON(feature).getBounds(), { padding: [12, 12] }); } catch { /* keep the view */ }
-  }, [feature, map]);
+    if (!data) return;
+    try { map.fitBounds(L.geoJSON(data).getBounds(), { padding: [12, 12], maxZoom: 17 }); } catch { /* keep the view */ }
+  }, [data, map]);
   return null;
 }
 
@@ -38,11 +38,18 @@ function FitTo({ feature }) {
  *   value      [lat, lng] or null
  *   onChange   (value | null) => void
  *   barangay   GeoJSON feature of the barangay to show and centre on, or null
+ *   puroks     the chosen puroks' GeoJSON features, outlined and framed
+ *              ahead of the barangay
  */
-export default function LocationPicker({ value, onChange, barangay = null }) {
+export default function LocationPicker({ value, onChange, barangay = null, puroks = [] }) {
   const [locating, setLocating] = useState(false);
   const [geoError, setGeoError] = useState('');
   const outline = useMemo(() => (barangay?.geometry ? barangay : null), [barangay]);
+  const chosen = useMemo(
+    () => (puroks.length ? { type: 'FeatureCollection', features: puroks } : null),
+    [puroks],
+  );
+  const chosenKey = puroks.map((f) => f.id).join(',');
 
   function useMyLocation() {
     if (!navigator.geolocation) {
@@ -80,7 +87,15 @@ export default function LocationPicker({ value, onChange, barangay = null }) {
               style={{ color: '#1f3d1c', weight: 2, fillOpacity: 0.04 }}
             />
           )}
-          {!value && <FitTo feature={outline} />}
+          {chosen && (
+            <GeoJSON
+              key={`p-${chosenKey}`}
+              data={chosen}
+              interactive={false}
+              style={{ color: '#d64545', weight: 2, fillOpacity: 0.12 }}
+            />
+          )}
+          {!value && <FitTo data={chosen || outline} />}
           {value && <Marker position={value} icon={PIN} interactive={false} />}
           <ClickToPlace onPick={onChange} />
         </MapContainer>

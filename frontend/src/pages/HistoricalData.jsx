@@ -41,6 +41,10 @@ export default function HistoricalData() {
 
   const [hazardId, setHazardId] = useState('');
   const [barangayId, setBarangayId] = useState('');
+  // One purok of the barangay: '' for all of them, 'none' for the records
+  // that name no purok. Its counts (all time, all types) fill the options.
+  const [purokId, setPurokId] = useState('');
+  const [purokCounts, setPurokCounts] = useState(null);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
@@ -66,11 +70,24 @@ export default function HistoricalData() {
       .catch(() => setHazardTypes([]));
   }, []);
 
+  // The barangay's purok counts (a new barangay starts on all its puroks:
+  // the Barangay select resets purokId as it changes)
+  useEffect(() => {
+    setPurokCounts(null);
+    if (!barangayId) return undefined;
+    let cancelled = false;
+    historyApi.area({ barangay: barangayId, period: 'all' })
+      .then((data) => { if (!cancelled) setPurokCounts(data); })
+      .catch(() => { /* no counts: the Purok filter stays hidden */ });
+    return () => { cancelled = true; };
+  }, [barangayId]);
+
   useEffect(() => {
     let cancelled = false;
     const params = {};
     if (hazardId)   params.hazard_type = hazardId;
     if (barangayId) params.barangay = barangayId;
+    if (barangayId && purokId) params.purok = purokId;
     if (dateFrom)   params.date_from = dateFrom;
     if (dateTo)     params.date_to = `${dateTo}T23:59:59`;
 
@@ -83,7 +100,7 @@ export default function HistoricalData() {
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [hazardId, barangayId, dateFrom, dateTo]);
+  }, [hazardId, barangayId, purokId, dateFrom, dateTo]);
 
   const sampleCount = records.filter((r) => r.is_sample).length;
   const pageCount = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
@@ -117,11 +134,22 @@ export default function HistoricalData() {
 
         <div className="db-filters">
           <label className="db-field">Barangay
-            <select value={barangayId} onChange={(e) => setBarangayId(e.target.value)}>
+            <select value={barangayId} onChange={(e) => { setBarangayId(e.target.value); setPurokId(''); }}>
               <option value="">All barangays</option>
               {barangays.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </label>
+          {barangayId && purokCounts && (
+            <label className="db-field">Purok
+              <select value={purokId} onChange={(e) => setPurokId(e.target.value)}>
+                <option value="">All puroks ({purokCounts.count})</option>
+                {purokCounts.puroks.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.count})</option>)}
+                {purokCounts.unplaced > 0 && (
+                  <option value="none">Purok not recorded ({purokCounts.unplaced})</option>
+                )}
+              </select>
+            </label>
+          )}
           <label className="db-field">From
             <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
           </label>

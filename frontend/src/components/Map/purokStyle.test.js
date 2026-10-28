@@ -1,4 +1,4 @@
-import { PUROK_COLOR, PUROK_HOVER, hasEstimates, purokAt, purokStyle, purokTooltip, puroksOf } from './purokStyle';
+import { PUROK_COLOR, PUROK_HOVER, PUROK_SELECTED, hasEstimates, purokAt, purokStyle, purokTooltip, puroksOf } from './purokStyle';
 
 const feature = (props) => ({ type: 'Feature', properties: props, geometry: null });
 
@@ -20,6 +20,12 @@ describe('purokStyle', () => {
   test('the hovered purok is tinted and its line thickened', () => {
     expect(PUROK_HOVER.fillOpacity).toBeGreaterThan(0);
     expect(PUROK_HOVER.weight).toBeGreaterThan(purokStyle(feature({ source: 'estimated' })).weight);
+  });
+
+  test('the selected purok is drawn bold and solid', () => {
+    const s = { ...purokStyle(feature({ source: 'estimated' })), ...PUROK_SELECTED };
+    expect(s.weight).toBeGreaterThan(PUROK_HOVER.weight);
+    expect(s.dashArray).toBeNull();
   });
 });
 
@@ -89,9 +95,11 @@ describe('purokTooltip', () => {
     expect(html).toContain('location approximate');
   });
 
-  test('an unnamed area says the purok is not identified yet', () => {
-    const html = purokTooltip(feature({ name: 'Unnamed area 3', source: 'estimated', confidence: '', barangay_name: 'Tangke' }));
-    expect(html).toContain('<strong>Unnamed area 3</strong>');
+  test('an area named after a landmark says the purok is not identified yet', () => {
+    const html = purokTooltip(feature({
+      name: 'Near Tanke National High School', source: 'estimated', confidence: '', barangay_name: 'Tangke',
+    }));
+    expect(html).toContain('<strong>Near Tanke National High School</strong>');
     expect(html).toContain('Tangke');
     expect(html).toContain('Purok not identified yet');
   });

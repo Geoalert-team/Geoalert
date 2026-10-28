@@ -46,6 +46,26 @@ def highest(levels):
     return max(known, key=RANK.get) if known else 'Green'
 
 
+def purok_counts(since, types=None):
+    """
+    {(purok id, type name): count} of past events since `since` (all time
+    for None), one per (record, purok). Records with no hazard type count
+    nowhere; `types` (names) narrows it, every type when empty.
+    """
+    from django.db.models import Count
+    from apps.history.models import HistoricalRecord
+
+    records = HistoricalRecord.objects.filter(puroks__isnull=False, hazard_type__isnull=False)
+    if since is not None:
+        records = records.filter(occurred_at__gte=since)
+    if types:
+        records = records.filter(hazard_type__name__in=types)
+    rows = (records.values_list('puroks', 'hazard_type__name')
+            .annotate(n=Count('id', distinct=True))
+            .order_by())
+    return {(purok, kind): n for purok, kind, n in rows}
+
+
 def purok_levels(purok_ids, hazard_type, now):
     """{purok id: {'count', 'level'}} for these puroks, counting this hazard type in the period."""
     from django.db.models import Count

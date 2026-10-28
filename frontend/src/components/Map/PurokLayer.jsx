@@ -1,60 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import L from 'leaflet';
-import { GeoJSON, Pane, useMap } from 'react-leaflet';
-import { PUROK_ATTRIBUTION, PUROK_HOVER, purokAt, purokStyle, purokTooltip } from './purokStyle';
+import React from 'react';
+import { GeoJSON, Pane } from 'react-leaflet';
+import { PUROK_ATTRIBUTION, PUROK_HOVER, PUROK_SELECTED, purokStyle, purokTooltip } from './purokStyle';
+import usePurokHover from './usePurokHover';
 
-// Over these the pointer belongs to something else (a hazard pin, its popup)
-const NOT_THE_MAP = '.leaflet-marker-icon, .leaflet-popup, .leaflet-tooltip, .leaflet-control';
+const idOf = (f) => f?.id ?? f?.properties?.id;
 
 /**
  * The purok outlines of the selected barangay. Hovering a purok (tapping it
- * on a phone) tints it and names it.
+ * on a phone) tints it and names it, with tooltipFor's text. The purok the
+ * panel shows (selectedId) is drawn bold.
  *
- * The lines aren't interactive: this works out which purok is under the
- * pointer instead, so the barangay underneath keeps its clicks (moving the
- * spot the panel reads) and so do the drawing tools. Its own
- * pane, under the barangay outlines (400), keeps the barangay line on top.
+ * The lines aren't interactive (see usePurokHover). Their own pane, under
+ * the barangay outlines (400), keeps the barangay line on top.
  */
-export default function PurokLayer({ geo }) {
-  const map = useMap();
-  const [hovered, setHovered] = useState(null);
-
-  useEffect(() => {
-    if (!geo) return undefined;
-    const box = map.getContainer();
-    const tooltip = L.tooltip({ direction: 'top', offset: [0, -10], className: 'pm-purok-tip' });
-    const clear = () => {
-      setHovered(null);
-      map.closeTooltip(tooltip);
-    };
-    const find = (e) => {
-      if (e.target.closest?.(NOT_THE_MAP)) {
-        clear();
-        return;
-      }
-      const latlng = map.mouseEventToLatLng(e);
-      const purok = purokAt(geo, latlng.lng, latlng.lat);
-      if (!purok) {
-        clear();
-        return;
-      }
-      setHovered(purok);
-      tooltip.setLatLng(latlng).setContent(purokTooltip(purok));
-      if (!map.hasLayer(tooltip)) map.openTooltip(tooltip);
-    };
-    box.addEventListener('mousemove', find);
-    box.addEventListener('click', find); // phones have no hover: a tap names the purok
-    box.addEventListener('mouseleave', clear);
-    return () => {
-      box.removeEventListener('mousemove', find);
-      box.removeEventListener('click', find);
-      box.removeEventListener('mouseleave', clear);
-      clear();
-    };
-  }, [map, geo]);
+export default function PurokLayer({ geo, selectedId = null, tooltipFor = purokTooltip }) {
+  const hovered = usePurokHover(geo, tooltipFor);
 
   if (!geo) return null;
   const barangay = geo.features[0]?.properties?.barangay;
+  const selected = selectedId == null ? null : geo.features.find((f) => String(idOf(f)) === String(selectedId));
   return (
     <Pane name="puroks" style={{ zIndex: 370, pointerEvents: 'none' }}>
       <GeoJSON
@@ -64,9 +28,17 @@ export default function PurokLayer({ geo }) {
         interactive={false}
         attribution={PUROK_ATTRIBUTION}
       />
+      {selected && (
+        <GeoJSON
+          key={`purok-selected-${idOf(selected)}`}
+          data={selected}
+          style={(f) => ({ ...purokStyle(f), ...PUROK_SELECTED })}
+          interactive={false}
+        />
+      )}
       {hovered && (
         <GeoJSON
-          key={`purok-hover-${hovered.id ?? hovered.properties.id}`}
+          key={`purok-hover-${idOf(hovered)}`}
           data={hovered}
           style={(f) => ({ ...purokStyle(f), ...PUROK_HOVER })}
           interactive={false}

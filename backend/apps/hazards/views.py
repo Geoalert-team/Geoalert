@@ -1,13 +1,13 @@
 import json
+import logging
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.gis.geos import Polygon
-from django.db import connection, transaction
+from django.db import DatabaseError, connection, transaction
 from django.db.models import Count, Q
-from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
 from apps.notifications.models import Notification
@@ -15,7 +15,8 @@ from apps.accounts.models import User
 from apps.barangays.models import Barangay
 from apps.history.models import HistoricalRecord
 
-from apps.hazards.geometry import cordon_ring, main_barangay, overlap_shares, with_cordon
+from apps.hazards.geometry import main_barangay, overlap_shares, overlapping_puroks
+from apps.reports.decide import zone_puroks
 from apps.hazards.models import HazardType, HazardZone, HazardAlert, HazardVerification
 from apps.hazards.serializers import (
     clean_zone_geometry,
@@ -48,6 +49,8 @@ from apps.hazards.alerts import (
     where_text,
 )
 
+logger = logging.getLogger(__name__)
+
 # An active zone of the same hazard type already covering this share of a
 # new drawing is most likely the same event: the officer is asked to update
 # that zone instead, and has to say so to publish anyway.
@@ -59,14 +62,6 @@ def find_duplicates(geometry, hazard_type):
     Active (or held) zones of the same hazard type that overlap a new
     drawing, most-overlapping first, each with the share of the new drawing
     it already covers (0-1).
-
-    Compares the hazards themselves, never their cordons. A duplicate means
-    "the same event published twice", and the burning block is what
-    identifies the event. Two fires a street apart have cordons that overlap
-    heavily while being separate events; comparing buffered shapes would
-    flag them, and a warning that fires on every neighbouring fire soon gets
-    clicked past. On bare blocks the DUPLICATE_SHARE threshold keeps the
-    meaning it had before cordons existed, so it is left unchanged.
     """
     zones = list(
         HazardZone.objects
@@ -296,8 +291,7 @@ class HazardZoneCreateView(APIView):
                 )
             log_event(
                 request, 'HOLD_HAZARD_ALERT', 'hazard_zone', zone.id,
-                f'{type_name(zone)} / Red for {where} held for a second approval.'
-                f'{f" Cordon {zone.cordon_m} m." if zone.cordon_m else ""}{duplicate_note}',
+                f'{type_name(zone)} / Red for {where} held for a second approval.{duplicate_note}',
             )
             payload = HazardZoneSerializer(zone).data
             payload['approval'] = {
@@ -329,8 +323,7 @@ class HazardZoneCreateView(APIView):
                 f'{type_name(zone)} / {zone.severity} published for {where}. '
                 f'{len(recipients)} recipient(s) notified. '
                 f'Zone {zone.id}. '
-                f'Barangays identified {"manually" if manual_ids else "from zone geometry"}'
-                f'{f", including a {zone.cordon_m} m cordon" if zone.cordon_m else ""}.'
+                f'Barangays identified {"manually" if manual_ids else "from zone geometry"}.'
                 f'{duplicate_note}'
             ),
         )
@@ -549,7 +542,7 @@ class HazardZoneDetailView(APIView):
         # Archive to historical records on the transition into Resolved,
         # not on every PATCH that happens to carry status='Resolved'.
         if is_resolving and not HistoricalRecord.objects.filter(hazard_zone=zone).exists():
-            HistoricalRecord.objects.create(
+            record = HistoricalRecord.objects.create(
                 barangay         = zone.barangay,
                 hazard_type      = zone.hazard_type,
                 hazard_zone      = zone,
@@ -560,6 +553,17 @@ class HazardZoneDetailView(APIView):
                 total_displaced  = _as_count(request.data.get('total_displaced')),
                 is_sample        = zone.is_sample,
             )
+            # It counts once in every purok its reports named, or for a zone
+            # drawn on the map every purok its area overlaps, which is what
+            # colours those puroks on the map (fires are closed elsewhere).
+            # A shape PostGIS can't compare costs the links, never the
+            # all-clear below: a retry couldn't send it, the zone is resolved.
+            if zone.geometry:
+                try:
+                    with transaction.atomic():
+                        record.puroks.set(zone_puroks(zone) or overlapping_puroks(zone.geometry))
+                except DatabaseError:
+                    logger.warning('Resolved zone %s: its puroks could not be worked out', zone.id, exc_info=True)
 
         if is_resolving:
             told, where = all_clear(zone, request.user, request.data.get('summary') or '')
@@ -901,20 +905,8 @@ class HazardZoneForBarangayView(APIView):
         if boundary is None:
             zones = zones.filter(barangay_id=assigned)
         else:
-            # A zone whose cordon alone reaches this barangay alerted it too
-            # (see affected_barangays), so it belongs on this dashboard.
-            cordon_reaches = RawSQL(
-                'SELECT z.hzzn_id FROM hazard_zone z, barangay b '
-                'WHERE b.brgy_id = %s AND z.hzzn_cordon_m IS NOT NULL '
-                "AND z.hzzn_status = 'Active' "
-                'AND ST_DWithin(z.hzzn_polygon::geography, b.brgy_boundary::geography, z.hzzn_cordon_m)',
-                [assigned],
-            )
             try:
-                zones = zones.filter(
-                    Q(geometry__intersects=boundary) | Q(barangay_id=assigned)
-                    | Q(id__in=cordon_reaches)
-                )
+                zones = zones.filter(Q(geometry__intersects=boundary) | Q(barangay_id=assigned))
                 zones.exists()  # force the query now, so a bad boundary is caught here
             except Exception:
                 # Malformed boundary: fall back to the barangay recorded on the
@@ -1091,15 +1083,11 @@ class HazardZonePreviewView(APIView):
 
         data = serializer.validated_data
         geometry = data['geometry']
-        cordon_m = data.get('cordon_m')
         manual_ids = request.data.get('affected_barangays') or None
-        # Routed on the block plus its cordon, the same as the real publish
-        barangays = affected_barangays(geometry, manual_ids, cordon_m)
+        barangays = affected_barangays(geometry, manual_ids)
         recipients = alert_recipients(request.user, barangays).count()
 
         duplicates = find_duplicates(geometry, data.get('hazard_type'))
-        reach = with_cordon(geometry, cordon_m) if cordon_m else None
-        ring = cordon_ring(geometry, reach)
 
         # Measured by PostGIS on the spheroid rather than by reprojecting
         # here: GDAL needs PROJ's data files, which aren't set up on every
@@ -1113,7 +1101,6 @@ class HazardZonePreviewView(APIView):
                 return None
 
         area = measure(geometry)
-        total = measure(reach) if reach is not None else area
 
         needs_approval = (
             needs_second_approval(data['severity'])
@@ -1124,13 +1111,6 @@ class HazardZonePreviewView(APIView):
         return Response({
             'geometry': json.loads(geometry.geojson),
             'area_m2': round(area) if area is not None else None,
-            # With a cordon the area people are told about can be several
-            # times the hazard itself, so the officer sees both figures.
-            'cordon_m': cordon_m,
-            'cordon_geometry': json.loads(reach.geojson) if reach is not None else None,
-            # The ring alone, drawn hatched like it will be on the public map
-            'cordon_ring': json.loads(ring.geojson) if ring is not None else None,
-            'total_area_m2': round(total) if total is not None else None,
             'barangay': {'id': home.id, 'name': home.name} if home else None,
             'affected_barangays': [b.name for b in barangays],
             'recipients': recipients,

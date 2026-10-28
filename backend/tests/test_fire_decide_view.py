@@ -2,8 +2,9 @@
 The fire decision against a real database: approving puts the fire on the
 map at its puroks' history level, Extreme waits for a second officer, a
 report is decided once, and attaching never alerts early, never restarts a
-waiting raise and never joins a sample fire. A fire's map pins come from
-its reports; a flood published from a report keeps its drawn area.
+waiting raise and never joins a sample fire. Floods and landslides are
+pushed the same way, at their own type's history level. A zone's map pins
+come from its reports, whatever its type.
 """
 from datetime import timedelta
 
@@ -13,6 +14,7 @@ from rest_framework.test import APIRequestFactory, force_authenticate
 
 from apps.hazards.models import HazardZone
 from apps.hazards.serializers import HazardZoneGeoSerializer
+from apps.history.models import HistoricalRecord
 from apps.notifications.models import Notification
 from apps.reports.decide_views import IncidentReportDecideView
 from apps.reports.views import IncidentReportReviewView
@@ -28,15 +30,32 @@ class FireDecideViewTests(FireSetupMixin, TestCase):
 
     # the reviewer's findings
 
-    def test_pins_only_for_fire_zones(self):
-        # A flood published from a pinned report keeps its drawn area on the map
+    def test_pins_come_from_reports_whatever_the_type(self):
         flood_zone = self.zone(self.near, hazard_type=self.flood)
-        self.report(hazard=self.flood, location=self.near.boundary.point_on_surface, hazard_zone=flood_zone)
-        self.assertEqual(HazardZoneGeoSerializer(flood_zone).data['properties']['pins'], [])
-        fire_zone = self.zone(self.near)
-        self.report(self.near, hazard_zone=fire_zone, status='Validated')
-        pins = HazardZoneGeoSerializer(fire_zone).data['properties']['pins']
-        self.assertEqual([p['purok_name'] for p in pins], ['Purok Near'])
+        self.report(self.near, hazard=self.flood, hazard_zone=flood_zone, status='Validated')
+        pins = HazardZoneGeoSerializer(flood_zone).data['properties']['pins']
+        self.assertEqual([(p['purok_id'], p['purok_name']) for p in pins], [(self.near.id, 'Purok Near')])
+        # Drawn on the map with no report: the map places it itself
+        drawn = self.zone(self.near, hazard_type=self.flood)
+        self.assertEqual(HazardZoneGeoSerializer(drawn).data['properties']['pins'], [])
+
+    def test_a_flood_is_pushed_at_its_flood_history_level(self):
+        self.history(self.near, 5)  # Extreme for fires: a flood doesn't count them
+        for i in range(3):
+            past = HistoricalRecord.objects.create(barangay=self.home, hazard_type=self.flood, severity_level='Green',
+                                                   occurred_at=timezone.now() - timedelta(days=40 * (i + 1)))
+            past.puroks.add(self.near)
+        report = self.report(self.near, hazard=self.flood)
+        check = self.decide(report).data
+        self.assertEqual((check['error'], check['level']), (None, 'Orange'))
+        # The quick check says who it reaches before anything is sent
+        self.assertEqual((check['affected_barangays'], check['recipients']), (['Home'], 2))
+        response = self.decide(report, {'action': 'approve'})
+        self.assertEqual(response.status_code, 201)
+        zone = HazardZone.objects.get(pk=response.data['zone']['id'])
+        self.assertEqual((zone.hazard_type, zone.severity, zone.status), (self.flood, 'Orange', 'Active'))
+        report.refresh_from_db()
+        self.assertEqual((report.status, report.hazard_zone_id), ('Validated', zone.id))
 
     def test_attach_to_a_held_fire_alerts_no_one_until_it_is_approved(self):
         held = self.zone(self.near, severity='Red', status='Awaiting_Approval')

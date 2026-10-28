@@ -1,5 +1,5 @@
-import React from 'react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import React, { useEffect, useMemo } from 'react';
+import { MapContainer, TileLayer, GeoJSON, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 // The same pin the reporter placed, so the officer reviewing the report
@@ -7,12 +7,28 @@ import 'leaflet/dist/leaflet.css';
 import './css/LocationPicker.css';
 import './css/ReportLocationMap.css';
 
+const CITY_CENTRE = [10.2447, 123.8494];
+
 const PIN = L.divIcon({
   className: '',
   html: '<div class="lp-pin"></div>',
   iconSize: [22, 22],
   iconAnchor: [11, 11],
 });
+
+// Frames the puroks named, and the pin with them when there is one
+function FitTo({ data, lat, lng }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!data) return;
+    try {
+      const bounds = L.geoJSON(data).getBounds();
+      if (lat != null) bounds.extend([lat, lng]);
+      map.fitBounds(bounds, { padding: [16, 16], maxZoom: 17 });
+    } catch { /* keep the view */ }
+  }, [data, lat, lng, map]);
+  return null;
+}
 
 /**
  * Where a report said the hazard was, read only.
@@ -28,21 +44,28 @@ const PIN = L.divIcon({
  *
  * Props:
  *   latitude, longitude   numbers, or null/undefined when no pin was dropped
+ *   puroks                the outlines of the puroks the report names
+ *                         (GeoJSON features), drawn and framed with the pin
  *   zoom                  starting zoom, 16 is about one block across
  */
-export default function ReportLocationMap({ latitude, longitude, zoom = 16 }) {
+export default function ReportLocationMap({ latitude, longitude, puroks = [], zoom = 16 }) {
   const hasPin = Number.isFinite(latitude) && Number.isFinite(longitude);
+  const outlines = useMemo(
+    () => (puroks.length ? { type: 'FeatureCollection', features: puroks } : null),
+    [puroks],
+  );
+  const outlineKey = puroks.map((f) => f.id).join(',');
 
-  if (!hasPin) {
+  if (!hasPin && !outlines) {
     return <p className="rlm-none">No pin was dropped on this report.</p>;
   }
 
-  const position = [latitude, longitude];
+  const outlined = puroks.length === 1 ? 'The red outline is the purok it names.' : 'The red outlines are the puroks it names.';
   return (
     <div className="rlm">
       <div className="rlm-map">
         <MapContainer
-          center={position}
+          center={hasPin ? [latitude, longitude] : CITY_CENTRE}
           zoom={zoom}
           scrollWheelZoom={false}
           style={{ height: '100%' }}
@@ -51,11 +74,21 @@ export default function ReportLocationMap({ latitude, longitude, zoom = 16 }) {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution="&copy; OpenStreetMap contributors"
           />
-          <Marker position={position} icon={PIN} interactive={false} />
+          {outlines && (
+            <GeoJSON
+              key={outlineKey}
+              data={outlines}
+              interactive={false}
+              style={{ color: '#d64545', weight: 2, fillOpacity: 0.12 }}
+            />
+          )}
+          {hasPin && <Marker position={[latitude, longitude]} icon={PIN} interactive={false} />}
+          <FitTo data={outlines} lat={hasPin ? latitude : null} lng={hasPin ? longitude : null} />
         </MapContainer>
       </div>
       <p className="rlm-coords">
-        Pinned at {latitude.toFixed(5)}, {longitude.toFixed(5)}
+        {hasPin ? `Pinned at ${latitude.toFixed(5)}, ${longitude.toFixed(5)}.` : 'No pin was dropped.'}
+        {outlines && ` ${outlined}`}
       </p>
     </div>
   );

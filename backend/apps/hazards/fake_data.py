@@ -62,12 +62,12 @@ SEVERITIES = ('Red', 'Orange', 'Green')
 # drawn as large as a river overflow.
 # ---------------------------------------------------------------------------
 
-# Fire: the zone is the burned block plus the cordon around it. A closely
+# Fire: the zone is the burned block plus a margin around it. A closely
 # built neighborhood has about 60 m2 of ground per house (30-40 m2 of floor
 # at ~60% coverage), so 40 razed houses burn ~0.25 ha, a ~27 m radius.
 GROUND_PER_HOUSE_M2 = 60
 FIRE_HOUSES = {'Red': (12, 250), 'Orange': (1, 8)}  # drawn log-uniform: most fires are small
-FIRE_CORDON_M = {'Red': (20, 30), 'Orange': (12, 20)}
+FIRE_MARGIN_M = {'Red': (20, 30), 'Orange': (12, 20)}
 FIRE_GREEN_RADIUS_M = (8, 20)  # grass or kitchen fire, no house lost
 FAMILIES_PER_HOUSE = (1.0, 1.5)  # shared houses are common in informal areas
 HOUSEHOLD_SIZE = 4.1  # PSA 2020 average household
@@ -279,7 +279,7 @@ def impact(hazard, severity, rnd):
         else:
             houses = _log_uniform_int(*FIRE_HOUSES[severity], rnd)
             burned = math.sqrt(houses * GROUND_PER_HOUSE_M2 / math.pi)
-            radius = burned + rnd.uniform(*FIRE_CORDON_M[severity])
+            radius = burned + rnd.uniform(*FIRE_MARGIN_M[severity])
             families = round(houses * rnd.uniform(*FAMILIES_PER_HOUSE))
             displaced = round(families * HOUSEHOLD_SIZE)
             details.update(houses=houses, families=families, alarm=_alarm(houses),

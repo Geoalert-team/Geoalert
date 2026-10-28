@@ -78,6 +78,7 @@ export default function Login() {
   function backToPasswordStep() {
     setAwaiting2fa(false);
     setCode('');
+    setPassword('');
     setError('');
   }
 
@@ -96,9 +97,12 @@ export default function Login() {
           <span className="lg-brand-name">GeoAlert Talisay</span>
         </div>
 
+        {/* Each step keyed as its own form: reused, "Back to login" became
+            "Log in" before the browser finished the click, which then sent
+            the password again and landed back on the code step. */}
         {!awaiting2fa ? (
           /* ============ STEP 1: EMAIL + PASSWORD ============ */
-          <form onSubmit={handlePasswordSubmit}>
+          <form key="password" onSubmit={handlePasswordSubmit}>
             <div className="lg-head">
               <h1>Welcome back</h1>
               <p>Log in to your GeoAlert Talisay staff account.</p>
@@ -154,7 +158,7 @@ export default function Login() {
           </form>
         ) : (
           /* ============ STEP 2: AUTHENTICATOR CODE ============ */
-          <form onSubmit={handleCodeSubmit}>
+          <form key="code" onSubmit={handleCodeSubmit}>
             <div className="lg-head">
               <span className="lg-shield" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z" /><path d="M9 12l2 2 4-4" /></svg>

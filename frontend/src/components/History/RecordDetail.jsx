@@ -4,10 +4,14 @@ import ZoneReports from '../Resolve/ZoneReports';
 import { FATALITIES, INJURED, bfpLabel } from '../Resolve/fireClose';
 
 /**
- * One history record in full, opened from the history page. When and where
- * it happened, the BFP fire log's figures (columns G-W) for a fire, the
- * counts, and what the barangay reported when the hazard was live. No
- * severity: the record is what happened, not how the alert was graded.
+ * One history record in full, opened from the history page or a past
+ * hazard on the map. When and where it happened, the BFP fire log's figures
+ * (columns G-W) for a fire, the counts, and what the barangay reported when
+ * the hazard was live. No severity: the record is what happened, not how
+ * the alert was graded.
+ *
+ * Outside DRRMO the server leaves out the address, the damage, the injured
+ * and dead by sex and the zone (STAFF_ONLY_FIELDS); their rows go with them.
  *
  * Styled with db- classes from Dashboard.css (the page already loads it).
  */
@@ -144,13 +148,15 @@ export default function RecordDetail({ recordId, onClose }) {
                       : 'not recorded'}
                   </dd>
                   <dt>Alarm</dt><dd>{record.alarm_level ? bfpLabel(record.alarm_level) : 'not recorded'}</dd>
-                  <dt>Damage</dt><dd>{money(record.damage_cost)}</dd>
+                  {'damage_cost' in record && <><dt>Damage</dt><dd>{money(record.damage_cost)}</dd></>}
                   <dt>Structures</dt><dd>{counted(record.structures_affected)}</dd>
                 </dl>
-                <div className="db-bfp-tables">
-                  <CountTable caption="Injured" groups={INJURED} record={record} />
-                  <CountTable caption="Fatalities" groups={FATALITIES} record={record} />
-                </div>
+                {COUNT_KEYS.every((k) => k in record) && (
+                  <div className="db-bfp-tables">
+                    <CountTable caption="Injured" groups={INJURED} record={record} />
+                    <CountTable caption="Fatalities" groups={FATALITIES} record={record} />
+                  </div>
+                )}
               </section>
             )}
 

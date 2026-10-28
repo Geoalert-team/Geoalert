@@ -32,16 +32,6 @@ function timeOf(iso) {
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
-// Safety cordon around the hazard. Same limits as the server
-// (CORDON_MIN_M / CORDON_MAX_M in apps/hazards/geometry.py).
-const CORDON_MIN = 10;
-const CORDON_MAX = 100;
-// Hazard types offered a cordon. A fire is the burning block plus the ring
-// people are told to leave; floods and landslides are outlined whole.
-const CORDON_TYPES = ['Fire'];
-// Suggested width by severity, in meters, until the officer types their own
-const CORDON_SUGGESTED = { Red: 30, Orange: 20, Green: 10 };
-
 /**
  * The last look before an alert goes out: who it reaches and what it
  * overlaps. Publishing notifies people straight away and can't be taken
@@ -73,35 +63,16 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
         <dd>
           <span className="pub-sev-dot" style={{ background: sev.color }} /> {typeName}, {sev.label.toLowerCase()}
         </dd>
-        {preview.area_m2 != null && !preview.cordon_m && (
+        {preview.area_m2 != null && (
           <>
             <dt>Area</dt>
             <dd>{formatArea(preview.area_m2)}{' '}<small>(after cutting at the city boundary)</small></dd>
           </>
         )}
-        {/* With a cordon the area people are told about can be several
-            times the hazard itself, so each figure is named. */}
-        {preview.cordon_m ? (
-          <>
-            <dt>{typeName === 'Fire' ? 'Burning area' : 'Hazard area'}</dt>
-            <dd>{preview.area_m2 != null ? formatArea(preview.area_m2) : 'Unknown'}</dd>
-            <dt>Cordon</dt>
-            <dd>{preview.cordon_m} m around it, hatched on the map</dd>
-            <dt>Total area</dt>
-            <dd>
-              <strong>{preview.total_area_m2 != null ? formatArea(preview.total_area_m2) : 'Unknown'}</strong>
-              {' '}<small>(hazard and cordon, cut at the city boundary)</small>
-            </dd>
-          </>
-        ) : null}
         <dt>Barangays</dt>
-        <dd>{places}{preview.cordon_m ? <small>(including where only the cordon reaches)</small> : null}</dd>
+        <dd>{places}</dd>
         <dt>Shape</dt>
-        <dd>
-          {preview.cordon_m
-            ? 'The solid green area is the hazard. The hatched ring is the cordon.'
-            : 'The green area on the map is what will be saved.'}
-        </dd>
+        <dd>The green area on the map is what will be saved.</dd>
         <dt>Notifies</dt>
         <dd><strong>{plural(preview.recipients, 'account')}</strong></dd>
       </dl>
@@ -208,8 +179,6 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
  *                     which case "outside" can't be told from "unknown"
  *   onCancel()
  *   onPublished(zone)
- *   prefill           { reportId, typeName, description } when publishing
- *                     from a validated incident report, or null
  *   onPreviewShape(g) the GeoJSON the server will save, for the map to
  *                     show during the check; null when there is none
  *   onReplacePoints(pts)
@@ -228,19 +197,15 @@ function ConfirmStep({ preview, typeName, sev, busy, error, onBack, onSend, onCa
  */
 export default function PublishHazardPanel({
   points, onUndo, onClear, barangay, outsideCorners = 0, boundariesReady = true,
-  onCancel, onPublished, prefill = null, onPreviewShape,
+  onCancel, onPublished, onPreviewShape,
   onReplacePoints, onMethodChange, seed = null, susceptibilityIndex = null,
 }) {
   const [types, setTypes] = useState([]);
   const [hazardTypeId, setHazardTypeId] = useState('');
   const [severity, setSeverity] = useState('Orange');
-  const [description, setDescription] = useState(prefill?.description || '');
+  const [description, setDescription] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  // Safety cordon, for the hazard types that have one. The width follows the
-  // severity's suggestion until the officer types a number of their own.
-  const [cordonOn, setCordonOn] = useState(true);
-  const [cordonM, setCordonM] = useState('');
   // The server's answer to "what would publishing this do?", shown for the
   // officer to confirm before anything goes out. Null while still editing.
   const [preview, setPreview] = useState(null);
@@ -249,13 +214,10 @@ export default function PublishHazardPanel({
     hazardsApi.types()
       .then((list) => {
         setTypes(list || []);
-        // From a report: start on the report's hazard type
-        const fromReport = prefill?.typeName
-          && list?.find((t) => t.name.toLowerCase() === prefill.typeName.toLowerCase());
-        if (list?.length) setHazardTypeId((prev) => prev || (fromReport || list[0]).id);
+        if (list?.length) setHazardTypeId((prev) => prev || list[0].id);
       })
       .catch(() => setError('Could not load hazard types. Check the backend is running.'));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- the report is fixed when the panel opens
+  }, []);
 
   const typeName = types.find((t) => String(t.id) === String(hazardTypeId))?.name;
 
@@ -357,12 +319,6 @@ export default function PublishHazardPanel({
     setMethod(key);
   }
 
-  const cordonOffered = CORDON_TYPES.includes(typeName);
-  const cordonWidth = cordonM === '' ? CORDON_SUGGESTED[severity] : Number(cordonM);
-  const cordonBad = cordonOffered && cordonOn
-    && !(Number.isInteger(cordonWidth) && cordonWidth >= CORDON_MIN && cordonWidth <= CORDON_MAX);
-  const cordon = cordonOffered && cordonOn && !cordonBad ? cordonWidth : null;
-
   const typical = TYPICAL_SIZE[typeName];
   const corners = points.length;
   const closed = corners >= MIN_CORNERS;
@@ -376,7 +332,7 @@ export default function PublishHazardPanel({
   // corner looks "outside", and saying so would be noise.
   const spills = boundariesReady && outsideCorners > 0;
   const allOutside = boundariesReady && closed && outsideCorners === corners && !barangay;
-  const blocked = busy || !hazardTypeId || !closed || allOutside || cordonBad;
+  const blocked = busy || !hazardTypeId || !closed || allOutside;
 
   // A second look at the outline against the susceptibility map: drawn on
   // safe ground, or stopping short of risky ground. Advice only.
@@ -400,11 +356,6 @@ export default function PublishHazardPanel({
       severity,
       description: description.trim(),
       geometry: pointsToPolygon(points),
-      // The drawn area stays the hazard itself; the cordon goes alongside
-      // it as a width, never merged into the polygon.
-      cordon_m: cordon,
-      // Links the validated report to the zone published from it
-      ...(prefill?.reportId ? { incident_report: prefill.reportId } : {}),
     };
   }
 
@@ -450,32 +401,22 @@ export default function PublishHazardPanel({
     }
   }
 
-  // Show the map what will really be saved, cut at the city boundary. With
-  // a cordon, the ring goes first so the hazard draws on top of it. The ring
-  // is hatched as residents will see it; a server without cordon_ring sends
-  // only the whole cordon, which gets just its edge.
+  // Show the map what will really be saved, cut at the city boundary
   useEffect(() => {
     if (!preview?.geometry) {
       onPreviewShape?.(null);
       return;
     }
-    const features = [];
-    const ring = preview.cordon_ring || preview.cordon_geometry;
-    if (ring) {
-      features.push({
-        type: 'Feature',
-        properties: { part: 'cordon', ring: Boolean(preview.cordon_ring) },
-        geometry: ring,
-      });
-    }
-    features.push({ type: 'Feature', properties: { part: 'hazard' }, geometry: preview.geometry });
-    onPreviewShape?.({ type: 'FeatureCollection', features });
+    onPreviewShape?.({
+      type: 'FeatureCollection',
+      features: [{ type: 'Feature', properties: { part: 'hazard' }, geometry: preview.geometry }],
+    });
   }, [preview]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Anything changed after the check makes the summary stale
   useEffect(() => {
     setPreview(null);
-  }, [points, hazardTypeId, severity, description, cordon]);
+  }, [points, hazardTypeId, severity, description]);
 
   const sev = SEVERITY[severity];
 
@@ -622,53 +563,8 @@ export default function PublishHazardPanel({
             </button>
           </div>
           {typical && <small className="pub-size-hint">Typical size: {typical}.</small>}
-
-          {/* Outline only what is burning. The ring people must leave is
-              set here as a width, so the map can show the two apart. */}
-          {cordonOffered && (
-            <div className="pub-cordon">
-              <label className="pub-cordon-toggle">
-                <input
-                  type="checkbox"
-                  checked={cordonOn}
-                  onChange={(e) => setCordonOn(e.target.checked)}
-                  disabled={busy}
-                />
-                Add a cordon around it
-              </label>
-              {cordonOn && (
-                <label className="pub-cordon-width" htmlFor="pub-cordon-m">
-                  <input
-                    id="pub-cordon-m"
-                    type="number"
-                    inputMode="numeric"
-                    min={CORDON_MIN}
-                    max={CORDON_MAX}
-                    step={5}
-                    value={cordonM === '' ? CORDON_SUGGESTED[severity] : cordonM}
-                    onChange={(e) => setCordonM(e.target.value)}
-                    disabled={busy}
-                    aria-invalid={cordonBad || undefined}
-                  />
-                  m wide
-                </label>
-              )}
-              <small className={`pub-size-hint ${cordonBad ? 'pub-warn' : ''}`}>
-                {cordonBad
-                  ? `Enter a whole number from ${CORDON_MIN} to ${CORDON_MAX} m.`
-                  : cordonOn
-                    ? 'Outline only the burning area. Barangays the cordon reaches are alerted too.'
-                    : 'Without a cordon, only the outlined area is alerted.'}
-              </small>
-            </div>
-          )}
         </div>
 
-        {prefill?.reportId && (
-          <p className="pub-where" style={{ marginBottom: 6 }}>
-            From a validated incident report. Its type and description are filled in.
-          </p>
-        )}
         <p className="pub-where">
           {barangay && <>Mostly in <strong>{barangay.name}</strong>. </>}
           {allOutside && (

@@ -1,9 +1,11 @@
 """
 GET/POST /api/reports/incidents/<id>/decide/: the DRRMO's decision on a
-fire report. Approving it makes it a live fire on the map, a pin at each of
-its puroks; attaching joins it to a fire already live nearby; rejecting it
-says why. The rules are in apps/reports/decide.py; this does the lookups,
-the alerts and the one transaction.
+report, the dashboard's "Validate and push". Approving it makes it a live
+hazard on the map, a pin at each of its puroks; attaching joins it to a
+live one of its type nearby; rejecting it says why. GET is the check shown
+first: the level, who it would alert, and what is live nearby. The rules
+are in apps/reports/decide.py; this does the lookups, the alerts and the
+one transaction.
 """
 from django.db import transaction
 from django.utils import timezone
@@ -13,8 +15,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.hazards.alerts import (
-    affected_barangays, approval_due_at, approvers_for, issue_alert, needs_second_approval,
-    notify, request_raise, type_name, where_text,
+    affected_barangays, alert_recipients, approval_due_at, approvers_for, issue_alert,
+    needs_second_approval, notify, request_raise, type_name, where_text,
 )
 from apps.hazards.models import HazardZone
 from apps.hazards.serializers import HazardZoneSerializer
@@ -37,8 +39,12 @@ def _history(report):
     return rows, highest(r['level'] for r in rows)
 
 
-def _live_fires_near(report, pins):
-    # Sample fires (seed_fake_hazards) are never offered: a real report
+def _noun(report):
+    return (getattr(report.hazard_type, 'name', '') or 'hazard').lower()
+
+
+def _live_near(report, pins):
+    # Sample hazards (seed_fake_hazards) are never offered: a real report
     # joined to one would vanish with it
     zones = (HazardZone.objects
              .filter(status__in=LIVE, hazard_type=report.hazard_type, is_sample=False)
@@ -76,12 +82,17 @@ class IncidentReportDecideView(APIView):
         if report is None:
             return Response({'error': 'Report not found'}, status=status.HTTP_404_NOT_FOUND)
         rows, level = _history(report)
+        pins = report_pins(report)
+        # Who approving it would alert, routed as the real alert will be
+        barangays = affected_barangays(fire_geometry(pins)) if pins else []
         return Response({
             'error': decision_error(report),
             'puroks': rows,
             'level': level,
             'thresholds': thresholds(),
-            'nearby': _live_fires_near(report, report_pins(report)),
+            'affected_barangays': [b.name for b in barangays],
+            'recipients': alert_recipients(request.user, barangays).count() if barangays else 0,
+            'nearby': _live_near(report, pins),
         })
 
     def post(self, request, pk):
@@ -116,11 +127,12 @@ class IncidentReportDecideView(APIView):
         report.reviewed_by = request.user
         report.reviewed_at = timezone.now()
         report.save(update_fields=['status', 'review_note', 'reviewed_by', 'reviewed_at'])
-        log_event(request, 'REJECT_FIRE_REPORT', 'incident_report', report.id, f'Fire report rejected: {note}')
+        log_event(request, 'REJECT_FIRE_REPORT', 'incident_report', report.id,
+                  f'{_noun(report).capitalize()} report rejected: {note}')
         return Response({'report': IncidentReportSerializer(report, context={'request': request}).data})
 
     def _approve(self, request, report, note):
-        # The level is the puroks' fire history; the officer doesn't choose one
+        # The level is the puroks' history of this type; the officer doesn't choose one
         _, level = _history(report)
         pins = report_pins(report)
         if not pins:
@@ -146,13 +158,14 @@ class IncidentReportDecideView(APIView):
                 f'{timezone.localtime(due):%I:%M %p} if no officer answers.',
                 zone,
             )
-            details = f'Fire report approved as Red for {where_text(barangays)}; held for a second approval.'
+            details = (f'{_noun(report).capitalize()} report approved as Red for {where_text(barangays)}; '
+                       f'held for a second approval.')
         else:
             if needs_second_approval(level):
                 zone.auto_released = True  # Extreme, but nobody else to approve it
                 zone.save(update_fields=['auto_released'])
             alert, barangays, recipients = issue_alert(zone, user)
-            details = (f'Fire report approved as {level} for {where_text(barangays)}. '
+            details = (f'{_noun(report).capitalize()} report approved as {level} for {where_text(barangays)}. '
                        f'{len(recipients)} recipient(s) notified.')
         log_event(request, 'APPROVE_FIRE_REPORT', 'hazard_zone', zone.id, f'{details} Report {report.id}.')
         return Response({
@@ -166,7 +179,7 @@ class IncidentReportDecideView(APIView):
                 .filter(pk=request.data.get('zone'), status__in=LIVE, hazard_type=report.hazard_type,
                         is_sample=False).first())
         if zone is None:
-            return Response({'error': 'That fire is no longer active.'}, status=status.HTTP_409_CONFLICT)
+            return Response({'error': f'That {_noun(report)} is no longer active.'}, status=status.HTTP_409_CONFLICT)
         pins = report_pins(report)
         if not pins:
             return Response({'error': 'This report has no purok or location to put on the map.'},
@@ -182,13 +195,13 @@ class IncidentReportDecideView(APIView):
         _link(report, zone, user, note)
 
         added = [b for b in affected_barangays(zone) if b.id not in before]
-        # A fire still waiting for a second officer alerts nobody yet: when
+        # A hazard still waiting for a second officer alerts nobody yet: when
         # it goes out, issue_alert reaches the added barangays with the rest
         if added and zone.status == 'Active':
             notify(
                 User.objects.filter(is_active=True, assigned_barangay__in=added).exclude(id=user.id),
                 f'{type_name(zone)} alert ({zone.severity}) now covers {where_text(added)}: '
-                f'another report joined the fire. Tap to see it and what to do.',
+                f'another report joined the {_noun(report)}. Tap to see it and what to do.',
                 zone,
             )
 
@@ -217,7 +230,7 @@ class IncidentReportDecideView(APIView):
                 raised = f' Raised to {history_level}.'
 
         log_event(request, 'ATTACH_FIRE_REPORT', 'hazard_zone', zone.id,
-                  f'Report {report.id} joined the fire'
+                  f'Report {report.id} joined the {_noun(report)}'
                   + (f'; newly alerted: {where_text(added)}.' if added else '.') + raised)
         return Response({
             'report': IncidentReportSerializer(report, context={'request': request}).data,

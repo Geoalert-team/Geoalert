@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { historyApi } from '../../api/historyApi';
+import ForecastPeriodPicker from './ForecastPeriodPicker';
 import {
-  FORECAST_DISCLAIMER, MONTHS, SEVERITY_WORD, likelihoodInfo, nextMonth, yearsText,
+  FORECAST_DISCLAIMER, SEVERITY_WORD, defaultPeriod, likelihoodInfo, periodIn, periodLabel, periodMonth,
+  periodParams, periodPastHeader, periodYearsText, withMonth,
 } from './forecastLevels';
 import './forecast.css';
 
 /**
- * Which barangays a month has tended to hit, and with what. Pick a month;
- * pick a barangay row to see its whole year.
+ * Which barangays a month, a month in a given year, or the week around a
+ * date has tended to hit, and with what. Pick the period; pick a barangay
+ * row to see its whole year. A period that has started also shows what
+ * actually happened in it.
  *
  * Rule-based seasonal statistics from the archive (backend
  * apps/history/forecast.py), not AI and not a weather forecast.
@@ -23,7 +27,7 @@ import './forecast.css';
  *                   asked; the dashboard card labels them instead)
  */
 export default function BarangayLikelihood({ compact = false, limit = 5, hazard = '', excludeSamples = false }) {
-  const [month, setMonth] = useState(nextMonth());
+  const [period, setPeriod] = useState(defaultPeriod);
   const [barangay, setBarangay] = useState(null); // { id, name } for the profile
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -32,7 +36,7 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
     let cancelled = false;
     setError('');
     historyApi.forecast({
-      month,
+      ...periodParams(period),
       ...(hazard ? { hazard_type_name: hazard } : {}),
       ...(barangay ? { barangay: barangay.id } : {}),
       ...(excludeSamples ? { exclude_samples: 'true' } : {}),
@@ -40,35 +44,42 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
       .then((d) => { if (!cancelled) setData(d); })
       .catch(() => { if (!cancelled) setError('Could not load the seasonal likelihood.'); });
     return () => { cancelled = true; };
-  }, [month, hazard, barangay, excludeSamples]);
+  }, [period, hazard, barangay, excludeSamples]);
 
-  const monthName = MONTHS[month - 1];
   const rows = data?.results || [];
   const shown = compact ? rows.slice(0, limit) : rows;
+  // What actually happened, once a period with a year has started
+  const outcome = data?.outcome;
 
   return (
     <div className="fc">
       <div className="fc-controls">
-        <label className="fc-field">
-          Month
-          <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-            {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
-          </select>
-        </label>
+        <ForecastPeriodPicker value={period} onChange={setPeriod} />
       </div>
 
       {error && <p className="db-error" role="alert">{error}</p>}
 
+      {data?.year != null && (
+        <p className="fc-note">
+          {data.years.length
+            ? `For ${periodLabel(period)}, from ${periodIn(period)} in ${data.years[0]}–${data.years[data.years.length - 1]}.`
+            : `Nothing on record before ${periodLabel(period)} to estimate from.`}
+          {outcome && (outcome.complete
+            ? ` It is over: ${outcome.events} event${outcome.events === 1 ? '' : 's'} happened.`
+            : ` It has started: ${outcome.events} event${outcome.events === 1 ? '' : 's'} so far.`)}
+        </p>
+      )}
+
       {data && data.limited && (
         <p className="fc-note">
-          Only {data.years.length} past {monthName}{data.years.length === 1 ? '' : 's'} on record, so
+          Only {data.years.length} past year{data.years.length === 1 ? '' : 's'} on record for {periodIn(period)}, so
           these levels are rough.
         </p>
       )}
 
       {data && !rows.length && (
         <p className="db-empty">
-          No hazard has been recorded in {monthName} in the years on record.
+          No hazard has been recorded in {periodIn(period)} in the years on record.
         </p>
       )}
 
@@ -81,7 +92,8 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
               <th scope="col">Barangay</th>
               <th scope="col">Hazard</th>
               <th scope="col">Likelihood</th>
-              <th scope="col">Past {monthName}s</th>
+              <th scope="col">{periodPastHeader(period)}</th>
+              {outcome && <th scope="col">{outcome.complete ? 'What happened' : 'So far'}</th>}
               {!compact && <th scope="col">Usual severity</th>}
             </tr>
           </thead>
@@ -113,7 +125,8 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
                       {info.label}
                     </span>
                   </td>
-                  <td>{yearsText(r, monthName)}</td>
+                  <td>{periodYearsText(r, period)}</td>
+                  {outcome && <td>{r.actual ? `${r.actual} event${r.actual === 1 ? '' : 's'}` : 'None'}</td>}
                   {!compact && <td>{SEVERITY_WORD[r.typical_severity] || '-'}</td>}
                 </tr>
               );
@@ -147,10 +160,10 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
               return (
                 <li
                   key={m.month}
-                  className={m.month === month ? 'is-current' : undefined}
+                  className={m.month === periodMonth(period) ? 'is-current' : undefined}
                   title={`${m.month_name}: ${info.label} (${m.years_hit} of ${m.years_considered} years)`}
                 >
-                  <button type="button" onClick={() => setMonth(m.month)} aria-label={`${m.month_name}, ${info.label}`}>
+                  <button type="button" onClick={() => setPeriod((p) => withMonth(p, m.month))} aria-label={`${m.month_name}, ${info.label}`}>
                     <span className="fc-bar-wrap">
                       <span className="fc-bar" style={{ height: `${height}%`, background: info.color }} />
                     </span>
@@ -177,7 +190,9 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
           <summary>How this is calculated</summary>
           <p>
             For each barangay and hazard type, the system looks at the same month in each past year
-            on the record (up to ten years) and counts the years that had at least one event. A year
+            on the record (up to ten years), or for an exact date the week around it (three days
+            either side), and counts the years that had at least one event. With a year picked, only
+            the years before it count, so a past period can be checked against what happened. A year
             counts half as much for every three years back, so recent seasons matter more. At least
             60% of years, or two or more events expected in the month, is High; at least 30% is
             Moderate; anything less that still happened is Low. It is plain counting, with no AI or

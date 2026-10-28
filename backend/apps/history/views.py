@@ -1,5 +1,4 @@
-import math
-from datetime import timedelta
+from datetime import date, timedelta
 
 from django.utils import timezone
 from rest_framework.views import APIView
@@ -9,7 +8,7 @@ from django.db.models import Count
 from django.db.models.functions import TruncMonth
 
 from apps.history.models import HistoricalRecord
-from apps.history.serializers import HistoricalRecordDetailSerializer, HistoricalRecordSerializer
+from apps.history.serializers import STAFF_ONLY_FIELDS, HistoricalRecordDetailSerializer, HistoricalRecordSerializer
 from utils.sampling import TRUTHY
 
 
@@ -20,7 +19,10 @@ class HistoricalRecordListView(APIView):
     Public access — no login required.
 
     Filters:
-      ?barangay=1
+      ?barangay=1      filed under it, or linked to one of its puroks
+                       (apps/history/area.py), each record once
+      ?purok=12  or  ?purok=none   with ?barangay: one purok's records, or
+                       the barangay's records that name no purok
       ?hazard_type=1   or   ?hazard_type_name=Flood
       ?severity=Red
       ?date_from=2026-01-01&date_to=2026-12-31
@@ -38,8 +40,21 @@ class HistoricalRecordListView(APIView):
         records = HistoricalRecord.objects.select_related('hazard_type', 'barangay')
 
         barangay = request.query_params.get('barangay')
+        purok = (request.query_params.get('purok') or '').strip()
+        if purok and not barangay:
+            return Response({'error': 'purok needs a barangay.'}, status=400)
+        if purok and purok != 'none':
+            try:
+                purok = int(purok)
+            except ValueError:
+                return Response({'error': 'purok must be an id or "none".'}, status=400)
         if barangay:
-            records = records.filter(barangay_id=barangay)
+            from apps.history.area import barangay_records
+            records = records.filter(id__in=barangay_records(barangay))
+        if purok == 'none':
+            records = records.filter(barangay_id=barangay, puroks__isnull=True)
+        elif purok:
+            records = records.filter(puroks__id=purok)
 
         severity = request.query_params.get('severity')
         if severity:
@@ -96,11 +111,14 @@ class HistoricalRecordListView(APIView):
 class HistoricalRecordDetailView(APIView):
     """
     GET /api/history/<id>/
-    Returns a single historical record. Public access.
+    Returns a single historical record. Public access, opened from the
+    map's past hazards; DRRMO staff also get STAFF_ONLY_FIELDS.
     """
     permission_classes = [AllowAny]
 
     def get(self, request, pk):
+        from utils.permissions import IsDRRMOOfficer
+
         try:
             record = (HistoricalRecord.objects
                       .select_related('barangay', 'hazard_type')
@@ -112,7 +130,11 @@ class HistoricalRecordDetailView(APIView):
                 status=404
             )
         # In full: the BFP figures, the puroks and the exact location too
-        return Response(HistoricalRecordDetailSerializer(record).data)
+        data = HistoricalRecordDetailSerializer(record).data
+        if not IsDRRMOOfficer().has_permission(request, self):
+            for name in STAFF_ONLY_FIELDS:
+                data.pop(name, None)
+        return Response(data)
 
 
 class HistoricalTrendsView(APIView):
@@ -181,57 +203,82 @@ class HistoricalTrendsView(APIView):
             'by_month':       by_month,
         })
 
-class HistoricalHeatView(APIView):
-    """
-    GET /api/history/heat/?years=5
-    Where past hazards happened, for the heat shading on the public map.
-    Public access.
+def _type_names(request):
+    """?types=Flood,Fire as a list of names; empty means every type."""
+    return [t.strip() for t in (request.query_params.get('types') or '').split(',') if t.strip()]
 
-    Each record becomes one spot: the middle of its archived hazard zone and
-    that zone's radius, or the middle of its barangay when no zone was kept.
-    Records with neither are skipped, since there is nowhere to put them.
+
+class PurokLevelsView(APIView):
+    """
+    GET /api/history/purok-levels/?types=Flood,Fire
+    Each purok's level from how often it was hit, per hazard type, for the
+    map's purok colours. Public access.
+
+      {"thresholds": {"years", "moderate", "extreme"},
+       "results": [{"purok": id, "type": "Fire", "count": 3, "level": "Orange"}]}
+
+    Puroks with no past event are left out. Without ?types, every type;
+    unknown names match nothing.
     """
     permission_classes = [AllowAny]
 
-    FALLBACK_RADIUS_M = 150  # barangay-only records: a modest patch at its centre
+    def get(self, request):
+        from apps.history.purok_levels import level_for, purok_counts, thresholds
+
+        t = thresholds()
+        since = timezone.now() - timedelta(days=365 * t['years'])
+        counts = purok_counts(since, _type_names(request))
+        results = [
+            {'purok': purok, 'type': kind, 'count': n, 'level': level_for(n, t)}
+            for (purok, kind), n in sorted(counts.items())
+        ]
+        return Response({'thresholds': t, 'results': results})
+
+
+class AreaHistoryView(APIView):
+    """
+    GET /api/history/area/?barangay=7[&purok=12|none][&types=Fire][&period=all]
+    One barangay's past hazards, or one of its puroks', for the map's
+    barangay panel and the History page's Purok filter. Public access;
+    DRRMO staff also get each event's BFP address and damage.
+
+    In the history period (Settings) unless ?period=all. With no purok:
+    the total, each purok with history (count, level), how many records
+    name no purok, and the events. With purok=<id>: that purok only; with
+    purok=none: the barangay's records that name no purok.
+    See apps/history/area.py.
+    """
+    permission_classes = [AllowAny]
 
     def get(self, request):
+        from apps.barangays.models import Barangay, Purok
+        from apps.history.area import area_history
+        from apps.history.purok_levels import thresholds
+        from utils.permissions import IsDRRMOOfficer
+
         try:
-            years = min(max(int(request.query_params.get('years', 5)), 1), 20)
-        except (TypeError, ValueError):
-            years = 5
-        since = timezone.now() - timedelta(days=365 * years)
+            barangay = Barangay.objects.get(pk=int(request.query_params.get('barangay', '')))
+        except ValueError:
+            return Response({'error': 'barangay must be an id.'}, status=400)
+        except Barangay.DoesNotExist:
+            return Response({'error': 'Barangay not found'}, status=404)
 
-        records = (
-            HistoricalRecord.objects
-            .filter(occurred_at__gte=since)
-            .select_related('hazard_type', 'hazard_zone', 'barangay')
-        )
+        purok = (request.query_params.get('purok') or '').strip() or None
+        if purok is not None and purok != 'none':
+            try:
+                purok_id = int(purok)
+            except ValueError:
+                return Response({'error': 'purok must be an id or "none".'}, status=400)
+            purok = Purok.objects.filter(pk=purok_id, barangay=barangay).first()
+            if purok is None:
+                return Response({'error': f'That purok is not in Barangay {barangay.name}.'}, status=400)
 
-        spots = []
-        for r in records:
-            if r.hazard_zone and r.hazard_zone.geometry:
-                geom = r.hazard_zone.geometry
-                point = geom.point_on_surface
-                xmin, ymin, xmax, ymax = geom.extent
-                width = (xmax - xmin) * 111320 * math.cos(math.radians(point.y))
-                height = (ymax - ymin) * 111320
-                radius = max(10, min(width, height) / 2)
-            elif r.barangay and r.barangay.boundary:
-                point = r.barangay.boundary.point_on_surface
-                radius = self.FALLBACK_RADIUS_M
-            else:
-                continue
-            spots.append({
-                'type': r.hazard_type.name if r.hazard_type else None,
-                'severity': r.severity_level,
-                'lat': round(point.y, 6),
-                'lng': round(point.x, 6),
-                'radius': round(radius),
-                'occurred_at': r.occurred_at,
-            })
+        since = None
+        if request.query_params.get('period') != 'all':
+            since = timezone.now() - timedelta(days=365 * thresholds()['years'])
 
-        return Response({'years': years, 'spots': spots})
+        staff = IsDRRMOOfficer().has_permission(request, self)
+        return Response(area_history(barangay, purok, _type_names(request), since, staff))
 
 
 class HistoricalForecastView(APIView):
@@ -244,6 +291,10 @@ class HistoricalForecastView(APIView):
     that month was hit in past years, recent years counting more.
 
       ?month=1-12            defaults to next month
+      ?year=2024             with month: that month in that year, read from
+                             the years before it; once it has started, each
+                             row also has `actual`, what happened in it
+      ?date=2027-11-15       instead of month: the week around that date
       ?hazard_type_name=Flood
       ?barangay=7            also returns that barangay's 12-month profile
       ?years=10              how many past years to read (1-10)
@@ -261,12 +312,29 @@ class HistoricalForecastView(APIView):
         )
 
         now = timezone.localtime()
-        try:
-            month = int(request.query_params.get('month') or (now.month % 12 + 1))
-            if not 1 <= month <= 12:
-                raise ValueError
-        except (TypeError, ValueError):
-            return Response({'error': 'month must be a number from 1 to 12.'}, status=400)
+        day = year = None
+        if request.query_params.get('date'):
+            try:
+                on = date.fromisoformat(request.query_params['date'])
+            except ValueError:
+                return Response({'error': 'date must be a real date, like 2027-11-15.'}, status=400)
+            month, day, year = on.month, on.day, on.year
+        else:
+            try:
+                month = int(request.query_params.get('month') or (now.month % 12 + 1))
+                if not 1 <= month <= 12:
+                    raise ValueError
+            except (TypeError, ValueError):
+                return Response({'error': 'month must be a number from 1 to 12.'}, status=400)
+            if request.query_params.get('year'):
+                try:
+                    year = int(request.query_params['year'])
+                    if not 1900 <= year <= 2100:
+                        raise ValueError
+                except ValueError:
+                    return Response({'error': 'year must be a year from 1900 to 2100.'}, status=400)
+        if year is not None and not 1900 <= year <= 2100:
+            return Response({'error': 'date must be in a year from 1900 to 2100.'}, status=400)
         try:
             years = min(max(int(request.query_params.get('years', MAX_YEARS)), 1), MAX_YEARS)
         except (TypeError, ValueError):
@@ -300,14 +368,15 @@ class HistoricalForecastView(APIView):
         )
         picked = [e for e in events if not hazard or (e['hazard'] or '').lower() == hazard.lower()]
 
-        result = seasonal_forecast(picked, month, now, max_years=years)
-        result['profile'] = seasonal_profile(events, now, barangay_id=barangay, hazard=hazard, max_years=years)
+        result = seasonal_forecast(picked, month, now, max_years=years, day=day, year=year)
+        result['profile'] = seasonal_profile(events, now, barangay_id=barangay, hazard=hazard, max_years=years,
+                                             year=year)
         result['profile_barangay'] = barangay
         result['hazard_type'] = hazard
         result['basis'] = {
             'records': len(picked),
             'sample_records': sum(1 for e in picked if e['is_sample']),
-            'method': 'Share of past years with an event in this month; '
+            'method': f'Share of past years with an event in {"the week around this date" if day else "this month"}; '
                       'a year counts half as much every 3 years back. Rule-based, no AI.',
         }
         return Response(result)
