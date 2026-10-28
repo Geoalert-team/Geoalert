@@ -97,7 +97,6 @@ def apply_raise(zone, approver=None, auto=False):
     """
     requested_by = zone.pending_by
     zone.severity = 'Red'
-    zone.reset_verification()  # the barangays answered for a lower severity
     zone.pending_severity = ''
     zone.pending_by = None
     zone.pending_at = None

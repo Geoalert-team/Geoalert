@@ -218,14 +218,12 @@ class IncidentReportDecideView(APIView):
                 # Nobody else to approve: raise now and send the Extreme
                 # alert, as the zone PATCH does in the same case
                 zone.severity = 'Red'
-                zone.reset_verification()
                 zone.auto_released = True
                 zone.save()
                 issue_alert(zone, user, suffix=' Raised to Extreme.')
                 raised = ' Raised to Red (no second officer).'
             else:
                 zone.severity = history_level
-                zone.reset_verification()
                 zone.save()
                 raised = f' Raised to {history_level}.'
 

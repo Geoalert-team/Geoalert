@@ -57,18 +57,18 @@ function StatusTag({ status }) {
   return <span className={`adm-action adm-action-${tone}`}>{status}</span>;
 }
 
-function ReviewDialog({ report, decision, onCancel, onDone }) {
+// A report is validated only by pushing it (PushDialog); this is its Reject
+function RejectDialog({ report, onCancel, onDone }) {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const validating = decision === 'Validated';
 
   async function submit() {
     setBusy(true);
     setError('');
     try {
-      await reportsApi.review(report.id, { status: decision, review_note: note.trim() });
-      onDone(decision);
+      await reportsApi.review(report.id, { status: 'Rejected', review_note: note.trim() });
+      onDone();
     } catch (err) {
       setError(fieldErrors(err).form || 'The review could not be saved. Please try again.');
       setBusy(false);
@@ -77,7 +77,7 @@ function ReviewDialog({ report, decision, onCancel, onDone }) {
 
   return (
     <Modal
-      title={validating ? 'Validate this report?' : 'Reject this report?'}
+      title="Reject this report?"
       subtitle={`${typeName(report)}${barangayName(report) ? ` · ${barangayName(report)}` : ''} · reported by ${reporterName(report)}`}
       onClose={busy ? () => {} : onCancel}
       width={520}
@@ -85,35 +85,28 @@ function ReviewDialog({ report, decision, onCancel, onDone }) {
       footer={
         <>
           <button type="button" className="adm-btn adm-btn-ghost" onClick={onCancel} disabled={busy}>Cancel</button>
-          <button
-            type="button"
-            className={`adm-btn ${validating ? 'adm-btn-primary' : 'adm-btn-danger'}`}
-            onClick={submit}
-            disabled={busy}
-          >
-            <Icon name={validating ? 'check' : 'x'} size={16} strokeWidth={2.5} />
-            {busy ? 'Saving…' : validating ? 'Validate report' : 'Reject report'}
+          <button type="button" className="adm-btn adm-btn-danger" onClick={submit} disabled={busy}>
+            <Icon name="x" size={16} strokeWidth={2.5} />
+            {busy ? 'Saving…' : 'Reject report'}
           </button>
         </>
       }
     >
       <div className="drm-review">
         <p className="drm-review-text">
-          {validating
-            ? 'Validating confirms the incident happened as reported. It moves to your validated reports and does not go on the map; use Validate and push for that.'
-            : 'Rejecting marks the report as not accurate or not actionable. The reporter can see your reason.'}
+          Rejecting marks the report as not accurate or not actionable. The reporter can see your reason.
         </p>
         <div className="adm-field">
           <label htmlFor="drm-review-note">
-            {validating ? 'Note' : 'Reason for rejecting'}
-            <span className="adm-optional">{validating ? 'Optional' : 'Recommended'}</span>
+            Reason for rejecting
+            <span className="adm-optional">Recommended</span>
           </label>
           <textarea
             id="drm-review-note"
             rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder={validating ? 'e.g. Confirmed with the barangay captain by phone.' : 'e.g. Duplicate of an earlier report from the same barangay.'}
+            placeholder="e.g. Duplicate of an earlier report from the same barangay."
             autoFocus
           />
         </div>
@@ -317,7 +310,7 @@ function PushDialog({ report, purokGeo, onCancel, onDone }) {
   );
 }
 
-function ReportDetail({ report, purokGeo, onClose, onReview, onPush }) {
+function ReportDetail({ report, purokGeo, onClose, onReject, onPush }) {
   const purokShapes = useMemo(() => reportPurokShapes(purokGeo, report), [purokGeo, report]);
   const place = [report.barangay_details?.name, report.barangay_details?.municipality].filter(Boolean).join(', ');
   return (
@@ -331,15 +324,10 @@ function ReportDetail({ report, purokGeo, onClose, onReview, onPush }) {
         report.status === 'Pending' ? (
           <>
             <button type="button" className="adm-btn adm-btn-ghost" onClick={onClose}>Close</button>
-            <button type="button" className="adm-btn adm-btn-ghost drm-btn-reject" onClick={() => onReview(report, 'Rejected')}>
+            <button type="button" className="adm-btn adm-btn-ghost drm-btn-reject" onClick={() => onReject(report)}>
               <Icon name="x" size={16} strokeWidth={2.5} /> Reject
             </button>
-            {/* A fire is only ever validated by pushing it */}
-            {!isFireReport(report) && (
-              <button type="button" className="adm-btn adm-btn-ghost" onClick={() => onReview(report, 'Validated')}>
-                <Icon name="check" size={16} strokeWidth={2.5} /> Validate
-              </button>
-            )}
+            {/* Every report is validated by pushing it */}
             <button type="button" className="adm-btn adm-btn-primary" onClick={() => onPush(report)}>
               <Icon name="check" size={16} strokeWidth={2.5} /> Validate and push
             </button>
@@ -412,7 +400,7 @@ function ReportDetail({ report, purokGeo, onClose, onReview, onPush }) {
   );
 }
 
-function ReportRow({ report, onOpen, onReview, onPush }) {
+function ReportRow({ report, onOpen, onReject, onPush }) {
   const type = typeName(report);
   const brgy = barangayName(report);
   return (
@@ -445,14 +433,9 @@ function ReportRow({ report, onOpen, onReview, onPush }) {
         </button>
         {report.status === 'Pending' && (
           <>
-            <button type="button" className="adm-btn adm-btn-ghost adm-btn-sm drm-btn-reject" onClick={() => onReview(report, 'Rejected')}>
+            <button type="button" className="adm-btn adm-btn-ghost adm-btn-sm drm-btn-reject" onClick={() => onReject(report)}>
               <Icon name="x" size={15} strokeWidth={2.5} /> Reject
             </button>
-            {!isFireReport(report) && (
-              <button type="button" className="adm-btn adm-btn-ghost adm-btn-sm" onClick={() => onReview(report, 'Validated')}>
-                <Icon name="check" size={15} strokeWidth={2.5} /> Validate
-              </button>
-            )}
             <button type="button" className="adm-btn adm-btn-primary adm-btn-sm" onClick={() => onPush(report)}>
               <Icon name="check" size={15} strokeWidth={2.5} /> Validate and push
             </button>
@@ -479,7 +462,7 @@ export default function DRRMODashboard() {
   const [page, setPage] = useState(1);
 
   const [selected, setSelected] = useState(null); // report in the full view
-  const [reviewing, setReviewing] = useState(null); // { report, decision }
+  const [rejecting, setRejecting] = useState(null); // a report in the Reject dialog
   const [deciding, setDeciding] = useState(null);   // a report in the "Validate and push" check
   // Purok outlines, so a report's map shows the puroks it names. Loaded
   // when a report is first opened; a failed load leaves the pin alone and
@@ -570,9 +553,9 @@ export default function DRRMODashboard() {
   // A fire report is decided in one step that also puts it on the map, so
   // its Reject goes through the push check too (the server refuses the plain
   // review for fires)
-  function openReview(report, decision) {
+  function openReject(report) {
     if (isFireReport(report) && canPush(report)) setDeciding(report);
-    else setReviewing({ report, decision });
+    else setRejecting(report);
   }
 
   function decideDone(message) {
@@ -582,14 +565,14 @@ export default function DRRMODashboard() {
     load();
   }
 
-  function reviewDone(decision) {
-    const { report } = reviewing;
-    setReviewing(null);
+  function rejectDone() {
+    const report = rejecting;
+    setRejecting(null);
     setSelected(null);
     setToast({
       id: Date.now(),
       tone: 'good',
-      message: `${typeName(report)} report${barangayName(report) ? ` from ${barangayName(report)}` : ''} ${decision === 'Validated' ? 'validated' : 'rejected'}.`,
+      message: `${typeName(report)} report${barangayName(report) ? ` from ${barangayName(report)}` : ''} rejected.`,
     });
     load();
   }
@@ -754,7 +737,7 @@ export default function DRRMODashboard() {
             <>
               <ul className="drm-list">
                 {pageReports.map((r) => (
-                  <ReportRow key={r.id} report={r} onOpen={setSelected} onReview={openReview} onPush={setDeciding} />
+                  <ReportRow key={r.id} report={r} onOpen={setSelected} onReject={openReject} onPush={setDeciding} />
                 ))}
               </ul>
               {pages > 1 && (
@@ -773,21 +756,20 @@ export default function DRRMODashboard() {
         </section>
       </div>
 
-      {selected && !reviewing && !deciding && (
+      {selected && !rejecting && !deciding && (
         <ReportDetail
           report={selected}
           purokGeo={purokGeo}
           onClose={() => setSelected(null)}
-          onReview={openReview}
+          onReject={openReject}
           onPush={setDeciding}
         />
       )}
-      {reviewing && (
-        <ReviewDialog
-          report={reviewing.report}
-          decision={reviewing.decision}
-          onCancel={() => setReviewing(null)}
-          onDone={reviewDone}
+      {rejecting && (
+        <RejectDialog
+          report={rejecting}
+          onCancel={() => setRejecting(null)}
+          onDone={rejectDone}
         />
       )}
       {deciding && (

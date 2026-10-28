@@ -13,11 +13,12 @@ from django.utils import timezone
 from apps.notifications.models import Notification
 from apps.accounts.models import User
 from apps.barangays.models import Barangay
+from apps.history.flood_landslide import close_fields as event_close_fields
 from apps.history.models import HistoricalRecord
 
 from apps.hazards.geometry import main_barangay, overlap_shares, overlapping_puroks
 from apps.reports.decide import zone_puroks
-from apps.hazards.models import HazardType, HazardZone, HazardAlert, HazardVerification
+from apps.hazards.models import HazardType, HazardZone, HazardAlert
 from apps.hazards.serializers import (
     clean_zone_geometry,
     HazardZoneGeoSerializer,
@@ -89,26 +90,6 @@ def find_duplicates(geometry, hazard_type):
     ]
     found.sort(key=lambda d: d['overlap'], reverse=True)
     return found
-
-
-def _as_count(value):
-    """
-    Turn whatever the frontend sent for a casualty/displaced count into
-    either a non-negative int or None ("not recorded").
-
-    '' / None / 'n/a' / '-3' all become None rather than 0, because
-    'zero casualties' and 'nobody counted yet' are different facts and
-    the report totals should not treat a blank field as a confirmed zero.
-    """
-    if value is None:
-        return None
-    if isinstance(value, bool):
-        return None
-    try:
-        number = int(str(value).strip())
-    except (TypeError, ValueError):
-        return None
-    return number if number >= 0 else None
 
 
 def link_report(request, zone):
@@ -204,9 +185,9 @@ class HazardZoneListView(APIView):
         zones = (
             HazardZone.objects
             .filter(status='Active')
-            .select_related('hazard_type', 'barangay', 'verified_by', 'approved_by', 'reviewed_by')
-            .prefetch_related('verifications__barangay', 'verifications__answered_by',
-                              'incidentreport_set__puroks')  # a report-made fire's pins
+            .select_related('hazard_type', 'barangay', 'approved_by')
+            # Its reports: the pins at their puroks, and when it started
+            .prefetch_related('incidentreport_set__puroks')
         )
 
         barangay = request.query_params.get('barangay')
@@ -347,13 +328,18 @@ class HazardZoneDetailView(APIView):
     PATCH /api/hazards/<id>/  → Update severity, description, or resolve the hazard
 
     Resolving (status='Resolved') also writes a HistoricalRecord so the
-    event shows up in History and in the hazard summary report. Optional
-    body fields used only when resolving:
-        total_casualties  int or ''   → '' means "not recorded"
-        total_displaced   int or ''
-        summary           text        → stored as the record's description,
-                                        leaving the live zone's own
-                                        description untouched
+    event shows up in History and in the hazard summary report: one row of
+    the flood and landslide log (apps/history/flood_landslide.py
+    close_fields). Body fields used only when resolving:
+        hazard_subcategory  text, from the log's list for the type; required
+                            for a flood or landslide
+        cause               text, the cause / weather system
+        injured, fatalities, families_affected, persons_affected
+                            int or ''  → '' means "not recorded"
+        summary             text  → stored as the record's description,
+                                    leaving the live zone's own
+                                    description untouched
+    A 400 for bad figures is {field: message}.
     """
     permission_classes = [IsAuthenticated, IsDRRMOOfficer]
 
@@ -432,6 +418,15 @@ class HazardZoneDetailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Any other hazard is filed as one row of the flood and landslide
+        # log (columns H-N), checked before anything changes, as a fire's
+        # figures are
+        figures = None
+        if new_status in ('Resolved', 'Archived') and not was_already_resolved:
+            figures, errors = event_close_fields(request.data, zone.hazard_type.name if zone.hazard_type else '')
+            if errors:
+                return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
         valid_statuses = [
             c[0] for c in HazardZone.STATUS_CHOICES if c[0] != 'Retracted'
         ]
@@ -484,11 +479,6 @@ class HazardZoneDetailView(APIView):
         zone.description = request.data.get('description', zone.description)
         touch(zone)  # an officer looked at it: no "still active?" reminder for 24 h
 
-        # A severity or shape change makes every earlier ground answer stale:
-        # the barangays confirmed a different hazard.
-        if zone.severity != old_severity or reshaped:
-            zone.reset_verification()
-
         is_resolving = (
             zone.status in ('Resolved', 'Archived')
             and not was_already_resolved
@@ -535,23 +525,23 @@ class HazardZoneDetailView(APIView):
             log_event(
                 request, 'RESHAPE_HAZARD', 'hazard_zone', zone.id,
                 f'{type_name(zone)} / {zone.severity} reshaped. Now covers {where_text(after)}'
-                + (f'; newly added and notified: {where_text(added)}.' if added else '.')
-                + ' Barangay answers reset.',
+                + (f'; newly added and notified: {where_text(added)}.' if added else '.'),
             )
 
         # Archive to historical records on the transition into Resolved,
         # not on every PATCH that happens to carry status='Resolved'.
         if is_resolving and not HistoricalRecord.objects.filter(hazard_zone=zone).exists():
+            summary = figures.pop('summary')
             record = HistoricalRecord.objects.create(
                 barangay         = zone.barangay,
                 hazard_type      = zone.hazard_type,
                 hazard_zone      = zone,
                 severity_level   = zone.severity,
-                description      = request.data.get('summary') or zone.description or '',
+                description      = summary or zone.description or '',
                 occurred_at      = zone.activated_at or zone.resolved_at or timezone.now(),
-                total_casualties = _as_count(request.data.get('total_casualties')),
-                total_displaced  = _as_count(request.data.get('total_displaced')),
+                total_displaced  = None,  # the log counts families and persons affected
                 is_sample        = zone.is_sample,
+                **figures,
             )
             # It counts once in every purok its reports named, or for a zone
             # drawn on the map every purok its area overlaps, which is what
@@ -742,189 +732,6 @@ class HazardZoneRetractedListView(APIView):
         return Response({
             'count':   total,
             'results': HazardZoneSerializer(zones[:limit], many=True).data,
-        })
-
-
-class HazardZoneVerifyView(APIView):
-    """
-    POST /api/hazards/<id>/verify/
-    Ground confirmation.
-
-        {"status": "Confirmed" | "Disputed", "note": "optional, what they saw"}
-
-    A hazard zone is published from the DRRMO office, often off a forecast or
-    a phoned-in report. This is the people standing in it saying whether it
-    matches what they can see — which is why only Barangay Personnel may
-    answer, and only for a zone that touches their own barangay. An officer
-    confirming the zone they published themselves would mean nothing, so
-    DRRMO and admins can read the answer but not give one.
-
-    A zone that is no longer Active cannot be confirmed: there is nothing
-    left on the ground to look at.
-    """
-    permission_classes = [IsAuthenticated, IsBarangayPersonnel]
-
-    ALLOWED = ('Confirmed', 'Disputed')
-
-    def post(self, request, pk):
-        try:
-            zone = (
-                HazardZone.objects
-                .select_related('hazard_type', 'barangay', 'verified_by')
-                .get(pk=pk)
-            )
-        except HazardZone.DoesNotExist:
-            return Response(
-                {'error': 'Hazard zone not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        new_status = request.data.get('status')
-        if new_status not in self.ALLOWED:
-            return Response(
-                {'error': f'status must be one of {list(self.ALLOWED)}.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if zone.status != 'Active':
-            return Response(
-                {'error': 'This hazard is already closed, so it can no longer be confirmed.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        role = getattr(getattr(request.user, 'role', None), 'name', '')
-        if role != 'Barangay_Personnel':
-            return Response(
-                {'error': 'Only barangay personnel can confirm a hazard on the ground.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        assigned = getattr(request.user, 'assigned_barangay_id', None)
-        if assigned is None:
-            return Response(
-                {'error': 'Your account has no barangay assigned, so there is nothing for you to confirm.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        if assigned not in {b.id for b in affected_barangays(zone)}:
-            return Response(
-                {'error': 'You can only confirm hazards in your own barangay.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        note = (request.data.get('note') or '').strip()
-        with transaction.atomic():
-            previous = (
-                HazardVerification.objects
-                .filter(hazard_zone=zone, barangay_id=assigned)
-                .values_list('status', flat=True)
-                .first()
-            )
-            answer, _ = HazardVerification.objects.update_or_create(
-                hazard_zone=zone,
-                barangay_id=assigned,
-                defaults={
-                    'status': new_status,
-                    'note': note,
-                    'answered_by': request.user,
-                    'answered_at': timezone.now(),
-                },
-            )
-            newly_disputed = new_status == 'Disputed' and previous != 'Disputed'
-            if newly_disputed:
-                # A review answered the earlier disputes, not this one
-                zone.clear_review()
-            zone.refresh_verification_summary()
-            zone.save(update_fields=[
-                'verification_status', 'verified_by', 'verified_at', 'verification_note',
-                'review_note', 'reviewed_by', 'reviewed_at',
-            ])
-
-            if newly_disputed:
-                # Tell the officer who published it, or every officer when
-                # that account is gone, so a wrong alert is looked at now
-                # rather than whenever someone happens to open it.
-                publisher = zone.published_by if zone.published_by and zone.published_by.is_active else None
-                officers = (
-                    [publisher] if publisher
-                    else User.objects.filter(is_active=True, role__name__in=['DRRMO_Officer', 'System_Admin'])
-                )
-                notify(
-                    officers,
-                    f'Disputed: {answer.barangay.name} personnel say the {type_name(zone)} alert '
-                    f'is not there as published'
-                    + (f': "{note}".' if note else '.')
-                    + ' Review it, withdraw it, or reshape it.',
-                    zone,
-                )
-
-        log_event(
-            request, 'VERIFY_HAZARD', 'hazard_zone', zone.id,
-            f'{new_status} for {answer.barangay.name} by {request.user.email}',
-        )
-
-        return Response(HazardZoneSerializer(zone).data)
-
-
-class HazardZoneForBarangayView(APIView):
-    """
-    GET /api/hazards/for-barangay/
-    Active hazard zones touching the signed-in user's barangay, newest first,
-    so the barangay dashboard can push what needs an answer rather than
-    making personnel hunt for it on the map.
-
-    ?pending=true returns only the ones nobody has answered yet.
-
-    Barangay Personnel see their own barangay. DRRMO and admins have no
-    single barangay of their own, so they get an empty list here and use the
-    map instead.
-    """
-    permission_classes = [IsAuthenticated, IsBarangayPersonnel]
-
-    def get(self, request):
-        assigned = getattr(request.user, 'assigned_barangay_id', None)
-        if assigned is None:
-            return Response({'barangay': None, 'count': 0, 'results': []})
-
-        zones = (
-            HazardZone.objects
-            .filter(status='Active')
-            .select_related('hazard_type', 'barangay', 'verified_by')
-            .order_by('-activated_at')
-        )
-
-        # The barangay recorded on a zone is only where the officer tapped;
-        # a 1 km zone can cross three of them. Match on the geometry, the same
-        # way the alert decides who to notify, so what the dashboard shows and
-        # what the alert went out to agree.
-        boundary = (
-            Barangay.objects
-            .filter(id=assigned)
-            .values_list('boundary', flat=True)
-            .first()
-        )
-        if boundary is None:
-            zones = zones.filter(barangay_id=assigned)
-        else:
-            try:
-                zones = zones.filter(Q(geometry__intersects=boundary) | Q(barangay_id=assigned))
-                zones.exists()  # force the query now, so a bad boundary is caught here
-            except Exception:
-                # Malformed boundary: fall back to the barangay recorded on the
-                # zone rather than showing nothing at all.
-                zones = (
-                    HazardZone.objects
-                    .filter(status='Active', barangay_id=assigned)
-                    .select_related('hazard_type', 'barangay', 'verified_by')
-                    .order_by('-activated_at')
-                )
-
-        if (request.query_params.get('pending') or '').strip().lower() in ('1', 'true', 'yes'):
-            zones = zones.exclude(verifications__barangay_id=assigned)
-
-        return Response({
-            'barangay': assigned,
-            'count': zones.count(),
-            'results': HazardZoneSerializer(zones, many=True).data,
         })
 
 
@@ -1294,65 +1101,6 @@ class HazardZoneApproveView(APIView):
             'recipients_notified': len(recipients),
         }
         return Response(payload)
-
-
-class HazardZoneReviewView(APIView):
-    """
-    POST /api/hazards/<id>/review/
-
-        {"note": "Checked with the barangay captain; the creek is still rising upstream."}
-
-    DRRMO's answer to a dispute: the zone was looked at and stays as it is.
-    The alternatives are withdrawing it or reshaping it, which have their
-    own endpoints. The note shows on the public map next to the dispute, and
-    the personnel who disputed it are told. A new dispute clears the review.
-    """
-    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
-    MIN_NOTE = 5
-
-    def post(self, request, pk):
-        zone = (
-            HazardZone.objects
-            .select_related('hazard_type', 'barangay')
-            .filter(pk=pk)
-            .first()
-        )
-        if zone is None:
-            return Response({'error': 'Hazard zone not found'}, status=status.HTTP_404_NOT_FOUND)
-        if zone.status != 'Active':
-            return Response({'error': 'Only an active hazard zone can be reviewed.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        if zone.verification_status != 'Disputed':
-            return Response({'error': 'No barangay has disputed this hazard, so there is nothing to review.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        note = (request.data.get('note') or '').strip()
-        if len(note) < self.MIN_NOTE:
-            return Response({'error': 'Say what was checked and why the zone stays. '
-                                      'The note is shown with the dispute on the public map.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        disputers = [
-            v.answered_by for v in
-            zone.verifications.filter(status='Disputed').select_related('answered_by')
-            if v.answered_by and v.answered_by.is_active
-        ]
-        with transaction.atomic():
-            zone.review_note = note
-            zone.reviewed_by = request.user
-            zone.reviewed_at = timezone.now()
-            zone.save(update_fields=['review_note', 'reviewed_by', 'reviewed_at'])
-            notify(
-                disputers,
-                f'DRRMO reviewed your dispute about the {type_name(zone)} alert and is keeping it: "{note}"',
-                zone,
-            )
-
-        log_event(
-            request, 'REVIEW_HAZARD_DISPUTE', 'hazard_zone', zone.id,
-            f'Dispute reviewed, zone kept. {len(disputers)} disputer(s) told. Note: {note}',
-        )
-        return Response(HazardZoneSerializer(zone).data)
 
 
 class HazardZoneRefuseRaiseView(APIView):

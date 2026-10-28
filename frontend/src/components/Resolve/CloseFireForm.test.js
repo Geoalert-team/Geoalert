@@ -6,7 +6,7 @@ import { historyApi } from '../../api/historyApi';
 import { reportsApi } from '../../api/reportApi';
 
 jest.mock('../../api/hazardsApi', () => ({ hazardsApi: { closeFire: jest.fn(), update: jest.fn() } }));
-jest.mock('../../api/historyApi', () => ({ historyApi: { bfpOptions: jest.fn() } }));
+jest.mock('../../api/historyApi', () => ({ historyApi: { bfpOptions: jest.fn(), eventOptions: jest.fn() } }));
 jest.mock('../../api/reportApi', () => ({ reportsApi: { forZone: jest.fn() } }));
 
 beforeAll(() => { global.IS_REACT_ACT_ENVIRONMENT = true; });
@@ -16,6 +16,7 @@ beforeEach(() => {
     property_types: { RESIDENTIAL: ['SINGLE AND TWO FAMILY DWELLING'], TRANSPORT: ['TRICYCLE', 'TRUCK'] },
     alarm_levels: ['1ST ALARM', '2ND ALARM'],
   });
+  historyApi.eventOptions.mockResolvedValue({ subcategories: { Flood: ['RIVER OVERFLOW'] } });
   reportsApi.forZone.mockResolvedValue([]);
 });
 
@@ -40,14 +41,15 @@ const click = (el, text) => act(() => {
   [...el.querySelectorAll('button')].find((b) => b.textContent === text).click();
 });
 
-test('a fire zone gets the BFP columns G-W; a flood keeps the plain form', async () => {
+test('a fire zone gets the BFP columns G-W; a flood gets the flood and landslide log', async () => {
   const fire = await render('Fire');
   expect(fire.querySelector('h3').textContent).toBe('Close the fire');
   expect([...fire.querySelectorAll('legend')].map((l) => l.textContent)).toEqual(['Injured', 'Fatalities']);
   expect(fire.querySelector('#db-bfp-alarm')).not.toBeNull();
   expect(fire.querySelector('textarea')).toBeNull(); // no "What happened?"
   const flood = await render('Flood');
-  expect(flood.querySelector('h3').textContent).toBe('Resolve and archive');
+  expect(flood.querySelector('h3').textContent).toBe('Resolve the flood');
+  expect(flood.querySelector('#db-ev-sub')).not.toBeNull();
   expect(flood.querySelector('#db-bfp-alarm')).toBeNull();
 });
 

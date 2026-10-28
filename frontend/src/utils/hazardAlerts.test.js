@@ -15,19 +15,15 @@ test('worst severity first, then newest first', () => {
   expect(alerts.map((a) => a.id)).toEqual(['c', 'd', 'b', 'a']);
 });
 
-test('names every barangay the zone reaches, else the one it is filed under', () => {
-  const [reaching, filed] = activeAlerts({
+test('names the barangay the zone is filed under, or none', () => {
+  const [filed, unfiled] = activeAlerts({
     features: [
-      zone('a', {
-        severity: 'Red',
-        barangay_name: 'Bulacao',
-        verifications: [{ barangay_name: 'Bulacao' }, { barangay_name: 'Pooc' }, { barangay_name: 'Pooc' }],
-      }),
-      zone('b', { severity: 'Orange', barangay_name: 'Lawaan I', verifications: [] }),
+      zone('a', { severity: 'Red', barangay_name: 'Lawaan I' }),
+      zone('b', { severity: 'Orange' }),
     ],
   });
-  expect(reaching.barangays).toEqual(['Bulacao', 'Pooc']);
   expect(filed.barangays).toEqual(['Lawaan I']);
+  expect(unfiled.barangays).toEqual([]);
 });
 
 test('skips zones that are not Active, and reads the id from properties too', () => {

@@ -84,10 +84,20 @@ class PlanImportTests(SimpleTestCase):
         [rec], _ = plan([event()], [split('TABUNOC')])
         self.assertEqual(rec['barangay'], TABUNOK)
 
-    def test_casualties_are_kept_once_per_event(self):
-        records, _ = plan([event(injured=6, fatalities=7)], [split('SAN ISIDRO'), split('DUMLOG')])
+    def test_the_logs_columns_fill_the_record(self):
+        [rec], _ = plan([event(cause='Typhoon Tino', injured=1, fatalities=0, families=48, persons=119)],
+                        [split('DUMLOG')])
+        self.assertEqual((rec['hazard_subcategory'], rec['cause']), ('RIVER OVERFLOW', 'Typhoon Tino'))
+        self.assertEqual((rec['injured'], rec['fatalities'], rec['families_affected'], rec['persons_affected']),
+                         (1, 0, 48, 119))
+        self.assertEqual(rec['description'], 'Water neck-deep. Sources: https://a.example/1 https://a.example/2')
+
+    def test_figures_are_kept_once_per_event(self):
+        records, _ = plan([event(injured=6, fatalities=7, families=10)], [split('SAN ISIDRO'), split('DUMLOG')])
         self.assertEqual([r['total_casualties'] for r in records], [13, None])
-        self.assertIn('Whole event (2 barangays): 6 injured, 7 dead.', records[1]['description'])
+        self.assertEqual([(r['injured'], r['families_affected']) for r in records], [(6, 10), (None, None)])
+        self.assertIn('Whole event (2 barangays): 6 injured, 7 dead, 10 families affected.',
+                      records[1]['description'])
 
     def test_zero_is_kept_apart_from_not_reported(self):
         [zero], _ = plan([event(injured=0, fatalities=0)], [split('MANIPIS')])
@@ -125,6 +135,42 @@ class PlanImportTests(SimpleTestCase):
         records, report = plan([event(city='Minglanilla'), event(row=5, date=None)], [])
         self.assertEqual(records, [])
         self.assertEqual((report['outside_city'], report['bad_date']), (['Flood row 4'], ['Flood row 5']))
+
+
+class CloseFieldsTests(SimpleTestCase):
+    def test_a_flood_needs_a_sub_category_from_its_list(self):
+        fields, errors = fl.close_fields({'hazard_subcategory': ' river overflow '}, 'Flood')
+        self.assertEqual((fields['hazard_subcategory'], errors), ('RIVER OVERFLOW', {}))
+        _, errors = fl.close_fields({}, 'Flood')
+        self.assertEqual(errors, {'hazard_subcategory': 'Choose the sub category.'})
+        _, errors = fl.close_fields({'hazard_subcategory': 'ROAD LANDSLIDE'}, 'Flood')
+        self.assertIn('hazard_subcategory', errors)
+
+    def test_a_type_without_a_list_is_not_asked_for_one(self):
+        fields, errors = fl.close_fields({'hazard_subcategory': 'ANYTHING'}, 'Earthquake')
+        self.assertEqual((fields['hazard_subcategory'], errors), ('', {}))
+
+    def test_counts_are_whole_numbers_and_blank_is_not_counted(self):
+        fields, errors = fl.close_fields({'hazard_subcategory': 'LANDSLIDE', 'injured': 2, 'fatalities': '0',
+                                          'families_affected': '', 'persons_affected': None}, 'Landslide')
+        self.assertEqual(errors, {})
+        self.assertEqual((fields['injured'], fields['fatalities'], fields['families_affected'],
+                          fields['persons_affected'], fields['total_casualties']), (2, 0, None, None, 2))
+        _, errors = fl.close_fields({'hazard_subcategory': 'LANDSLIDE', 'injured': '-1', 'persons_affected': '2.5'},
+                                    'Landslide')
+        self.assertEqual(errors, {'injured': 'Enter a whole number, 0 or more.',
+                                  'persons_affected': 'Enter a whole number, 0 or more.'})
+
+    def test_nobody_counted_is_no_casualty_total(self):
+        fields, _ = fl.close_fields({'hazard_subcategory': 'LANDSLIDE'}, 'Landslide')
+        self.assertIsNone(fields['total_casualties'])
+
+    def test_cause_and_summary_are_kept_and_the_cause_has_a_limit(self):
+        fields, errors = fl.close_fields({'hazard_subcategory': 'FLASH FLOOD', 'cause': '  Heavy   rain ',
+                                          'summary': ' Knee-deep. '}, 'Flood')
+        self.assertEqual((fields['cause'], fields['summary'], errors), ('Heavy rain', 'Knee-deep.', {}))
+        _, errors = fl.close_fields({'hazard_subcategory': 'FLASH FLOOD', 'cause': 'x' * 201}, 'Flood')
+        self.assertEqual(errors, {'cause': 'Keep the cause under 200 characters.'})
 
 
 class SeverityTests(SimpleTestCase):

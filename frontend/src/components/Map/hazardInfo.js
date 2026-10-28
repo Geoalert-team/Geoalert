@@ -21,7 +21,7 @@ export const SEVERITY = {
     color: '#1f9d55',
     tint: '#e8f6ee',
     text: '#16693a',
-    advice: 'Low risk right now. Standard monitoring is in place, so stay alert to changes.',
+    advice: 'Standard monitoring is in place. Stay alert to changes.',
   },
 };
 

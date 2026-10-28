@@ -33,4 +33,6 @@ export const historyApi = {
 
   // DRRMO: the fire close form's lists, { property_types: {category: [sub]}, alarm_levels: [...] }
   bfpOptions: () => client.get('/api/history/bfp-options/').then((r) => r.data),
+  // The flood and landslide close form's list: sub categories by hazard type
+  eventOptions: () => client.get('/api/history/event-options/').then((r) => r.data),
 };

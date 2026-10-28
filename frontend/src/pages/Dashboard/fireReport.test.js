@@ -27,7 +27,7 @@ const GEO = {
 };
 const FIRE = {
   barangay: '19', hazard_type: '2', description: 'Smoke from a house near the chapel',
-  started_at: '2026-10-25T13:00', started_at_edited: false, location: [10.255, 123.855],
+  started_at: '2026-10-25T13:00', started_at_edited: false,
   puroks: ['3', '6'],
 };
 const NOW = new Date('2026-10-25T14:00');
@@ -74,14 +74,13 @@ test('changing barangay empties the puroks', () => {
 });
 
 test('switching hazard clears the when-and-where errors, which name the hazard', () => {
-  expect(hazardSwitchErrors({ puroks: 'x', started_at: 'y', location: 'z', description: 'd' }))
+  expect(hazardSwitchErrors({ puroks: 'x', started_at: 'y', description: 'd' }))
     .toEqual({ description: 'd' });
 });
 
 test('fire report checks', () => {
   const opts = { noun: 'fire', hasPuroks: true, purokStatus: 'ready', now: NOW };
   expect(validateReport(FIRE, opts)).toEqual({});
-  expect(validateReport({ ...FIRE, location: null }, opts)).toEqual({}); // no pin needed
   expect(validateReport({ ...FIRE, puroks: [] }, opts).puroks).toBe('Choose the purok or sitio where the fire is.');
   expect(validateReport({ ...FIRE, puroks: Array.from({ length: 11 }, (_, i) => String(i)) }, opts).puroks)
     .toBe('Choose at most 10 puroks.');
@@ -98,7 +97,6 @@ test('fire report checks', () => {
 test('flood and landslide reports say when and which puroks too, but not how serious it is', () => {
   const opts = { noun: 'flood', hasPuroks: true, purokStatus: 'ready', now: NOW };
   expect(validateReport(FIRE, opts)).toEqual({});
-  expect(validateReport({ ...FIRE, location: null }, opts)).toEqual({}); // the pin stays optional
   expect(validateReport({ ...FIRE, puroks: [], started_at: '' }, opts)).toEqual({
     started_at: 'Say when the flood started.',
     puroks: 'Choose the purok or sitio where the flood is.',
@@ -114,15 +112,11 @@ test('the hazard is named by its type, or "hazard" before one is chosen', () => 
   expect(hazardNoun(types, '')).toBe('hazard');
 });
 
-test('payload: every report sends when and puroks; a fire sends no pin, other types keep theirs', () => {
-  const fire = reportPayload(FIRE, { fire: true });
-  expect(fire).toMatchObject({ barangay: 19, hazard_type: 2, puroks: [3, 6] });
-  expect(fire.started_at).toBe(new Date('2026-10-25T13:00').toISOString());
-  ['location', 'severity_estimate', 'purok', 'purok_other'].forEach((k) => expect(fire).not.toHaveProperty(k));
-  const flood = reportPayload(FIRE, { fire: false });
-  expect(flood).toMatchObject({ location: [10.255, 123.855], puroks: [3, 6] });
-  expect(flood.started_at).toBe(new Date('2026-10-25T13:00').toISOString());
-  expect(flood).not.toHaveProperty('severity_estimate');
+test('payload: every report sends when and puroks, and no pin', () => {
+  const body = reportPayload({ ...FIRE, location: [10.255, 123.855] });
+  expect(body).toMatchObject({ barangay: 19, hazard_type: 2, puroks: [3, 6] });
+  expect(body.started_at).toBe(new Date('2026-10-25T13:00').toISOString());
+  ['location', 'severity_estimate', 'purok', 'purok_other'].forEach((k) => expect(body).not.toHaveProperty(k));
 });
 
 test('place label lists the puroks', () => {

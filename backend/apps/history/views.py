@@ -3,12 +3,14 @@ from datetime import date, timedelta
 from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.db.models import Count
 from django.db.models.functions import TruncMonth
 
+from apps.history.flood_landslide import SUBCATEGORIES
 from apps.history.models import HistoricalRecord
 from apps.history.serializers import STAFF_ONLY_FIELDS, HistoricalRecordDetailSerializer, HistoricalRecordSerializer
+from utils.permissions import IsDRRMOOfficer
 from utils.sampling import TRUTHY
 
 
@@ -380,3 +382,11 @@ class HistoricalForecastView(APIView):
                       'a year counts half as much every 3 years back. Rule-based, no AI.',
         }
         return Response(result)
+
+
+class EventOptionsView(APIView):
+    """The flood and landslide close form's list: sub categories by hazard type name."""
+    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+
+    def get(self, request):
+        return Response({'subcategories': SUBCATEGORIES})

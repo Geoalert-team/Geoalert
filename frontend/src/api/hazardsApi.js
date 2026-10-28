@@ -34,26 +34,12 @@ export const hazardsApi = {
   refuseRaise: (id, reason) =>
     client.post(`/api/hazards/${id}/raise/refuse/`, { reason }).then((r) => r.data),
 
-  // DRRMO's answer to a dispute: checked, and the zone stays. The note shows
-  // with the dispute on the public map. Withdrawing it is the other answer.
-  review: (id, note) => client.post(`/api/hazards/${id}/review/`, { note }).then((r) => r.data),
-
   // DRRMO: close a fire with the BFP figures (the fire log's columns G-W).
   // A fire still on the map is put out in the same step: the all-clear goes
   // and one history record is filed. Answers { zone, record_id }.
   closeFire: (id, figures) => client.post(`/api/hazards/${id}/close/`, figures).then((r) => r.data),
 
   update: (id, payload) => client.patch(`/api/hazards/${id}/`, payload).then((r) => r.data),
-
-  // Ground confirmation from the barangay: status is 'Confirmed' or 'Disputed'.
-  // Only Barangay Personnel may call this, and only for their own barangay.
-  verify: (id, { status, note }) =>
-    client.post(`/api/hazards/${id}/verify/`, { status, note }).then((r) => r.data),
-
-  // Active zones touching the signed-in user's barangay, for the barangay
-  // dashboard. ?pending=true narrows to the ones nobody has answered yet.
-  forBarangay: (params) =>
-    client.get('/api/hazards/for-barangay/', { params }).then((r) => r.data),
 
   // Per-type active counts and the colour legend, for the map's layer panel (F6)
   layers: () => client.get('/api/hazards/layers/').then((r) => r.data),

@@ -10,11 +10,11 @@ class RoleSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     role = RoleSerializer(read_only=True)
-    # So the map can tell barangay personnel which answer on a hazard is
-    # their own barangay's. Read-only: assignment is an admin action.
+    # The barangay a personnel account reports for (the report form's
+    # default). Read-only: assignment is an admin action.
     assigned_barangay = serializers.PrimaryKeyRelatedField(read_only=True)
-    # The id above is what the map compares answers against, so it stays an
-    # id. Screens that need to *show* the barangay were reading
+    # The id above stays an id, since screens compare against it. Screens
+    # that need to *show* the barangay were reading
     # assigned_barangay.name off that number and silently getting undefined,
     # so the name is its own field rather than a change of shape.
     assigned_barangay_name = serializers.CharField(

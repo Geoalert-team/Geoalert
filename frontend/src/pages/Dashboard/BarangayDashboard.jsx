@@ -8,8 +8,6 @@ import { guidanceApi } from '../../api/guidanceApi';
 import { hazardsApi } from '../../api/hazardsApi';
 import { Icon, Toast, fieldErrors, formatDateTime, timeAgo } from './admin/adminShared';
 import { HazardIcon, ReportPhotos, StatusTag } from './reportShared';
-import ConfirmHazardCard from '../../components/Verify/ConfirmHazardCard';
-import LocationPicker from '../../components/Map/LocationPicker';
 import PurokPreviewMap from '../../components/Map/PurokPreviewMap';
 import { puroksOf } from '../../components/Map/purokStyle';
 import {
@@ -81,9 +79,8 @@ function emptyForm(user) {
     description: '',
     position: user?.position || '',
     agency: '',
-    location: null, // optional map pin [lat, lng]; fires use their puroks instead
-    // Fire reports only: when it started (and whether the reporter changed
-    // it), and the ids of the puroks it is in
+    // When it started (and whether the reporter changed it), and the ids of
+    // the puroks it is in, which is where the report is placed
     started_at: localNow(),
     started_at_edited: false,
     puroks: [],
@@ -264,8 +261,8 @@ export default function BarangayDashboard() {
     }));
   }
 
-  // Every report asks when and where (the BFP log's columns A-F). A fire is
-  // placed at its puroks; a flood or landslide may also drop a pin.
+  // Every report asks when and where (the BFP log's columns A-F), and is
+  // placed at its puroks: the map only shows them, it takes no pin.
   const fire = isFireType(hazardTypes, form.hazard_type);
   const noun = hazardNoun(hazardTypes, form.hazard_type);
   const barangayPuroks = useMemo(() => puroksOf(purokGeo, form.barangay), [purokGeo, form.barangay]);
@@ -316,7 +313,7 @@ export default function BarangayDashboard() {
 
     setBusy(true);
     try {
-      await reportsApi.submit({ ...reportPayload(form, { fire }), photos: photos.map((p) => p.file) });
+      await reportsApi.submit({ ...reportPayload(form), photos: photos.map((p) => p.file) });
       setForm({ ...emptyForm(user), position: form.position, agency: form.agency });
       clearPhotos();
       setErrors({});
@@ -407,12 +404,6 @@ export default function BarangayDashboard() {
             </div>
           </div>
         </div>
-
-        {/* ---------- Ground confirmation ----------
-            Above the report form on purpose: answering a hazard that is
-            already live matters more than filing a new report. The card
-            brings its own db- styling; this page's root carries .db. */}
-        <ConfirmHazardCard />
 
         <div className="brg-grid">
           {/* ---------- Submit form ---------- */}
@@ -536,33 +527,14 @@ export default function BarangayDashboard() {
                 {errors.puroks && <p className="adm-field-error">{errors.puroks}</p>}
               </div>
 
-              {fire ? (
-                <div className="adm-field">
-                  <label>Where exactly</label>
-                  <PurokPreviewMap
-                    barangay={barangayShapes.get(String(form.barangay)) || null}
-                    puroks={chosenPuroks}
-                    pins={purokPins(purokGeo, form.puroks)}
-                  />
-                </div>
-              ) : (
-                <div className={`adm-field ${errors.location ? 'has-error' : ''}`}>
-                  <label>
-                    Where exactly <span className="brg-optional">optional</span>
-                  </label>
-                  <p className="adm-muted" style={{ margin: '0 0 6px', fontSize: '.8rem' }}>
-                    Drop a pin where you saw it. Pins from several reports let the DRRMO draw the hazard
-                    zone around what was actually seen. Without one, the report is placed at its purok.
-                  </p>
-                  <LocationPicker
-                    value={form.location}
-                    onChange={(v) => set('location', v)}
-                    barangay={barangayShapes.get(String(form.barangay)) || null}
-                    puroks={chosenPuroks}
-                  />
-                  {errors.location && <p className="adm-field-error">{errors.location}</p>}
-                </div>
-              )}
+              <div className="adm-field">
+                <label>Where exactly</label>
+                <PurokPreviewMap
+                  barangay={barangayShapes.get(String(form.barangay)) || null}
+                  puroks={chosenPuroks}
+                  pins={purokPins(purokGeo, form.puroks)}
+                />
+              </div>
             </div>
 
             <div className="brg-step">

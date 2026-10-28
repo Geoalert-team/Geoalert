@@ -46,6 +46,8 @@ class HistoricalRecordDetailSerializer(HistoricalRecordSerializer):
             'injured_ff_male', 'injured_ff_female', 'injured_civ_male', 'injured_civ_female',
             'fatal_ff_male', 'fatal_ff_female', 'fatal_civ_male', 'fatal_civ_female',
             'damage_cost', 'structures_affected', 'alarm_level',
+            # Flood and landslide log H-M: sub category, cause, the counts
+            'hazard_subcategory', 'cause', 'injured', 'fatalities', 'families_affected', 'persons_affected',
         ]
 
 
