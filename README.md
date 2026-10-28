@@ -39,6 +39,13 @@ the old samples; real hazards are never touched.
 python manage.py seed_fake_hazards --clear          removes all sample data
 python manage.py seed_fake_hazards --active 12 --years 8 --seed 7
 
+Real flood and landslide history (2021-2026, from news reports) comes from the
+Flood_Landslide_data .xlsx: one record per event per barangay it hit. It is already in
+the shared database; running it again adds only new rows.
+
+python manage.py import_flood_landslide path\to\Flood_Landslide_data.xlsx --dry-run
+python manage.py import_flood_landslide path\to\Flood_Landslide_data.xlsx --replace     swaps in a corrected sheet
+
 
 
 Then set up the frontend in a new terminal:
