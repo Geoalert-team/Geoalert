@@ -14,7 +14,7 @@ const zone = (id, props) => ({ type: 'Feature', id, geometry: null, properties: 
 const FEED = {
   features: [
     zone('g1', { severity: 'Green', hazard_type_name: 'Flood', barangay_name: 'Pooc', activated_at: new Date().toISOString() }),
-    zone('r1', { severity: 'Red', hazard_type_name: 'Fire', verifications: [{ barangay_name: 'Bulacao' }] }),
+    zone('r1', { severity: 'Red', hazard_type_name: 'Fire', barangay_name: 'Bulacao' }),
   ],
 };
 

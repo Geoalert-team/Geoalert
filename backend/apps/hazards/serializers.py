@@ -4,7 +4,7 @@ from rest_framework_gis.fields import GeometryField
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from apps.barangays.models import Barangay
 from apps.hazards.geometry import city_outline, clip_to_city, main_barangay
-from apps.hazards.models import HazardType, HazardZone, HazardAlert, HazardVerification
+from apps.hazards.models import HazardType, HazardZone, HazardAlert
 from apps.accounts.serializers import UserSerializer
 
 
@@ -12,16 +12,6 @@ class HazardTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model  = HazardType
         fields = ['id', 'name', 'logo_class', 'is_active']
-
-
-class HazardVerificationSerializer(serializers.ModelSerializer):
-    """One barangay's answer about a zone."""
-    barangay_name = serializers.CharField(source='barangay.name', read_only=True, default=None)
-    answered_by_name = serializers.CharField(source='answered_by.full_name', read_only=True, default=None)
-
-    class Meta:
-        model = HazardVerification
-        fields = ['barangay', 'barangay_name', 'status', 'note', 'answered_by_name', 'answered_at']
 
 
 class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
@@ -35,15 +25,8 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
     barangay_name = serializers.CharField(
         source='barangay.name', read_only=True, default=None
     )
-    verified_by_name = serializers.CharField(
-        source='verified_by.full_name', read_only=True, default=None
-    )
     approved_by_name = serializers.CharField(
         source='approved_by.full_name', read_only=True, default=None
-    )
-    verifications = HazardVerificationSerializer(many=True, read_only=True)
-    reviewed_by_name = serializers.CharField(
-        source='reviewed_by.full_name', read_only=True, default=None
     )
     # As drawn, before cutting at the city boundary: what reshaping starts from
     outline = GeometryField(read_only=True)
@@ -51,6 +34,12 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
     # (ST_Within), 'partial' when it crosses the edge. Null without a bbox.
     in_view = serializers.SerializerMethodField()
     pins = serializers.SerializerMethodField()
+    started_at = serializers.SerializerMethodField()
+
+    def get_started_at(self, obj):
+        """When it started by its reports (the earliest); null for a zone drawn with no report."""
+        started = [r.started_at for r in obj.incidentreport_set.all() if r.started_at]
+        return serializers.DateTimeField().to_representation(min(started)) if started else None
 
     def get_pins(self, obj):
         """
@@ -88,16 +77,10 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
         fields = [
             'id', 'barangay', 'barangay_name', 'hazard_type_name',
             'severity', 'status', 'description',
-            'activated_at', 'resolved_at',
+            'activated_at', 'resolved_at', 'started_at',
             'is_sample',
-            # Ground confirmation, so the map can show whether anyone in the
-            # barangay has actually been out to look.
-            'verification_status', 'verification_note',
-            'verified_at', 'verified_by_name',
             # Second approval for Extreme alerts
             'approved_by_name', 'approved_at', 'auto_released',
-            # Each barangay's own answer, and DRRMO's answer to a dispute
-            'verifications', 'review_note', 'reviewed_at', 'reviewed_by_name',
             'outline',
             # A raise to Extreme waiting for a second officer
             'pending_severity', 'pending_at',
@@ -113,9 +96,6 @@ class HazardZoneSerializer(serializers.ModelSerializer):
     barangay_name = serializers.CharField(
         source='barangay.name', read_only=True, default=None
     )
-    verified_by_name = serializers.CharField(
-        source='verified_by.full_name', read_only=True, default=None
-    )
     retracted_by_name = serializers.CharField(
         source='retracted_by.full_name', read_only=True, default=None
     )
@@ -125,10 +105,6 @@ class HazardZoneSerializer(serializers.ModelSerializer):
     approved_by_name = serializers.CharField(
         source='approved_by.full_name', read_only=True, default=None
     )
-    verifications = HazardVerificationSerializer(many=True, read_only=True)
-    reviewed_by_name = serializers.CharField(
-        source='reviewed_by.full_name', read_only=True, default=None
-    )
 
     class Meta:
         model  = HazardZone
@@ -137,15 +113,11 @@ class HazardZoneSerializer(serializers.ModelSerializer):
             'severity', 'status', 'description',
             'activated_at', 'resolved_at',
             'is_sample',
-            'verification_status', 'verification_note',
-            'verified_at', 'verified_by_name',
             # Withdrawal, so the DRRMO list can say who withdrew it and why
             'retracted_at', 'retracted_by_name', 'retraction_reason',
             'published_by_name',
             # Second approval for Extreme alerts
             'approved_by_name', 'approved_at', 'auto_released',
-            # Each barangay's own answer, and DRRMO's answer to a dispute
-            'verifications', 'review_note', 'reviewed_at', 'reviewed_by_name',
             # A raise to Extreme waiting for a second officer
             'pending_severity', 'pending_at',
         ]

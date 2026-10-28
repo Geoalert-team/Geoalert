@@ -2,12 +2,14 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { historyApi } from '../../api/historyApi';
 import ZoneReports from '../Resolve/ZoneReports';
 import { FATALITIES, INJURED, bfpLabel } from '../Resolve/fireClose';
+import { COUNTS as EVENT_COUNTS } from '../Resolve/eventClose';
 
 /**
  * One history record in full, opened from the history page or a past
  * hazard on the map. When and where it happened, the BFP fire log's figures
- * (columns G-W) for a fire, the counts, and what the barangay reported when
- * the hazard was live. No severity: the record is what happened, not how
+ * (columns G-W) for a fire or the flood and landslide log's (G-M) for the
+ * others, the counts, and what the barangay reported when the hazard was
+ * live. No severity: the record is what happened, not how
  * the alert was graded.
  *
  * Outside DRRMO the server leaves out the address, the damage, the injured
@@ -44,6 +46,12 @@ const COUNT_KEYS = [...INJURED.firefighter, ...INJURED.civilian, ...FATALITIES.f
 export function hasBfpFigures(record) {
   return Boolean(record.alarm_level || record.property_category)
     || [...COUNT_KEYS, 'damage_cost', 'structures_affected'].some((k) => record[k] !== null && record[k] !== undefined);
+}
+
+// A flood or landslide resolved with the log's figures, or imported from the log
+export function hasEventFigures(record) {
+  return Boolean(record.hazard_subcategory || record.cause)
+    || EVENT_COUNTS.some(({ key }) => record[key] !== null && record[key] !== undefined);
 }
 
 function CountTable({ caption, groups, record }) {
@@ -157,6 +165,20 @@ export default function RecordDetail({ recordId, onClose }) {
                     <CountTable caption="Fatalities" groups={FATALITIES} record={record} />
                   </div>
                 )}
+              </section>
+            )}
+
+            {hasEventFigures(record) && (
+              <section className="db-modal-section">
+                <h3>{type} figures</h3>
+                <dl className="db-dl">
+                  <dt>Hazard type</dt>
+                  <dd>{record.hazard_subcategory ? `${type.toUpperCase()} – ${record.hazard_subcategory}` : 'not recorded'}</dd>
+                  <dt>Cause</dt><dd>{record.cause || 'not recorded'}</dd>
+                  {EVENT_COUNTS.map(({ key, label }) => (
+                    <React.Fragment key={key}><dt>{label}</dt><dd>{counted(record[key])}</dd></React.Fragment>
+                  ))}
+                </dl>
               </section>
             )}
 

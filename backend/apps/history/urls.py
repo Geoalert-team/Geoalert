@@ -6,6 +6,7 @@ from apps.history.views import (
     HistoricalForecastView,
     PurokLevelsView,
     AreaHistoryView,
+    EventOptionsView,
 )
 from apps.hazards.fire_close_views import BfpOptionsView
 
@@ -19,5 +20,7 @@ urlpatterns = [
     path('area/',      AreaHistoryView.as_view(),            name='history-area'),
     # The fire close form's lists: property types and alarm levels
     path('bfp-options/', BfpOptionsView.as_view(),           name='history-bfp-options'),
+    # The flood and landslide close form's list: sub categories
+    path('event-options/', EventOptionsView.as_view(),       name='history-event-options'),
     path('<uuid:pk>/', HistoricalRecordDetailView.as_view(), name='history-detail'),
 ]

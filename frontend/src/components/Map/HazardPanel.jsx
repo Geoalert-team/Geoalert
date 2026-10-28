@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { severityInfo, hazardIconPath, hazardColor, DRRMO_HOTLINE } from './hazardInfo';
 import GuidanceSteps from './GuidanceSteps';
+import { activeFor, formatWhen, placeLine } from './panelFacts';
 import ResolveHazardForm from '../Resolve/ResolveHazardForm';
 import RetractHazardForm from '../Resolve/RetractHazardForm';
 import { hazardsApi } from '../../api/hazardsApi';
@@ -275,33 +276,19 @@ function HazardStack({ stack, current, onPick }) {
 // Slides in from the left (desktop) or up from the bottom (mobile).
 // stack: the hazards at the clicked spot (including item); onPick switches between them.
 export default function HazardPanel({
-  item, open, onClose, onResolved, onRetracted, onVerified, stack = [], onPick,
+  item, open, onClose, onResolved, onRetracted, stack = [], onPick,
 }) {
   const [tab, setTab] = useState('overview');
   // 'resolve' when the hazard is over, 'retract' when it should never have
   // been published. Only one form is ever open.
   const [closing, setClosing] = useState(null);
-  // Ground confirmation, for barangay personnel standing in the hazard
-  const [answering, setAnswering] = useState(null); // 'Confirmed' | 'Disputed'
-  const [note, setNote] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [verifyError, setVerifyError] = useState('');
-  // DRRMO's reply to a dispute
-  const [reviewNote, setReviewNote] = useState('');
-  const [reviewing, setReviewing] = useState(false);
-  const [reviewError, setReviewError] = useState('');
   const closeRef = useRef(null);
-  const { canPublish, user } = useAuth();
+  const { canPublish } = useAuth();
 
   // Go back to the Overview tab and move focus into the panel whenever a new pin is chosen
   useEffect(() => {
     setTab('overview');
     setClosing(null);
-    setAnswering(null);
-    setNote('');
-    setVerifyError('');
-    setReviewNote('');
-    setReviewError('');
     if (open) closeRef.current?.focus({ preventScroll: true });
   }, [item?.id, open]);
 
@@ -315,53 +302,6 @@ export default function HazardPanel({
   // how the resolve flow gets demonstrated without waiting for a real one.
   const canResolve = canPublish && item && (item.status || 'Active') === 'Active';
 
-  // Only barangay personnel confirm, and only while the hazard is live. The
-  // backend also checks the zone actually touches their barangay — the panel
-  // can't know that reliably, so it offers the buttons and shows the server's
-  // refusal if they are not the right barangay.
-  const role = user?.role?.name || user?.role;
-  const canConfirm =
-    role === 'Barangay_Personnel' && item && (item.status || 'Active') === 'Active';
-
-  // This user's own barangay's answer, if they gave one. Other barangays
-  // the zone crosses keep their own answers.
-  const answers = item?.verifications || [];
-  const myAnswer = answers.find((v) => String(v.barangay) === String(user?.assigned_barangay));
-  const disputed = item?.verificationStatus === 'Disputed';
-  const canReview = canResolve && disputed && !item?.reviewNote;
-
-  async function submitReview() {
-    if (!item) return;
-    setReviewing(true);
-    setReviewError('');
-    try {
-      const zone = await hazardsApi.review(item.id, reviewNote.trim());
-      setReviewNote('');
-      onVerified?.(zone);
-    } catch (err) {
-      setReviewError(err?.message || 'Could not save the review.');
-    } finally {
-      setReviewing(false);
-    }
-  }
-
-  async function submitVerification() {
-    if (!answering || !item) return;
-    setSaving(true);
-    setVerifyError('');
-    try {
-      const zone = await hazardsApi.verify(item.id, { status: answering, note: note.trim() });
-      setAnswering(null);
-      setNote('');
-      onVerified?.(zone);
-    } catch (err) {
-      // axiosClient flattens the server error into err.message
-      setVerifyError(err?.message || 'Could not save that. Check your connection and try again.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
     <aside className={`pm-panel ${open ? 'is-open' : ''}`} aria-label="Hazard details">
       {item && (
@@ -372,8 +312,8 @@ export default function HazardPanel({
               <svg viewBox="0 0 24 24"><path d={hazardIconPath(item.type)} /></svg>
             </div>
             <div className="pm-panel-title">
-              <h2>{item.location}</h2>
-              <p>{item.type} hazard in Talisay City</p>
+              <h2>{item.type} in {item.location}</h2>
+              <p>{placeLine(item)}</p>
             </div>
             <button ref={closeRef} type="button" className="pm-panel-close" onClick={onClose}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
@@ -418,10 +358,11 @@ export default function HazardPanel({
           >
             {tab === 'overview' && (
               <>
-                <h3>{sev.label} {item.type.toLowerCase()} advisory</h3>
-                <p>{item.description || 'No description has been added for this area yet.'}</p>
+                {/* The level is the badge above; this says what is going on and what to do */}
+                <h3>What&apos;s happening</h3>
+                <p>{item.description || 'No description has been added yet.'}</p>
                 <div className="pm-callout" style={{ background: sev.tint, borderColor: sev.color, color: sev.text }}>
-                  <strong>{sev.label}:</strong> {sev.advice}
+                  {sev.advice}
                 </div>
                 {others.length > 0 && (
                   <div className="pm-overlap">
@@ -436,128 +377,14 @@ export default function HazardPanel({
                   </div>
                 )}
 
-                {/* Ground confirmation, one line per barangay that answered.
-                    Deliberately silent while nobody has: "nobody has been out
-                    to look yet" is not news to a reader standing in the
-                    hazard, and it crowded the panel. */}
-                {answers.length > 0 && answers.map((v) => (
-                  <p key={v.barangay} className={v.status === 'Disputed' ? 'pm-disputed' : 'pm-verified'}>
-                    <strong>
-                      {v.status === 'Disputed' ? 'Disputed' : 'Confirmed'} by {v.barangay_name}
-                    </strong>
-                    {v.answered_by_name ? ` (${v.answered_by_name})` : ''}
-                    {v.note ? ` — "${v.note}"` : '.'}
-                  </p>
-                ))}
-                {answers.length > 0 && disputed && !item.reviewNote && (
-                  <p className="pm-disputed">Treat this advisory with caution until DRRMO reviews it.</p>
-                )}
-                {disputed && item.reviewNote && (
-                  <p className="pm-verified">
-                    <strong>DRRMO reviewed the dispute and kept this alert</strong>
-                    {item.reviewedByName ? ` (${item.reviewedByName})` : ''}: "{item.reviewNote}"
-                  </p>
-                )}
-
-                {/* Answers given before each barangay kept its own */}
-                {answers.length === 0 && item.verificationStatus === 'Confirmed' && (
-                  <p className="pm-verified">
-                    <strong>Confirmed on the ground</strong>
-                    {item.verifiedByName ? ` by ${item.verifiedByName}` : ''}
-                    {item.verificationNote ? ` — "${item.verificationNote}"` : '.'}
-                  </p>
-                )}
-                {answers.length === 0 && item.verificationStatus === 'Disputed' && (
-                  <p className="pm-disputed">
-                    <strong>Disputed by the barangay</strong>
-                    {item.verificationNote ? ` — "${item.verificationNote}"` : '.'}
-                    {' '}Treat this advisory with caution until DRRMO reviews it.
-                  </p>
-                )}
-
-                {/* ---------- Barangay: answer for the ground ---------- */}
-                {canConfirm && (
-                  <div className="db-scope db-embed">
-                    {answering ? (
-                      <div className="db-confirm">
-                        <p>
-                          {answering === 'Confirmed'
-                            ? 'Confirm that this hazard is on the ground as described?'
-                            : 'Report that this hazard is not there as described?'}
-                        </p>
-                        <label className="db-field" htmlFor="pm-verify-note">
-                          What did you see? (optional)
-                          <textarea
-                            id="pm-verify-note"
-                            rows={2}
-                            value={note}
-                            onChange={(e) => setNote(e.target.value)}
-                            placeholder={answering === 'Confirmed'
-                              ? 'Water about knee deep along the national road'
-                              : 'Road is clear, no landslide seen as of this morning'}
-                          />
-                        </label>
-                        {verifyError && <p className="db-error" role="alert">{verifyError}</p>}
-                        <div className="db-btn-row">
-                          <button
-                            type="button"
-                            className="db-btn db-btn-primary db-btn-sm"
-                            onClick={submitVerification}
-                            disabled={saving}
-                          >
-                            {saving
-                              ? 'Saving…'
-                              : answering === 'Confirmed' ? 'Yes, confirm' : 'Yes, dispute'}
-                          </button>
-                          <button
-                            type="button"
-                            className="db-btn db-btn-outline db-btn-sm"
-                            onClick={() => { setAnswering(null); setVerifyError(''); }}
-                            disabled={saving}
-                          >
-                            Go back
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="db-hint" style={{ marginBottom: 8 }}>
-                          {myAnswer
-                            ? `Your barangay ${myAnswer.status === 'Confirmed' ? 'confirmed' : 'disputed'} this. Has it changed?`
-                            : 'You are barangay personnel. Is this hazard there as described?'}
-                        </p>
-                        {verifyError && <p className="db-error" role="alert">{verifyError}</p>}
-                        <div className="db-btn-row">
-                          <button
-                            type="button"
-                            className="db-btn db-btn-outline db-btn-sm"
-                            onClick={() => setAnswering('Confirmed')}
-                          >
-                            {myAnswer?.status === 'Disputed'
-                              ? 'Change to confirmed'
-                              : myAnswer?.status === 'Confirmed' ? 'Confirm again' : 'Confirm it is there'}
-                          </button>
-                          <button
-                            type="button"
-                            className="db-btn db-btn-outline db-btn-sm"
-                            onClick={() => setAnswering('Disputed')}
-                          >
-                            {myAnswer?.status === 'Confirmed' ? 'Change to disputed' : 'Dispute'}
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-
                 <dl className="pm-facts">
                   <div>
-                    <dt>Status</dt>
-                    <dd>{item.status || 'Active'}</dd>
+                    <dt>{item.startedAt ? 'Started' : 'Published'}</dt>
+                    <dd>{formatWhen(item.startedAt || item.activatedAt)}</dd>
                   </div>
                   <div>
-                    <dt>Active since</dt>
-                    <dd>{formatDate(item.activatedAt)}</dd>
+                    <dt>Active for</dt>
+                    <dd>{activeFor(item.activatedAt)}</dd>
                   </div>
                 </dl>
 
@@ -567,35 +394,6 @@ export default function HazardPanel({
                     <strong>Raise to Extreme waiting for a second officer.</strong>{' '}
                     It stays {sev.label.toLowerCase()} until another officer approves it.
                   </p>
-                )}
-
-                {/* ---------- DRRMO: answer a dispute ---------- */}
-                {canReview && !closing && (
-                  <div className="db-scope db-embed">
-                    <p className="db-hint" style={{ marginBottom: 8 }}>
-                      A barangay disputed this. If you checked and it stays as it
-                      is, say why. Otherwise withdraw it.
-                    </p>
-                    <label className="db-field" htmlFor="pm-review-note">
-                      What did you check?
-                      <textarea
-                        id="pm-review-note"
-                        rows={2}
-                        value={reviewNote}
-                        onChange={(e) => setReviewNote(e.target.value)}
-                        placeholder="Called the barangay captain; water is still rising upstream"
-                      />
-                    </label>
-                    {reviewError && <p className="db-error" role="alert">{reviewError}</p>}
-                    <button
-                      type="button"
-                      className="db-btn db-btn-outline db-btn-sm"
-                      onClick={submitReview}
-                      disabled={reviewing || reviewNote.trim().length < 5}
-                    >
-                      {reviewing ? 'Saving…' : 'Keep it, with this note'}
-                    </button>
-                  </div>
                 )}
 
                 {/* ---------- DRRMO: close the hazard out ---------- */}

@@ -6,8 +6,7 @@ import { SEVERITY_ORDER } from './severity';
 
 /**
  * One alert per Active zone, worst severity first, newest first within a
- * severity. Each names every barangay the zone reaches (one verification
- * per barangay), falling back to the barangay it is filed under.
+ * severity. Each names the barangay it is filed under.
  */
 export function activeAlerts(featureCollection) {
   const features = featureCollection?.features || featureCollection?.results?.features || [];
@@ -18,18 +17,14 @@ export function activeAlerts(featureCollection) {
   return features
     .map((f) => ({ id: f.id ?? f.properties?.id, ...f.properties }))
     .filter((p) => p.id != null && (!p.status || p.status === 'Active'))
-    .map((p) => {
-      const named = (p.verifications || []).map((v) => v.barangay_name).filter(Boolean);
-      const barangays = [...new Set(named.length ? named : [p.barangay_name].filter(Boolean))];
-      return {
-        id: p.id,
-        type: p.hazard_type_name || 'Hazard',
-        severity: p.severity,
-        barangays,
-        activatedAt: p.activated_at || null,
-        sample: !!p.is_sample,
-      };
-    })
+    .map((p) => ({
+      id: p.id,
+      type: p.hazard_type_name || 'Hazard',
+      severity: p.severity,
+      barangays: [p.barangay_name].filter(Boolean),
+      activatedAt: p.activated_at || null,
+      sample: !!p.is_sample,
+    }))
     .sort((a, b) => rank(a.severity) - rank(b.severity)
       || new Date(b.activatedAt || 0) - new Date(a.activatedAt || 0));
 }

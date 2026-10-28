@@ -145,43 +145,6 @@ class HazardZone(models.Model):
     def __str__(self):
         return f'{self.hazard_type} - {self.severity} - {self.status}'
 
-    def reset_verification(self):
-        """
-        Call when severity or shape changes: the old answers were about a
-        different hazard, so every barangay is asked again. Deletes the
-        per-barangay answers, so only call it on a zone that is being saved.
-        """
-        self.verification_status = 'Pending'
-        self.verified_by         = None
-        self.verified_at         = None
-        self.verification_note   = ''
-        self.clear_review()
-        if self.pk:
-            self.verifications.all().delete()
-
-    def clear_review(self):
-        self.review_note = ''
-        self.reviewed_by = None
-        self.reviewed_at = None
-
-    def refresh_verification_summary(self):
-        """
-        Set the zone-level fields from the per-barangay answers, so older
-        screens that only read verification_status keep working.
-
-        Any dispute wins: one barangay saying "it isn't there" is what DRRMO
-        needs to look at, even if another barangay confirmed its own part.
-        The note and name are from the most recent answer with that status.
-        """
-        answers = list(self.verifications.select_related('answered_by').order_by('-answered_at'))
-        disputed = [a for a in answers if a.status == 'Disputed']
-        confirmed = [a for a in answers if a.status == 'Confirmed']
-        latest = (disputed or confirmed or [None])[0]
-        self.verification_status = 'Disputed' if disputed else 'Confirmed' if confirmed else 'Pending'
-        self.verified_by = latest.answered_by if latest else None
-        self.verified_at = latest.answered_at if latest else None
-        self.verification_note = latest.note if latest else ''
-
 
 class HazardVerification(models.Model):
     """

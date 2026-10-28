@@ -1,10 +1,13 @@
 """
-Reading and planning the flood and landslide log (manage.py import_flood_landslide).
+The flood and landslide log: reading it (manage.py import_flood_landslide)
+and closing a flood or landslide in the app as one row of it (close_fields).
 
 The workbook is laid out like the BFP fire log. The Flood and Landslide sheets
-hold one event per row below three header rows. The By Barangay sheet splits
-the same events one row per barangay (or purok) below one header row, and an
-event naming no barangay is not in it.
+hold one event per row below three header rows: when (A-B), where (C-F), the
+hazard type and sub category (G-H), the cause (I), injured, fatalities,
+families and persons affected (J-M) and what happened (N). The By Barangay
+sheet splits the same events one row per barangay (or purok) below one header
+row, and an event naming no barangay is not in it.
 
 Each (event, barangay) becomes one history record, so the map's barangay
 panel, the History filter and the forecast, which all read a record's one
@@ -39,6 +42,18 @@ COUNTS = ('injured', 'fatalities', 'families', 'persons')
 
 # Rows the log keeps as warnings, not events: nothing flooded or slid
 WARNING_ONLY = {'RIVER LEVEL RISING', 'GROUND CRACK (SLOPE INSTABILITY)'}
+
+# Sub categories (column H) as the log has them, for events. The one list the
+# close form, the server's check and the import share; edit it here.
+SUBCATEGORIES = {
+    'Flood': ['RIVER OVERFLOW', 'RIVER SWELLING', 'FLASH FLOOD', 'UPLAND FLASH FLOOD', 'FLASH FLOOD (ROAD)',
+              'ROAD FLOODING', 'COASTAL WAVES'],
+    'Landslide': ['LANDSLIDE', 'ROAD LANDSLIDE', 'ROAD LANDSLIDE / ROCKFALL', 'SLOPE FAILURE / ROCKFALL',
+                  'REPEATED ROCKSLIDES', 'LANDSLIDE / MUDFLOW', 'GROUND CRACK (SLOPE INSTABILITY)'],
+}
+CAUSE_MAX = 200
+# Close form key -> HistoricalRecord field, for the counts J-M
+CLOSE_COUNTS = ('injured', 'fatalities', 'families_affected', 'persons_affected')
 
 
 def _text(value):
@@ -129,14 +144,13 @@ def _figures(event):
 
 
 def _description(event, families_here, barangays):
-    text = [f'{event["subcategory"].capitalize()}. {event["impact"]}'.strip()]
-    if event['cause']:
-        text.append(f'Cause: {event["cause"].rstrip(".")}.')
+    text = [event['impact']] if event['impact'] else []
     if families_here is not None:
         text.append(f'Families evacuated in this barangay: {families_here:,}.')
+    # One barangay's record holds the event's figures; the others say what they were
     figures = _figures(event)
-    if figures:
-        text.append(f'Whole event ({barangays} barangays): {figures}.' if barangays > 1 else f'Reported: {figures}.')
+    if figures and barangays > 1:
+        text.append(f'Whole event ({barangays} barangays): {figures}.')
     if event['source']:
         text.append('Sources: ' + ' '.join(event['source'].split()))
     return ' '.join(text)
@@ -212,6 +226,8 @@ def plan_import(events, splits, existing_refs, barangays, puroks_by_barangay, va
         if not groups[0]['barangay']:
             report['no_barangay'].append(_where(event))
         casualties = _casualties(event)
+        figures = {'injured': event['injured'], 'fatalities': event['fatalities'],
+                   'families_affected': event['families'], 'persons_affected': event['persons']}
         for i, group in enumerate(groups):
             ref = source_ref(when.date(), event['hazard'], group['barangay'])
             if ref in existing_refs:
@@ -243,7 +259,10 @@ def plan_import(events, splits, existing_refs, barangays, puroks_by_barangay, va
                 'purok_names': purok_names,
                 'severity_level': severity(event),
                 'description': _description(event, group['families'], len(groups)),
+                'hazard_subcategory': event['subcategory'][:60],
+                'cause': event['cause'][:CAUSE_MAX],
                 # Stored once per event, so city totals in Reports add up
+                **{k: (v if i == 0 else None) for k, v in figures.items()},
                 'total_casualties': casualties if i == 0 else None,
                 'total_displaced': None,  # the log counts persons affected, not displaced
                 'location_text': location,
@@ -256,3 +275,36 @@ def plan_import(events, splits, existing_refs, barangays, puroks_by_barangay, va
             report['splits_without_event'].extend(f'{SPLIT_SHEET} row {r}' for g in groups for r in g['rows'])
     report['imported'] = len(records)
     return records, report
+
+
+# --- Closing a flood or landslide in the app: the log's columns H to N -------
+
+def close_fields(data, hazard):
+    """
+    (fields, errors) for resolving a hazard of this type (its name): the
+    HistoricalRecord values from the close form, and {field: message} for
+    what is missing or wrong. A type with no sub category list (anything but
+    a flood or landslide) is not asked for one. The server's side of
+    eventClose.js, with the same words.
+    """
+    fields, errors = {}, {}
+
+    choices = SUBCATEGORIES.get(hazard)
+    sub = _text(data.get('hazard_subcategory')).upper() if choices else ''
+    if choices and sub not in choices:
+        errors['hazard_subcategory'] = 'Choose the sub category.'
+    fields['hazard_subcategory'] = sub
+
+    fields['cause'] = _text(data.get('cause'))
+    if len(fields['cause']) > CAUSE_MAX:
+        errors['cause'] = f'Keep the cause under {CAUSE_MAX} characters.'
+
+    for key in CLOSE_COUNTS:
+        fields[key], ok = bfp._whole(data.get(key))
+        if not ok:
+            errors[key] = 'Enter a whole number, 0 or more.'
+
+    known = [fields[k] for k in ('injured', 'fatalities') if fields[k] is not None]
+    fields['total_casualties'] = sum(known) if known else None
+    fields['summary'] = (data.get('summary') or '').strip()
+    return fields, errors

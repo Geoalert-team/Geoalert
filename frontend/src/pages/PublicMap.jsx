@@ -109,17 +109,8 @@ function featureToItem(feature) {
     status: p.status,
     description: p.description,
     activatedAt: p.activated_at,
-    // Ground confirmation from the barangay. Only shown once somebody has
-    // answered — an unanswered hazard says nothing about itself.
-    verificationStatus: p.verification_status || 'Pending',
-    verificationNote: p.verification_note || '',
-    verifiedAt: p.verified_at,
-    verifiedByName: p.verified_by_name,
-    // Each barangay's own answer, and DRRMO's reply to a dispute
-    verifications: p.verifications || [],
-    reviewNote: p.review_note || '',
-    reviewedAt: p.reviewed_at,
-    reviewedByName: p.reviewed_by_name,
+    // When it started by its reports; null for a zone drawn with no report
+    startedAt: p.started_at || null,
     // Extreme alerts: approved by a second officer, or sent on its own
     approvedByName: p.approved_by_name,
     // 'Red' while a raise to Extreme waits for a second officer
@@ -669,30 +660,6 @@ export default function PublicMap() {
 
   const handleResolved = dropHazard;
   const handleRetracted = dropHazard;
-
-  // Ground confirmation doesn't move a hazard anywhere, so the pin stays and
-  // only its own state changes. Patched in place rather than reloading, so the
-  // panel the user is reading doesn't close under them.
-  function handleVerified(zone) {
-    if (!zone?.id) return;
-    setLiveHazards((prev) =>
-      prev.map((h) =>
-        String(h.id) === String(zone.id)
-          ? {
-              ...h,
-              verificationStatus: zone.verification_status || 'Pending',
-              verificationNote: zone.verification_note || '',
-              verifiedAt: zone.verified_at,
-              verifiedByName: zone.verified_by_name,
-              verifications: zone.verifications || [],
-              reviewNote: zone.review_note || '',
-              reviewedAt: zone.reviewed_at,
-              reviewedByName: zone.reviewed_by_name,
-            }
-          : h,
-      ),
-    );
-  }
 
   /* ---------- Publishing ---------- */
 
@@ -1383,7 +1350,6 @@ export default function PublicMap() {
           onClose={() => setPanelOpen(false)}
           onResolved={handleResolved}
           onRetracted={handleRetracted}
-          onVerified={handleVerified}
           stack={stack}
           onPick={showStacked}
         />

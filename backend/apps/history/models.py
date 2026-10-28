@@ -43,6 +43,14 @@ class HistoricalRecord(models.Model):
     fatal_ff_female      = models.IntegerField(null=True, blank=True, db_column='hstr_fatal_ff_female')
     fatal_civ_male       = models.IntegerField(null=True, blank=True, db_column='hstr_fatal_civ_male')
     fatal_civ_female     = models.IntegerField(null=True, blank=True, db_column='hstr_fatal_civ_female')
+    # A flood or landslide as the flood and landslide log has it (columns
+    # H-M; G is the hazard type). Blank or null means not known, never zero.
+    hazard_subcategory   = models.CharField(max_length=60, blank=True, default='', db_column='hstr_hazard_subcategory')
+    cause                = models.CharField(max_length=200, blank=True, default='', db_column='hstr_cause')
+    injured              = models.IntegerField(null=True, blank=True, db_column='hstr_injured')
+    fatalities           = models.IntegerField(null=True, blank=True, db_column='hstr_fatalities')
+    families_affected    = models.IntegerField(null=True, blank=True, db_column='hstr_families_affected')
+    persons_affected     = models.IntegerField(null=True, blank=True, db_column='hstr_persons_affected')
     # The address as the BFP typed it. Staff only: never on the public map.
     location_text        = models.TextField(blank=True, default='', db_column='hstr_location_text')
     # import_bfp_fires' key, so a re-import adds only new rows; null for

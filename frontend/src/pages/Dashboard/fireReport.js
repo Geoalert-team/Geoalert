@@ -1,13 +1,11 @@
 // What the incident report form asks, checks and sends. Every report is
 // when and where, the BFP fire log's columns A-F: when it started and the
-// puroks it is in, picked from the barangay's list. A fire's reporter
-// doesn't place a pin: the map shows one at each chosen purok, and the
+// puroks it is in, picked from the barangay's list. No reporter places a
+// pin, whatever the hazard: the map shows one at each chosen purok, and the
 // server sets the report's location from them. Property type, casualties,
-// damage and alarm level are DRRMO's, entered when the fire is closed.
-// Floods and landslides also keep an optional clickable pin, which the
-// DRRMO draws zones around; without one the server places them at their
-// first purok. No report asks how serious it is: the DRRMO sets the level
-// when it publishes the hazard.
+// damage and alarm level are DRRMO's, entered when the fire is closed. No
+// report asks how serious it is: the DRRMO sets the level when it
+// publishes the hazard.
 // The server checks the same rules (apps/reports/fire_report.py) with the
 // same words.
 
@@ -18,7 +16,7 @@ export const MAX_PUROKS = 10;
 // A phone clock a few minutes fast is not a start time in the future
 const CLOCK_SKEW_MS = 5 * 60 * 1000;
 // Errors that belong to one hazard type's fields, cleared when it changes
-const HAZARD_FIELD_ERRORS = ['started_at', 'puroks', 'location'];
+const HAZARD_FIELD_ERRORS = ['started_at', 'puroks'];
 
 // The chosen hazard's name for the checks' wording ("Say when the flood
 // started."), or "hazard" before one is chosen
@@ -101,8 +99,9 @@ export function validateReport(form, { noun = 'hazard', hasPuroks, purokStatus, 
 }
 
 // What reportsApi.submit is given (photos are added by the caller)
-export function reportPayload(form, { fire }) {
-  const body = {
+// Every report is placed at its puroks, so none sends a pin
+export function reportPayload(form) {
+  return {
     barangay: Number(form.barangay),
     hazard_type: Number(form.hazard_type),
     description: form.description.trim(),
@@ -111,8 +110,6 @@ export function reportPayload(form, { fire }) {
     started_at: new Date(form.started_at).toISOString(),
     puroks: (form.puroks || []).map(Number),
   };
-  // A fire is placed at its puroks; other hazards send their pin, if any
-  return fire ? body : { ...body, location: form.location };
 }
 
 // Where the barangay is filed, as the BFP fire log's columns C-E. Shown on
