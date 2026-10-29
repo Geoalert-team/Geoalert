@@ -27,8 +27,8 @@ const PUBLIC_LINKS = [
   { to: "/what-to-do", label: "What to do" },
 ];
 
-// Barangay Personnel don't get History or Reports (matches the route gates
-// in App.jsx). Analytics is a tab of Reports, not its own entry; the old
+// Barangay Personnel don't get History or Reports, and BFP Personnel get
+// History (their fires) but not Reports (matches the route gates in App.jsx). Analytics is a tab of Reports, not its own entry; the old
 // /app/analytics link still resolves. The icons are the dashboards' own.
 const DASHBOARD = { to: "/app/dashboard", label: "Dashboard", icon: "grid" };
 const HISTORY = { to: "/app/history", label: "History", icon: "clock" };
@@ -38,6 +38,7 @@ const STAFF_LINKS = {
   System_Admin: [DASHBOARD, HISTORY, REPORTS, SECURITY],
   DRRMO_Officer: [DASHBOARD, HISTORY, REPORTS, SECURITY],
   Barangay_Personnel: [DASHBOARD, SECURITY],
+  BFP_Personnel: [DASHBOARD, HISTORY, SECURITY],
 };
 
 // Below this width the bar folds into the ☰ menu, signed in or out. The

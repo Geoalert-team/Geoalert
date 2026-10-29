@@ -111,6 +111,11 @@ export function AuthProvider({ children }) {
   const canPublish =
     user &&
     ["DRRMO_Officer", "System_Admin"].includes(user.role?.name || user.role);
+  // Closing a fire with the BFP figures: DRRMO and admins, and BFP personnel,
+  // who can do nothing else (the server keeps them to fires)
+  const canCloseFires =
+    user &&
+    ["DRRMO_Officer", "System_Admin", "BFP_Personnel"].includes(user.role?.name || user.role);
 
   return (
     <AuthContext.Provider
@@ -121,6 +126,7 @@ export function AuthProvider({ children }) {
         verifyLoginCode,
         logout,
         canPublish,
+        canCloseFires,
         setUser,
         loggingOut,
       }}>

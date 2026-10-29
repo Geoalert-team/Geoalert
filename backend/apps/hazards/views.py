@@ -892,7 +892,7 @@ class HazardZonePreviewView(APIView):
         geometry = data['geometry']
         manual_ids = request.data.get('affected_barangays') or None
         barangays = affected_barangays(geometry, manual_ids)
-        recipients = alert_recipients(request.user, barangays).count()
+        recipients = alert_recipients(request.user, barangays, data.get('hazard_type')).count()
 
         duplicates = find_duplicates(geometry, data.get('hazard_type'))
 

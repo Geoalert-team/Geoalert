@@ -13,6 +13,9 @@ A fire is one row of the BFP fire log. The report gave its columns A-F
 casualties, damage, structures, alarm level). The record counts once in
 every purok its reports named, which is what the purok colours count.
 Floods and landslides keep the one-step resolve in HazardZoneDetailView.
+
+BFP personnel can do all of this as well as DRRMO: every view here only
+ever touches a fire.
 """
 from django.db import transaction
 from django.utils import timezone
@@ -28,7 +31,7 @@ from apps.history.bfp import ALARM_LEVELS, PROPERTY_TYPES, close_fields, exact_l
 from apps.history.models import HistoricalRecord
 from apps.reports.decide import zone_puroks
 from utils.audit import log_event
-from utils.permissions import IsDRRMOOfficer
+from utils.permissions import IsBFPPersonnel
 
 
 def _is_fire(zone):
@@ -60,7 +63,7 @@ def _put_out(zone, user, note, reporter_text):
 
 
 class FireOutView(APIView):
-    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+    permission_classes = [IsAuthenticated, IsBFPPersonnel]
 
     def post(self, request, pk):
         note = (request.data.get('note') or '').strip()
@@ -79,7 +82,7 @@ class FireOutView(APIView):
 
 
 class FireCloseView(APIView):
-    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+    permission_classes = [IsAuthenticated, IsBFPPersonnel]
 
     def post(self, request, pk):
         fields, errors = close_fields(request.data)
@@ -134,7 +137,7 @@ class FireCloseView(APIView):
 
 class FiguresDueView(APIView):
     """Fires that are out and still waiting for their BFP figures, longest-waiting first."""
-    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+    permission_classes = [IsAuthenticated, IsBFPPersonnel]
 
     def get(self, request):
         zones = (HazardZone.objects.filter(status='Resolving', hazard_type__name__iexact='fire')
@@ -153,7 +156,7 @@ class FiguresDueView(APIView):
 
 class BfpOptionsView(APIView):
     """The close form's lists: property types by category, and alarm levels."""
-    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+    permission_classes = [IsAuthenticated, IsBFPPersonnel]
 
     def get(self, request):
         return Response({'property_types': PROPERTY_TYPES, 'alarm_levels': ALARM_LEVELS})

@@ -10,6 +10,7 @@ from apps.history.views import (
     HistoryExportView,
 )
 from apps.hazards.fire_close_views import BfpOptionsView
+from apps.history.import_views import HistoryImportView
 
 urlpatterns = [
     path('',           HistoricalRecordListView.as_view(),   name='history-list'),
@@ -25,5 +26,7 @@ urlpatterns = [
     path('event-options/', EventOptionsView.as_view(),       name='history-event-options'),
     # DRRMO: the records as an Excel or CSV file in the BFP fire log's columns A-W
     path('export/',    HistoryExportView.as_view(),          name='history-export'),
+    # DRRMO: the BFP fire log or the flood and landslide log, checked and then imported
+    path('import/',    HistoryImportView.as_view(),          name='history-import'),
     path('<uuid:pk>/', HistoricalRecordDetailView.as_view(), name='history-detail'),
 ]

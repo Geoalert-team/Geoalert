@@ -8,7 +8,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         # Seed roles
-        roles = ['System_Admin', 'DRRMO_Officer', 'Barangay_Personnel']
+        roles = ['System_Admin', 'DRRMO_Officer', 'Barangay_Personnel', 'BFP_Personnel']
         for role_name in roles:
             Role.objects.get_or_create(name=role_name)
             self.stdout.write(f'  ✓ Role: {role_name}')

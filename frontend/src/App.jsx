@@ -47,10 +47,11 @@ function AppRoutes() {
 
       {/* Logged-in staff */}
       <Route path="/app/dashboard" element={<Gate><Dashboard /></Gate>} />
+      {/* BFP personnel see the fire records only (HistoricalData.jsx) */}
       <Route
         path="/app/history"
         element={
-          <Gate roles={["System_Admin", "DRRMO_Officer"]}>
+          <Gate roles={["System_Admin", "DRRMO_Officer", "BFP_Personnel"]}>
             <HistoricalData />
           </Gate>
         }

@@ -41,4 +41,19 @@ export const historyApi = {
   // every type when left out) and the list's barangay, purok, date_from, date_to
   export: (params) =>
     client.get('/api/history/export/', { params, responseType: 'blob' }).then((r) => r.data),
+
+  // DRRMO: the BFP fire log or the flood and landslide log (.xlsx). Without
+  // save it only checks the file. Answers { kind, kind_label, read, new,
+  // already, linked, barangay_only, problems: [{ label, rows }], unlinked:
+  // [{ barangay, place, count, close }], to_check, saved }.
+  importFile: (file, { save = false, includeWarnings = false } = {}) => {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    if (save) form.append('save', 'true');
+    if (includeWarnings) form.append('include_warnings', 'true');
+    // multipart, not the client's JSON default, or the file is lost (see reportApi.create)
+    return client
+      .post('/api/history/import/', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((r) => r.data);
+  },
 };

@@ -30,6 +30,8 @@
   text-align: left; font-family: var(--db-font-body); color: inherit; cursor: pointer;
 }
 .drm-report-main:focus-visible { outline: none; box-shadow: var(--adm-focus); border-radius: 10px; }
+/* The same row, read-only (the BFP dashboard's fire reports) */
+.drm-report-static { flex: 1; min-width: 0; display: flex; gap: 14px; }
 .drm-report-body { flex: 1; min-width: 0; }
 .drm-report-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .drm-report-title { font-weight: 800; font-size: 1rem; color: var(--db-heading); }

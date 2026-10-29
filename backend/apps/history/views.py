@@ -12,7 +12,7 @@ from apps.history.flood_landslide import SUBCATEGORIES
 from apps.history.models import HistoricalRecord
 from apps.history.serializers import STAFF_ONLY_FIELDS, HistoricalRecordDetailSerializer, HistoricalRecordSerializer
 from utils.audit import log_event
-from utils.permissions import IsDRRMOOfficer
+from utils.permissions import IsBFPPersonnel, IsDRRMOOfficer, is_bfp
 from utils.sampling import TRUTHY
 
 
@@ -127,7 +127,8 @@ class HistoricalRecordDetailView(APIView):
     """
     GET /api/history/<id>/
     Returns a single historical record. Public access, opened from the
-    map's past hazards; DRRMO staff also get STAFF_ONLY_FIELDS.
+    map's past hazards; DRRMO staff also get STAFF_ONLY_FIELDS, and BFP
+    personnel get them on a fire.
     """
     permission_classes = [AllowAny]
 
@@ -146,7 +147,9 @@ class HistoricalRecordDetailView(APIView):
             )
         # In full: the BFP figures, the puroks and the exact location too
         data = HistoricalRecordDetailSerializer(record).data
-        if not IsDRRMOOfficer().has_permission(request, self):
+        fire = record.hazard_type is not None and record.hazard_type.name.lower() == 'fire'
+        staff = IsDRRMOOfficer().has_permission(request, self) or (fire and is_bfp(request.user))
+        if not staff:
             for name in STAFF_ONLY_FIELDS:
                 data.pop(name, None)
         return Response(data)
@@ -409,12 +412,13 @@ class HistoryExportView(APIView):
     """
     GET /api/history/export/?file=xlsx|csv&types=Fire,Flood
     The records in the BFP fire log's columns A-W (apps/history/export.py),
-    newest first. DRRMO staff only: the log has the exact address and the
-    damage. Takes the list's barangay, purok and date filters; ?types are
-    hazard type names, every type when left out. Sample records stay out
-    of a file that leaves the system. Logged, as the report prints are.
+    newest first. DRRMO staff only, and BFP personnel for fires: the log has
+    the exact address and the damage. Takes the list's barangay, purok and
+    date filters; ?types are hazard type names, every type when left out
+    (only Fire for BFP, whatever is asked). Sample records stay out of a
+    file that leaves the system. Logged, as the report prints are.
     """
-    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+    permission_classes = [IsAuthenticated, IsBFPPersonnel]
     FILES = {
         'xlsx': ('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Excel'),
         'csv': ('text/csv; charset=utf-8', 'CSV'),
@@ -430,7 +434,7 @@ class HistoryExportView(APIView):
         records, error = _filtered(request)
         if error:
             return error
-        types = _type_names(request)
+        types = ['Fire'] if is_bfp(request.user) else _type_names(request)
         if types:
             match = Q()
             for name in types:

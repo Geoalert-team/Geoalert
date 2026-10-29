@@ -4,7 +4,7 @@ import { datedFilename, downloadBlob } from '../../utils/csv';
 
 /**
  * Download the history in the BFP fire log's columns A-W, as Excel or CSV,
- * newest first. DRRMO staff only; the server builds the file (backend
+ * newest first. DRRMO staff, and BFP for fires; the server builds the file (backend
  * apps/history/export.py), leaves sample records out and logs the download.
  *
  *   hazardTypes   [{ id, name }], one checkbox each
@@ -42,7 +42,8 @@ export default function HistoryExport({ hazardTypes, initialTypes, filters, hasS
   }, [onClose]);
 
   const names = hazardTypes.map((t) => t.name).filter((n) => picked.has(n));
-  const all = names.length === hazardTypes.length;
+  // A lone type (BFP's Fire) is still named, in the request and the file name
+  const all = hazardTypes.length > 1 && names.length === hazardTypes.length;
 
   function toggle(name) {
     setPicked((prev) => {
@@ -97,10 +98,12 @@ export default function HistoryExport({ hazardTypes, initialTypes, filters, hasS
               </label>
             ))}
           </div>
-          <p className="db-hint">
-            Floods and landslides use the same columns: the hazard and its sub category in G and H,
-            injured in N, fatalities in T.
-          </p>
+          {hazardTypes.length > 1 && (
+            <p className="db-hint">
+              Floods and landslides use the same columns: the hazard and its sub category in G and H,
+              injured in N, fatalities in T.
+            </p>
+          )}
         </fieldset>
 
         <fieldset className="db-fieldset">

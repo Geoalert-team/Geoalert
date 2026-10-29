@@ -8,6 +8,8 @@ class Role(models.Model):
         ('System_Admin',       'System Administrator'),
         ('DRRMO_Officer',      'DRRMO Officer'),
         ('Barangay_Personnel', 'Barangay Personnel'),
+        # Bureau of Fire Protection: fires only (see utils/permissions.py)
+        ('BFP_Personnel',      'BFP Personnel'),
     ]
     id          = models.BigAutoField(primary_key=True, db_column='role_id')
     name        = models.CharField(max_length=40, choices=ROLE_CHOICES, unique=True, db_column='role_name')

@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import AdminDashboard from './AdminDashboard';
 import BarangayDashboard from './BarangayDashboard';
+import BFPDashboard from './BFPDashboard';
 import DRRMODashboard from './DRRMODashboard';
 
 export default function Dashboard() {
@@ -11,6 +12,7 @@ export default function Dashboard() {
   if (roleName === 'System_Admin') return <AdminDashboard />;
   if (roleName === 'DRRMO_Officer') return <DRRMODashboard />;
   if (roleName === 'Barangay_Personnel') return <BarangayDashboard />;
+  if (roleName === 'BFP_Personnel') return <BFPDashboard />;
 
   return <p style={{ padding: 24 }}>Your account role isn't recognized. Contact an administrator.</p>;
 }

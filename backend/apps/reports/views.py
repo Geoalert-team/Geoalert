@@ -18,7 +18,8 @@ from apps.reports.serializers import (
     IncidentReportCreateSerializer,
     IncidentReportReviewSerializer,
 )
-from utils.permissions import IsBarangayPersonnel
+from utils.permissions import BFP_ROLE, IsBarangayPersonnel, IsBFPPersonnel
+from apps.hazards.alerts import tell_bfp_of_report
 
 
 class HazardSummaryReportView(APIView):
@@ -249,11 +250,13 @@ class IncidentReportListCreateView(APIView):
     GET  /api/reports/incidents/   → List reports
          Barangay Personnel see only their own submissions.
          DRRMO Officer / System Admin see all submissions.
+         BFP Personnel see every fire report, read-only: on their
+         dashboard as soon as it is sent, and in the close form.
          ?hazard_zone=<id> narrows to the reports linked to that zone.
     POST /api/reports/incidents/   → Submit a new report
          Barangay Personnel only.
     """
-    permission_classes = [IsAuthenticated, IsBarangayPersonnel]
+    permission_classes = [IsAuthenticated, IsBarangayPersonnel | IsBFPPersonnel]
 
     def get(self, request):
         # Fetched up front, or listing N reports costs N extra queries each
@@ -267,6 +270,8 @@ class IncidentReportListCreateView(APIView):
         role = request.user.role.name if request.user.role else None
         if role == 'Barangay_Personnel':
             reports = reports.filter(submitted_by=request.user)
+        elif role == BFP_ROLE:
+            reports = reports.filter(hazard_type__name__iexact='fire')
 
         status_filter = request.query_params.get('status')
         if status_filter:
@@ -306,6 +311,9 @@ class IncidentReportListCreateView(APIView):
         )
 
     def post(self, request):
+        if request.user.role.name == BFP_ROLE:
+            return Response({'error': 'Only barangay personnel submit incident reports.'},
+                            status=status.HTTP_403_FORBIDDEN)
         # request.data covers both JSON and multipart/form-data, so a report
         # with photos and one without arrive through the same path. DRF's
         # MultiPartParser is on by default; nothing here needs to know which
@@ -320,6 +328,11 @@ class IncidentReportListCreateView(APIView):
         # failed and can be retried.
         with transaction.atomic():
             report = serializer.save(submitted_by=request.user)
+
+        # BFP hears of a fire as soon as a barangay reports it, not only once
+        # DRRMO has validated it and put it on the map
+        if report.hazard_type and report.hazard_type.name.lower() == 'fire':
+            tell_bfp_of_report(report)
 
         return Response(
             IncidentReportSerializer(report, context={'request': request}).data,

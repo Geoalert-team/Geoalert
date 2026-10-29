@@ -17,6 +17,7 @@
   --tone-admin: #1c2e4a;  --tone-admin-tint: #e8edf5;
   --tone-drrmo: #b4520b;  --tone-drrmo-tint: #fdf0e3;
   --tone-brgy:  #0f766e;  --tone-brgy-tint:  #e2f4f1;
+  --tone-bfp:   #a3122a;  --tone-bfp-tint:   #fbe9ec;
   --tone-none:  #6a778d;  --tone-none-tint:  #eef1f5;
 
   --good: #16693a; --good-tint: #e6f5ec;
@@ -180,6 +181,7 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
 .adm-bar .adm-tone-admin { background: var(--tone-admin); }
 .adm-bar .adm-tone-drrmo { background: var(--tone-drrmo); }
 .adm-bar .adm-tone-brgy  { background: var(--tone-brgy); }
+.adm-bar .adm-tone-bfp   { background: var(--tone-bfp); }
 
 .adm-quick { display: flex; flex-direction: column; gap: 8px; }
 .adm-quick-btn {
@@ -198,6 +200,7 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
 .adm-tone-admin { background: var(--tone-admin-tint); color: var(--tone-admin); }
 .adm-tone-drrmo { background: var(--tone-drrmo-tint); color: var(--tone-drrmo); }
 .adm-tone-brgy  { background: var(--tone-brgy-tint);  color: var(--tone-brgy); }
+.adm-tone-bfp   { background: var(--tone-bfp-tint);   color: var(--tone-bfp); }
 .adm-tone-none  { background: var(--tone-none-tint);  color: var(--tone-none); }
 
 /* ---------- Action tags (activity) ---------- */
@@ -337,7 +340,7 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
 }
 .adm .adm-input-prefix input { border-radius: 0 10px 10px 0; }
 
-.adm-role-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.adm-role-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .adm-role-option {
   position: relative; display: flex; flex-direction: column; gap: 10px; padding: 14px;
   border: 1.5px solid var(--adm-line-strong); border-radius: 12px; background: var(--adm-surface) !important; color: var(--db-body) !important;
@@ -351,6 +354,7 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
 .adm-role-option.adm-tone-admin .adm-role-option-icon { background: var(--tone-admin-tint); color: var(--tone-admin); }
 .adm-role-option.adm-tone-drrmo .adm-role-option-icon { background: var(--tone-drrmo-tint); color: var(--tone-drrmo); }
 .adm-role-option.adm-tone-brgy  .adm-role-option-icon { background: var(--tone-brgy-tint);  color: var(--tone-brgy); }
+.adm-role-option.adm-tone-bfp   .adm-role-option-icon { background: var(--tone-bfp-tint);   color: var(--tone-bfp); }
 .adm-role-option-text { display: flex; flex-direction: column; gap: 3px; }
 .adm-role-option-text strong { font-size: .9rem; color: var(--db-heading); }
 .adm-role-option-text span { font-size: .78rem; line-height: 1.4; color: var(--db-soft); }

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.hazards.alerts import NEW_FIRE_REPORT
 from apps.notifications.models import Notification
 
 
@@ -67,5 +68,8 @@ class NotificationSerializer(serializers.ModelSerializer):
             # the dashboard is where it can be acted on or read about.
             if zone.status == 'Active':
                 return f'/map?zone={zone.id}'
+            return '/app/dashboard'
+        # A new fire report, for BFP: the list is on their dashboard
+        if (obj.content or '').startswith(NEW_FIRE_REPORT):
             return '/app/dashboard'
         return None

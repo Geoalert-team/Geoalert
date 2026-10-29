@@ -27,6 +27,14 @@ export const ROLE_META = {
     description: 'Submits incident reports for the barangay they are assigned to.',
     positionHint: 'e.g. Barangay Secretary',
   },
+  BFP_Personnel: {
+    label: 'BFP Personnel',
+    short: 'BFP',
+    tone: 'bfp',
+    icon: 'flame',
+    description: 'Gets fire alerts, closes fires with the BFP figures and exports the fire history.',
+    positionHint: 'e.g. Fire Officer II',
+  },
 };
 
 /**
@@ -38,7 +46,8 @@ export const ROLE_META = {
  * DRRM offices under RA 10121: a Local DRRM Officer series I-V plus an
  * assistant, working across administration and training, research and
  * planning, and operations and warning. Barangay titles follow the Local
- * Government Code.
+ * Government Code. BFP ones are a city fire station's usual designations
+ * and the Fire Officer ranks of RA 9263.
  *
  * OTHER_POSITION stays available everywhere. A real LGU will have a title
  * nobody predicted, and an account that cannot be created because the list
@@ -76,6 +85,20 @@ export const ROLE_POSITIONS = {
     'Barangay Health Worker',
     'SK Chairperson',
   ],
+  BFP_Personnel: [
+    'City Fire Marshal',
+    'Deputy City Fire Marshal',
+    'Chief, Operations Section',
+    'Fire Safety Inspector',
+    'Fire Arson Investigator',
+    'Senior Fire Officer IV',
+    'Senior Fire Officer III',
+    'Senior Fire Officer II',
+    'Senior Fire Officer I',
+    'Fire Officer III',
+    'Fire Officer II',
+    'Fire Officer I',
+  ],
 };
 
 export function positionsFor(role) {
@@ -83,6 +106,7 @@ export function positionsFor(role) {
 }
 
 export const BARANGAY_ROLE = 'Barangay_Personnel';
+export const BFP_ROLE = 'BFP_Personnel';
 
 export function roleName(role) {
   return role?.name || role || '';
@@ -111,6 +135,7 @@ export const ACTION_META = {
   RETRACT_HAZARD: { label: 'Withdrew hazard alert', tone: 'bad', icon: 'userX' },
   VERIFY_HAZARD: { label: 'Ground confirmation', tone: 'info', icon: 'check' },
   GENERATE_REPORT: { label: 'Generated report', tone: 'neutral', icon: 'list' },
+  IMPORT_HISTORY: { label: 'Imported history', tone: 'info', icon: 'list' },
   CONFIG_CHANGED: { label: 'Changed a setting', tone: 'warn', icon: 'shield' },
 };
 
@@ -212,6 +237,7 @@ const PATHS = {
   list: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />,
   grid: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>,
   dot: <circle cx="12" cy="12" r="3" />,
+  flame: <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z" />,
 };
 
 export function Icon({ name, size = 18, className = '', strokeWidth = 2 }) {

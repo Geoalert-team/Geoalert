@@ -20,6 +20,7 @@ from apps.admin_dashboard.models import AuditLog
 from apps.barangays.models import Barangay
 from apps.hazards.models import HazardAlert, HazardZone
 from apps.notifications.models import Notification
+from utils.permissions import BFP_ROLE, is_bfp
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +151,7 @@ def affected_barangays(zone_or_geometry, manual_ids=None):
     return [zone.barangay] if zone and zone.barangay else []
 
 
-def alert_recipients(publisher, barangays):
+def alert_recipients(publisher, barangays, hazard_type=None):
     """
     Who gets told. Barangay personnel assigned to an affected barangay, plus
     DRRMO and admins who need city-wide visibility.
@@ -158,19 +159,24 @@ def alert_recipients(publisher, barangays):
     Anyone with no assigned barangay is included too: until every account has
     one set, excluding them would silently stop their alerts, which is a worse
     failure than one extra notification.
+
+    BFP personnel get every fire city-wide and nothing else, so hazard_type
+    (a HazardType or its name) decides whether they are in.
     """
     users = User.objects.filter(is_active=True)
     if publisher is not None:
         users = users.exclude(id=publisher.id)
-    return (
-        users
-        .filter(
-            Q(assigned_barangay__in=barangays)
-            | Q(assigned_barangay__isnull=True)
-            | Q(role__name__in=OFFICER_ROLES)
-        )
-        .distinct()
+    reach = (
+        Q(assigned_barangay__in=barangays)
+        | Q(assigned_barangay__isnull=True)
+        | Q(role__name__in=OFFICER_ROLES)
     )
+    name = getattr(hazard_type, 'name', hazard_type) or ''
+    if name.lower() == 'fire':
+        users = users.filter(reach | Q(role__name=BFP_ROLE))
+    else:
+        users = users.filter(reach).exclude(role__name=BFP_ROLE)
+    return users.distinct()
 
 
 def approvers_for(publisher):
@@ -197,6 +203,25 @@ def notify(users, content, zone=None):
     ])
 
 
+# How a new fire report's notice starts; the bell links it to the dashboard
+NEW_FIRE_REPORT = 'New fire report'
+
+
+def tell_bfp_of_report(report):
+    """
+    A barangay's fire report, to every BFP account as soon as it is sent, so
+    the fire service can move while DRRMO decides it. The alert proper still
+    goes out once DRRMO puts it on the map.
+    """
+    puroks = ', '.join(p.name for p in report.puroks.all())
+    where = f'Barangay {report.barangay.name}' if report.barangay else 'a barangay'
+    notify(
+        User.objects.filter(is_active=True, role__name=BFP_ROLE),
+        f'{NEW_FIRE_REPORT} from {where}{f" ({puroks})" if puroks else ""}. '
+        f'DRRMO is reviewing it; the report is on your dashboard.',
+    )
+
+
 def issue_alert(zone, issued_by, manual_ids=None, suffix=''):
     """
     Send the alert for a zone that has just gone live. Call inside a
@@ -215,7 +240,7 @@ def issue_alert(zone, issued_by, manual_ids=None, suffix=''):
         severity=zone.severity,
         notes=zone.description,
     )
-    recipients = list(alert_recipients(zone.published_by or issued_by, barangays))
+    recipients = list(alert_recipients(zone.published_by or issued_by, barangays, zone.hazard_type))
     Notification.objects.bulk_create([
         Notification(
             hazard_alert=alert,
@@ -408,9 +433,10 @@ def all_clear(zone, resolved_by, summary=''):
     where = where_text(affected_barangays(zone))
     note = f' {summary.strip()}' if summary and summary.strip() else ''
     users = list(recipients)
+    by = 'the BFP' if is_bfp(resolved_by) else 'DRRMO'
     notify(
         users,
-        f'ALL CLEAR: the {type_name(zone)} alert for {where} has been resolved by DRRMO.{note}',
+        f'ALL CLEAR: the {type_name(zone)} alert for {where} has been resolved by {by}.{note}',
         zone,
     )
     return users, where

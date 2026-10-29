@@ -165,7 +165,7 @@ export default function UserFormModal({ user, roles, onClose, onSave }) {
   }
 
   const err = (k) => errors[k];
-  const nameOrder = ['System_Admin', 'DRRMO_Officer', 'Barangay_Personnel'];
+  const nameOrder = ['System_Admin', 'DRRMO_Officer', 'Barangay_Personnel', 'BFP_Personnel'];
   const sortedRoles = [...roles].sort((a, b) => nameOrder.indexOf(a.name) - nameOrder.indexOf(b.name));
 
   return (
@@ -174,7 +174,7 @@ export default function UserFormModal({ user, roles, onClose, onSave }) {
       subtitle={
         editing
           ? `Update ${user.full_name || user.email}'s profile, contact details and access.`
-          : 'Create an account for DRRMO or barangay personnel. A temporary password is generated when you save.'
+          : 'Create an account for DRRMO, barangay or BFP personnel. A temporary password is generated when you save.'
       }
       onClose={saving ? () => {} : onClose}
       width={760}

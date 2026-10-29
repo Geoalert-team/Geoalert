@@ -104,3 +104,16 @@ test('nothing ticked, nothing to download; a failure is shown and the window sta
   expect(el.querySelector('.db-history-export [role="alert"]').textContent).toBe('You do not have permission.');
   expect(downloadBlob).not.toHaveBeenCalled();
 });
+
+test('BFP sees the fire records only, with no tabs, and exports them as fires', async () => {
+  useAuth.mockReturnValue({ canPublish: false, canCloseFires: true, user: { role: { name: 'BFP_Personnel' } } });
+  const el = await render();
+  expect(historyApi.list).toHaveBeenLastCalledWith({ hazard_type_name: 'Fire' });
+  expect(el.querySelector('.db-tabs')).toBeNull();
+
+  await click(button(el, 'Export'));
+  expect([...el.querySelectorAll('.db-history-export fieldset')][0].textContent).not.toMatch(/Flood|Landslide/);
+  await click(button(el, 'Download'));
+  expect(historyApi.export).toHaveBeenCalledWith({ file: 'xlsx', types: 'Fire' });
+  expect(downloadBlob).toHaveBeenCalledWith(expect.stringMatching(/^history-fire-\d{4}-\d\d-\d\d\.xlsx$/), expect.any(Blob));
+});

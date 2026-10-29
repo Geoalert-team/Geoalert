@@ -26,8 +26,10 @@ function zoneType(props) {
  * Props:
  *   onResolved()  optional — called after a successful resolve so the
  *                 parent dashboard can refresh its own counters
+ *   fireOnly      the BFP dashboard's card: active fires only, resolved
+ *                 with the BFP figures, and no withdrawing (DRRMO's call)
  */
-export default function ActiveZonesCard({ onResolved }) {
+export default function ActiveZonesCard({ onResolved, fireOnly = false }) {
   const [zones, setZones] = useState([]);
   const [resolvedTotal, setResolvedTotal] = useState(null);
   const [withdrawn, setWithdrawn] = useState(null); // { count, results } or null
@@ -44,17 +46,19 @@ export default function ActiveZonesCard({ onResolved }) {
     setLoading(true);
     try {
       const geo = await hazardsApi.list();
-      setZones(
-        (geo.features || []).map((f) => ({
-          id: f.id ?? f.properties?.id,
-          ...f.properties,
-        }))
-      );
+      const all = (geo.features || []).map((f) => ({
+        id: f.id ?? f.properties?.id,
+        ...f.properties,
+      }));
+      setZones(fireOnly ? all.filter((z) => zoneType(z).toLowerCase() === 'fire') : all);
     } catch {
       setZones([]);
     } finally {
       setLoading(false);
     }
+
+    // The totals and the withdrawn list below are DRRMO's
+    if (fireOnly) return;
 
     // Resolved zones never come back from /api/hazards/ (it filters to
     // Active), so the running total needs its own call.
@@ -74,7 +78,7 @@ export default function ActiveZonesCard({ onResolved }) {
     } catch {
       setWithdrawn(null);
     }
-  }, []);
+  }, [fireOnly]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -108,7 +112,7 @@ export default function ActiveZonesCard({ onResolved }) {
 
   return (
     <div className="db-card db-active-zones">
-      <h2>Active hazard zones</h2>
+      <h2>{fireOnly ? 'Active fires' : 'Active hazard zones'}</h2>
       <p className="db-card-sub">
         {loading
           ? 'Loading…'
@@ -121,19 +125,21 @@ export default function ActiveZonesCard({ onResolved }) {
 
       {!loading && zones.length > 0 && (
         <div className="db-active-zones-filter">
-          <div className="db-active-zone-types" role="group" aria-label="Filter active zones by hazard type">
-            {['all', 'flood', 'fire', 'landslide'].map((type) => (
-              <button
-                key={type}
-                type="button"
-                className={`db-active-zone-type${hazardFilter === type ? ' is-active' : ''}`}
-                aria-pressed={hazardFilter === type}
-                onClick={() => { setHazardFilter(type); setPage(1); }}
-              >
-                {type === 'all' ? 'All types' : `${type[0].toUpperCase()}${type.slice(1)}`}
-              </button>
-            ))}
-          </div>
+          {!fireOnly && (
+            <div className="db-active-zone-types" role="group" aria-label="Filter active zones by hazard type">
+              {['all', 'flood', 'fire', 'landslide'].map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  className={`db-active-zone-type${hazardFilter === type ? ' is-active' : ''}`}
+                  aria-pressed={hazardFilter === type}
+                  onClick={() => { setHazardFilter(type); setPage(1); }}
+                >
+                  {type === 'all' ? 'All types' : `${type[0].toUpperCase()}${type.slice(1)}`}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="db-active-zones-search-row">
             <label className="db-field">
               Search active zones
@@ -153,7 +159,7 @@ export default function ActiveZonesCard({ onResolved }) {
       )}
 
       {!loading && zones.length === 0 ? (
-        <p className="db-empty">No hazard zones are active right now.</p>
+        <p className="db-empty">{fireOnly ? 'No fires are active right now.' : 'No hazard zones are active right now.'}</p>
       ) : !loading && filteredZones.length === 0 ? (
         <p className="db-empty">No active zones match the selected filters. Try another type or search.</p>
       ) : (
@@ -173,14 +179,16 @@ export default function ActiveZonesCard({ onResolved }) {
                   >
                     Resolve
                   </button>
-                  <button
-                    type="button"
-                    className="db-btn db-btn-outline db-btn-sm"
-                    onClick={() => setTarget({ id: z.id, title: zoneLabel(z), mode: 'retract' })}
-                    title="Published by mistake — withdraw without filing a historical record"
-                  >
-                    Withdraw
-                  </button>
+                  {!fireOnly && (
+                    <button
+                      type="button"
+                      className="db-btn db-btn-outline db-btn-sm"
+                      onClick={() => setTarget({ id: z.id, title: zoneLabel(z), mode: 'retract' })}
+                      title="Published by mistake — withdraw without filing a historical record"
+                    >
+                      Withdraw
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="db-item-meta">

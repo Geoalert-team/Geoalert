@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import RecordDetail from '../components/History/RecordDetail';
 import HistoryExport from '../components/History/HistoryExport';
+import HistoryImport from '../components/History/HistoryImport';
 import { useAuth } from '../context/AuthContext';
 import { historyApi } from '../api/historyApi';
 import { barangaysApi } from '../api/barangaysApi';
@@ -41,10 +42,16 @@ const PAGE_SIZE = 10;
  * The trends, seasonal outlook and barangay likelihood that used to sit here
  * are in Reports › Analytics, which reads the same records.
  * DRRMO staff can export the filtered records in the BFP fire log's columns
- * (HistoryExport), picking the hazard types to include.
+ * (HistoryExport), picking the hazard types to include. BFP personnel see
+ * and export the fires only; the server holds their export to fires too.
+ * DRRMO staff can also import the BFP fire log or the flood and landslide
+ * log (HistoryImport).
  */
 export default function HistoricalData() {
-  const canExport = Boolean(useAuth()?.canPublish);
+  const auth = useAuth();
+  const canExport = Boolean(auth?.canPublish || auth?.canCloseFires);
+  const canImport = Boolean(auth?.canPublish);
+  const fireOnly = (auth?.user?.role?.name || auth?.user?.role) === 'BFP_Personnel';
   const [records, setRecords] = useState([]);
   const [barangays, setBarangays] = useState([]);
   const [hazardTypes, setHazardTypes] = useState([]);
@@ -74,6 +81,17 @@ export default function HistoricalData() {
     setExporting(false);
     exportButton.current?.focus();
   }, []);
+  // The import window, likewise; reloaded bumps after records are added
+  const [importing, setImporting] = useState(false);
+  const [reloaded, setReloaded] = useState(0);
+  const importButton = useRef(null);
+  const closeImport = useCallback(() => {
+    setImporting(false);
+    importButton.current?.focus();
+  }, []);
+  const imported = useCallback((result) => {
+    if (result.new > 0) setReloaded((n) => n + 1);
+  }, []);
 
   useEffect(() => {
     barangaysApi.list()
@@ -85,9 +103,9 @@ export default function HistoricalData() {
     // Read hazard types from the API instead of hardcoding 1/2/3 — the
     // seeded IDs won't survive a reseed, and new types are expected.
     hazardsApi.types()
-      .then((types) => setHazardTypes(types || []))
+      .then((types) => setHazardTypes((types || []).filter((t) => !fireOnly || t.name.toLowerCase() === 'fire')))
       .catch(() => setHazardTypes([]));
-  }, []);
+  }, [fireOnly]);
 
   // The barangay's purok counts (a new barangay starts on all its puroks:
   // the Barangay select resets purokId as it changes)
@@ -95,11 +113,11 @@ export default function HistoricalData() {
     setPurokCounts(null);
     if (!barangayId) return undefined;
     let cancelled = false;
-    historyApi.area({ barangay: barangayId, period: 'all' })
+    historyApi.area({ barangay: barangayId, period: 'all', ...(fireOnly ? { types: 'Fire' } : {}) })
       .then((data) => { if (!cancelled) setPurokCounts(data); })
       .catch(() => { /* no counts: the Purok filter stays hidden */ });
     return () => { cancelled = true; };
-  }, [barangayId]);
+  }, [barangayId, fireOnly]);
 
   // The Barangay, Purok and date filters, which the export shares
   const filters = useMemo(() => {
@@ -113,7 +131,9 @@ export default function HistoricalData() {
 
   useEffect(() => {
     let cancelled = false;
-    const params = hazardId ? { ...filters, hazard_type: hazardId } : filters;
+    const params = fireOnly
+      ? { ...filters, hazard_type_name: 'Fire' }
+      : hazardId ? { ...filters, hazard_type: hazardId } : filters;
 
     setLoading(true);
     setError('');
@@ -124,37 +144,44 @@ export default function HistoricalData() {
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [hazardId, filters]);
+  }, [hazardId, filters, fireOnly, reloaded]);
 
   const sampleCount = records.filter((r) => r.is_sample).length;
   const pageCount = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
   const pageRecords = records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const hazardTabs = [{ id: '', name: 'All types' }, ...hazardTypes.map((t) => ({ id: t.id, name: t.name }))];
+  // BFP has the one type, so no tabs
+  const hazardTabs = fireOnly ? [] : [{ id: '', name: 'All types' }, ...hazardTypes.map((t) => ({ id: t.id, name: t.name }))];
 
   return (
     <div className="db db-history">
       <PublicNavbar />
       <div className="db-wrap">
         <div className="db-header">
-          <h1>Historical records</h1>
-          <p>
-            Archived hazard events in Talisay City.{' '}
-            <Link to="/app/reports?tab=analytics">Trends and the seasonal outlook are in Reports › Analytics</Link>
-          </p>
+          <h1>{fireOnly ? 'Fire records' : 'Historical records'}</h1>
+          {fireOnly ? (
+            <p>Archived fires in Talisay City, with the BFP figures each was closed with.</p>
+          ) : (
+            <p>
+              Archived hazard events in Talisay City.{' '}
+              <Link to="/app/reports?tab=analytics">Trends and the seasonal outlook are in Reports › Analytics</Link>
+            </p>
+          )}
         </div>
 
-        <div className="db-tabs" role="tablist">
-          {hazardTabs.map((h) => (
-            <button
-              key={h.name} type="button" role="tab" aria-selected={String(hazardId) === String(h.id)}
-              className={`db-tab ${String(hazardId) === String(h.id) ? 'is-active' : ''}`}
-              onClick={() => setHazardId(h.id)}
-            >
-              {h.name}
-            </button>
-          ))}
-        </div>
+        {hazardTabs.length > 0 && (
+          <div className="db-tabs" role="tablist">
+            {hazardTabs.map((h) => (
+              <button
+                key={h.name} type="button" role="tab" aria-selected={String(hazardId) === String(h.id)}
+                className={`db-tab ${String(hazardId) === String(h.id) ? 'is-active' : ''}`}
+                onClick={() => setHazardId(h.id)}
+              >
+                {h.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="db-filters">
           <label className="db-field">Barangay
@@ -195,17 +222,29 @@ export default function HistoricalData() {
           <div className="db-card">
             <div className="db-history-head">
               <h2>{loading ? 'Records' : `${records.length} record${records.length === 1 ? '' : 's'}`}</h2>
-              {canExport && (
-                <button
-                  ref={exportButton}
-                  type="button"
-                  className="db-btn db-btn-outline db-btn-sm"
-                  onClick={() => setExporting(true)}
-                  disabled={hazardTypes.length === 0}
-                >
-                  Export
-                </button>
-              )}
+              <div className="db-btn-row">
+                {canImport && (
+                  <button
+                    ref={importButton}
+                    type="button"
+                    className="db-btn db-btn-outline db-btn-sm"
+                    onClick={() => setImporting(true)}
+                  >
+                    Import
+                  </button>
+                )}
+                {canExport && (
+                  <button
+                    ref={exportButton}
+                    type="button"
+                    className="db-btn db-btn-outline db-btn-sm"
+                    onClick={() => setExporting(true)}
+                    disabled={hazardTypes.length === 0}
+                  >
+                    Export
+                  </button>
+                )}
+              </div>
             </div>
             {loading ? (
               <p style={{ color: 'var(--db-soft)' }}>Loading...</p>
@@ -270,6 +309,7 @@ export default function HistoricalData() {
           onClose={closeExport}
         />
       )}
+      {importing && <HistoryImport onImported={imported} onClose={closeImport} />}
     </div>
   );
 }

@@ -176,6 +176,20 @@
 .db-history .db-export-choices { display: flex; flex-wrap: wrap; gap: 10px 20px; margin: 4px 0 10px; }
 .db-history .db-export-actions { justify-content: flex-end; margin-top: 4px; }
 
+/* The import window (HistoryImport.jsx) */
+.db-history .db-history-import { max-width: 560px; }
+.db-history .db-history-import .db-field { margin-bottom: 12px; }
+.db-history .db-import-check { margin: 4px 0 14px; padding: 14px 16px; border: 1px solid var(--db-line); border-radius: 12px; background: #f8fafd; }
+.db-history .db-import-kind { margin: 0; font-size: .82rem; font-weight: 700; color: var(--db-soft); }
+.db-history .db-import-new { margin: 2px 0 8px; font-size: 1.15rem; font-weight: 800; color: var(--history-ink, var(--db-heading)); }
+.db-history .db-import-facts { margin: 0 0 10px; padding-left: 18px; font-size: .88rem; color: var(--db-body); }
+.db-history .db-import-details { margin-top: 8px; font-size: .86rem; color: var(--db-body); }
+.db-history .db-import-details summary { cursor: pointer; font-weight: 700; color: var(--db-heading); }
+.db-history .db-import-rows,
+.db-history .db-import-list { margin: 6px 0 0; padding-left: 18px; max-height: 180px; overflow-y: auto; overflow-wrap: anywhere; }
+.db-history .db-import-rows { padding-left: 0; }
+.db-history .db-import-close { color: var(--db-soft); }
+
 .db-history .db-list { gap: 0; padding: 8px 18px; }
 
 .db-history .db-item {

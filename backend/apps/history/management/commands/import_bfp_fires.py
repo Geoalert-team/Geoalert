@@ -5,15 +5,13 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.barangays.aliases import match_barangay
-from apps.barangays.models import Barangay, Purok
+from apps.barangays.models import Barangay
 from apps.hazards.models import HazardType
 from apps.history import bfp
 from apps.history.bfp_import import plan_import
 from apps.history.bfp_link import link_address, load_link_index
+from apps.history.importing import PUROK_DATA, ImportProblem, import_fires, purok_index
 from apps.history.models import HistoricalRecord
-
-# Other spellings, unplaced puroks' sitios, and landmarks and streets by area (load_link_index)
-PUROK_DATA = Path(__file__).resolve().parents[3] / 'barangays' / 'data' / 'puroks'
 
 
 class Command(BaseCommand):
@@ -46,37 +44,24 @@ class Command(BaseCommand):
         path = Path(options['file'])
         if not path.exists():
             raise CommandError(f'File not found: {path}')
-        rows = bfp.read_sheet(path)
 
         if options['names_from']:
-            puroks_by_barangay, ids = self.puroks_from_csv(Path(options['names_from']), barangays)
-            existing, dry_run = set(), True
-        else:
-            puroks_by_barangay, ids = self.puroks_from_db()
-            existing = set(HistoricalRecord.objects.filter(source_ref__isnull=False)
-                           .values_list('source_ref', flat=True))
-            dry_run = options['dry_run']
-
-        records, report = plan_import(rows, existing, barangays, puroks_by_barangay, variants)
-        self.print_report(report)
-        if dry_run:
+            puroks_by_barangay, _ = self.puroks_from_csv(Path(options['names_from']), barangays)
+            _, report = plan_import(bfp.read_sheet(path), set(), barangays, puroks_by_barangay, variants)
+            self.print_report(report)
             self.stdout.write(self.style.SUCCESS('Dry run: nothing saved.'))
             return
 
-        with transaction.atomic():
-            for rec in records:
-                purok_name = rec.pop('purok_name')
-                record = HistoricalRecord.objects.create(hazard_type=fire, **rec)
-                if purok_name:
-                    record.puroks.add(ids[(rec['barangay'].id, purok_name)])
-        self.stdout.write(self.style.SUCCESS(f'Imported {len(records)} fires.'))
-
-    def puroks_from_db(self):
-        by_barangay, ids = {}, {}
-        for pk, barangay_id, name in Purok.objects.values_list('id', 'barangay_id', 'name'):
-            by_barangay.setdefault(barangay_id, []).append(name)
-            ids[(barangay_id, name)] = pk
-        return by_barangay, ids
+        # The History page's Import saves through the same function (apps/history/importing.py)
+        try:
+            report = import_fires(path, save=not options['dry_run'])
+        except ImportProblem as e:
+            raise CommandError(str(e))
+        self.print_report(report)
+        if options['dry_run']:
+            self.stdout.write(self.style.SUCCESS('Dry run: nothing saved.'))
+        else:
+            self.stdout.write(self.style.SUCCESS(f'Imported {report["imported"]} fires.'))
 
     def puroks_from_csv(self, path, barangays):
         if not path.exists():
@@ -90,7 +75,7 @@ class Command(BaseCommand):
         return by_barangay, {}
 
     def relink(self, barangays, variants, dry_run):
-        puroks_by_barangay, ids = self.puroks_from_db()
+        puroks_by_barangay, ids = purok_index()
         linked = barangay_only = changed = 0
         with transaction.atomic():
             for record in (HistoricalRecord.objects.filter(source_ref__startswith='bfp:')

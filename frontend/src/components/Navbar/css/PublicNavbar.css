@@ -20,6 +20,7 @@
   --pn-tone-admin: #1c2e4a;  --pn-tone-admin-tint: #e8edf5;
   --pn-tone-drrmo: #b4520b;  --pn-tone-drrmo-tint: #fdf0e3;
   --pn-tone-brgy:  #0f766e;  --pn-tone-brgy-tint:  #e2f4f1;
+  --pn-tone-bfp:   #a3122a;  --pn-tone-bfp-tint:   #fbe9ec;
   --pn-tone-none:  #6a778d;  --pn-tone-none-tint:  #eef1f5;
 
   position: sticky;
@@ -272,6 +273,7 @@
 .pn-tone-admin { background: var(--pn-tone-admin-tint); color: var(--pn-tone-admin); }
 .pn-tone-drrmo { background: var(--pn-tone-drrmo-tint); color: var(--pn-tone-drrmo); }
 .pn-tone-brgy  { background: var(--pn-tone-brgy-tint);  color: var(--pn-tone-brgy); }
+.pn-tone-bfp   { background: var(--pn-tone-bfp-tint);   color: var(--pn-tone-bfp); }
 .pn-tone-none  { background: var(--pn-tone-none-tint);  color: var(--pn-tone-none); }
 
 .pn-acct {

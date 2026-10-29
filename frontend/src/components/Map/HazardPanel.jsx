@@ -283,7 +283,7 @@ export default function HazardPanel({
   // been published. Only one form is ever open.
   const [closing, setClosing] = useState(null);
   const closeRef = useRef(null);
-  const { canPublish } = useAuth();
+  const { canPublish, canCloseFires } = useAuth();
 
   // Go back to the Overview tab and move focus into the panel whenever a new pin is chosen
   useEffect(() => {
@@ -296,11 +296,13 @@ export default function HazardPanel({
   const others = item ? stack.filter((h) => h.id !== item.id) : [];
   const worst = stack[0]; // the stack is sorted most serious first
 
-  // Only DRRMO/Admin can close out a hazard, and only one that's still live.
+  // Only DRRMO/Admin can close out a hazard, and only one that's still live;
+  // BFP personnel can close a fire, by resolving it and nothing else.
   // Sample hazards are resolvable on purpose: they are real rows in the
   // database, and walking a seeded hazard through to a historical record is
   // how the resolve flow gets demonstrated without waiting for a real one.
-  const canResolve = canPublish && item && (item.status || 'Active') === 'Active';
+  const isFire = (item?.type || '').toLowerCase() === 'fire';
+  const canResolve = (canPublish || (canCloseFires && isFire)) && item && (item.status || 'Active') === 'Active';
 
   return (
     <aside className={`pm-panel ${open ? 'is-open' : ''}`} aria-label="Hazard details">
@@ -399,7 +401,7 @@ export default function HazardPanel({
                 {/* ---------- DRRMO: close the hazard out ---------- */}
                 {canResolve && (
                   <div className="db-scope db-embed">
-                    <DeliveryReceipts zoneId={item.id} />
+                    {canPublish && <DeliveryReceipts zoneId={item.id} />}
                     {closing === 'resolve' && (
                       <ResolveHazardForm
                         zoneId={item.id}
@@ -428,7 +430,7 @@ export default function HazardPanel({
                       />
                     )}
 
-                    {!closing && (
+                    {!closing && canPublish && (
                       <>
                         <div className="db-btn-row">
                           <button type="button" className="db-btn db-btn-outline" onClick={() => setClosing('resolve')}>
@@ -442,6 +444,21 @@ export default function HazardPanel({
                           Resolve a hazard that happened and is over — it becomes a
                           historical record. Withdraw one that should never have gone
                           out; nothing is filed as an incident.
+                        </p>
+                      </>
+                    )}
+
+                    {/* BFP: close the fire with its figures; withdrawing an alert stays with DRRMO */}
+                    {!closing && !canPublish && (
+                      <>
+                        <div className="db-btn-row">
+                          <button type="button" className="db-btn db-btn-outline" onClick={() => setClosing('resolve')}>
+                            Close with BFP figures
+                          </button>
+                        </div>
+                        <p className="db-hint" style={{ marginTop: 8 }}>
+                          When the fire is out, file it with the BFP figures. It comes off the
+                          map and becomes a historical record.
                         </p>
                       </>
                     )}

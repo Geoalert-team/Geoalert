@@ -1,17 +1,8 @@
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
 
-from apps.barangays.models import Barangay, Purok
-from apps.hazards.models import HazardType
-from apps.history import flood_landslide as fl
-from apps.history.bfp_link import load_link_index
-from apps.history.models import HistoricalRecord
-
-PUROK_DATA = Path(__file__).resolve().parents[3] / 'barangays' / 'data' / 'puroks'
-# Other spellings of purok names (barangay,variant,name), hand-edited
-VARIANTS_FILE = PUROK_DATA / 'name_variants.csv'
+from apps.history.importing import ImportProblem, import_floods
 
 
 class Command(BaseCommand):
@@ -29,44 +20,22 @@ class Command(BaseCommand):
                             help='Delete every record an earlier run of this import made, then import the file.')
 
     def handle(self, *args, **options):
-        types = {t.name: t for t in HazardType.objects.filter(name__in=fl.HAZARDS.values())}
-        missing = sorted(set(fl.HAZARDS.values()) - set(types))
-        if missing:
-            raise CommandError(f'No hazard type named {", ".join(missing)}. Run seed_data first.')
         path = Path(options['file'])
         if not path.exists():
             raise CommandError(f'File not found: {path}')
+        # The History page's Import saves through the same function (apps/history/importing.py)
         try:
-            events, splits = fl.read_workbook(path)
-        except ValueError as e:
+            report = import_floods(path, save=not options['dry_run'],
+                                   include_warnings=options['include_warnings'], replace=options['replace'])
+        except ImportProblem as e:
             raise CommandError(str(e))
-
-        barangays = list(Barangay.objects.all())
-        variants = load_link_index(PUROK_DATA)
-        by_barangay, ids = {}, {}
-        for pk, barangay_id, name in Purok.objects.values_list('id', 'barangay_id', 'name'):
-            by_barangay.setdefault(barangay_id, []).append(name)
-            ids[(barangay_id, name)] = pk
-        earlier = HistoricalRecord.objects.filter(source_ref__startswith=fl.REF_PREFIX)
-        existing = set() if options['replace'] else set(earlier.values_list('source_ref', flat=True))
-
-        records, report = fl.plan_import(events, splits, existing, barangays, by_barangay, variants,
-                                         include_warnings=options['include_warnings'])
         self.print_report(report)
         if options['dry_run']:
-            replaced = f' (would replace {earlier.count()})' if options['replace'] else ''
+            replaced = f' (would replace {report["replaced"]})' if options['replace'] else ''
             self.stdout.write(self.style.SUCCESS(f'Dry run: nothing saved{replaced}.'))
             return
-
-        with transaction.atomic():
-            removed = earlier.delete()[1].get('history.HistoricalRecord', 0) if options['replace'] else 0
-            for rec in records:
-                purok_names = rec.pop('purok_names')
-                record = HistoricalRecord.objects.create(hazard_type=types[rec.pop('hazard')], **rec)
-                if purok_names:
-                    record.puroks.add(*(ids[(rec['barangay'].id, n)] for n in purok_names))
-        replaced = f', replacing {removed}' if options['replace'] else ''
-        self.stdout.write(self.style.SUCCESS(f'Imported {len(records)} records{replaced}.'))
+        replaced = f', replacing {report["replaced"]}' if options['replace'] else ''
+        self.stdout.write(self.style.SUCCESS(f'Imported {report["imported"]} records{replaced}.'))
 
     def print_report(self, report):
         for key in ('read', 'imported', 'skipped_existing', 'linked', 'barangay_only'):

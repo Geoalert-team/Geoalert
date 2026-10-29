@@ -91,7 +91,8 @@ class IncidentReportDecideView(APIView):
             'level': level,
             'thresholds': thresholds(),
             'affected_barangays': [b.name for b in barangays],
-            'recipients': alert_recipients(request.user, barangays).count() if barangays else 0,
+            'recipients': (alert_recipients(request.user, barangays, report.hazard_type).count()
+                           if barangays else 0),
             'nearby': _live_near(report, pins),
         })
 
