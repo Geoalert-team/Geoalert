@@ -155,13 +155,26 @@
   box-shadow: 0 12px 30px rgba(34, 58, 89, .06);
 }
 
-.db-history > .db-wrap > .db-card > h2 {
+.db-history > .db-wrap > .db-card > .db-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 22px 26px;
   border-bottom: 1px solid #e8edf3;
   background: linear-gradient(90deg, #fff, #f8fafd);
+}
+
+.db-history .db-history-head h2 {
+  margin: 0;
   color: var(--history-ink);
   font-size: 1.1rem;
 }
+
+/* The export window (HistoryExport.jsx) */
+.db-history .db-history-export { max-width: 520px; }
+.db-history .db-export-choices { display: flex; flex-wrap: wrap; gap: 10px 20px; margin: 4px 0 10px; }
+.db-history .db-export-actions { justify-content: flex-end; margin-top: 4px; }
 
 .db-history .db-list { gap: 0; padding: 8px 18px; }
 
@@ -229,7 +242,7 @@
   .db-history .db-tab { padding: 0 13px; }
   .db-history .db-filters { grid-template-columns: 1fr; padding: 14px; }
   .db-history > .db-wrap > .db-card { border-radius: 16px; }
-  .db-history > .db-wrap > .db-card > h2 { padding: 18px; }
+  .db-history > .db-wrap > .db-card > .db-history-head { padding: 18px; }
   .db-history .db-list { padding: 6px 10px; }
   .db-history .db-item { padding: 16px 14px 16px 19px; }
   .db-history .db-pager { flex-wrap: wrap; justify-content: center; padding: 14px; }

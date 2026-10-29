@@ -37,7 +37,11 @@ export function toCsv(sections, meta = []) {
 
 /** Save text as a .csv download. The BOM makes Excel read it as UTF-8 (ñ in barangay names). */
 export function downloadCsv(filename, text) {
-  const blob = new Blob(['﻿', text], { type: 'text/csv;charset=utf-8' });
+  downloadBlob(filename, new Blob(['﻿', text], { type: 'text/csv;charset=utf-8' }));
+}
+
+/** Save a file the browser already holds (a Blob) as a download. */
+export function downloadBlob(filename, blob) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -50,7 +54,12 @@ export function downloadCsv(filename, text) {
 
 /** report-name-2026-10-19.csv */
 export function csvFilename(name, when = new Date()) {
+  return datedFilename(name, 'csv', when);
+}
+
+/** report-name-2026-10-19.xlsx */
+export function datedFilename(name, ext, when = new Date()) {
   const d = new Date(when);
   const pad = (n) => String(n).padStart(2, '0');
-  return `${name}-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.csv`;
+  return `${name}-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.${ext}`;
 }

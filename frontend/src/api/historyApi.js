@@ -35,4 +35,10 @@ export const historyApi = {
   bfpOptions: () => client.get('/api/history/bfp-options/').then((r) => r.data),
   // The flood and landslide close form's list: sub categories by hazard type
   eventOptions: () => client.get('/api/history/event-options/').then((r) => r.data),
+
+  // DRRMO: the records as a file in the BFP fire log's columns A-W, newest
+  // first (a Blob). params: file ('xlsx' or 'csv'), types ('Fire,Flood';
+  // every type when left out) and the list's barangay, purok, date_from, date_to
+  export: (params) =>
+    client.get('/api/history/export/', { params, responseType: 'blob' }).then((r) => r.data),
 };

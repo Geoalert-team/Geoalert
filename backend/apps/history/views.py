@@ -1,17 +1,57 @@
+import re
 from datetime import date, timedelta
 
 from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.functions import TruncMonth
 
 from apps.history.flood_landslide import SUBCATEGORIES
 from apps.history.models import HistoricalRecord
 from apps.history.serializers import STAFF_ONLY_FIELDS, HistoricalRecordDetailSerializer, HistoricalRecordSerializer
+from utils.audit import log_event
 from utils.permissions import IsDRRMOOfficer
 from utils.sampling import TRUTHY
+
+
+def _filtered(request):
+    """
+    (records, None) narrowed by ?barangay, ?purok, ?severity, ?date_from and
+    ?date_to, or (None, error response). The hazard type is left to the caller.
+    """
+    records = HistoricalRecord.objects.select_related('hazard_type', 'barangay')
+
+    barangay = request.query_params.get('barangay')
+    purok = (request.query_params.get('purok') or '').strip()
+    if purok and not barangay:
+        return None, Response({'error': 'purok needs a barangay.'}, status=400)
+    if purok and purok != 'none':
+        try:
+            purok = int(purok)
+        except ValueError:
+            return None, Response({'error': 'purok must be an id or "none".'}, status=400)
+    if barangay:
+        from apps.history.area import barangay_records
+        records = records.filter(id__in=barangay_records(barangay))
+    if purok == 'none':
+        records = records.filter(barangay_id=barangay, puroks__isnull=True)
+    elif purok:
+        records = records.filter(puroks__id=purok)
+
+    severity = request.query_params.get('severity')
+    if severity:
+        records = records.filter(severity_level=severity)
+
+    date_from = request.query_params.get('date_from')
+    if date_from:
+        records = records.filter(occurred_at__gte=date_from)
+
+    date_to = request.query_params.get('date_to')
+    if date_to:
+        records = records.filter(occurred_at__lte=date_to)
+    return records, None
 
 
 class HistoricalRecordListView(APIView):
@@ -39,36 +79,9 @@ class HistoricalRecordListView(APIView):
     MAX_LIMIT = 50
 
     def get(self, request):
-        records = HistoricalRecord.objects.select_related('hazard_type', 'barangay')
-
-        barangay = request.query_params.get('barangay')
-        purok = (request.query_params.get('purok') or '').strip()
-        if purok and not barangay:
-            return Response({'error': 'purok needs a barangay.'}, status=400)
-        if purok and purok != 'none':
-            try:
-                purok = int(purok)
-            except ValueError:
-                return Response({'error': 'purok must be an id or "none".'}, status=400)
-        if barangay:
-            from apps.history.area import barangay_records
-            records = records.filter(id__in=barangay_records(barangay))
-        if purok == 'none':
-            records = records.filter(barangay_id=barangay, puroks__isnull=True)
-        elif purok:
-            records = records.filter(puroks__id=purok)
-
-        severity = request.query_params.get('severity')
-        if severity:
-            records = records.filter(severity_level=severity)
-
-        date_from = request.query_params.get('date_from')
-        if date_from:
-            records = records.filter(occurred_at__gte=date_from)
-
-        date_to = request.query_params.get('date_to')
-        if date_to:
-            records = records.filter(occurred_at__lte=date_to)
+        records, error = _filtered(request)
+        if error:
+            return error
 
         # Counts per hazard type before narrowing to one type
         all_types = records
@@ -390,3 +403,51 @@ class EventOptionsView(APIView):
 
     def get(self, request):
         return Response({'subcategories': SUBCATEGORIES})
+
+
+class HistoryExportView(APIView):
+    """
+    GET /api/history/export/?file=xlsx|csv&types=Fire,Flood
+    The records in the BFP fire log's columns A-W (apps/history/export.py),
+    newest first. DRRMO staff only: the log has the exact address and the
+    damage. Takes the list's barangay, purok and date filters; ?types are
+    hazard type names, every type when left out. Sample records stay out
+    of a file that leaves the system. Logged, as the report prints are.
+    """
+    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+    FILES = {
+        'xlsx': ('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Excel'),
+        'csv': ('text/csv; charset=utf-8', 'CSV'),
+    }
+
+    def get(self, request):
+        from django.http import HttpResponse
+        from apps.history.export import log_row, to_csv, to_xlsx
+
+        kind = request.query_params.get('file') or 'xlsx'
+        if kind not in self.FILES:
+            return Response({'error': f'file must be one of {list(self.FILES)}.'}, status=400)
+        records, error = _filtered(request)
+        if error:
+            return error
+        types = _type_names(request)
+        if types:
+            match = Q()
+            for name in types:
+                match |= Q(hazard_type__name__iexact=name)
+            records = records.filter(match)
+        records = records.filter(is_sample=False).prefetch_related('puroks').order_by('-occurred_at', 'id')
+
+        rows = [log_row(r) for r in records]
+        content_type, label = self.FILES[kind]
+        body = to_xlsx(rows) if kind == 'xlsx' else to_csv(rows)
+        # history-fire-flood-2026-10-29.xlsx
+        words = [re.sub(r'[^a-z0-9]+', '', t.lower()) for t in types]
+        name = '-'.join(['history', *filter(None, words), timezone.localdate().isoformat()])
+
+        criteria = ' '.join(f'{k}={v}' for k, v in request.query_params.items() if k != 'file' and v)
+        log_event(request, 'EXPORT_REPORT', 'historical_record', '',
+                  f'History downloaded as {label}: {len(rows)} record(s). {criteria}'[:300].strip())
+        response = HttpResponse(body, content_type=content_type)
+        response['Content-Disposition'] = f'attachment; filename="{name}.{kind}"'
+        return response

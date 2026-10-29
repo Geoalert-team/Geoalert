@@ -300,10 +300,14 @@ DRRMO dashboard lists fires waiting for figures, each with **Enter BFP figures**
 
 Staff also see the exact location and the damage cost. Other hazards are unchanged.
 
-**Export.** `GET /api/history/fires.xlsx` (DRRMO Officer, System Admin), with the history
-page's date and barangay filters, downloads one sheet:
-- **Header:** the BFP fire log's three header rows, with the same merged cells and words.
-- **Rows:** one per fire, oldest first.
+**Export** (as built 2026-10-29, `apps/history/export.py`). `GET /api/history/export/?file=xlsx|csv&types=Fire,Flood`
+(DRRMO Officer, System Admin), with the history page's barangay, purok and date filters,
+downloads one sheet as Excel or CSV:
+- **Header:** the BFP fire log's three header rows, with the same merged cells, words and colours.
+- **Rows:** one per record, newest first. Every hazard type unless `types` names some; sample records left out.
+- **CSV:** what Google Sheets saves from the log: merged cells blank, `26-Jan-23`, `20:36`, `Php75,000.00`.
+- **Floods and landslides** use the same columns: hazard and sub category in G–H, injured in N,
+  fatalities in T, the rest blank. Casualties a record has no split for go in T, as the log puts them.
 - **Columns A–W:**
 
   | Column | Content |
@@ -319,8 +323,8 @@ page's date and barangay filters, downloads one sheet:
   | W | Alarm |
 
 - A blank count stays blank.
-- The history page has an **Export fires (Excel)** button for staff. The export is
-  logged, as the report prints are.
+- The history page has an **Export** button for staff: tick the hazard types (the page's tab
+  to start with) and the file kind. The export is logged, as the report prints are.
 
 ## Changes to the hazard-levels spec
 

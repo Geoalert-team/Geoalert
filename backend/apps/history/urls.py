@@ -7,6 +7,7 @@ from apps.history.views import (
     PurokLevelsView,
     AreaHistoryView,
     EventOptionsView,
+    HistoryExportView,
 )
 from apps.hazards.fire_close_views import BfpOptionsView
 
@@ -22,5 +23,7 @@ urlpatterns = [
     path('bfp-options/', BfpOptionsView.as_view(),           name='history-bfp-options'),
     # The flood and landslide close form's list: sub categories
     path('event-options/', EventOptionsView.as_view(),       name='history-event-options'),
+    # DRRMO: the records as an Excel or CSV file in the BFP fire log's columns A-W
+    path('export/',    HistoryExportView.as_view(),          name='history-export'),
     path('<uuid:pk>/', HistoricalRecordDetailView.as_view(), name='history-detail'),
 ]

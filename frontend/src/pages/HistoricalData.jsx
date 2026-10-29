@@ -1,7 +1,9 @@
-﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import RecordDetail from '../components/History/RecordDetail';
+import HistoryExport from '../components/History/HistoryExport';
+import { useAuth } from '../context/AuthContext';
 import { historyApi } from '../api/historyApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { hazardsApi } from '../api/hazardsApi';
@@ -22,6 +24,13 @@ function nestedName(detail) {
   return detail?.name || detail?.properties?.name || null;
 }
 
+// The list runs newest first, so each row shows its time as well as its date
+function when(iso) {
+  return new Date(iso).toLocaleString('en-PH', {
+    month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+  });
+}
+
 const PAGE_SIZE = 10;
 
 /**
@@ -31,8 +40,11 @@ const PAGE_SIZE = 10;
  * no severity: a record is what happened, not how its alert was graded.
  * The trends, seasonal outlook and barangay likelihood that used to sit here
  * are in Reports › Analytics, which reads the same records.
+ * DRRMO staff can export the filtered records in the BFP fire log's columns
+ * (HistoryExport), picking the hazard types to include.
  */
 export default function HistoricalData() {
+  const canExport = Boolean(useAuth()?.canPublish);
   const [records, setRecords] = useState([]);
   const [barangays, setBarangays] = useState([]);
   const [hazardTypes, setHazardTypes] = useState([]);
@@ -54,6 +66,13 @@ export default function HistoricalData() {
   const closeRecord = useCallback(() => {
     setOpenId(null);
     opener.current?.focus();
+  }, []);
+  // The export window, and the button to return focus to on close
+  const [exporting, setExporting] = useState(false);
+  const exportButton = useRef(null);
+  const closeExport = useCallback(() => {
+    setExporting(false);
+    exportButton.current?.focus();
   }, []);
 
   useEffect(() => {
@@ -82,14 +101,19 @@ export default function HistoricalData() {
     return () => { cancelled = true; };
   }, [barangayId]);
 
-  useEffect(() => {
-    let cancelled = false;
+  // The Barangay, Purok and date filters, which the export shares
+  const filters = useMemo(() => {
     const params = {};
-    if (hazardId)   params.hazard_type = hazardId;
     if (barangayId) params.barangay = barangayId;
     if (barangayId && purokId) params.purok = purokId;
     if (dateFrom)   params.date_from = dateFrom;
     if (dateTo)     params.date_to = `${dateTo}T23:59:59`;
+    return params;
+  }, [barangayId, purokId, dateFrom, dateTo]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const params = hazardId ? { ...filters, hazard_type: hazardId } : filters;
 
     setLoading(true);
     setError('');
@@ -100,7 +124,7 @@ export default function HistoricalData() {
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [hazardId, barangayId, purokId, dateFrom, dateTo]);
+  }, [hazardId, filters]);
 
   const sampleCount = records.filter((r) => r.is_sample).length;
   const pageCount = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
@@ -169,7 +193,20 @@ export default function HistoricalData() {
 
         {!error && (
           <div className="db-card">
-            <h2>{loading ? 'Records' : `${records.length} record${records.length === 1 ? '' : 's'}`}</h2>
+            <div className="db-history-head">
+              <h2>{loading ? 'Records' : `${records.length} record${records.length === 1 ? '' : 's'}`}</h2>
+              {canExport && (
+                <button
+                  ref={exportButton}
+                  type="button"
+                  className="db-btn db-btn-outline db-btn-sm"
+                  onClick={() => setExporting(true)}
+                  disabled={hazardTypes.length === 0}
+                >
+                  Export
+                </button>
+              )}
+            </div>
             {loading ? (
               <p style={{ color: 'var(--db-soft)' }}>Loading...</p>
             ) : records.length === 0 ? (
@@ -195,7 +232,7 @@ export default function HistoricalData() {
                     </span>
                     <span className="db-item-meta">{r.description}</span>
                     <span className="db-item-meta">
-                      {new Date(r.occurred_at).toLocaleDateString()}
+                      {when(r.occurred_at)}
                       {' · '}{countText('Casualties', r.total_casualties)}
                       {' · '}{countText('Displaced', r.total_displaced)}
                     </span>
@@ -224,6 +261,15 @@ export default function HistoricalData() {
       </div>
 
       {openId && <RecordDetail recordId={openId} onClose={closeRecord} />}
+      {exporting && (
+        <HistoryExport
+          hazardTypes={hazardTypes}
+          initialTypes={hazardTypes.filter((t) => !hazardId || String(t.id) === String(hazardId)).map((t) => t.name)}
+          filters={filters}
+          hasSamples={sampleCount > 0}
+          onClose={closeExport}
+        />
+      )}
     </div>
   );
 }
