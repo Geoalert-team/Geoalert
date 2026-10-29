@@ -36,7 +36,7 @@ async function render(props) {
 const button = (el, text) => [...el.querySelectorAll('button')].find((b) => b.textContent.includes(text));
 const events = (el) => el.querySelectorAll('.pm-history-list li');
 
-test('the barangay view lists its puroks, the unplaced and five events', async () => {
+test('the barangay view lists its puroks and five events; the unplaced have no row', async () => {
   historyApi.area.mockResolvedValue(AREA);
   const { el } = await render();
   expect(historyApi.area).toHaveBeenCalledWith({ barangay: 19, types: 'Fire' });
@@ -44,20 +44,30 @@ test('the barangay view lists its puroks, the unplaced and five events', async (
   expect(button(el, 'Purok Sambag').textContent).toContain('2');
   // The level in words, not only its colour
   expect(button(el, 'Purok Sambag').textContent).toContain('Low');
-  expect(button(el, 'Purok not recorded').textContent).toContain('16');
+  expect(el.textContent).not.toContain('Purok not recorded');
   expect(events(el)).toHaveLength(5);
   await act(async () => { button(el, 'Show more').click(); });
   expect(events(el)).toHaveLength(7);
   expect(button(el, 'Show more')).toBeUndefined();
 });
 
-test('picking a row calls onPickPurok with its id, and the unplaced row with "none"', async () => {
+test('picking a row calls onPickPurok with its id', async () => {
   historyApi.area.mockResolvedValue(AREA);
   const { el, props } = await render();
   await act(async () => { button(el, 'Purok Sambag').click(); });
   expect(props.onPickPurok).toHaveBeenLastCalledWith(7);
-  await act(async () => { button(el, 'Purok not recorded').click(); });
-  expect(props.onPickPurok).toHaveBeenLastCalledWith('none');
+});
+
+test('a row with several types says which set its colour', async () => {
+  const mixed = { id: 7, name: 'Purok Sambag', parent: '', count: 4, level: 'Green',
+    by_type: { Fire: { count: 2, level: 'Green' }, Flood: { count: 2, level: 'Green' } } };
+  historyApi.area.mockResolvedValue({ ...AREA, puroks: [mixed] });
+  const { el } = await render({ types: ['Fire', 'Flood'] });
+  // 4 in all would read Moderate; each type's 2 is Low
+  expect(button(el, 'Purok Sambag').textContent).toContain('2 fires (Low), 2 floods (Low)');
+  historyApi.area.mockResolvedValue({ ...AREA, puroks: [{ ...mixed, by_type: { Fire: mixed.by_type.Fire } }] });
+  const one = await render();
+  expect(button(one.el, 'Purok Sambag').textContent).not.toContain('(Low)');
 });
 
 test('the purok view has a way back', async () => {

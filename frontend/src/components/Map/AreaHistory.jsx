@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { historyApi } from '../../api/historyApi';
 import RecordDetail from '../History/RecordDetail';
 import { severityInfo } from './hazardInfo';
-import { areaTitle, levelLabel } from './purokLevels';
+import { areaTitle, historyLine, levelLabel } from './purokLevels';
 import '../../pages/css/Dashboard.css';
 
 const PAGE = 5; // events shown per "Show more"
@@ -32,10 +32,9 @@ function Level({ level }) {
  * The past hazards section of the barangay panel (GET /api/history/area/).
  *
  * barangay     { id, name }
- * purokId      null for the whole barangay, a purok id for one purok, or
- *              'none' for the barangay's records that name no purok
+ * purokId      null for the whole barangay, or a purok id for one purok
  * types        the hazard types ticked in Layers; nothing is fetched for none
- * onPickPurok  (id | 'none' | null) when a row or the way back is chosen
+ * onPickPurok  (id | null) when a row or the way back is chosen
  *
  * Each event opens in full (RecordDetail). The window goes to document.body:
  * the panel slides with a transform, which would pin a fixed window to it.
@@ -100,7 +99,9 @@ export default function AreaHistory({ barangay, purokId, types, onPickPurok }) {
 
       <p className="pm-history-summary">{areaTitle(area.count, types, years)}</p>
 
-      {purokId == null && (area.puroks.length > 0 || area.unplaced > 0) && (
+      {/* Records that name no purok stay in the barangay's count and its
+          list below; they have no row, since there is no purok to show */}
+      {purokId == null && area.puroks.length > 0 && (
         <ul className="pm-area-puroks">
           {area.puroks.map((p) => (
             <li key={p.id}>
@@ -109,21 +110,17 @@ export default function AreaHistory({ barangay, purokId, types, onPickPurok }) {
                 <span>
                   <strong>{p.name}</strong>
                   {p.parent && <small>{p.parent}</small>}
+                  {/* Each type is counted on its own, so with several the
+                      colour is the highest type's, not the total's */}
+                  {Object.keys(p.by_type || {}).length > 1 && (
+                    <small>{historyLine(p.by_type, types, years)}</small>
+                  )}
                 </span>
                 <Level level={p.level} />
                 <span className="pm-area-count">{p.count}</span>
               </button>
             </li>
           ))}
-          {area.unplaced > 0 && (
-            <li>
-              <button type="button" onClick={() => onPickPurok('none')}>
-                <Swatch level={null} />
-                <span><strong>Purok not recorded</strong></span>
-                <span className="pm-area-count">{area.unplaced}</span>
-              </button>
-            </li>
-          )}
         </ul>
       )}
 

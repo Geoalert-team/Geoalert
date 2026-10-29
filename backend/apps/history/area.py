@@ -84,9 +84,13 @@ def area_history(barangay, purok, types, since, staff):
 
     rows = []
     for pid, name, parent in barangay.puroks.values_list('id', 'name', 'parent'):
-        n = sum(c for (p, _), c in counts.items() if p == pid)
+        # Its level is the highest of its types' levels, not the level of its
+        # total count: by_type says which type set it
+        by_type = {kind: {'count': c, 'level': level_for(c, t)} for (p, kind), c in counts.items() if p == pid}
+        n = sum(v['count'] for v in by_type.values())
         if n:
-            rows.append({'id': pid, 'name': name, 'parent': parent, 'count': n, 'level': level_of(pid)})
+            rows.append({'id': pid, 'name': name, 'parent': parent, 'count': n, 'level': level_of(pid),
+                         'by_type': by_type})
     rows.sort(key=lambda r: (-r['count'], r['name']))
     result.update(purok=None, puroks=rows, level=_top(r['level'] for r in rows),
                   unplaced=sum(1 for e in events if not e['puroks']))

@@ -8,7 +8,9 @@ from rest_framework import status
 
 from apps.barangays.models import Barangay, Purok
 from apps.hazards.models import HazardZone
-from apps.barangays.serializers import BarangayGeoSerializer, BarangaySerializer, PurokGeoSerializer
+from apps.barangays.serializers import (
+    BarangayGeoSerializer, BarangaySerializer, PurokGeoSerializer, sitio_leftovers,
+)
 
 
 class BarangayListView(APIView):
@@ -35,8 +37,9 @@ class PurokListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        puroks = Purok.objects.select_related('barangay').order_by('barangay__name', 'name')
-        return Response(PurokGeoSerializer(puroks, many=True, context={'members': Purok.member_counts()}).data)
+        puroks = list(Purok.objects.select_related('barangay').order_by('barangay__name', 'name'))
+        context = {'members': Purok.member_counts(), 'leftovers': sitio_leftovers(puroks)}
+        return Response(PurokGeoSerializer(puroks, many=True, context=context).data)
 
 
 class BarangayDetailView(APIView):

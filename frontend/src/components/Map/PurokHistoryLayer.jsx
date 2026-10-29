@@ -26,7 +26,7 @@ export default function PurokHistoryLayer({ geo, levels, types, tooltipFor, skip
   usePurokHover(hoverable, tooltipFor, 'pm-on-past-purok');
 
   if (!filled) return null;
-  // A sitio is drawn around its puroks: its colour goes underneath, showing where a purok has none of its own
+  // A sitio fills only its part outside its puroks (filledPuroks); its pane stays under theirs
   const { sitios, puroks } = splitFills(filled);
   // react-leaflet's GeoJSON only reads its data once: remount when the fills change
   const keyOf = (fc) => fc.features.map((f) => `${f.id ?? f.properties.id}:${f.properties.level}`).join('|');

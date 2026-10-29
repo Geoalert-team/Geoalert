@@ -24,13 +24,25 @@ test('only puroks with a level are filled', () => {
 });
 
 test('sitio fills are split from purok fills so they can sit underneath', () => {
-  const sitio = { ...feature(9), properties: { id: 9, name: 'Sitio Laray', members: 2 } };
+  const own = { type: 'Polygon', coordinates: [[[2, 0], [4, 0], [4, 1], [2, 0]]] };
+  const sitio = { ...feature(9), properties: { id: 9, name: 'Sitio Laray', members: 2, leftover: own } };
   const geo = { type: 'FeatureCollection', features: [feature(7), sitio] };
   const { sitios, puroks } = splitFills(filledPuroks(geo, byPurok(RESULTS), ['Fire']));
   expect(sitios.features.map((f) => f.id)).toEqual([9]);
   expect(puroks.features.map((f) => f.id)).toEqual([7]);
   expect(splitFills(null)).toEqual({ sitios: null, puroks: null });
   expect(splitFills({ type: 'FeatureCollection', features: [feature(7)] }).sitios).toBeNull();
+});
+
+test("a sitio fills only its own part, not the puroks inside it", () => {
+  const own = { type: 'Polygon', coordinates: [[[2, 0], [4, 0], [4, 1], [2, 0]]] };
+  const whole = { type: 'Polygon', coordinates: [[[0, 0], [4, 0], [4, 1], [0, 0]]] };
+  const sitio = { type: 'Feature', id: 9, geometry: whole, properties: { id: 9, members: 2, leftover: own } };
+  const [filled] = filledPuroks({ features: [sitio] }, byPurok(RESULTS), ['Fire']).features;
+  expect(filled.geometry).toBe(own);
+  // Its puroks cover it all: nothing of its own to fill
+  const covered = { ...sitio, properties: { id: 9, members: 2, leftover: null } };
+  expect(filledPuroks({ features: [covered] }, byPurok(RESULTS), ['Fire'])).toBeNull();
 });
 
 test('the hover line and the copy', () => {

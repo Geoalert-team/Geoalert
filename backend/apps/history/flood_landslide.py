@@ -90,7 +90,8 @@ def read_workbook(path):
         for sheet in EVENT_SHEETS:
             for number, row in _rows(wb[sheet], EVENT_COLUMNS, 4):
                 event = {'sheet': sheet, 'row': number, 'date': row['date'], 'time': row['time']}
-                for key in ('city', 'location', 'hazard', 'subcategory', 'cause', 'impact', 'remarks', 'source'):
+                # Column P, the sources, is left out: the record says what happened, not where it was read
+                for key in ('city', 'location', 'hazard', 'subcategory', 'cause', 'impact', 'remarks'):
                     event[key] = _text(row[key])
                 event['hazard'] = event['hazard'].upper()
                 event.update({key: _count(row[key]) for key in COUNTS})
@@ -134,26 +135,20 @@ def _casualties(event):
     return sum(known) if known else None
 
 
-def _figures(event):
-    parts = []
-    for key, label in (('injured', 'injured'), ('fatalities', 'dead'),
-                       ('families', 'families affected'), ('persons', 'persons affected')):
-        if event[key] is not None:
-            parts.append(f'{event[key]:,} {label}')
-    return ', '.join(parts)
-
-
-def _description(event, families_here, barangays):
-    text = [event['impact']] if event['impact'] else []
-    if families_here is not None:
-        text.append(f'Families evacuated in this barangay: {families_here:,}.')
-    # One barangay's record holds the event's figures; the others say what they were
-    figures = _figures(event)
-    if figures and barangays > 1:
-        text.append(f'Whole event ({barangays} barangays): {figures}.')
-    if event['source']:
-        text.append('Sources: ' + ' '.join(event['source'].split()))
-    return ' '.join(text)
+def _figures(event, families_here, lead):
+    """
+    The log's counts for one barangay's record. A barangay's own family count
+    (the By Barangay sheet) is its own. The event's other figures can't be
+    split by barangay, so only its first barangay's record holds them, and
+    city totals in Reports add up.
+    """
+    families = families_here if families_here is not None else event['families']
+    return {
+        'injured': event['injured'] if lead else None,
+        'fatalities': event['fatalities'] if lead else None,
+        'families_affected': families if lead or families_here is not None else None,
+        'persons_affected': event['persons'] if lead else None,
+    }
 
 
 def source_ref(day, hazard, barangay_text):
@@ -226,8 +221,6 @@ def plan_import(events, splits, existing_refs, barangays, puroks_by_barangay, va
         if not groups[0]['barangay']:
             report['no_barangay'].append(_where(event))
         casualties = _casualties(event)
-        figures = {'injured': event['injured'], 'fatalities': event['fatalities'],
-                   'families_affected': event['families'], 'persons_affected': event['persons']}
         for i, group in enumerate(groups):
             ref = source_ref(when.date(), event['hazard'], group['barangay'])
             if ref in existing_refs:
@@ -258,11 +251,11 @@ def plan_import(events, splits, existing_refs, barangays, puroks_by_barangay, va
                 'barangay': barangay,
                 'purok_names': purok_names,
                 'severity_level': severity(event),
-                'description': _description(event, group['families'], len(groups)),
+                # What happened, as the log tells it; its figures are fields of their own
+                'description': event['impact'],
                 'hazard_subcategory': event['subcategory'][:60],
                 'cause': event['cause'][:CAUSE_MAX],
-                # Stored once per event, so city totals in Reports add up
-                **{k: (v if i == 0 else None) for k, v in figures.items()},
+                **_figures(event, group['families'], lead=i == 0),
                 'total_casualties': casualties if i == 0 else None,
                 'total_displaced': None,  # the log counts persons affected, not displaced
                 'location_text': location,

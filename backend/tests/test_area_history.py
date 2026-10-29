@@ -78,7 +78,8 @@ class AreaHistoryTests(RecordMixin, TestCase):
         data = self.area(barangay=self.home.id, types='Fire').data
         self.assertEqual((data['count'], data['unplaced'], data['level'], data['purok']), (4, 1, 'Orange', None))
         self.assertEqual(data['puroks'], [{'id': self.near.id, 'name': 'Purok Near', 'parent': '',
-                                           'count': 3, 'level': 'Orange'}])
+                                           'count': 3, 'level': 'Orange',
+                                           'by_type': {'Fire': {'count': 3, 'level': 'Orange'}}}])
         self.assertEqual(len(data['events']), 4)
         self.assertNotIn('location_text', data['events'][0])
 
@@ -88,6 +89,9 @@ class AreaHistoryTests(RecordMixin, TestCase):
         self.record(self.home, self.near, hazard=self.flood)
         data = self.area(barangay=self.home.id, types='Fire,Flood').data
         self.assertEqual((data['count'], data['puroks'][0]['level']), (4, 'Green'))
+        # 4 in all would be Orange; each type's 2 is Green, and by_type says so
+        self.assertEqual(data['puroks'][0]['by_type'], {'Fire': {'count': 2, 'level': 'Green'},
+                                                        'Flood': {'count': 2, 'level': 'Green'}})
 
     def test_purok_view_and_none_view(self):
         self.history(self.near, 2)

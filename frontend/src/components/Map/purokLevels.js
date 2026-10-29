@@ -40,13 +40,21 @@ export function purokLevel(entry, types) {
     .reduce((top, lv) => (!top || RANK[lv] > RANK[top] ? lv : top), null);
 }
 
-// The puroks to fill, each with properties.level; null when there are none
+// The puroks to fill, each with properties.level; null when there are none.
+// A sitio's own past hazards happened somewhere in it, not in each of its
+// puroks, so it fills only its part outside them (properties.leftover from
+// the API): a purok inside it with none of its own stays clear, as its panel
+// row and hover say.
 export function filledPuroks(geo, levels, types) {
   if (!geo || !types.length) return null;
   const features = (geo.features || [])
     .map((f) => ({ f, level: purokLevel(levels?.get(String(f.id ?? f.properties?.id)), types) }))
-    .filter(({ level }) => level)
-    .map(({ f, level }) => ({ ...f, properties: { ...f.properties, level } }));
+    .filter(({ f, level }) => level && (!isContainer(f) || f.properties?.leftover))
+    .map(({ f, level }) => ({
+      ...f,
+      ...(isContainer(f) ? { geometry: f.properties.leftover } : {}),
+      properties: { ...f.properties, level },
+    }));
   return features.length ? { type: 'FeatureCollection', features } : null;
 }
 

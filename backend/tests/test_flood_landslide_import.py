@@ -58,7 +58,6 @@ class PlanImportTests(SimpleTestCase):
         self.assertEqual(records[0]['occurred_at'], datetime(2021, 6, 12, 18, 55, tzinfo=MNL))
         self.assertEqual(len({r['source_ref'] for r in records}), 2)
         self.assertTrue(records[0]['source_ref'].startswith('flood-landslide:'))
-        self.assertIn('Families evacuated in this barangay: 357.', records[0]['description'])
         self.assertEqual(report['imported'], 2)
 
     def test_a_named_place_on_the_purok_list_is_linked(self):
@@ -90,14 +89,24 @@ class PlanImportTests(SimpleTestCase):
         self.assertEqual((rec['hazard_subcategory'], rec['cause']), ('RIVER OVERFLOW', 'Typhoon Tino'))
         self.assertEqual((rec['injured'], rec['fatalities'], rec['families_affected'], rec['persons_affected']),
                          (1, 0, 48, 119))
-        self.assertEqual(rec['description'], 'Water neck-deep. Sources: https://a.example/1 https://a.example/2')
 
-    def test_figures_are_kept_once_per_event(self):
-        records, _ = plan([event(injured=6, fatalities=7, families=10)], [split('SAN ISIDRO'), split('DUMLOG')])
+    def test_the_description_is_what_happened_only(self):
+        # No sources and no figures: those have fields of their own
+        records, _ = plan([event(injured=6, fatalities=7)], [split('SAN ISIDRO', families=357), split('DUMLOG')])
+        self.assertEqual([r['description'] for r in records], ['Water neck-deep.', 'Water neck-deep.'])
+
+    def test_figures_the_log_cannot_split_are_kept_once_per_event(self):
+        records, _ = plan([event(injured=6, fatalities=7, families=10, persons=40)],
+                          [split('SAN ISIDRO'), split('DUMLOG')])
         self.assertEqual([r['total_casualties'] for r in records], [13, None])
-        self.assertEqual([(r['injured'], r['families_affected']) for r in records], [(6, 10), (None, None)])
-        self.assertIn('Whole event (2 barangays): 6 injured, 7 dead, 10 families affected.',
-                      records[1]['description'])
+        self.assertEqual([(r['injured'], r['fatalities'], r['families_affected'], r['persons_affected'])
+                          for r in records], [(6, 7, 10, 40), (None, None, None, None)])
+
+    def test_each_barangay_keeps_its_own_family_count(self):
+        records, _ = plan([event(families=1154, persons=4887)],
+                          [split('SAN ISIDRO', families=357), split('DUMLOG', 'SITIO BAHALA', families=107)])
+        self.assertEqual([r['families_affected'] for r in records], [357, 107])
+        self.assertEqual([r['persons_affected'] for r in records], [4887, None])
 
     def test_zero_is_kept_apart_from_not_reported(self):
         [zero], _ = plan([event(injured=0, fatalities=0)], [split('MANIPIS')])
