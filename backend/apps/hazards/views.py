@@ -1,4 +1,3 @@
-import json
 import logging
 
 from rest_framework.views import APIView
@@ -6,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.gis.geos import Polygon
-from django.db import DatabaseError, connection, transaction
+from django.db import DatabaseError, transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 
@@ -16,32 +15,28 @@ from apps.barangays.models import Barangay
 from apps.history.flood_landslide import close_fields as event_close_fields
 from apps.history.models import HistoricalRecord
 
-from apps.hazards.geometry import main_barangay, overlap_shares, overlapping_puroks
+from apps.hazards.geometry import main_barangay, overlapping_puroks
 from apps.reports.decide import zone_puroks
 from apps.hazards.models import HazardType, HazardZone, HazardAlert
 from apps.hazards.serializers import (
     clean_zone_geometry,
     HazardZoneGeoSerializer,
     HazardZoneSerializer,
-    HazardZoneCreateSerializer,
     HazardTypeSerializer,
 )
 from rest_framework_gis.fields import GeometryField
 from rest_framework.exceptions import ValidationError as DRFValidationError
-from utils.permissions import IsDRRMOOfficer, IsBarangayPersonnel
+from utils.permissions import IsDRRMOOfficer
 from utils.audit import log_event
 from utils import map_version
 
 from apps.hazards.alerts import (
     affected_barangays,
     all_clear,
-    alert_recipients,
-    approval_window,
     apply_raise,
     approval_due_at,
     approvers_for,
     issue_alert,
-    needs_second_approval,
     notify,
     release_overdue_quietly,
     request_raise,
@@ -51,63 +46,6 @@ from apps.hazards.alerts import (
 )
 
 logger = logging.getLogger(__name__)
-
-# An active zone of the same hazard type already covering this share of a
-# new drawing is most likely the same event: the officer is asked to update
-# that zone instead, and has to say so to publish anyway.
-DUPLICATE_SHARE = 0.5
-
-
-def find_duplicates(geometry, hazard_type):
-    """
-    Active (or held) zones of the same hazard type that overlap a new
-    drawing, most-overlapping first, each with the share of the new drawing
-    it already covers (0-1).
-    """
-    zones = list(
-        HazardZone.objects
-        .filter(
-            status__in=['Active', 'Awaiting_Approval'],
-            hazard_type=hazard_type,
-            geometry__intersects=geometry,
-        )
-        .select_related('hazard_type', 'barangay', 'published_by')
-    )
-    shares = overlap_shares(geometry, [z.id for z in zones])
-    found = [
-        {
-            'id': str(z.id),
-            'type': type_name(z),
-            'severity': z.severity,
-            'status': z.status,
-            'barangay': z.barangay.name if z.barangay else None,
-            'activated_at': z.activated_at,
-            'published_by': z.published_by.full_name if z.published_by else None,
-            'overlap': round(shares.get(z.id, 0), 3),
-            'major': shares.get(z.id, 0) >= DUPLICATE_SHARE,
-        }
-        for z in zones
-    ]
-    found.sort(key=lambda d: d['overlap'], reverse=True)
-    return found
-
-
-def link_report(request, zone):
-    """
-    Published from a validated incident report ("Publish hazard here" on the
-    dashboard): record which zone came of it, so the report shows it was
-    acted on and the same report isn't published twice.
-    """
-    report_id = request.data.get('incident_report')
-    if not report_id:
-        return
-    from apps.reports.models import IncidentReport
-    try:
-        IncidentReport.objects.filter(
-            id=report_id, status='Validated', hazard_zone__isnull=True,
-        ).update(hazard_zone=zone)
-    except Exception:
-        pass  # a bad report id must not stop the alert going out
 
 
 def parse_bbox(value):
@@ -204,122 +142,6 @@ class HazardZoneListView(APIView):
             return dict(HazardZoneGeoSerializer(zones, many=True, context={'within_ids': within_ids}).data)
 
         return map_version.tag(Response(map_version.cached_body(etag, build)), etag)
-
-
-class HazardZoneCreateView(APIView):
-    """
-    POST /api/hazards/create/
-    Publish a new hazard zone. DRRMO Officer only.
-    """
-    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
-
-    def post(self, request):
-        serializer = HazardZoneCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Optional override for when the GIS data can't name the affected
-        # barangays and the officer picks them by hand.
-        manual_ids = request.data.get('affected_barangays') or None
-        severity = serializer.validated_data['severity']
-
-        # Most of this area already has a live zone for the same hazard:
-        # likely a second alert for one event. The officer saw this in the
-        # preview and must confirm it is a separate event.
-        major = [
-            d for d in find_duplicates(serializer.validated_data['geometry'],
-                                       serializer.validated_data.get('hazard_type'))
-            if d['major']
-        ]
-        confirmed_duplicate = str(request.data.get('confirm_duplicate', '')).lower() in ('1', 'true', 'yes')
-        if major and not confirmed_duplicate:
-            top = major[0]
-            return Response(
-                {
-                    'error': f'An active {top["type"]} zone already covers {round(top["overlap"] * 100)}% '
-                             f'of this area. Update that zone instead, or confirm this is a separate event.',
-                    'code': 'duplicate_zone',
-                    'duplicates': major,
-                },
-                status=status.HTTP_409_CONFLICT,
-            )
-        duplicate_note = (
-            ' Published despite overlapping active zone(s): '
-            + ', '.join(f'{d["id"]} ({round(d["overlap"] * 100)}%)' for d in major) + '.'
-        ) if major else ''
-
-        # Extreme alerts wait for a second officer. If there is nobody else
-        # who could approve, waiting would only delay the warning, so it
-        # goes straight out.
-        hold = needs_second_approval(severity) and approvers_for(request.user).exists()
-
-        if hold:
-            with transaction.atomic():
-                zone = serializer.save(published_by=request.user, status='Awaiting_Approval')
-                link_report(request, zone)
-                barangays = affected_barangays(zone, manual_ids)
-                where = where_text(barangays)
-                due = approval_due_at(zone)
-                notify(
-                    approvers_for(request.user),
-                    f'Approval needed: Extreme {type_name(zone)} alert for {where}, '
-                    f'published by {request.user.full_name}. It goes out automatically at '
-                    f'{timezone.localtime(due):%I:%M %p} if no officer answers.',
-                    zone,
-                )
-            log_event(
-                request, 'HOLD_HAZARD_ALERT', 'hazard_zone', zone.id,
-                f'{type_name(zone)} / Red for {where} held for a second approval.{duplicate_note}',
-            )
-            payload = HazardZoneSerializer(zone).data
-            payload['approval'] = {
-                'required': True,
-                'due_at': due,
-                'affected_barangays': [b.name for b in barangays],
-            }
-            return Response(payload, status=status.HTTP_201_CREATED)
-
-        # One transaction: a hazard that is half-published - saved but with
-        # nobody notified - is worse than one that failed outright.
-        with transaction.atomic():
-            zone = serializer.save(published_by=request.user)
-            link_report(request, zone)
-            if needs_second_approval(severity):
-                # Extreme, but no second officer exists to approve it
-                zone.auto_released = True
-                zone.save(update_fields=['auto_released'])
-            alert, barangays, recipients = issue_alert(zone, request.user, manual_ids)
-            names = [b.name for b in barangays] or ['Talisay City']
-            where = ', '.join(names)
-
-        log_event(
-            request,
-            action='PUBLISH_HAZARD_ALERT',
-            table='hazard_alert',
-            target_id=alert.id,
-            details=(
-                f'{type_name(zone)} / {zone.severity} published for {where}. '
-                f'{len(recipients)} recipient(s) notified. '
-                f'Zone {zone.id}. '
-                f'Barangays identified {"manually" if manual_ids else "from zone geometry"}.'
-                f'{duplicate_note}'
-            ),
-        )
-
-        payload = HazardZoneSerializer(zone).data
-        # Feedback for the officer, and what F8's alert monitoring reads back
-        payload['alert'] = {
-            'id': str(alert.id),
-            'affected_barangays': names,
-            'recipients_notified': len(recipients),
-            # True when no mapped boundary matched, so the UI can offer manual selection
-            'barangays_uncertain': not barangays,
-        }
-
-        return Response(payload, status=status.HTTP_201_CREATED)
 
 
 class HazardZoneDetailView(APIView):
@@ -777,54 +599,6 @@ class HazardTypeListView(APIView):
         return Response(HazardTypeSerializer(types, many=True).data)
 
 
-class HazardUnifiedView(APIView):
-    """
-    GET /api/hazards/unified/
-    Returns all active hazard zones grouped by hazard type.
-    Supports layer toggle: ?types=Flood,Fire
-    Public access — no login required.
-    Used by Leaflet.js unified display with layer control.
-    """
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        etag = map_version.etag_for(request)
-        if map_version.is_fresh(request, etag):
-            return map_version.tag(Response(status=status.HTTP_304_NOT_MODIFIED), etag)
-
-        zones = HazardZone.objects.filter(
-            status='Active'
-        ).select_related('hazard_type', 'barangay')
-
-        # Filter by hazard types if specified
-        # Example: ?types=Flood,Fire
-        types_param = request.query_params.get('types')
-        if types_param:
-            type_names = [t.strip() for t in types_param.split(',')]
-            zones = zones.filter(hazard_type__name__in=type_names)
-
-        # Filter by severity if specified
-        # Example: ?severity=Red
-        severity = request.query_params.get('severity')
-        if severity:
-            zones = zones.filter(severity=severity)
-
-        # Filter by bbox if specified (same rules as /api/hazards/)
-        zones, within_ids, error = filter_by_bbox(zones, request)
-        if error:
-            return error
-
-        def build():
-            serializer = HazardZoneGeoSerializer(zones, many=True, context={'within_ids': within_ids})
-            return {
-                'type': 'FeatureCollection',
-                'count': zones.count(),
-                'features': serializer.data['features'],
-            }
-
-        return map_version.tag(Response(map_version.cached_body(etag, build)), etag)
-
-
 class HazardLayerListView(APIView):
     """
     GET /api/hazards/layers/
@@ -869,65 +643,6 @@ class HazardLayerListView(APIView):
         return Response({
             'Layers': layers,
             'Total_active_hazards': HazardZone.objects.filter(status='Active').count(),
-        })
-
-class HazardZonePreviewView(APIView):
-    """
-    POST /api/hazards/preview/
-    Same body as /api/hazards/create/. Saves nothing and notifies nobody.
-
-    What the officer sees before an alert goes out: the shape as it will be
-    saved (clipped to the city), the barangays it reaches, how many accounts
-    will be notified, whether it needs a second approval, and any active zone
-    of the same hazard type it overlaps, which is usually a double publish.
-    """
-    permission_classes = [IsAuthenticated, IsDRRMOOfficer]
-
-    def post(self, request):
-        serializer = HazardZoneCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        data = serializer.validated_data
-        geometry = data['geometry']
-        manual_ids = request.data.get('affected_barangays') or None
-        barangays = affected_barangays(geometry, manual_ids)
-        recipients = alert_recipients(request.user, barangays, data.get('hazard_type')).count()
-
-        duplicates = find_duplicates(geometry, data.get('hazard_type'))
-
-        # Measured by PostGIS on the spheroid rather than by reprojecting
-        # here: GDAL needs PROJ's data files, which aren't set up on every
-        # developer machine, and the database already has them.
-        def measure(shape):
-            try:
-                with connection.cursor() as cursor:
-                    cursor.execute('SELECT ST_Area(ST_GeomFromEWKB(%s)::geography)', [bytes(shape.ewkb)])
-                    return cursor.fetchone()[0]
-            except Exception:
-                return None
-
-        area = measure(geometry)
-
-        needs_approval = (
-            needs_second_approval(data['severity'])
-            and approvers_for(request.user).exists()
-        )
-        home = data.get('barangay')
-
-        return Response({
-            'geometry': json.loads(geometry.geojson),
-            'area_m2': round(area) if area is not None else None,
-            'barangay': {'id': home.id, 'name': home.name} if home else None,
-            'affected_barangays': [b.name for b in barangays],
-            'recipients': recipients,
-            'needs_approval': needs_approval,
-            'approval_minutes': int(approval_window().total_seconds() // 60),
-            'duplicates': duplicates,
-            # True when one of them covers DUPLICATE_SHARE or more of this
-            # drawing: publishing then needs confirm_duplicate.
-            'major_duplicate': any(d['major'] for d in duplicates),
-            'duplicate_share': DUPLICATE_SHARE,
         })
 
 

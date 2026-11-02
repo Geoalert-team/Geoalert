@@ -1,46 +1,35 @@
 from django.urls import path
 from apps.hazards.views import (
     HazardZoneListView,
-    HazardZoneCreateView,
     HazardZoneDetailView,
     HazardZoneResolvedListView,
     HazardZoneRetractView,
     HazardZoneRetractedListView,
-    HazardZonePreviewView,
     HazardZoneAwaitingListView,
     HazardZoneApproveView,
     HazardZoneRefuseRaiseView,
     HazardZoneReceiptsView,
     HazardTypeListView,
-    HazardUnifiedView,
     HazardLayerListView,
 )
-from apps.hazards.fire_close_views import FiguresDueView, FireCloseView, FireOutView
-from apps.hazards.field_views import (
-    PastZonesNearView, ZoneFieldMarkDetailView, ZoneFieldMarksView,
-)
+from apps.hazards.fire_close_views import FireCloseView
+from apps.hazards.field_views import ZoneFieldMarkDetailView, ZoneFieldMarksView
 
 urlpatterns = [
-    path('past-zones/',       PastZonesNearView.as_view(),          name='hazard-past-zones'),
     path('<uuid:pk>/marks/',  ZoneFieldMarksView.as_view(),         name='hazard-marks'),
     path('<uuid:pk>/marks/<uuid:mark_id>/', ZoneFieldMarkDetailView.as_view(),
          name='hazard-mark-detail'),
     path('',                  HazardZoneListView.as_view(),         name='hazard-list'),
-    path('preview/',          HazardZonePreviewView.as_view(),      name='hazard-preview'),
     path('awaiting/',         HazardZoneAwaitingListView.as_view(), name='hazard-awaiting'),
     path('<uuid:pk>/approve/', HazardZoneApproveView.as_view(),      name='hazard-approve'),
     path('<uuid:pk>/raise/refuse/', HazardZoneRefuseRaiseView.as_view(), name='hazard-raise-refuse'),
     path('<uuid:pk>/receipts/', HazardZoneReceiptsView.as_view(),     name='hazard-receipts'),
-    path('create/',           HazardZoneCreateView.as_view(),       name='hazard-create'),
     path('types/',            HazardTypeListView.as_view(),         name='hazard-types'),
-    path('unified/',          HazardUnifiedView.as_view(),          name='hazard-unified'),
     path('layers/',           HazardLayerListView.as_view(),        name='hazard-layers'),
     path('resolved/',          HazardZoneResolvedListView.as_view(),  name='hazard-resolved'),
     path('retracted/',         HazardZoneRetractedListView.as_view(), name='hazard-retracted'),
     path('<uuid:pk>/retract/', HazardZoneRetractView.as_view(),       name='hazard-retract'),
-    # A fire resolves in two steps: out (all-clear), then the BFP figures
-    path('<uuid:pk>/fire-out/', FireOutView.as_view(),               name='hazard-fire-out'),
+    # A fire closes with the BFP figures, which also puts it out
     path('<uuid:pk>/close/',   FireCloseView.as_view(),              name='hazard-fire-close'),
-    path('figures-due/',       FiguresDueView.as_view(),             name='hazard-figures-due'),
     path('<uuid:pk>/',         HazardZoneDetailView.as_view(),        name='hazard-detail'),
 ]

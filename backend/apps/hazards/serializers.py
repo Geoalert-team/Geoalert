@@ -2,10 +2,8 @@ from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from rest_framework_gis.fields import GeometryField
 from django.contrib.gis.geos import MultiPolygon, Polygon
-from apps.barangays.models import Barangay
-from apps.hazards.geometry import city_outline, clip_to_city, main_barangay
-from apps.hazards.models import HazardType, HazardZone, HazardAlert
-from apps.accounts.serializers import UserSerializer
+from apps.hazards.geometry import city_outline, clip_to_city
+from apps.hazards.models import HazardType, HazardZone
 
 
 class HazardTypeSerializer(serializers.ModelSerializer):
@@ -158,55 +156,3 @@ def clean_zone_geometry(value):
         raise serializers.ValidationError(str(exc))
 
 
-class HazardZoneCreateSerializer(serializers.ModelSerializer):
-    """
-    Body for POST /api/hazards/create/ — the map's publish form.
-    Plain fields plus a GeoJSON geometry, e.g.
-
-        {"hazard_type": 1, "barangay": 7, "severity": "Orange",
-         "description": "...",
-         "geometry": {"type": "Polygon", "coordinates": [[[lng, lat], ...]]}}
-    """
-
-    # Declared explicitly on purpose. A plain ModelSerializer can only build
-    # a field for a GIS geometry column when rest_framework_gis is listed in
-    # INSTALLED_APPS, because its AppConfig.ready() is what registers the
-    # mapping. Naming the field here makes writes work either way, instead of
-    # raising while the serializer's fields are being built — which surfaces
-    # as a 500 rather than a validation error.
-    geometry = GeometryField()
-
-    class Meta:
-        model  = HazardZone
-        fields = [
-            'barangay', 'hazard_type', 'severity',
-            'geometry', 'description',
-        ]
-
-    def validate_geometry(self, value):
-        clipped, outline = clean_zone_geometry(value)
-        self._outline = outline
-        return clipped
-
-    def validate(self, attrs):
-        # The zone belongs to the barangay holding most of it. The map only
-        # previews this; deciding it here means a zone spanning two barangays
-        # is filed under the one it mostly covers, not wherever the officer
-        # happened to tap first.
-        geom = attrs.get('geometry')
-        if geom is not None:
-            touched = Barangay.objects.filter(boundary__intersects=geom)
-            home = main_barangay(geom, touched)
-            if home is not None:
-                attrs['barangay'] = home
-            attrs['outline'] = getattr(self, '_outline', None)
-        return attrs
-
-
-class HazardAlertSerializer(serializers.ModelSerializer):
-    class Meta:
-        model  = HazardAlert
-        fields = [
-            'id', 'hazard_zone', 'issued_by',
-            'hazard_type', 'severity', 'notes', 'created_at'
-        ]

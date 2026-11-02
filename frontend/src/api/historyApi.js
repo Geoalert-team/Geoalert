@@ -12,9 +12,6 @@ export const historyApi = {
   detail: (id) =>
     client.get(`/api/history/${id}/`).then((r) => r.data),
 
-  trends: (params) =>
-    client.get('/api/history/trends/', { params }).then((r) => r.data),
-
   // Seasonal likelihood per barangay for a month (rule-based, see backend apps/history/forecast.py).
   // params: month (1-12), hazard_type_name, barangay (adds that barangay's 12-month profile)
   forecast: (params) =>

@@ -50,12 +50,3 @@ class HistoricalRecordDetailSerializer(HistoricalRecordSerializer):
             'hazard_subcategory', 'cause', 'injured', 'fatalities', 'families_affected', 'persons_affected',
         ]
 
-
-class HistoricalRecordCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model  = HistoricalRecord
-        fields = [
-            'barangay', 'hazard_type', 'hazard_zone',
-            'severity_level', 'description', 'occurred_at',
-            'total_casualties', 'total_displaced'
-        ]

@@ -106,7 +106,6 @@ export function positionsFor(role) {
 }
 
 export const BARANGAY_ROLE = 'Barangay_Personnel';
-export const BFP_ROLE = 'BFP_Personnel';
 
 export function roleName(role) {
   return role?.name || role || '';

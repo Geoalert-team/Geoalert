@@ -2,30 +2,6 @@ import { useEffect, useState } from 'react';
 
 const BASE = `${process.env.PUBLIC_URL || ''}/hazard-index`;
 
-// Five classes, lowest first. index.json carries the same list; this is the fallback.
-export const SUSCEPTIBILITY_CLASSES = [
-  { key: 'very-low', label: 'Very low', color: '#a8a8a8' },
-  { key: 'low', label: 'Low', color: '#ffb100' },
-  { key: 'medium', label: 'Moderate', color: '#8fe800' },
-  { key: 'high', label: 'High', color: '#1f3cff' },
-  { key: 'very-high', label: 'Very high', color: '#ff0000' },
-];
-
-// Which layer each filter chip shows
-export const LAYER_FOR_FILTER = { All: 'all', Flood: 'flood', Landslide: 'landslide', Fire: 'fire' };
-
-export const LAYER_TITLE = {
-  all: 'Highest susceptibility, any hazard',
-  flood: 'Flood susceptibility',
-  landslide: 'Landslide susceptibility',
-  fire: 'Fire susceptibility',
-};
-
-export function layerUrl(index, key) {
-  const file = index?.layers?.[key];
-  return file ? `${BASE}/${file}?v=${encodeURIComponent(index.generated || '')}` : null;
-}
-
 // { status: 'loading' | 'ready' | 'missing', index, rivers }
 export function useSusceptibility() {
   const [state, setState] = useState({ status: 'loading', index: null, rivers: null });

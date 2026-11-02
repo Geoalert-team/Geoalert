@@ -6,7 +6,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.db.models import Count, Q
-from django.db.models.functions import TruncMonth
 
 from apps.history.flood_landslide import SUBCATEGORIES
 from apps.history.models import HistoricalRecord
@@ -154,72 +153,6 @@ class HistoricalRecordDetailView(APIView):
                 data.pop(name, None)
         return Response(data)
 
-
-class HistoricalTrendsView(APIView):
-    """
-    GET /api/history/trends/
-    Returns aggregated trend data for visualization.
-    Public access.
-
-    Supports same filters as list view.
-    """
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        records = HistoricalRecord.objects.all()
-
-        barangay = request.query_params.get('barangay')
-        if barangay:
-            records = records.filter(barangay_id=barangay)
-
-        hazard_type = request.query_params.get('hazard_type')
-        if hazard_type:
-            records = records.filter(hazard_type_id=hazard_type)
-
-        date_from = request.query_params.get('date_from')
-        if date_from:
-            records = records.filter(occurred_at__gte=date_from)
-
-        date_to = request.query_params.get('date_to')
-        if date_to:
-            records = records.filter(occurred_at__lte=date_to)
-
-        # Frequency by hazard type
-        by_type = list(
-            records.values('hazard_type__name')
-            .annotate(count=Count('id'))
-            .order_by('-count')
-        )
-
-        # Frequency by barangay
-        by_barangay = list(
-            records.values('barangay__name')
-            .annotate(count=Count('id'))
-            .order_by('-count')[:10]
-        )
-
-        # Frequency by severity
-        by_severity = list(
-            records.values('severity_level')
-            .annotate(count=Count('id'))
-            .order_by('-count')
-        )
-
-        # Frequency over time (by month)
-        by_month = list(
-            records.annotate(month=TruncMonth('occurred_at'))
-            .values('month')
-            .annotate(count=Count('id'))
-            .order_by('month')
-        )
-
-        return Response({
-            'total_records':  records.count(),
-            'by_hazard_type': by_type,
-            'by_barangay':    by_barangay,
-            'by_severity':    by_severity,
-            'by_month':       by_month,
-        })
 
 def _type_names(request):
     """?types=Flood,Fire as a list of names; empty means every type."""

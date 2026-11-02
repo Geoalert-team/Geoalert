@@ -1,8 +1,8 @@
 """
-Resolving a fire against a real database: Fire out sends the all-clear and
-takes it off the map; closing it with the BFP figures files one history
-record that counts once in each of its puroks. Closing a fire still on the
-map does both in one step. Floods keep the one-step resolve.
+Resolving a fire against a real database: closing it with the BFP figures
+files one history record that counts once in each of its puroks, and a fire
+still on the map is put out (the all-clear, off the map) in the same step.
+Floods keep their own resolve.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -11,7 +11,7 @@ from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIRequestFactory, force_authenticate
 
-from apps.hazards.fire_close_views import FiguresDueView, FireCloseView, FireOutView
+from apps.hazards.fire_close_views import FireCloseView
 from apps.hazards.models import HazardZone
 from apps.hazards.views import HazardZoneDetailView
 from apps.history.models import HistoricalRecord
@@ -39,19 +39,8 @@ class FireCloseViewTests(FireSetupMixin, TestCase):
         return view.as_view()(request, **({'pk': zone.pk} if zone else {}))
 
     def post(self, zone, action, body):
-        return self.call({'fire-out': FireOutView, 'close': FireCloseView}[action], 'post', zone, body)
+        return self.call(FireCloseView, 'post', zone, body)
 
-    def test_fire_out_takes_it_off_the_map(self):
-        zone = self.fire_zone(self.near)
-        self.assertEqual(self.post(zone, 'fire-out', {}).status_code, 200)
-        zone.refresh_from_db()
-        self.assertEqual((zone.status, zone.fire_out_by_id), ('Resolving', self.officer.id))
-        self.assertFalse(HazardZone.objects.filter(status='Active').exists())
-        self.assertTrue(Notification.objects.filter(recipient=self.reporter, content__contains='is out').exists())
-
-    def test_only_an_active_fire_can_be_put_out(self):
-        zone = self.fire_zone(self.near, status='Resolving')
-        self.assertEqual(self.post(zone, 'fire-out', {}).data['error'], 'Only an active fire can be put out.')
 
     def test_close_files_one_record_counting_each_purok_once(self):
         zone = self.fire_zone(self.near, self.far, self.near, status='Resolving')
@@ -99,9 +88,6 @@ class FireCloseViewTests(FireSetupMixin, TestCase):
         fire = self.fire_zone(self.near)
         flood = self.zone(self.near, hazard_type=self.flood)
         self.assertEqual(self.call(HazardZoneDetailView, 'patch', fire, {'status': 'Resolved'}).status_code, 400)
-        self.assertEqual(self.call(HazardZoneDetailView, 'patch', flood, {'status': 'Resolved'}).status_code, 200)
+        self.assertEqual(self.call(HazardZoneDetailView, 'patch', flood,
+                                   {'status': 'Resolved', 'hazard_subcategory': 'RIVER OVERFLOW'}).status_code, 200)
 
-    def test_figures_due_lists_fires_that_are_out(self):
-        self.fire_zone(self.near)
-        out = self.fire_zone(self.far, status='Resolving')
-        self.assertEqual([z['id'] for z in self.call(FiguresDueView, 'get').data], [str(out.id)])

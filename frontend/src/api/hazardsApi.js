@@ -1,4 +1,4 @@
-﻿import client, { BACKGROUND } from './axiosClient';
+import client, { BACKGROUND } from './axiosClient';
 
 export const hazardsApi = {
   types: () => client.get('/api/hazards/types/').then((r) => r.data),
@@ -9,20 +9,9 @@ export const hazardsApi = {
   // server no queries.
   listTagged: () =>
     client.get('/api/hazards/', BACKGROUND).then((r) => ({ data: r.data, etag: r.headers?.etag || null })),
-  detail: (id) => client.get(`/api/hazards/${id}/`).then((r) => r.data),
-  create: (payload) => client.post('/api/hazards/create/', payload).then((r) => r.data),
 
   // Who received this zone's latest alert and who has opened it, by barangay
   receipts: (id) => client.get(`/api/hazards/${id}/receipts/`).then((r) => r.data),
-
-  // What a publish would do, without doing it: the clipped shape, the
-  // barangays and number of accounts it reaches, overlapping zones of the
-  // same type, and whether it needs a second officer. Saves nothing.
-  // Resolved or archived zones of a type near a spot, each with corners to start from
-  pastZones: ({ type, lat, lng, radius }) =>
-    client.get('/api/hazards/past-zones/', { params: { type, lat, lng, ...(radius ? { radius } : {}) } })
-      .then((r) => r.data),
-  preview: (payload) => client.post('/api/hazards/preview/', payload).then((r) => r.data),
 
   // Extreme alerts waiting for a second officer, and approving one (sends it).
   // To refuse one, withdraw it with retract() and a reason.

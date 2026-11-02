@@ -1,12 +1,12 @@
 """
-Resolving a fire: put out, then closed with the BFP figures.
+Resolving a fire: closed with the BFP figures.
 
-POST /api/hazards/<id>/fire-out/   the fire is out: all-clear, off the map
-POST /api/hazards/<id>/close/      the BFP figures: one history record. On a
-                                   fire still Active it is put out first, in
-                                   the same transaction (the resolve form's
-                                   one step); on one already out it only closes
-GET  /api/hazards/figures-due/     fires out and still waiting for figures
+POST /api/hazards/<id>/close/      the BFP figures: one history record. A fire
+                                   still Active is put out in the same
+                                   transaction (all-clear, off the map); one
+                                   left Resolving by the old two-step flow
+                                   only closes
+GET  /api/history/bfp-options/     the close form's lists
 
 A fire is one row of the BFP fire log. The report gave its columns A-F
 (when and where); closing gives the rest (G onward: property type,
@@ -62,25 +62,6 @@ def _put_out(zone, user, note, reporter_text):
     return told, where
 
 
-class FireOutView(APIView):
-    permission_classes = [IsAuthenticated, IsBFPPersonnel]
-
-    def post(self, request, pk):
-        note = (request.data.get('note') or '').strip()
-        with transaction.atomic():
-            zone = _locked_fire(pk)
-            if zone is None:
-                return Response({'error': 'Hazard zone not found'}, status=status.HTTP_404_NOT_FOUND)
-            if not _is_fire(zone) or zone.status != 'Active':
-                return Response({'error': 'Only an active fire can be put out.'}, status=status.HTTP_409_CONFLICT)
-            told, where = _put_out(zone, request.user, note,
-                                   'The fire you reported at {where} is out. DRRMO will record the BFP figures.')
-
-        log_event(request, 'FIRE_OUT', 'hazard_zone', zone.id,
-                  f'{type_name(zone)} for {where} is out. All-clear sent to {len(told)} account(s).')
-        return Response(HazardZoneSerializer(zone).data)
-
-
 class FireCloseView(APIView):
     permission_classes = [IsAuthenticated, IsBFPPersonnel]
 
@@ -133,25 +114,6 @@ class FireCloseView(APIView):
                   f'for {len(puroks)} purok(s).')
         return Response({'zone': HazardZoneSerializer(zone).data, 'record_id': str(record.id)},
                         status=status.HTTP_201_CREATED)
-
-
-class FiguresDueView(APIView):
-    """Fires that are out and still waiting for their BFP figures, longest-waiting first."""
-    permission_classes = [IsAuthenticated, IsBFPPersonnel]
-
-    def get(self, request):
-        zones = (HazardZone.objects.filter(status='Resolving', hazard_type__name__iexact='fire')
-                 .select_related('barangay', 'hazard_type').order_by('fire_out_at'))
-        out = []
-        for zone in zones:
-            started = [r.started_at for r in zone.incidentreport_set.all() if r.started_at]
-            out.append({
-                **HazardZoneSerializer(zone).data,
-                'barangay_name': zone.barangay.name if zone.barangay else None,
-                'puroks': [p.name for p in zone_puroks(zone)],
-                'started_at': min(started) if started else zone.activated_at,
-            })
-        return Response(out)
 
 
 class BfpOptionsView(APIView):

@@ -14,7 +14,7 @@ from apps.barangays.models import Barangay
 from apps.barangays.views import BarangayHazardsView
 from apps.hazards.alerts import affected_barangays
 from apps.hazards.models import HazardType, HazardZone
-from apps.hazards.serializers import HazardZoneCreateSerializer, HazardZoneGeoSerializer, HazardZoneSerializer
+from apps.hazards.serializers import HazardZoneGeoSerializer, HazardZoneSerializer
 
 LAT, LNG = 10.74, 122.97
 M = 1 / 111_320
@@ -99,5 +99,3 @@ class NoCordonFieldsTests(TestCase):
             for name in ('cordon_m', 'cordon', 'cordon_ring'):
                 self.assertNotIn(name, serializer.Meta.fields)
 
-    def test_publishing_takes_no_cordon(self):
-        self.assertNotIn('cordon_m', HazardZoneCreateSerializer().fields)

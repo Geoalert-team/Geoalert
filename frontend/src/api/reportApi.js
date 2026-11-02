@@ -25,13 +25,6 @@ export const reportsApi = {
   forZone: (zoneId) =>
     client.get('/api/reports/incidents/', { params: { hazard_zone: zoneId } }).then((r) => r.data),
 
-  // Pinned, non-rejected reports of one hazard type from the last hours, for
-  // drawing a zone around where they were seen. DRRMO/Admin.
-  located: (hazardTypeName, sinceHours = 72) =>
-    client.get('/api/reports/incidents/', {
-      params: { located: 'true', hazard_type_name: hazardTypeName, since_hours: sinceHours },
-    }).then((r) => r.data),
-
   // Barangay Personnel: submit a new incident report.
   // photos is an optional array of File objects from an <input type="file" multiple>.
   submit: ({

@@ -4,8 +4,7 @@
 // whole puroks (purokLevels.js) and active hazards are pins. What is left
 // here is the one thing other parts still need, loadClassGrid, which turns a
 // susceptibility PNG (public/hazard-index/, built offline) back into class
-// numbers. SpotReading uses it for the panel's "This spot" reading and
-// utils/zoneCheck.js for the publish panel's checks.
+// numbers. SpotReading uses it for the panel's "This spot" reading.
 
 const BASE = `${process.env.PUBLIC_URL || ''}/hazard-index`;
 
