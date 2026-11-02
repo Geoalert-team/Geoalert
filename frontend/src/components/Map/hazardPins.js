@@ -1,10 +1,11 @@
-// Where the public map puts a hazard's pins. A zone made from reports (a
-// fire, flood or landslide pushed from the DRRMO dashboard) comes with
-// `pins`: one per purok its reports name, and it is shown by those pins
-// alone, with no shading or outline (its zone is only a few small circles,
-// used to work out who to alert). A zone an officer drew keeps one pin at its
-// middle.
+// Where the public map puts a hazard's pins, and the puroks it outlines. A
+// zone made from reports (a fire, flood or landslide pushed from the DRRMO
+// dashboard) comes with `pins`: one per purok its reports name, and no
+// shading (its zone is only a few small circles, used to work out who to
+// alert); the puroks it is in are outlined instead. A seeded zone keeps one
+// pin at its middle.
 
+import { SEVERITY_RANK } from './hazardInfo';
 import { purokAt } from './purokStyle';
 
 export function markerSpots(item) {
@@ -34,4 +35,36 @@ export function hazardPuroks(item, geo) {
     if (purok) found.set(String(purok.id), purok);
   });
   return found.size ? { type: 'FeatureCollection', features: [...found.values()] } : null;
+}
+
+/**
+ * Every hazard's puroks at once, for the map to outline lightly before
+ * anything is tapped: a FeatureCollection with each purok once, its
+ * `hazards` property the hazards it is in, most serious first. Null when
+ * there is none or the puroks haven't loaded.
+ */
+export function hazardAreas(hazards, geo) {
+  const byPurok = new Map();
+  (hazards || []).forEach((h) => {
+    (hazardPuroks(h, geo)?.features || []).forEach((f) => {
+      const entry = byPurok.get(String(f.id)) || { feature: f, hazards: [] };
+      entry.hazards.push(h);
+      byPurok.set(String(f.id), entry);
+    });
+  });
+  if (!byPurok.size) return null;
+  const rank = (h) => SEVERITY_RANK[h.severity] || 0;
+  return {
+    type: 'FeatureCollection',
+    features: [...byPurok.values()].map(({ feature, hazards: here }) => ({
+      ...feature,
+      properties: { ...feature.properties, hazards: [...here].sort((a, b) => rank(b) - rank(a)) },
+    })),
+  };
+}
+
+// The most serious hazard whose purok is under this spot, or null
+export function hazardAt(areas, lng, lat) {
+  const purok = areas ? purokAt(areas, lng, lat) : null;
+  return purok ? purok.properties.hazards[0] : null;
 }

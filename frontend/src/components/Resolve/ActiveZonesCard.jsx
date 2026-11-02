@@ -98,6 +98,7 @@ export default function ActiveZonesCard({ onResolved, fireOnly = false }) {
     onResolved?.();
   }
 
+  const noun = fireOnly ? 'fire' : 'zone';
   const query = filter.trim().toLocaleLowerCase();
   const filteredZones = zones.filter((z) => {
     const matchesType = hazardFilter === 'all' || zoneType(z).toLocaleLowerCase().includes(hazardFilter);
@@ -142,17 +143,17 @@ export default function ActiveZonesCard({ onResolved, fireOnly = false }) {
           )}
           <div className="db-active-zones-search-row">
             <label className="db-field">
-              Search active zones
+              Search active {noun}s
               <input
                 type="search"
                 value={filter}
                 onChange={(e) => { setFilter(e.target.value); setPage(1); }}
                 placeholder="Barangay or severity"
-                aria-label="Search active hazard zones by barangay or severity"
+                aria-label={`Search active ${fireOnly ? 'fires' : 'hazard zones'} by barangay or severity`}
               />
             </label>
             <span className="db-active-zones-count">
-              {filteredZones.length} of {zones.length} active zone{zones.length === 1 ? '' : 's'}
+              {filteredZones.length} of {zones.length} active {noun}{zones.length === 1 ? '' : 's'}
             </span>
           </div>
         </div>
@@ -161,7 +162,7 @@ export default function ActiveZonesCard({ onResolved, fireOnly = false }) {
       {!loading && zones.length === 0 ? (
         <p className="db-empty">{fireOnly ? 'No fires are active right now.' : 'No hazard zones are active right now.'}</p>
       ) : !loading && filteredZones.length === 0 ? (
-        <p className="db-empty">No active zones match the selected filters. Try another type or search.</p>
+        <p className="db-empty">No active {noun}s match the {fireOnly ? 'search' : 'selected filters'}. Try another {fireOnly ? 'barangay or severity' : 'type or search'}.</p>
       ) : (
         <div className="db-list">
           {pageZones.map((z) => (

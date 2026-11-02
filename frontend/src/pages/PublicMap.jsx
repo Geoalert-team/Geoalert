@@ -9,7 +9,7 @@ import BarangayPanel from '../components/Map/BarangayPanel';
 import { useSusceptibility } from '../components/Map/susceptibility';
 import PurokLayer from '../components/Map/PurokLayer';
 import PurokHistoryLayer from '../components/Map/PurokHistoryLayer';
-import { PUROK_OF_HAZARD, hasEstimates, purokAt, purokStyle, purokTooltip, puroksOf } from '../components/Map/purokStyle';
+import { PUROK_HAZARD_AREA, PUROK_OF_HAZARD, hasEstimates, purokAt, purokStyle, purokTooltip, puroksOf } from '../components/Map/purokStyle';
 import { PUROK_LEVELS, byPurok, historyLine, thresholdText } from '../components/Map/purokLevels';
 import { HAZARD_TYPES, SEVERITY, severityInfo, hazardKey, hazardIconPath, hazardColor } from '../components/Map/hazardInfo';
 import { hazardsApi } from '../api/hazardsApi';
@@ -20,7 +20,7 @@ import {
   yearSpan,
 } from '../components/Forecast/forecastLevels';
 import ForecastPeriodPicker from '../components/Forecast/ForecastPeriodPicker';
-import { hazardPuroks, markerSpots } from '../components/Map/hazardPins';
+import { hazardAreas, hazardAt, hazardPuroks, markerSpots } from '../components/Map/hazardPins';
 import './css/PublicMap.css';
 import './css/PublicMapGis.css';
 import './css/PublicMapLayers.css';
@@ -471,6 +471,10 @@ export default function PublicMap() {
     () => (panelOpen && selectedHazard ? hazardPuroks(selectedHazard, purokGeo) : null),
     [panelOpen, selectedHazard, purokGeo],
   );
+  // Every shown hazard's puroks, outlined lightly from the start so the
+  // affected area is visible before anything is tapped; a tap inside one
+  // opens its hazard
+  const areas = useMemo(() => hazardAreas(visibleHazards, purokGeo), [visibleHazards, purokGeo]);
   const stack = useMemo(
     () => stackIds.map((id) => hazards.find((h) => h.id === id)).filter(Boolean),
     [stackIds, hazards],
@@ -741,16 +745,28 @@ export default function PublicMap() {
             tooltipFor={purokTip}
           />
 
-          {/* The puroks of the hazard the panel shows: bold and lightly
-              filled, over the past-hazard fills, under the barangay lines */}
-          {selectedHazardPuroks && (
+          {/* Every active hazard's puroks, faint; the one the panel shows bold
+              and lightly filled. Over the past-hazard fills, under the
+              barangay lines, so a tap reaches the barangay layer, which
+              hands taps inside these to their hazard. */}
+          {(areas || selectedHazardPuroks) && (
             <Pane name="hazard-puroks" style={{ zIndex: 380, pointerEvents: 'none' }}>
-              <GeoJSON
-                key={`hazard-puroks-${selectedHazardId}-${selectedHazardPuroks.features.map((f) => f.id).join(',')}`}
-                data={selectedHazardPuroks}
-                style={(f) => ({ ...purokStyle(f), ...PUROK_OF_HAZARD })}
-                interactive={false}
-              />
+              {areas && (
+                <GeoJSON
+                  key={`hazard-areas-${areas.features.map((f) => `${f.id}:${f.properties.hazards.map((h) => h.id).join('+')}`).join(',')}`}
+                  data={areas}
+                  style={(f) => ({ ...purokStyle(f), ...PUROK_HAZARD_AREA })}
+                  interactive={false}
+                />
+              )}
+              {selectedHazardPuroks && (
+                <GeoJSON
+                  key={`hazard-puroks-${selectedHazardId}-${selectedHazardPuroks.features.map((f) => f.id).join(',')}`}
+                  data={selectedHazardPuroks}
+                  style={(f) => ({ ...purokStyle(f), ...PUROK_OF_HAZARD })}
+                  interactive={false}
+                />
+              )}
             </Pane>
           )}
 
@@ -804,6 +820,13 @@ export default function PublicMap() {
                   const barangay = featureToBarangay(f);
                   const open = panelOpen && selection?.kind === 'barangay'
                     && String(selection.id) === String(barangay.id);
+                  // Inside a hazard's purok: that hazard. Not while this
+                  // barangay's panel is open, where a tap picks a purok.
+                  const hazard = open ? null : hazardAt(areas, e.latlng.lng, e.latlng.lat);
+                  if (hazard) {
+                    selectHazard(hazard);
+                    return;
+                  }
                   const purok = open ? purokAt(puroksOf(purokGeo, barangay.id), e.latlng.lng, e.latlng.lat) : null;
                   selectBarangay(barangay, [e.latlng.lat, e.latlng.lng], purok ? featureId(purok) : null);
                 },
@@ -1038,6 +1061,7 @@ export default function PublicMap() {
               </ul>
               {thresholds && <p className="pm-legend-note">{thresholdText(thresholds)}</p>}
               <p className="pm-legend-note">Pins: active hazards, coloured by alert level</p>
+              <p className="pm-legend-note">Purple outline: the puroks an active hazard is in. Tap inside it for details.</p>
             </>
           )}
           {legendOpen && (

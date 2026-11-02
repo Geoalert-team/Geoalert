@@ -507,11 +507,12 @@ export default function DRRMODashboard() {
   // Replaces the old "People affected" total. The report form no longer
   // collects casualty counts, so that figure could only ever read zero — and
   // a dashboard saying nobody is affected during a flood is worse than no
-  // figure at all. How many barangays are reporting is the honest measure of
-  // spread from the data still collected.
+  // figure at all. How many barangays have a hazard on the map is the honest
+  // measure of spread. (It used to count pending reports' barangays, which
+  // read 0 while a validated fire was live.)
   const barangaysAffected = useMemo(
-    () => new Set(pending.map(barangayName).filter(Boolean)).size,
-    [pending],
+    () => new Set((hazards?.features || []).map((f) => f.properties?.barangay_name).filter(Boolean)).size,
+    [hazards],
   );
 
   const oldestPending = pending.reduce((old, r) => (!old || new Date(r.created_at) < new Date(old) ? r.created_at : old), null);
@@ -621,8 +622,8 @@ export default function DRRMODashboard() {
             <span className="adm-metric-icon adm-metric-blue"><Icon name="building" size={20} /></span>
             <div className="adm-metric-text">
               <span className="adm-metric-label">Barangays affected</span>
-              <span className="adm-metric-value">{loading ? '—' : barangaysAffected}</span>
-              <span className="adm-metric-note">Across pending reports</span>
+              <span className="adm-metric-value">{hazards ? barangaysAffected : '—'}</span>
+              <span className="adm-metric-note">With an active hazard</span>
             </div>
           </div>
           <div className="adm-metric">
@@ -637,23 +638,7 @@ export default function DRRMODashboard() {
 
         <AwaitingApprovalCard onChanged={load} />
 
-        <ActiveZonesCard onResolved={load} />
-
-        {/* What past seasons say is coming, so the office can prepare ahead */}
-        <section className="adm-card">
-          <div className="drm-section-head">
-            <div>
-              <h2>Likely hazards</h2>
-              <p>
-                Barangays the period has tended to hit in past years: next month to start, or pick a
-                month, a month and year, or a date.{' '}
-                <Link to="/app/reports?tab=analytics">See every barangay and month</Link>
-              </p>
-            </div>
-          </div>
-          <BarangayLikelihood compact limit={5} />
-        </section>
-
+        {/* What needs a decision first: reports, then live zones, then the outlook */}
         <section className="adm-card adm-card-flush">
           <div className="drm-section-head">
             <div>
@@ -753,6 +738,23 @@ export default function DRRMODashboard() {
               )}
             </>
           )}
+        </section>
+
+        <ActiveZonesCard onResolved={load} />
+
+        {/* What past seasons say is coming, so the office can prepare ahead */}
+        <section className="adm-card">
+          <div className="drm-section-head">
+            <div>
+              <h2>Likely hazards</h2>
+              <p>
+                Barangays the period has tended to hit in past years: next month to start, or pick a
+                month, a month and year, or a date.{' '}
+                <Link to="/app/reports?tab=analytics">See every barangay and month</Link>
+              </p>
+            </div>
+          </div>
+          <BarangayLikelihood compact limit={5} />
         </section>
       </div>
 

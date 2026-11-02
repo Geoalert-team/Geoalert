@@ -33,6 +33,8 @@ export const PUROK_SELECTED = { weight: 3.5, dashArray: null };
 
 // Laid over purokStyle for the puroks of the hazard whose panel is open
 export const PUROK_OF_HAZARD = { weight: 3.5, dashArray: null, fill: true, fillColor: PUROK_COLOR, fillOpacity: 0.12 };
+// Every active hazard's puroks before one is tapped: the same, lighter
+export const PUROK_HAZARD_AREA = { weight: 2, opacity: 0.6, dashArray: null, fill: true, fillColor: PUROK_COLOR, fillOpacity: 0.06 };
 
 function inRing(lng, lat, ring) {
   let inside = false;

@@ -183,6 +183,9 @@ export default function BFPDashboard() {
           </div>
         </div>
 
+        {/* The fires BFP can act on first, then what barangays are reporting */}
+        <ActiveZonesCard fireOnly onResolved={load} />
+
         <section className="adm-card adm-card-flush">
           <div className="drm-section-head">
             <div>
@@ -213,12 +216,11 @@ export default function BFPDashboard() {
           </nav>
 
           {reports === null ? (
-            <div className="adm-empty"><p>Loading fire reports…</p></div>
+            <p className="drm-empty-line">Loading fire reports…</p>
           ) : shownReports.length === 0 ? (
-            <div className="adm-empty">
-              <Icon name="check" size={28} />
-              <p>{reportTab === 'Pending' ? 'No fire report is waiting for DRRMO.' : 'No fire reports yet.'}</p>
-            </div>
+            <p className="drm-empty-line">
+              {reportTab === 'Pending' ? 'No fire report is waiting for DRRMO.' : 'No fire reports yet.'}
+            </p>
           ) : (
             <>
               <ul className="drm-list">
@@ -240,8 +242,6 @@ export default function BFPDashboard() {
             </>
           )}
         </section>
-
-        <ActiveZonesCard fireOnly onResolved={load} />
 
         <section className="adm-card adm-card-flush">
           <div className="drm-section-head">

@@ -1,4 +1,4 @@
-import { drawsShading, hazardPuroks, markerSpots } from './hazardPins';
+import { drawsShading, hazardAreas, hazardAt, hazardPuroks, markerSpots } from './hazardPins';
 
 test('a report-made fire is one marker per purok, no shading', () => {
   const fire = {
@@ -48,4 +48,26 @@ test("a hazard's puroks: none outside every purok, or before they load", () => {
   // Each purok once, however many pins sit in it
   const twice = { id: 'z', position: [0.5, 0.5], pins: [{ lat: 0.5, lng: 0.5, purok_id: 7 }, { lat: 0.6, lng: 0.6, purok_id: null }] };
   expect(names(hazardPuroks(twice, GEO))).toEqual(['Purok Sambag']);
+});
+
+test('every hazard outlined at once: each purok once, with its hazards most serious first', () => {
+  const fire = { id: 'fire', severity: 'Orange', position: [0.5, 0.5], pins: [{ lat: 0.5, lng: 0.5, purok_id: 7 }] };
+  const flood = {
+    id: 'flood', severity: 'Red', position: [0.5, 0.5],
+    pins: [{ lat: 0.5, lng: 0.5, purok_id: 7 }, { lat: 0.5, lng: 1.5, purok_id: 8 }],
+  };
+  const areas = hazardAreas([fire, flood], GEO);
+  expect(names(areas)).toEqual(['Purok Sambag', 'Purok Lubi']);
+  expect(areas.features[0].properties.hazards.map((h) => h.id)).toEqual(['flood', 'fire']);
+  expect(areas.features[1].properties.hazards.map((h) => h.id)).toEqual(['flood']);
+});
+
+test('a tap inside an outline finds its most serious hazard; outside, none', () => {
+  const fire = { id: 'fire', severity: 'Orange', position: [0.5, 0.5], pins: [{ lat: 0.5, lng: 0.5, purok_id: 7 }] };
+  const areas = hazardAreas([fire], GEO);
+  expect(hazardAt(areas, 0.4, 0.6).id).toBe('fire');
+  expect(hazardAt(areas, 1.5, 0.5)).toBeNull(); // Lubi has no hazard
+  expect(hazardAt(null, 0.4, 0.6)).toBeNull();
+  expect(hazardAreas([], GEO)).toBeNull();
+  expect(hazardAreas([fire], null)).toBeNull();
 });
