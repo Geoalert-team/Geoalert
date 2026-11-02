@@ -419,6 +419,9 @@
 .pm-facts div { padding: 12px; border-radius: 12px; background: var(--pm-mist); }
 .pm-facts dt { color: var(--pm-soft); font-size: .82rem; font-weight: 700; }
 .pm-facts dd { margin: 2px 0 0; color: var(--pm-heading); font-weight: 700; }
+.pm-facts .pm-fact-main,
+.pm-facts .pm-fact-sub { display: block; }
+.pm-facts .pm-fact-sub { margin-top: 1px; color: var(--pm-soft); font-size: .9rem; font-weight: 600; }
 
 /* What to do: numbered steps (this is a real sequence) */
 .pm .pm-steps { counter-reset: pm-step; display: grid; gap: 12px; }

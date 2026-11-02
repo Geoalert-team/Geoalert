@@ -18,10 +18,13 @@ from apps.history.models import HistoricalRecord
 from apps.reports.decide import fire_geometry
 from tests.fire_setup import LAT, LNG, M, FireSetupMixin, box
 
+# A flood is filed as a row of the flood log, which needs its sub category
+RESOLVE = {'status': 'Resolved', 'hazard_subcategory': 'RIVER OVERFLOW'}
+
 
 class ResolveLinksPuroksTests(FireSetupMixin, TestCase):
     def resolve(self, zone):
-        request = APIRequestFactory().patch('/', {'status': 'Resolved'}, format='json')
+        request = APIRequestFactory().patch('/', RESOLVE, format='json')
         force_authenticate(request, user=self.officer)
         return HazardZoneDetailView.as_view()(request, pk=zone.pk)
 

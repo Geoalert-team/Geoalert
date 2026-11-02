@@ -1,4 +1,4 @@
-import { activeFor, placeLine } from './panelFacts';
+import { activeFor, placeLine, startedParts } from './panelFacts';
 
 test('the place line names each purok once, in order', () => {
   const item = { pins: [
@@ -21,4 +21,15 @@ test('active for counts hours, then days', () => {
   expect(activeFor('2026-10-27T13:59:00+08:00', now)).toBe('1 day');
   expect(activeFor('2026-10-25T09:00:00+08:00', now)).toBe('3 days');
   expect(activeFor(null, now)).toBe('Not recorded');
+});
+
+test('the start time is a day and a time, the year only when it is not this one', () => {
+  const now = new Date(2026, 10, 2, 14, 0);
+  const at = (...parts) => new Date(...parts).toISOString();
+  expect(startedParts(at(2026, 10, 2, 13, 31), now).day).toBe('Today');
+  expect(startedParts(at(2026, 10, 2, 13, 31), now).time).toMatch(/^1:31\s?PM$/i);
+  expect(startedParts(at(2026, 10, 1, 23, 5), now).day).toBe('Yesterday');
+  expect(startedParts(at(2026, 9, 27, 9, 0), now).day).toBe('Oct 27');
+  expect(startedParts(at(2025, 10, 2, 9, 0), now).day).toMatch(/Nov 2, 2025/);
+  expect(startedParts(null, now)).toBeNull();
 });

@@ -54,7 +54,7 @@ test('several reports are all shown and counted', async () => {
   expect(el.querySelector('.db-rz-count').textContent).toBe('2 reports');
 });
 
-test('a zone published from the office says it has no report', async () => {
+test('a zone with no linked report says so', async () => {
   const el = await render(() => Promise.resolve([]));
   expect(el.querySelector('.db-hint').textContent).toMatch(/No barangay report is linked to this zone/);
 });

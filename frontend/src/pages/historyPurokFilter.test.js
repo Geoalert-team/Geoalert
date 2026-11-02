@@ -29,7 +29,7 @@ async function render() {
   const el = document.createElement('div');
   document.body.appendChild(el);
   await act(async () => {
-    createRoot(el).render(<MemoryRouter><HistoricalData /></MemoryRouter>);
+    createRoot(el).render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><HistoricalData /></MemoryRouter>);
   });
   return el;
 }

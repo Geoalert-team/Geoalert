@@ -9,7 +9,8 @@ import { reportsApi } from '../../api/reportApi';
  * which puroks, who sent it and the photos.
  *
  * Styled with db- classes from Dashboard.css, like the form around it.
- * A zone published from the office has no report; it says so.
+ * A zone with no linked report (a seeded one, or one from before reports
+ * were linked) says so.
  */
 
 function when(iso) {
@@ -53,7 +54,7 @@ export function ReportSummary({ report }) {
             <a key={photo.id || photo.url} href={photo.url} target="_blank" rel="noreferrer" title="Open the full-size photo">
               <img
                 src={photo.url}
-                alt={`Photo sent with the ${type.toLowerCase()} report${photos.length > 1 ? ` (${i + 1} of ${photos.length})` : ''}`}
+                alt={`Sent with the ${type.toLowerCase()} report${photos.length > 1 ? ` (${i + 1} of ${photos.length})` : ''}`}
                 loading="lazy"
               />
             </a>
@@ -99,7 +100,7 @@ export default function ZoneReports({ zoneId }) {
       ) : reports === null ? (
         <p className="db-hint">Loading the barangay&apos;s report…</p>
       ) : reports.length === 0 ? (
-        <p className="db-hint">No barangay report is linked to this zone. It was published from the office.</p>
+        <p className="db-hint">No barangay report is linked to this zone.</p>
       ) : (
         reports.map((r) => <ReportSummary key={r.id} report={r} />)
       )}

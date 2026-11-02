@@ -1,4 +1,4 @@
-﻿import client from './axiosClient';
+import client from './axiosClient';
 
 export const authApi = {
   login: (email, password) => client.post('/api/auth/login/', { email, password }).then((r) => r.data),

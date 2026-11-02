@@ -204,7 +204,7 @@ function PushDialog({ report, purokGeo, onCancel, onDone }) {
         <section className="drm-detail-section">
           <h3>What was reported</h3>
           <p className="drm-detail-desc">{report.description || 'No description given.'}</p>
-          <ReportPhotos report={report} alt={`Photo sent with the ${noun} report`} />
+          <ReportPhotos report={report} alt={`Sent with the ${noun} report`} />
         </section>
 
         <section className="drm-detail-section">
@@ -366,7 +366,7 @@ function ReportDetail({ report, purokGeo, onClose, onReject, onPush }) {
           <p className="drm-detail-desc">{report.description || 'No description given.'}</p>
           {/* The row's thumbnail cannot be a link, so this is where an
               officer opens the photo full size to judge it before validating. */}
-          <ReportPhotos report={report} alt={`Photo sent with the ${typeName(report)} report`} />
+          <ReportPhotos report={report} alt={`Sent with the ${typeName(report)} report`} />
         </section>
 
         {/* The reporter could drop a pin where they saw it. Showing it here
@@ -416,7 +416,7 @@ function ReportRow({ report, onOpen, onReject, onPush }) {
             <StatusTag status={report.status} />
           </div>
           <p className="drm-report-desc">{report.description || 'No description given.'}</p>
-          <ReportPhotos report={report} linked={false} alt={`Photo sent with the ${typeName(report)} report`} />
+          <ReportPhotos report={report} linked={false} alt={`Sent with the ${typeName(report)} report`} />
           <p className="drm-report-meta">
             <span>{reporterName(report)}</span>
             {report.agency && <span>{report.agency}</span>}

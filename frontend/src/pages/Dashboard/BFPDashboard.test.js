@@ -36,7 +36,7 @@ async function render() {
   const el = document.createElement('div');
   document.body.appendChild(el);
   await act(async () => {
-    createRoot(el).render(<MemoryRouter><BFPDashboard /></MemoryRouter>);
+    createRoot(el).render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><BFPDashboard /></MemoryRouter>);
   });
   return el;
 }

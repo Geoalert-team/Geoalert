@@ -17,6 +17,26 @@ export function formatWhen(iso) {
   });
 }
 
+// When it started, as two short lines that fit the fact box without the
+// time wrapping: { day: 'Today' | 'Yesterday' | 'Nov 2' | 'Nov 2, 2025',
+// time: '1:31 PM' }, or null when it isn't recorded. The year shows only
+// when it isn't this year's.
+export function startedParts(iso, now = new Date()) {
+  if (!iso) return null;
+  const when = new Date(iso);
+  const midnight = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const daysAgo = Math.round((midnight(now) - midnight(when)) / 86400000);
+  let day;
+  if (daysAgo === 0) day = 'Today';
+  else if (daysAgo === 1) day = 'Yesterday';
+  else {
+    day = when.toLocaleDateString('en-PH', {
+      month: 'short', day: 'numeric', ...(when.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }),
+    });
+  }
+  return { day, time: when.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' }) };
+}
+
 // How long since `iso`: 'Under an hour', '5 hours', '1 day', '3 days'
 export function activeFor(iso, now = new Date()) {
   if (!iso) return 'Not recorded';

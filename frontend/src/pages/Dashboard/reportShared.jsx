@@ -80,8 +80,8 @@ export function ReportPhotos({ report, alt, linked = true }) {
           photo={photo}
           linked={linked}
           alt={photos.length > 1
-            ? `${alt || 'Attached photo'} (${i + 1} of ${photos.length})`
-            : (alt || 'Attached photo')}
+            ? `${alt || 'Attached to the report'} (${i + 1} of ${photos.length})`
+            : (alt || 'Attached to the report')}
         />
       ))}
     </div>

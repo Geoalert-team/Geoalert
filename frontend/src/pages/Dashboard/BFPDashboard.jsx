@@ -44,7 +44,7 @@ function FireReportRow({ report }) {
             <StatusTag status={report.status} />
           </div>
           <p className="drm-report-desc">{report.description || 'No description given.'}</p>
-          <ReportPhotos report={report} alt="Photo sent with the fire report" />
+          <ReportPhotos report={report} alt="Sent with the fire report" />
           <p className="drm-report-meta">
             <span>{report.reporter_name || report.submitted_by_name || 'Unknown reporter'}</span>
             {report.position && <span>{report.position}</span>}

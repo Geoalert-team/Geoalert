@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { severityInfo, hazardIconPath, hazardColor, DRRMO_HOTLINE } from './hazardInfo';
 import GuidanceSteps from './GuidanceSteps';
-import { activeFor, formatWhen, placeLine } from './panelFacts';
+import { activeFor, formatWhen, placeLine, startedParts } from './panelFacts';
 import ResolveHazardForm from '../Resolve/ResolveHazardForm';
 import RetractHazardForm from '../Resolve/RetractHazardForm';
 import { hazardsApi } from '../../api/hazardsApi';
@@ -293,6 +293,7 @@ export default function HazardPanel({
   }, [item?.id, open]);
 
   const sev = item ? severityInfo(item.severity) : null;
+  const started = item ? startedParts(item.startedAt || item.activatedAt) : null;
   const others = item ? stack.filter((h) => h.id !== item.id) : [];
   const worst = stack[0]; // the stack is sorted most serious first
 
@@ -382,7 +383,15 @@ export default function HazardPanel({
                 <dl className="pm-facts">
                   <div>
                     <dt>{item.startedAt ? 'Started' : 'Published'}</dt>
-                    <dd>{formatWhen(item.startedAt || item.activatedAt)}</dd>
+                    {/* The day, then the time on its own line; the full date on hover */}
+                    <dd title={formatWhen(item.startedAt || item.activatedAt)}>
+                      {started ? (
+                        <>
+                          <span className="pm-fact-main">{started.day}</span>
+                          <span className="pm-fact-sub">{started.time}</span>
+                        </>
+                      ) : 'Not recorded'}
+                    </dd>
                   </div>
                   <div>
                     <dt>Active for</dt>
