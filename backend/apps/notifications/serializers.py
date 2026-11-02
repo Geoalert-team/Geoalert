@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from apps.hazards.alerts import NEW_FIRE_REPORT
 from apps.notifications.models import Notification
 
 
@@ -9,7 +8,6 @@ class NotificationSerializer(serializers.ModelSerializer):
     # colour the row. Read-only and flattened so the frontend doesn't have
     # to make a second request per notification.
     hazard   = serializers.SerializerMethodField()
-    category = serializers.SerializerMethodField()
     link     = serializers.SerializerMethodField()
 
     class Meta:
@@ -33,28 +31,6 @@ class NotificationSerializer(serializers.ModelSerializer):
             'status':   zone.status if zone else None,
         }
 
-    def get_category(self, obj):
-        """
-        Which group the bell files this notification under: it picks the icon,
-        the title and the tab. Anything created against a hazard alert is a
-        hazard; the rest is inferred from the wording until those
-        notifications are created with a category of their own.
-        """
-        if obj.hazard_alert_id or obj.hazard_zone_id:
-            return 'hazard'
-
-        content = (obj.content or '').lower()
-        # A withdrawal notice carries no hazard_alert on purpose (it would
-        # inflate that alert's reach figures), but it is still about a hazard
-        # and belongs with the hazard alerts in the bell.
-        if 'withdrawn' in content:
-            return 'hazard'
-        if 'report' in content:
-            return 'report'
-        if any(word in content for word in ('password', 'two-factor', 'sign in', 'login', 'locked')):
-            return 'security'
-        return 'account'
-
     def get_link(self, obj):
         """
         Where tapping the notification should go, or None to leave it inert.
@@ -69,7 +45,7 @@ class NotificationSerializer(serializers.ModelSerializer):
             if zone.status == 'Active':
                 return f'/map?zone={zone.id}'
             return '/app/dashboard'
-        # A new fire report, for BFP: the list is on their dashboard
-        if (obj.content or '').startswith(NEW_FIRE_REPORT):
+        # A report notice: the reports are on the dashboard (BFP's fire reports)
+        if obj.category == Notification.REPORT:
             return '/app/dashboard'
         return None

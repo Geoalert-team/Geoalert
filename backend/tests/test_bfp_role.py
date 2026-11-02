@@ -14,7 +14,7 @@ from apps.accounts.models import Role, User
 from apps.hazards.alerts import alert_recipients, issue_alert, tell_bfp_of_report
 from apps.hazards.fire_close_views import BfpOptionsView, FireCloseView
 from apps.hazards.models import HazardZone
-from apps.hazards.views import HazardZoneDetailView, HazardZoneRetractView
+from apps.hazards.views import HazardZoneDetailView, HazardZoneReceiptsView, HazardZoneRetractView
 from apps.history.models import HistoricalRecord
 from apps.history.views import HistoricalRecordDetailView, HistoryExportView
 from apps.notifications.models import Notification
@@ -57,6 +57,16 @@ class BfpRoleTests(FireSetupMixin, TestCase):
         zone = self.zone(self.far)
         issue_alert(zone, issued_by=self.officer)
         self.assertTrue(Notification.objects.filter(recipient=self.bfp, hazard_alert__hazard_zone=zone).exists())
+
+    def test_receipts_list_bfp_on_its_own(self):
+        zone = self.zone(self.near)
+        issue_alert(zone, issued_by=self.officer)
+        groups = self.call(HazardZoneReceiptsView, 'get', user=self.officer, pk=zone.pk).data['groups']
+        names = [g['name'] for g in groups]
+        self.assertEqual(names[-2:], ['BFP', 'DRRMO and administrators'])
+        self.assertIn('Home', names[:-2])
+        bfp = groups[-2]
+        self.assertEqual((bfp['sent'], bfp['opened'], bfp['unread']), (1, 0, ['Fire Officer']))
 
     # ---------- Closing a fire ----------
 
@@ -122,7 +132,8 @@ class BfpRoleTests(FireSetupMixin, TestCase):
         self.assertEqual(notice.content, 'New fire report from Barangay Home (Purok Near). '
                                          'DRRMO is reviewing it; the report is on your dashboard.')
         self.assertFalse(Notification.objects.exclude(recipient=self.bfp).exists())
-        self.assertEqual(NotificationSerializer(notice).data['link'], '/app/dashboard')
+        data = NotificationSerializer(notice).data
+        self.assertEqual((data['category'], data['link']), ('report', '/app/dashboard'))
 
     def test_bfp_cannot_submit_a_report(self):
         response = self.call(IncidentReportListCreateView, 'post', {'description': 'Smoke'})

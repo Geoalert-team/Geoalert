@@ -5,6 +5,11 @@ from apps.hazards.models import HazardAlert, HazardZone
 
 
 class Notification(models.Model):
+    # The bell's tab, icon and title. Set where the notice is written, so
+    # rewording a message can't move it to another tab.
+    HAZARD, REPORT, SECURITY, ACCOUNT = 'hazard', 'report', 'security', 'account'
+    CATEGORIES = [(HAZARD, 'Hazard'), (REPORT, 'Report'), (SECURITY, 'Security'), (ACCOUNT, 'Account')]
+
     id           = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_column='notf_id')
     hazard_alert = models.ForeignKey(HazardAlert, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications', db_column='notf_hzal_id')
     # The zone a notice is about when it isn't the alert itself: a request
@@ -13,6 +18,7 @@ class Notification(models.Model):
     hazard_zone  = models.ForeignKey(HazardZone, on_delete=models.CASCADE, null=True, blank=True, related_name='notices', db_column='notf_hzzn_id')
     recipient    = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', db_column='notf_recipient_id')
     content      = models.TextField(db_column='notf_content')
+    category     = models.CharField(max_length=20, choices=CATEGORIES, default=HAZARD, db_column='notf_category')
     is_read      = models.BooleanField(default=False, db_column='notf_is_read')
     sent_at      = models.DateTimeField(auto_now_add=True, db_column='notf_sent_at')
     read_at      = models.DateTimeField(null=True, blank=True, db_column='notf_read_at')

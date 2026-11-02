@@ -1,0 +1,82 @@
+# Every push and pull request: the backend tests on a fresh PostGIS database of
+# their own (not the shared Supabase test_postgres), then the frontend tests and
+# the production build. With CI set, a build warning fails the build.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# A newer push to the same branch replaces a run still going
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: geoalert
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      SECRET_KEY: ci-only-not-a-secret
+      DB_NAME: geoalert
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      # The settings default to the Windows venv's GDAL; here it is the system's
+      GDAL_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/libgdal.so
+      GEOS_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/libgeos_c.so
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GDAL and GEOS
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gdal-bin libgdal-dev libgeos-dev
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements/*.txt
+      - name: Install requirements
+        run: pip install -r requirements/development.txt
+      - name: No model change is missing a migration
+        run: python manage.py makemigrations --check --dry-run
+      - name: Tests
+        run: python manage.py test tests apps --noinput
+
+  frontend:
+    name: Frontend tests and build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install packages
+        run: npm ci
+      - name: Tests
+        run: npm test -- --watchAll=false
+      - name: Production build
+        run: npm run build

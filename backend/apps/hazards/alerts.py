@@ -195,16 +195,12 @@ def type_name(zone):
     return zone.hazard_type.name if zone.hazard_type else 'Hazard'
 
 
-def notify(users, content, zone=None):
-    """A notice about a zone that is not the alert itself."""
+def notify(users, content, zone=None, category=Notification.HAZARD):
+    """A notice that is not the alert itself, filed in the bell under category."""
     Notification.objects.bulk_create([
-        Notification(hazard_alert=None, hazard_zone=zone, recipient=u, content=content)
+        Notification(hazard_alert=None, hazard_zone=zone, recipient=u, content=content, category=category)
         for u in users
     ])
-
-
-# How a new fire report's notice starts; the bell links it to the dashboard
-NEW_FIRE_REPORT = 'New fire report'
 
 
 def tell_bfp_of_report(report):
@@ -217,8 +213,9 @@ def tell_bfp_of_report(report):
     where = f'Barangay {report.barangay.name}' if report.barangay else 'a barangay'
     notify(
         User.objects.filter(is_active=True, role__name=BFP_ROLE),
-        f'{NEW_FIRE_REPORT} from {where}{f" ({puroks})" if puroks else ""}. '
+        f'New fire report from {where}{f" ({puroks})" if puroks else ""}. '
         f'DRRMO is reviewing it; the report is on your dashboard.',
+        category=Notification.REPORT,
     )
 
 

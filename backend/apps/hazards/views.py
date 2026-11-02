@@ -26,7 +26,7 @@ from apps.hazards.serializers import (
 )
 from rest_framework_gis.fields import GeometryField
 from rest_framework.exceptions import ValidationError as DRFValidationError
-from utils.permissions import IsDRRMOOfficer
+from utils.permissions import BFP_ROLE, IsDRRMOOfficer
 from utils.audit import log_event
 from utils import map_version
 
@@ -651,12 +651,15 @@ class HazardZoneReceiptsView(APIView):
     GET /api/hazards/<id>/receipts/
 
     Who received this zone's latest alert and who has opened it, by
-    barangay. The admin alert monitor already counts this for every alert;
-    this puts it on the zone itself, so the officer looking at a hazard can
-    see that Poblacion's personnel have read it and Cansojong's haven't,
-    and phone them.
+    barangay, then BFP, then DRRMO and administrators. The admin alert
+    monitor already counts this for every alert; this puts it on the zone
+    itself, so the officer looking at a hazard can see that Poblacion's
+    personnel have read it and Cansojong's haven't, or that the BFP hasn't
+    opened a fire alert, and phone them.
     """
     permission_classes = [IsAuthenticated, IsDRRMOOfficer]
+    # The city-wide groups, after the barangays, in this order
+    STAFF_GROUPS = ('BFP', 'DRRMO and administrators')
 
     def get(self, request, pk):
         alert = (
@@ -679,6 +682,8 @@ class HazardZoneReceiptsView(APIView):
             role = u.role.name if u.role else ''
             if role == 'Barangay_Personnel':
                 name = u.assigned_barangay.name if u.assigned_barangay else 'No barangay set'
+            elif role == BFP_ROLE:
+                name = 'BFP'
             else:
                 name = 'DRRMO and administrators'
             g = groups.setdefault(name, {'name': name, 'sent': 0, 'opened': 0, 'unread': []})
@@ -688,7 +693,9 @@ class HazardZoneReceiptsView(APIView):
             else:
                 g['unread'].append(u.full_name)
 
-        ordered = sorted(groups.values(), key=lambda g: (g['name'] == 'DRRMO and administrators', g['name']))
+        staff = self.STAFF_GROUPS
+        ordered = sorted(groups.values(),
+                         key=lambda g: (staff.index(g['name']) + 1 if g['name'] in staff else 0, g['name']))
         return Response({
             'alert': {'id': str(alert.id), 'severity': alert.severity, 'created_at': alert.created_at},
             'sent': sum(g['sent'] for g in ordered),
