@@ -94,7 +94,9 @@ DATABASES = {
             'keepalives_idle': 30,
             'keepalives_interval': 10,
             'keepalives_count': 5,
-            'sslmode': 'require',
+            # Supabase needs SSL. A local PostGIS without it (CI's) sets
+            # DB_SSLMODE=disable.
+            'sslmode': env('DB_SSLMODE', default='require'),
         },
         # Reuse a connection for up to a minute instead of a fresh SSL
         # handshake per request. Health checks replace one the pooler has

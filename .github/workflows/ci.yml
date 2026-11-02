@@ -41,6 +41,8 @@ jobs:
       DB_PASSWORD: postgres
       DB_HOST: localhost
       DB_PORT: '5432'
+      # The service database has no SSL; Supabase's default (require) would refuse it
+      DB_SSLMODE: disable
       # The settings default to the Windows venv's GDAL; here it is the system's
       GDAL_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/libgdal.so
       GEOS_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/libgeos_c.so
