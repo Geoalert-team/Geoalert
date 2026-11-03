@@ -15,6 +15,39 @@ function isFreshTab() {
   }
 }
 
+// A logout the server hasn't confirmed yet. Remembered so a reload can't sign
+// someone back in because the database was unreachable when they logged out.
+const LOGOUT_PENDING = "geoalert-logout-pending";
+
+function setLogoutPending(pending) {
+  try {
+    if (pending) localStorage.setItem(LOGOUT_PENDING, "1");
+    else localStorage.removeItem(LOGOUT_PENDING);
+  } catch {
+    // storage blocked; the logout request still goes out
+  }
+}
+
+function isLogoutPending() {
+  try {
+    return localStorage.getItem(LOGOUT_PENDING) === "1";
+  } catch {
+    return false;
+  }
+}
+
+// Ends the session on the server. 401/403 mean it is already gone, which is
+// what we wanted; anything else leaves the logout pending for the next load.
+async function endServerSession() {
+  try {
+    await authApi.logout();
+    setLogoutPending(false);
+  } catch (error) {
+    if (error?.status === 401 || error?.status === 403) setLogoutPending(false);
+    else console.warn("Logout not confirmed; retrying on the next load:", error);
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,12 +84,9 @@ export function AuthProvider({ children }) {
 
       // Development only: every fresh browser tab (like the one `npm start`
       // opens) starts logged out. Refreshing the page keeps you logged in.
-      if (process.env.NODE_ENV === "development" && isFreshTab()) {
-        try {
-          await authApi.logout();
-        } catch {
-          // Not logged in to begin with — nothing to do.
-        }
+      const freshDevTab = process.env.NODE_ENV === "development" && isFreshTab();
+      if (freshDevTab || isLogoutPending()) {
+        await endServerSession();
         setUser(null);
         setLoading(false);
         return;
@@ -80,6 +110,7 @@ export function AuthProvider({ children }) {
     if (res.require_2fa) {
       return { require2fa: true };
     }
+    setLogoutPending(false);
     setUser(res.user);
     return { require2fa: false };
   }
@@ -87,25 +118,19 @@ export function AuthProvider({ children }) {
   // Step 2, only called when step 1 returned require2fa: true.
   async function verifyLoginCode(code) {
     const res = await authApi.verifyLoginCode(code);
+    setLogoutPending(false);
     setUser(res.user);
   }
 
   async function logout() {
     if (loggingOut) return; // ignore repeat taps while a logout is already in flight
     setLoggingOut(true);
-    try {
-      await authApi.logout();
-    } catch (error) {
-      // Session may already be gone server-side — that's fine,
-      // we're logging out either way.
-      console.warn(
-        "Logout request failed (session likely already cleared):",
-        error,
-      );
-    } finally {
-      setUser(null);
-      setLoggingOut(false);
-    }
+    // Signed out on screen straight away: the request can hang for a minute
+    // when the database is unreachable, and the button would look dead.
+    setLogoutPending(true);
+    setUser(null);
+    await endServerSession();
+    setLoggingOut(false);
   }
 
   const canPublish =

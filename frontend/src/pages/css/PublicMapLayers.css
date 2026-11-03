@@ -36,6 +36,9 @@
   font-size: .82rem;
   line-height: 1.4;
 }
+/* The licence's data credits, folded away at the foot of the panel */
+.pm-legend-credits { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--pm-line); }
+.pm-legend-credits summary { color: var(--pm-soft); font-size: .78rem; font-weight: 700; cursor: pointer; }
 .pm-legend-source {
   max-width: 230px;
   margin-top: 12px;

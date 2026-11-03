@@ -28,5 +28,5 @@ test('explains a busy database', () => {
 });
 
 test('explains being offline', () => {
-  expect(errorMessage({ message: 'Network Error' })).toMatch(/Can't reach the GeoAlert server/);
+  expect(errorMessage({ message: 'Network Error' })).toMatch(/Can't reach the GeoAlert Talisay server/);
 });

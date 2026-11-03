@@ -15,13 +15,13 @@ const BY_STATUS = {
   409: 'Someone else changed this at the same time. Refresh the page and try again.',
   413: 'That file is too large to upload.',
   429: 'Too many attempts. Wait a minute and try again.',
-  502: "The GeoAlert server isn't responding. Try again in a moment.",
-  503: "The GeoAlert server is busy or can't reach its database. Try again in a moment.",
-  504: 'The GeoAlert server took too long to answer. Try again in a moment.',
+  502: "The GeoAlert Talisay server isn't responding. Try again in a moment.",
+  503: "The GeoAlert Talisay server is busy or can't reach its database. Try again in a moment.",
+  504: 'The GeoAlert Talisay server took too long to answer. Try again in a moment.',
 };
 
 const OFFLINE =
-  "Can't reach the GeoAlert server. Check your internet connection, or that the backend is running.";
+  "Can't reach the GeoAlert Talisay server. Check your internet connection, or that the backend is running.";
 
 /** The first message out of a DRF validation body like {"geometry": ["..."]}. */
 function firstFieldError(data) {

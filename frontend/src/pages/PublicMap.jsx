@@ -10,7 +10,7 @@ import { useSusceptibility } from '../components/Map/susceptibility';
 import PurokLayer from '../components/Map/PurokLayer';
 import PurokHistoryLayer from '../components/Map/PurokHistoryLayer';
 import { PUROK_HAZARD_AREA, PUROK_OF_HAZARD, hasEstimates, purokAt, purokStyle, purokTooltip, puroksOf } from '../components/Map/purokStyle';
-import { PUROK_LEVELS, byPurok, historyLine, thresholdText } from '../components/Map/purokLevels';
+import { byPurok, historyLine } from '../components/Map/purokLevels';
 import { HAZARD_TYPES, SEVERITY, severityInfo, hazardKey, hazardIconPath, hazardColor } from '../components/Map/hazardInfo';
 import { hazardsApi } from '../api/hazardsApi';
 import { barangaysApi } from '../api/barangaysApi';
@@ -65,7 +65,7 @@ const TILE_FAIL_LIMIT = 6;
 // What the map is coloured by. Active hazards are pins in both views,
 // coloured by their alert level, with no shading of their own.
 // Past hazards: each purok by how often it was hit in the history period
-// (components/Map/purokLevels.js); its legend says the thresholds.
+// (components/Map/purokLevels.js).
 const VIEWS = [
   { key: 'past', label: 'Past hazards', note: null },
   // Seasonal likelihood per barangay for a chosen month, from past years.
@@ -1003,11 +1003,11 @@ export default function PublicMap() {
             aria-expanded={legendOpen}
             onClick={() => setLegendOpen((open) => !open)}
           >
-            <span>Legend</span>
+            <span>{view === 'likely' ? 'Likely hazard levels' : 'Past hazard levels'}</span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
           </button>
 
-          {view === 'likely' ? (
+          {view === 'likely' && (
             <>
               <p className="pm-legend-title">
                 Likely in {periodLabel(likelyPeriod)}: {layerName.toLowerCase()}
@@ -1048,39 +1048,8 @@ export default function PublicMap() {
                 </p>
               )}
             </>
-          ) : (
-            <>
-              <p className="pm-legend-title">Past hazards: {layerName.toLowerCase()}</p>
-              <ul>
-                {PUROK_LEVELS.map((l) => (
-                  <li key={l.code}>
-                    <span className="pm-legend-swatch" style={{ background: l.color }} />
-                    {l.label}
-                  </li>
-                ))}
-              </ul>
-              {thresholds && <p className="pm-legend-note">{thresholdText(thresholds)}</p>}
-              <p className="pm-legend-note">Pins: active hazards, coloured by alert level</p>
-              <p className="pm-legend-note">Purple outline: the puroks an active hazard is in. Tap inside it for details.</p>
-            </>
           )}
-          {legendOpen && (
-            <>
-            {viewNote && <p className="pm-legend-note">{viewNote}</p>}
-            {/* The susceptibility layers are built offline from elevation
-                and river data; say when, so nobody mistakes them for live. */}
-            {susceptibility.index?.generated && (
-              <p className="pm-legend-note">
-                Susceptibility data as of{' '}
-                {new Date(susceptibility.index.generated).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' })}.
-              </p>
-            )}
-            {/* Data credits the elevation licence requires wherever the layers are shown */}
-            {(susceptibility.index?.sources || []).map((source) => (
-              <p key={source} className="pm-legend-note pm-legend-source">{source}</p>
-            ))}
-            </>
-          )}
+          {legendOpen && viewNote && <p className="pm-legend-note">{viewNote}</p>}
 
           {legendOpen && (
             <>
@@ -1115,6 +1084,17 @@ export default function PublicMap() {
                   Overlaps another hazard zone
                 </li>
               </ul>
+
+              {/* The elevation licence requires these credits wherever the layers
+                  are shown, so they fold away here rather than go */}
+              {susceptibility.index?.sources?.length > 0 && (
+                <details className="pm-legend-credits">
+                  <summary>Data credits</summary>
+                  {susceptibility.index.sources.map((source) => (
+                    <p key={source} className="pm-legend-note pm-legend-source">{source}</p>
+                  ))}
+                </details>
+              )}
             </>
           )}
         </div>

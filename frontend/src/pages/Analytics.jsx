@@ -41,7 +41,9 @@ const toRows = (rows, key, label = (r) => r[key] || 'Unspecified', color) =>
 export default function AnalyticsPanel() {
   const [months, setMonths] = useState(12);
   const [hazardTypeId, setHazardTypeId] = useState('');
-  const [includeSamples, setIncludeSamples] = useState(false);
+  // On while the archive only holds placeholder fires, so the tab isn't empty;
+  // the notice below labels the figures. Back to false once real data is in.
+  const [includeSamples, setIncludeSamples] = useState(true);
   const [hazardTypes, setHazardTypes] = useState([]);
   const [data, setData] = useState(null);
   const [error, setError] = useState('');

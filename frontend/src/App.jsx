@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useLayoutEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
@@ -30,7 +30,16 @@ function Gate({ children, roles }) {
 }
 
 function AppRoutes() {
+  const { pathname } = useLocation();
+  // A new page starts at the top. Before paint, so it never shows the old
+  // scroll position; a ?tab= change keeps the place, like the fade.
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
   return (
+    // Keyed on the path alone so each new page fades in, while a tab change
+    // that only touches the query string leaves the page where it is.
+    <div key={pathname} className="page-transition">
     <Routes>
       {/* Public, no login required */}
       <Route path="/" element={<PublicHome />} />
@@ -77,6 +86,7 @@ function AppRoutes() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </div>
   );
 }
 

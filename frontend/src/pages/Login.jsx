@@ -94,7 +94,7 @@ export default function Login() {
           <span className="lg-logo">
             <img src={logo} alt="" />
           </span>
-          <span className="lg-brand-name">GeoAlert</span>
+          <span className="lg-brand-name">GeoAlert Talisay</span>
         </div>
 
         {/* Each step keyed as its own form: reused, "Back to login" became
@@ -105,7 +105,7 @@ export default function Login() {
           <form key="password" onSubmit={handlePasswordSubmit}>
             <div className="lg-head">
               <h1>Welcome back</h1>
-              <p>Log in to your GeoAlert staff account.</p>
+              <p>Log in to your GeoAlert Talisay staff account.</p>
             </div>
 
             <div className="lg-field">
@@ -196,7 +196,7 @@ export default function Login() {
         )}
       </main>
 
-      <p className="lg-footer">GeoAlert Disaster Risk Awareness System, Talisay City</p>
+      <p className="lg-footer">GeoAlert Talisay · Disaster Risk Awareness System</p>
     </div>
   );
 }

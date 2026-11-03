@@ -107,12 +107,18 @@
 .ph-btn-outline:hover { background: var(--ph-navy); color: var(--ph-white); }
 
 /* ---------- Hero ---------- */
-.ph-hero { padding: 72px 0 88px; }
+/* A soft glow behind the photo side */
+.ph-hero {
+  padding: 64px 0 72px;
+  background:
+    radial-gradient(ellipse 60% 70% at 88% 18%, rgba(232, 237, 245, .7), transparent 70%);
+}
 
+/* The photo takes the larger share of the row */
 .ph-hero-grid {
   display: grid;
-  grid-template-columns: 1.05fr 1fr;
-  gap: 56px;
+  grid-template-columns: 0.95fr 1.2fr;
+  gap: 48px;
   align-items: center;
 }
 
@@ -153,14 +159,59 @@
   color: var(--ph-soft);
 }
 
-/* Photo slider */
+/* Photo slider. Raised to line up with the top of the text rather than
+   its middle, and set in a thin soft-toned frame so it belongs to the page
+   instead of sitting on it; no shadow. */
+.ph-hero-media {
+  position: relative;
+  align-self: start;
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: calc(var(--ph-radius-lg) + 10px);
+  background: linear-gradient(145deg, var(--ph-line) 0%, var(--ph-mist) 45%, var(--ph-white) 100%);
+}
 .ph-slider {
   position: relative;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 5 / 4;
   border-radius: var(--ph-radius-lg);
   overflow: hidden;
   background: var(--ph-mist);
 }
+
+/* Previous / next: frosted circles on either side, inside the photo */
+.ph-slider-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .82);
+  color: var(--ph-heading);
+  box-shadow: 0 4px 14px rgba(28, 46, 74, .25);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background-color .2s ease, transform .2s ease;
+}
+.ph-slider-arrow:hover { background: var(--ph-white); transform: translateY(-50%) scale(1.06); }
+.ph-slider-arrow:active { transform: translateY(-50%) scale(.96); }
+.ph-slider-prev { left: 16px; }
+.ph-slider-next { right: 16px; }
+.ph-slider-arrow svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ph .ph-slider-arrow:focus-visible { outline: 3px solid var(--ph-white); outline-offset: 2px; }
 .ph-slider-track {
   display: flex;
   height: 100%;
@@ -170,11 +221,18 @@
   flex: 0 0 100%;
   height: 100%;
 }
+.ph-slide {
+  overflow: hidden;
+}
+/* The photo on show drifts slowly closer, so it never sits still */
 .ph-slide img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: scale(1);
+  transition: transform 7s ease-out;
 }
+.ph-slide.is-active img { transform: scale(1.06); }
 
 .ph-slider-dots {
   position: absolute;
@@ -213,7 +271,7 @@
   font-weight: 800;
   letter-spacing: -0.02em;
 }
-.ph-section-head p { margin-top: 12px; font-size: 1.08rem; }
+.ph-section-head p { margin-top: 12px; font-size: 1.08rem; text-wrap: balance; }
 
 /* ---------- Hazard cards ---------- */
 .ph-hazard-grid {
@@ -223,11 +281,15 @@
 }
 
 .ph-hazard-card {
+  display: flex;
+  flex-direction: column;
   padding: 28px;
   border: 1px solid var(--ph-line);
   border-radius: var(--ph-radius);
   background: var(--ph-white);
+  transition: border-color .2s ease, transform .2s ease;
 }
+.ph-hazard-card:hover { border-color: var(--ph-navy); transform: translateY(-2px); }
 .ph-hazard-card h3 { font-size: 1.4rem; font-weight: 800; }
 .ph-hazard-card p { margin-top: 8px; }
 
@@ -252,30 +314,31 @@
 .ph-hazard-landslide .ph-hazard-icon { background: #f8eee2; color: #b86a1e; }
 .ph-hazard-fire .ph-hazard-icon { background: #fbe9e6; color: #cc3d2e; }
 
-.ph-level-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 22px;
-  padding-top: 20px;
-  border-top: 1px solid var(--ph-line);
-}
-.ph-level-list li {
+/* At the foot of every card, so the three line up */
+.ph-hazard-link {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 4px 12px 4px 10px;
-  border-radius: var(--ph-pill);
-  background: var(--ph-mist);
-  color: var(--ph-heading);
-  font-size: .88rem;
+  align-self: flex-start;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 18px;
+  color: var(--ph-navy);
   font-weight: 700;
+  font-size: .96rem;
+  text-decoration: none;
 }
-
-.ph-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
-.ph-dot-low { background: var(--ph-low); }
-.ph-dot-medium { background: var(--ph-medium); }
-.ph-dot-high { background: var(--ph-high); }
+.ph-hazard-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+.ph-hazard-link svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .2s ease;
+}
+.ph-hazard-link:hover svg { transform: translateX(3px); }
 
 /* ---------- Risk scale ---------- */
 .ph-risk-scale {
@@ -341,6 +404,7 @@
   font-weight: 800;
   font-size: 1.15rem;
 }
+.ph-steps-action { margin-top: 44px; }
 .ph-steps h3 { font-size: 1.3rem; font-weight: 800; }
 .ph-steps p { margin-top: 8px; }
 
@@ -356,7 +420,6 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
-  padding: 26px 24px;
   border: 1px solid var(--ph-line);
   border-radius: var(--ph-radius);
   background: var(--ph-white);
@@ -389,6 +452,78 @@
 .ph-btn-copy:hover { border-color: var(--ph-navy); color: var(--ph-navy); }
 .ph-btn-copy.is-copied { background: var(--ph-low-tint); border-color: var(--ph-low); color: #16693a; }
 
+/* Icon, call and copy on each card; the DRRMO's card stands out */
+.ph-hotline-card {
+  padding: 24px;
+  transition: border-color .2s ease, transform .2s ease;
+}
+.ph-hotline-card:hover { border-color: var(--ph-navy); transform: translateY(-2px); }
+.ph-hotline-card h3 { margin-top: 8px; }
+
+.ph-hotline-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: var(--ph-mist);
+  color: var(--ph-navy);
+}
+.ph-hotline-icon svg,
+.ph-call svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ph-hotline-icon svg { width: 22px; height: 22px; }
+
+/* Call and copy share a row, at the foot of every card */
+.ph-hotline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+.ph-hotline-actions .ph-btn-copy { margin-top: 0; }
+.ph-call {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--ph-pill);
+  background: var(--ph-navy);
+  color: var(--ph-white);
+  font-size: .88rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color .2s ease;
+}
+.ph-call:hover { background: var(--ph-navy-hover); }
+.ph-call svg { width: 15px; height: 15px; }
+
+/* The DRRMO's card, the first number to try */
+.ph-hotline-card.is-primary { border-color: var(--ph-navy); background: var(--ph-navy); }
+.ph-hotline-card.is-primary h3,
+.ph-hotline-card.is-primary .ph-hotline-number { color: var(--ph-white); }
+.ph-hotline-card.is-primary .ph-hotline-icon { background: rgba(255, 255, 255, .12); color: var(--ph-white); }
+.ph-hotline-card.is-primary .ph-call { background: var(--ph-white); color: var(--ph-navy); }
+.ph-hotline-card.is-primary .ph-call:hover { background: var(--ph-mist); }
+.ph-hotline-card.is-primary .ph-btn-copy:not(.is-copied) { border-color: rgba(255, 255, 255, .45); color: var(--ph-white); }
+.ph-hotline-card.is-primary .ph-btn-copy:not(.is-copied):hover { border-color: var(--ph-white); }
+
+/* ---------- Photo banners (About, Contact, What to do) ----------
+   One height on all three, the height of Contact's two-line title, so the
+   page doesn't change shape when moving between them. Below this width the
+   titles wrap differently, so each banner fits its own text. */
+@media (min-width: 961px) {
+  .ab-hero, .ct-hero, .wt-hero { min-height: 395px; }
+}
+
 /* ---------- Footer ---------- */
 .ph-footer {
   padding: 56px 0 28px;
@@ -412,13 +547,15 @@
   height: 48px;
   border-radius: 50%;
   background: var(--ph-white);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, .14);
   overflow: hidden;
 }
+/* Zoomed like the navbar's badge: the seal's ring fills the circle */
 .ph-footer-logo img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transform: scale(1.3);
+  transform: scale(1.62);
 }
 
 .ph-footer-name {
@@ -445,7 +582,6 @@
    Responsive
    ========================================================= */
 @media (max-width: 1000px) {
-  .ph-hazard-grid { grid-template-columns: repeat(2, 1fr); }
   .ph-hotline-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
@@ -460,6 +596,8 @@
   .ph-risk-step + .ph-risk-step { border-left: 0; border-top: 1px solid var(--ph-line); }
   .ph-risk-step { padding: 34px 24px 28px; }
 
+  /* Three across or one: two across would strand the third card */
+  .ph-hazard-grid { grid-template-columns: 1fr; }
   .ph-steps { grid-template-columns: 1fr; gap: 28px; }
 }
 

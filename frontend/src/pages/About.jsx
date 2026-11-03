@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import logo from '../assets/images/logo1.png';
+import ldrrmoHead from '../assets/images/ldrrmohead.png';
 import './css/PublicHome.css'; // shared ph- styles: sections, buttons, hazard cards, risk scale, footer
 import './css/About.css';      // styles only used on this page (ab-)
 
@@ -47,18 +48,21 @@ const FEATURES = [
 const HAZARDS = [
   {
     key: 'flood',
+    guide: 'Flood',
     name: 'Floods',
     text: 'Rising water from heavy rain, overflowing rivers and blocked drainage.',
     icon: <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" />,
   },
   {
     key: 'landslide',
+    guide: 'Landslide',
     name: 'Landslides',
     text: 'Soil and rock movement on slopes, most likely after days of steady rain.',
     icon: <path d="M3 20l6-12 4 7 3-4 5 9z" />,
   },
   {
     key: 'fire',
+    guide: 'Fire',
     name: 'Fires',
     text: 'Fire risk in closely built neighborhoods, especially during the dry months.',
     icon: <path d="M12 3c1 4 5 5.5 5 10.5A5 5 0 0 1 7 13.5C7 11 8.5 9.5 9.5 8.5c0 2 1 3 2 3 0-3-.5-5.5.5-8.5z" />,
@@ -84,7 +88,7 @@ export default function About() {
         <section className="ab-hero">
           <div className="ph-container">
             <p className="ab-hero-place">Talisay City DRRMO</p>
-            <h1 className="ab-hero-title">About GeoAlert</h1>
+            <h1 className="ab-hero-title">About GeoAlert Talisay</h1>
             <p className="ab-hero-lead">
               Real-time hazard mapping, clear safety guidance and coordinated disaster
               preparedness for every barangay in Talisay City.
@@ -98,7 +102,7 @@ export default function About() {
             <div className="ab-mission-text">
               <h2>Strengthening community resilience</h2>
               <p>
-                GeoAlert was developed with the Talisay City Disaster Risk Reduction and Management
+                GeoAlert Talisay was developed with the Talisay City Disaster Risk Reduction and Management
                 Office (DRRMO) to bring critical hazard information together in one place that
                 anyone can open on their phone.
               </p>
@@ -146,11 +150,10 @@ export default function About() {
                   </div>
                   <h3>{hazard.name}</h3>
                   <p>{hazard.text}</p>
-                  <ul className="ph-level-list">
-                    <li><span className="ph-dot ph-dot-low" />Low risk</li>
-                    <li><span className="ph-dot ph-dot-medium" />Moderate risk</li>
-                    <li><span className="ph-dot ph-dot-high" />High risk</li>
-                  </ul>
+                  <Link className="ph-hazard-link" to={`/what-to-do?hazard=${hazard.guide}`}>
+                    {hazard.guide} safety steps
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                  </Link>
                 </article>
               ))}
             </div>
@@ -179,21 +182,17 @@ export default function About() {
         <section className="ph-section ph-section-tint">
           <div className="ph-container">
             <div className="ph-section-head">
-              <h2>Who runs GeoAlert</h2>
+              <h2>Who runs GeoAlert Talisay</h2>
             </div>
 
             <div className="ab-team-card">
-              {/* Photo placeholder: replace the span with <img src={...} alt="Name of the DRRMO Head"> */}
-              <span className="ab-team-photo" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" />
-                </svg>
+              <span className="ab-team-photo">
+                <img src={ldrrmoHead} alt="Alvin Rosthelo T. Santillang" />
               </span>
               <div>
-                <h3>DRRMO Head</h3>
-                <p className="ab-team-org">Talisay City Disaster Risk Reduction and Management Office</p>
-                <p className="ab-team-role">Oversees the GeoAlert team.</p>
+                <h3>Alvin Rosthelo T. Santillang</h3>
+                <p className="ab-team-org">Local Disaster Risk Reduction and Management Officer IV</p>
+                <p className="ab-team-role">LDRRMO Head, Talisay City, Cebu</p>
               </div>
             </div>
           </div>
@@ -208,7 +207,7 @@ export default function About() {
               <img src={logo} alt="" />
             </span>
             <div>
-              <p className="ph-footer-name">GeoAlert</p>
+              <p className="ph-footer-name">GeoAlert Talisay</p>
               <p className="ph-footer-tagline">
                 Community geospatial hazard guidance and risk awareness for Talisay City.
               </p>
@@ -221,7 +220,7 @@ export default function About() {
             <li><Link to="/what-to-do">What to do</Link></li>
           </ul>
         </div>
-        <p className="ph-container ph-footer-copy">&copy; {new Date().getFullYear()} GeoAlert</p>
+        <p className="ph-container ph-footer-copy">&copy; {new Date().getFullYear()} GeoAlert Talisay</p>
       </footer>
     </div>
   );

@@ -99,19 +99,19 @@ test('narrow screen: the bar folds into the menu, the bell stays beside it, and 
   expect(texts(el, '.pn-menu .pn-acct-links a')).toEqual(['Dashboard', 'History', 'Reports', 'Security']);
 });
 
-test('both bars fold below 960 px: the shared right-hand slot needs about 939 px of bar', () => {
+test('both bars fold below 1100 px: signed in, the bar needs about 1060 px', () => {
   const queries = [];
   useAuth.mockReturnValue(staff('DRRMO_Officer'));
   window.matchMedia = (query) => { queries.push(query); return { matches: false, addEventListener() {}, removeEventListener() {} }; };
   const el = document.createElement('div');
   act(() => { createRoot(el).render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><PublicNavbar /></MemoryRouter>); });
-  expect(queries).toContain('(max-width: 959px)');
+  expect(queries).toContain('(max-width: 1099px)');
 
   queries.length = 0;
   useAuth.mockReturnValue({ user: null, logout: jest.fn() });
   const el2 = document.createElement('div');
   act(() => { createRoot(el2).render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><PublicNavbar /></MemoryRouter>); });
-  expect(queries).toContain('(max-width: 959px)');
+  expect(queries).toContain('(max-width: 1099px)');
 });
 
 const kind = (c) => {
@@ -124,7 +124,7 @@ const kind = (c) => {
   return c.className;
 };
 const order = (el) => [...el.querySelector('.pn-menu').children].map(kind);
-// The right-hand slot is the same box signed in or out, so the links never move
+// The right-hand slot holds the same things in the same place signed in or out
 const slot = (el) => [...el.querySelector('.pn-menu > .pn-account').children].map(kind);
 
 test('wide screen: the public links, then one right-hand slot', () => {

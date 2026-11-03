@@ -1,4 +1,6 @@
 import random
+from collections import Counter
+from datetime import timedelta
 from pathlib import Path
 
 from django.conf import settings
@@ -9,10 +11,11 @@ from django.utils import timezone
 from faker import Faker
 
 from apps.accounts.models import User
-from apps.barangays.models import Barangay
+from apps.barangays.models import Barangay, Purok
 from apps.hazards import fake_data
 from apps.hazards.models import HazardType, HazardZone
 from apps.history.models import HistoricalRecord
+from apps.history.purok_levels import level_for, thresholds
 
 
 class Command(BaseCommand):
@@ -36,12 +39,21 @@ class Command(BaseCommand):
                             help='Past records of the same hazard each active hazard\'s barangay gets at least (default 3).')
         parser.add_argument('--clear', action='store_true',
                             help='Only remove existing sample data, then stop.')
+        parser.add_argument('--types', default=','.join(fake_data.HAZARDS),
+                            help='Hazard types to generate, comma separated (default: all). Example: --types Fire')
+        parser.add_argument('--dry-run', action='store_true',
+                            help='Report what would be created and save nothing.')
 
     def handle(self, *args, **options):
         if options['clear']:
             with transaction.atomic():
                 self._clear()
             return
+
+        wanted = {name.strip() for name in options['types'].split(',') if name.strip()}
+        unknown = wanted - set(fake_data.HAZARDS)
+        if unknown or not wanted:
+            raise CommandError(f'--types takes any of {", ".join(fake_data.HAZARDS)}; got {options["types"]!r}.')
 
         types = {t.name: t for t in HazardType.objects.filter(name__in=fake_data.HAZARDS)}
         missing = set(fake_data.HAZARDS) - set(types)
@@ -67,18 +79,37 @@ class Command(BaseCommand):
         spots = {h: fake_data.Spots(grids[h], rnd, fake_data.MIN_CLASS[h]) for h in fake_data.HAZARDS}
         now = timezone.now()
 
-        history = fake_data.historical_events(spots, options['years'], now, fake, rnd)
-        active = fake_data.active_events(spots, options['active'], now, fake, rnd)
+        history = [e for e in fake_data.historical_events(spots, options['years'], now, fake, rnd)
+                   if e['hazard'] in wanted]
+        active = [e for e in fake_data.active_events(spots, options['active'], now, fake, rnd)
+                  if e['hazard'] in wanted]
         publisher = User.objects.filter(role__name='DRRMO_Officer', is_active=True).order_by('id').first()
 
         def barangay_at(lng, lat):
             point = Point(lng, lat, srid=4326)
             return next((b for b, prepared in barangays if prepared.contains(point)), None)
 
-        added = self._top_up_history(history, active, barangay_at, grids, options, now, fake, rnd)
+        added = self._top_up_history(history, active, barangay_at, grids, options, now, fake, rnd, wanted)
+
+        # The map's Past hazards colours count a record once in every purok
+        # it touched (HistoricalRecord.puroks), so an unlinked sample colours nothing
+        puroks = [(p.id, p.boundary.prepared) for p in Purok.objects.only('id', 'boundary')]
+
+        def event_shape(event):
+            ring = fake_data.circle_ring(event['lng'], event['lat'], event['radius_m'])
+            return MultiPolygon(Polygon(ring), srid=4326)
+
+        def puroks_touched(event):
+            shape = event_shape(event)
+            return [pid for pid, prepared in puroks if prepared.intersects(shape)]
+
+        touched = [puroks_touched(e) for e in history]
+
+        if options['dry_run']:
+            self._report_dry_run(history, active, touched, options)
+            return
 
         def zone_for(event, status):
-            ring = fake_data.circle_ring(event['lng'], event['lat'], event['radius_m'])
             barangay = barangay_at(event['lng'], event['lat'])
             return HazardZone(
                 barangay=barangay,
@@ -86,7 +117,7 @@ class Command(BaseCommand):
                 hazard_type=types[event['hazard']],
                 severity=event['severity'],
                 status=status,
-                geometry=MultiPolygon(Polygon(ring), srid=4326),
+                geometry=event_shape(event),
                 description=event['description'],
                 resolved_at=event.get('resolved_at'),
                 is_sample=True,
@@ -123,17 +154,42 @@ class Command(BaseCommand):
                 record.archived_at = e['resolved_at']
             HistoricalRecord.objects.bulk_update(records, ['archived_at'], batch_size=200)
 
+            through = HistoricalRecord.puroks.through
+            through.objects.bulk_create([
+                through(historicalrecord_id=record.pk, purok_id=pid)
+                for record, pids in zip(records, touched)
+                for pid in pids
+            ])
+
         by_type = {h: sum(e['hazard'] == h for e in history) for h in fake_data.HAZARDS}
         self.stdout.write(
             f'  ✓ {len(records)} historical records over {options["years"]} years '
             f'({", ".join(f"{n} {h.lower()}" for h, n in by_type.items())})'
         )
+        self.stdout.write(f'  ✓ {sum(bool(pids) for pids in touched)} of them linked to a purok')
         self.stdout.write(f'  ✓ {len(live)} active hazards on the map')
         self.stdout.write(f'  ✓ {added} extra records so every active hazard\'s barangay has at least '
                           f'{options["min_history"]} past {"record" if options["min_history"] == 1 else "records"} of that hazard')
         self.stdout.write(self.style.SUCCESS('Sample hazards ready. Remove them with --clear.'))
 
-    def _top_up_history(self, history, active, barangay_at, grids, options, now, fake, rnd):
+    def _report_dry_run(self, history, active, touched, options):
+        """What a real run would create. Reads only, writes nothing."""
+        t = thresholds()
+        since = timezone.now() - timedelta(days=365 * t['years'])
+        counts = Counter()
+        for event, pids in zip(history, touched):
+            if event['occurred_at'] >= since:
+                counts.update((pid, event['hazard']) for pid in pids)
+        levels = Counter(level_for(n, t) for n in counts.values())
+
+        self.stdout.write(f'  {len(history)} historical records over {options["years"]} years, '
+                          f'{sum(bool(pids) for pids in touched)} linked to a purok')
+        self.stdout.write(f'  {len({pid for pid, _ in counts})} puroks would get a colour: '
+                          f'{levels["Green"]} Low, {levels["Orange"]} Moderate, {levels["Red"]} Extreme')
+        self.stdout.write(f'  {len(active)} active hazards on the map')
+        self.stdout.write(self.style.WARNING('Dry run: nothing saved.'))
+
+    def _top_up_history(self, history, active, barangay_at, grids, options, now, fake, rnd, wanted):
         """
         Make sure each active hazard (sample or real) has at least --min-history
         past records of the same type in its barangay, so its History tab
@@ -156,7 +212,7 @@ class Command(BaseCommand):
         # Where hazards are active: the sample ones about to be created and the real ones
         targets = [(e['hazard'], e['lng'], e['lat']) for e in active]
         for zone in HazardZone.objects.filter(status='Active', is_sample=False).select_related('hazard_type'):
-            if zone.hazard_type and zone.hazard_type.name in fake_data.HAZARDS and zone.geometry:
+            if zone.hazard_type and zone.hazard_type.name in wanted and zone.geometry:
                 p = zone.geometry.point_on_surface
                 targets.append((zone.hazard_type.name, p.x, p.y))
 

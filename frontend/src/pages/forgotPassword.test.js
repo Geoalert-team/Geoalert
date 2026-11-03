@@ -54,7 +54,7 @@ test('too many requests says so', async () => {
 });
 
 test('a server that cannot be reached says so, instead of claiming an email was sent', async () => {
-  const offline = "Can't reach the GeoAlert server. Check your internet connection, or that the backend is running.";
+  const offline = "Can't reach the GeoAlert Talisay server. Check your internet connection, or that the backend is running.";
   authApi.requestPasswordReset.mockRejectedValue(new Error(offline)); // no status: no reply at all
   const el = await render(<ForgotPassword />);
   await send(el);

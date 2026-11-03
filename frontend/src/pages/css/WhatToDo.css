@@ -7,7 +7,7 @@
 .wt-hero {
   position: relative;
   overflow: hidden;
-  padding: 72px 0 80px;
+  padding: 64px 0 72px;
   background: var(--ph-navy);
   border-top: 1px solid rgba(255, 255, 255, .08);
   color: #d6deea;
@@ -39,7 +39,7 @@
 }
 .ph .wt-hero-title {
   color: var(--ph-white);
-  font-size: clamp(2.4rem, 5vw, 3.75rem);
+  font-size: clamp(2.2rem, 4.6vw, 3.4rem);
   font-weight: 800;
   letter-spacing: -0.025em;
 }
@@ -147,7 +147,7 @@
   grid-template-columns: 1.6fr 1fr;
   gap: 24px;
   margin-top: 24px;
-  align-items: start;
+  align-items: stretch; /* both panels end level, however long the steps are */
 }
 
 .wt-steps-card,
@@ -195,6 +195,20 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
+}
+.wt-supplies-bar {
+  height: 6px;
+  margin-top: 14px;
+  border-radius: 999px;
+  background: var(--ph-line);
+  overflow: hidden;
+}
+.wt-supplies-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ph-navy);
+  transition: width .25s ease;
 }
 .wt-supplies-count {
   padding: 4px 12px;
@@ -266,7 +280,7 @@
   display: grid;
   grid-template-columns: 1.7fr 1fr;
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .wt-player {
@@ -307,7 +321,17 @@
   text-underline-offset: 3px;
 }
 
-.wt-playlist { display: grid; gap: 10px; }
+/* As tall as the player, scrolling the rest: height 0 keeps a long list from
+   stretching the row, and min-height then fills what the player sets */
+.wt-playlist {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  height: 0;
+  min-height: 100%;
+  padding-right: 6px;
+  overflow-y: auto;
+}
 .wt-playlist-item {
   display: flex;
   align-items: center;
@@ -334,31 +358,6 @@
 }
 .wt-playlist-item strong { display: block; color: var(--ph-heading); font-size: .96rem; line-height: 1.35; }
 .wt-playlist-item small { color: var(--ph-soft); font-size: .85rem; }
-
-/* ---------- Emergency strip ---------- */
-.wt-emergency {
-  padding: 32px 0;
-  background: var(--ph-high);
-  color: var(--ph-white);
-}
-.wt-emergency-inner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-.wt-emergency strong {
-  display: block;
-  font-family: var(--ph-font-head);
-  font-size: 1.4rem;
-}
-.wt-emergency-inner span { color: #fde4e4; }
-.wt-emergency-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.wt-btn-white { background: var(--ph-white); color: #a12f2f; }
-.wt-btn-white:hover { background: #fde4e4; }
-.wt-btn-ghost { border-color: rgba(255, 255, 255, .8); color: var(--ph-white); }
-.wt-btn-ghost:hover { background: rgba(255, 255, 255, .15); }
 
 /* ---------- Filter bar + reset ---------- */
 .wt-filter-bar {
@@ -473,6 +472,8 @@
   .wt-guide-body { grid-template-columns: 1fr; }
   .wt-tips { grid-template-columns: repeat(2, 1fr); }
   .wt-videos { grid-template-columns: 1fr; }
+  /* Stacked under the player: the page scrolls, not the list */
+  .wt-playlist { height: auto; min-height: 0; padding-right: 0; overflow-y: visible; }
 }
 
 @media (max-width: 560px) {
@@ -485,7 +486,6 @@
   .wt-steps-card, .wt-supplies-card { padding: 22px; }
   .wt-tips { grid-template-columns: 1fr; }
   .wt-playlist-item img { width: 96px; }
-  .wt-emergency-actions, .wt-emergency-actions .ph-btn { width: 100%; }
 }
 /* Keyword search */
 .wt-search {

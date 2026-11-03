@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
-import { hazardIconPath, DRRMO_HOTLINE } from '../components/Map/hazardInfo';
+import { hazardIconPath } from '../components/Map/hazardInfo';
 import { GUIDES, PHASES, UNIVERSAL_TIPS, VIDEOS } from '../data/safetyGuides';
 import { hazardsApi } from '../api/hazardsApi';
 import { guidanceApi } from '../api/guidanceApi';
@@ -499,6 +499,16 @@ export default function WhatToDo() {
                     {packedCount} of {guide.supplies.length} packed
                   </span>
                 </div>
+                <div
+                  className="wt-supplies-bar"
+                  role="progressbar"
+                  aria-label="Go-bag items packed"
+                  aria-valuemin={0}
+                  aria-valuemax={guide.supplies.length}
+                  aria-valuenow={packedCount}
+                >
+                  <span style={{ width: `${(packedCount / guide.supplies.length) * 100}%` }} />
+                </div>
                 <p className="wt-supplies-note">
                   Pack these before {hazard.toLowerCase()} season and keep the bag somewhere easy to grab.
                 </p>
@@ -554,8 +564,8 @@ export default function WhatToDo() {
         <section className="ph-section">
           <div className="ph-container">
             <div className="ph-section-head">
-              <h2>Tutorial videos</h2>
-              <p>Watch and share these with your family.</p>
+              <h2>First aid videos</h2>
+              <p>Short first aid lessons. Watch and share them with your family.</p>
             </div>
 
             {activeVideo && (
@@ -608,20 +618,6 @@ export default function WhatToDo() {
             )}
           </div>
         </section>
-
-        {/* ============ EMERGENCY STRIP ============ */}
-        <section className="wt-emergency">
-          <div className="ph-container wt-emergency-inner">
-            <p>
-              <strong>In an emergency, don't read. Call.</strong>
-              <span>911 or the Talisay DRRMO at {DRRMO_HOTLINE.label}</span>
-            </p>
-            <div className="wt-emergency-actions">
-              <a className="ph-btn wt-btn-white" href="tel:911">Call 911</a>
-              <a className="ph-btn wt-btn-ghost" href={DRRMO_HOTLINE.tel}>Call DRRMO</a>
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* ============ FOOTER ============ */}
@@ -632,7 +628,7 @@ export default function WhatToDo() {
               <img src={logo} alt="" />
             </span>
             <div>
-              <p className="ph-footer-name">GeoAlert</p>
+              <p className="ph-footer-name">GeoAlert Talisay</p>
               <p className="ph-footer-tagline">
                 Community geospatial hazard guidance and risk awareness for Talisay City.
               </p>
@@ -645,7 +641,7 @@ export default function WhatToDo() {
             <li><Link to="/what-to-do">What to do</Link></li>
           </ul>
         </div>
-        <p className="ph-container ph-footer-copy">&copy; {new Date().getFullYear()} GeoAlert</p>
+        <p className="ph-container ph-footer-copy">&copy; {new Date().getFullYear()} GeoAlert Talisay</p>
       </footer>
     </div>
   );

@@ -4,7 +4,7 @@
 /* =========================================================
    The navigation bar, on every page and for everyone. Signed-in staff get
    the bell and one account button (.pn-acct, AccountMenu.jsx) whose menu
-   holds who they are, their role's pages and Log out. Below 960 px
+   holds who they are, their role's pages and Log out. Below 1100 px
    (PublicNavbar.jsx) the header gets .is-compact and folds into the ☰
    menu, which ends with the same account panel, already open.
    All classes start with "pn-" so they don't clash with index.css
@@ -27,8 +27,17 @@
   top: 0;
   z-index: 1100; /* stays above Leaflet map controls (z-index 1000) */
   background: var(--pn-navy);
+  box-shadow:
+    0 1px 0 rgba(28, 46, 74, 0.18),
+    0 10px 24px -18px rgba(28, 46, 74, 0.6);
   color: var(--pn-white);
   font-family: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  /* Its own type base, so the bar is the same size on every page instead of
+     inheriting the homepage's 17px / 1.65 or the dashboards' 16px / 1.55 */
+  font-size: 1rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .pn-inner {
@@ -54,33 +63,47 @@
 .pn-brand-name {
   font-family: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   font-weight: 800;
-  font-size: 1.35rem;
-  letter-spacing: -0.01em;
+  font-size: 1.4rem;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
 }
 
-/* Logo in a white circle so the black compass letters stay visible */
+/* The DRRMO seal in a white badge. The seal's green ring is only about 60%
+   of logo1.png (the compass points around it are cropped anyway), so the
+   image is zoomed until the ring reaches the badge's edge, which also hides
+   the tips of the compass points.
+   A faint halo separates the badge from the navy bar. */
 .pn-logo {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
   display: grid;
   place-items: center;
   border-radius: 50%;
   background: var(--pn-white);
   overflow: hidden;
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.14),
+    0 4px 12px rgba(6, 14, 28, 0.35);
+  transition: box-shadow 0.2s ease;
 }
 .pn-logo img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transform: scale(1.3);
+  transform: scale(1.62);
+}
+.pn-brand:hover .pn-logo {
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.28),
+    0 4px 12px rgba(6, 14, 28, 0.35);
 }
 
 /* Links */
 .pn-menu {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 18px;
 }
 
 .pn-links {
@@ -93,12 +116,12 @@
 
 .pn-link {
   display: block;
-  padding: 8px 14px;
+  padding: 9px 15px;
   border-radius: 999px;
   color: #d6deea;
   text-decoration: none;
   font-weight: 700;
-  font-size: 0.98rem;
+  font-size: 1.06rem;
   /* A squeezed bar must never break "What to do" onto two lines */
   white-space: nowrap;
   transition:
@@ -114,16 +137,14 @@
   background: rgba(255, 255, 255, 0.14);
 }
 
-/* The right-hand slot, the same width signed in or out, so the public
-   links never move. Signed out it holds Log in at its right end; signed in,
-   the bell and the account button, also right-aligned.
-   264 px = bell 42 + gap 10 + account button up to about 200. */
+/* The right-hand slot: the bell and Log in, or the bell and the account
+   button. It is only as wide as what it holds, so the links sit right
+   beside the bell either way. At its widest (bell 42 + gap 10 + account
+   button up to about 200) the whole bar needs about 1060 px. */
 .pn-account {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 10px;
-  width: 264px;
   flex-shrink: 0;
 }
 

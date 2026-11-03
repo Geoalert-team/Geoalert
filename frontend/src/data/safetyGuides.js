@@ -170,12 +170,17 @@ export const UNIVERSAL_TIPS = [
   },
 ];
 
-// PLACEHOLDER VIDEOS. Replace with the DRRMO's chosen videos later.
+// First aid training videos.
 // "id" is the part after watch?v= in a YouTube link.
 export const VIDEOS = [
-  { id: '3JvRPfpQtYc', hazard: 'Flood', title: 'NDRRMC safety measures before a typhoon' },
-  { id: 'Ed3g9WWD6xM', hazard: 'Flood', title: 'Flood and water safety' },
-  { id: 'DSYDjSDRU2U', hazard: 'Flood', title: 'Flash flood safety' },
-  { id: 'NhdiMVgJfSw', hazard: 'Flood', title: 'NDRRMC rescue teams in flooded areas' },
-  { id: 'kJ4U5Kxkx-c', hazard: 'Landslide', title: 'Landslide after a tropical storm in the Philippines' },
+  { id: 'gn6xt1ca8A0', hazard: 'First aid', title: 'How to use your first aid kit' },
+  { id: 'ea1RJUOiNfQ', hazard: 'First aid', title: 'How to do the primary survey' },
+  { id: 'GmqXqwSV3bo', hazard: 'First aid', title: 'The recovery position' },
+  { id: 'NxO5LvgqZe0', hazard: 'First aid', title: 'How to treat severe bleeding' },
+  { id: '2v8vlXgGXwE', hazard: 'First aid', title: 'How to treat a fracture' },
+  { id: 'fKzdiuseEIw', hazard: 'First aid', title: 'How to bandage a hand' },
+  { id: 'PwfBGkBXkFA', hazard: 'First aid', title: 'How to make a sling' },
+  { id: '4e7evinsfm0', hazard: 'First aid', title: 'How to treat cuts and grazes' },
+  { id: 'Uqy2IUhYkVA', hazard: 'First aid', title: 'What to do if someone has a spinal cord injury' },
+  { id: '0jps5SZlTdo', hazard: 'First aid', title: 'How to bandage a sprain' },
 ];
