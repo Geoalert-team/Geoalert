@@ -80,7 +80,14 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     (async () => {
-      await primeCsrf();
+      // Only sets the CSRF cookie. If it fails (offline, or a parallel
+      // request just ended the session) the sign-in check still has to run,
+      // or every staff page waits on "Checking session…" for good.
+      try {
+        await primeCsrf();
+      } catch {
+        // the next request that needs the cookie gets it, or says what failed
+      }
 
       // Development only: every fresh browser tab (like the one `npm start`
       // opens) starts logged out. Refreshing the page keeps you logged in.

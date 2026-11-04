@@ -258,6 +258,20 @@ class HazardZoneDetailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # An edit only moves a hazard forward: Active to Resolved or Archived,
+        # Resolved to Archived. Putting a finished one back on the map skipped
+        # the alert and the second officer an Extreme needs; a hazard that
+        # flares up again comes in as a new report. Awaiting approval and
+        # Resolving are set by the system, never by hand.
+        if new_status != zone.status:
+            allowed = {'Active': ('Resolved', 'Archived'), 'Resolved': ('Archived',)}
+            if new_status not in allowed.get(zone.status, ()):
+                return Response(
+                    {'error': f'A {zone.status.lower().replace("_", " ")} hazard cannot be changed to '
+                              f'{new_status.lower().replace("_", " ")}. A hazard that is back is reported again.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         # Reshaping: the officer redrew the outline of a live zone. Same
         # cleanup as publishing (repair, cut at the city boundary).
         reshaped = 'geometry' in request.data

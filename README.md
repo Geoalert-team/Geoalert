@@ -87,7 +87,10 @@ npm test                                (frontend)
 --------------------------------------------------------------------------------
 
 
-user = User.objects.create_superuser(email='admin@geoalert.gov.ph', password='Admin2026!', full_name='GeoAlert Administrator')
+To make the first administrator account, run this and type a password when asked
+(never write a real password in this file):
+
+python manage.py createsuperuser
 
 
 
