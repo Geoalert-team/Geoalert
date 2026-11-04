@@ -97,3 +97,10 @@
 .nw-error { color: var(--nw-active); font-size: .85rem; font-weight: 600; }
 .nw-preview { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
 .nw-preview img { width: 120px; height: 80px; object-fit: cover; border-radius: 8px; }
+
+/* ---------- Home page: Latest updates (components/News/LatestNews.jsx) ---------- */
+.nw-latest-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; text-align: left; }
+.nw-latest-more { margin-top: 24px; }
+@media (max-width: 860px) {
+  .nw-latest-list { grid-template-columns: 1fr; }
+}
