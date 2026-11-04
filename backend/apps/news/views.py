@@ -6,6 +6,8 @@ The newsfeed's API (docs/superpowers/specs/2026-11-04-newsfeed-design.md).
   PATCH  /api/news/<id>/   edit it: its BFP author, or any DRRMO officer or admin
   DELETE /api/news/<id>/   delete it, with its photo: the same people
 """
+from datetime import timezone as dt_timezone
+
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework import status
@@ -45,6 +47,13 @@ class NewsListView(APIView):
                 return Response({'before': 'before must be a date and time.'}, status=status.HTTP_400_BAD_REQUEST)
             if timezone.is_naive(before):
                 before = timezone.make_aware(before)
+            # In UTC before it reaches the database: Python takes offsets to
+            # ±23:59, PostgreSQL only to ±15:59 (a 500), and a date at the
+            # edge of the calendar overflows when converted
+            try:
+                before = before.astimezone(dt_timezone.utc)
+            except (ValueError, OverflowError):
+                return Response({'before': 'before must be a date and time.'}, status=status.HTTP_400_BAD_REQUEST)
         posts, next_before = build_feed(request.user, request, before, limit)
         return Response({'results': posts, 'next_before': next_before})
 

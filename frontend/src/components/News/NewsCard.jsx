@@ -30,10 +30,11 @@ export function alertTitle(post) {
 function AlertCard({ post }) {
   const active = post.status === 'active';
   return (
-    <article className="nw-card nw-card-alert" style={{ '--nw-hazard': hazardColor(post.hazard_type) }}>
+    <article className="nw-card nw-card-alert" style={{ '--nw-hazard': hazardColor(post.hazard_type || '') }}>
       <header className="nw-card-head">
         <span className="nw-hazard-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d={hazardIconPath(post.hazard_type)} /></svg>
+          {/* hazard_type is null when its type was deleted */}
+          <svg viewBox="0 0 24 24"><path d={hazardIconPath(post.hazard_type || '')} /></svg>
         </span>
         <span className={`nw-status ${active ? 'is-active' : 'is-resolved'}`}>{active ? 'Active' : 'Resolved'}</span>
         <time dateTime={post.published_at}>{postDate(post.published_at)}</time>

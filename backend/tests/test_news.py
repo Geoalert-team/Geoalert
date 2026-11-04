@@ -239,6 +239,11 @@ class NewsFeedTests(NewsTestCase):
         self.assertIn('before', self.feed(before='yesterday').data)
         self.assertEqual(self.feed(before='yesterday').status_code, 400)
         self.assertIn('limit', self.feed(limit='abc').data)
+        # Python takes offsets to ±23:59 and PostgreSQL only to ±15:59: such a time is
+        # served in UTC, not a 500; a date that overflows in UTC is refused
+        for odd in ('2026-11-04T08:00:00+20:00', '2026-11-04T08:00:00-23:00'):
+            self.assertEqual(self.feed(before=odd).status_code, 200, odd)
+        self.assertIn('before', self.feed(before='0001-01-01T00:30:00+01:00').data)
         Announcement.objects.bulk_create([Announcement(title=f'Post {i}', body='Text', source='DRRMO')
                                           for i in range(31)])
         self.assertEqual(len(self.feed(limit=99).data['results']), 30)

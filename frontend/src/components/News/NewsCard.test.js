@@ -55,6 +55,11 @@ test('an alert post names the hazard, level and place, with the map while active
   expect(el.querySelector('a[href="/map?zone=z1"]')).not.toBeNull();
 });
 
+test('an alert whose hazard type is gone still shows', async () => {
+  const el = await render({ post: { ...ALERT, hazard_type: null } });
+  expect(el.textContent).toMatch('Hazard alert (Moderate) for Home · Purok Near');
+});
+
 test('a resolved alert says so and has no map link', async () => {
   const el = await render({ post: { ...ALERT, status: 'resolved', map_link: null } });
   expect(el.querySelector('.nw-status').textContent).toBe('Resolved');

@@ -33,6 +33,14 @@ export default function News() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Escape closes the delete dialog, unless the delete is under way
+  useEffect(() => {
+    if (!confirming) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape' && !deleting) setConfirming(null); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [confirming, deleting]);
+
   async function loadMore() {
     setLoadingMore(true);
     setMoreFailed(false);
@@ -48,9 +56,11 @@ export default function News() {
   }
 
   function saved(post) {
+    // The first page may have failed or still be loading: the new post shows anyway
     setPosts((shown) => (editing === 'new'
-      ? [post, ...shown]
-      : shown.map((p) => (p.kind === post.kind && p.id === post.id ? post : p))));
+      ? [post, ...(shown || [])]
+      : (shown || []).map((p) => (p.kind === post.kind && p.id === post.id ? post : p))));
+    setFailed(false);
     setEditing(null);
   }
 
@@ -119,7 +129,7 @@ export default function News() {
             <h2 id="nw-delete-title">Delete this announcement?</h2>
             <p>&ldquo;{confirming.title}&rdquo; is removed from the news for everyone. This can&apos;t be undone.</p>
             <div className="nw-dialog-actions">
-              <button type="button" className="nw-btn nw-btn-ghost" onClick={() => setConfirming(null)} disabled={deleting}>
+              <button type="button" className="nw-btn nw-btn-ghost" onClick={() => setConfirming(null)} disabled={deleting} autoFocus>
                 Cancel
               </button>
               <button type="button" className="nw-btn nw-btn-danger-solid" onClick={confirmDelete} disabled={deleting}>

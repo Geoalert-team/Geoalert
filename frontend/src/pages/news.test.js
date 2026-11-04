@@ -92,6 +92,29 @@ test('posting adds the new announcement first; a server error stays under its fi
   expect(el.querySelector('input[name="title"]')).toBeNull();
 });
 
+test('the delete dialog takes focus and Escape closes it', async () => {
+  useAuth.mockReturnValue({ user: { role: { name: 'DRRMO_Officer' } }, canPostNews: true });
+  newsApi.feed.mockResolvedValue({ results: [post('a', { can_edit: true })], next_before: null });
+  const el = await render();
+  await act(async () => { button(el, 'Delete').click(); });
+  expect(el.querySelector('[role="alertdialog"]').contains(document.activeElement)).toBe(true);
+  await act(async () => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); });
+  expect(el.querySelector('[role="alertdialog"]')).toBeNull();
+  expect(newsApi.remove).not.toHaveBeenCalled();
+});
+
+test('posting after the feed failed to load shows the new post', async () => {
+  useAuth.mockReturnValue({ user: { role: { name: 'DRRMO_Officer' } }, canPostNews: true });
+  newsApi.feed.mockRejectedValueOnce(new Error('offline'));
+  newsApi.create.mockResolvedValueOnce(post('new', { title: 'Typhoon advisory', can_edit: true }));
+  const el = await render();
+  await act(async () => { button(el, 'New announcement').click(); });
+  await type(el.querySelector('input[name="title"]'), 'Typhoon advisory');
+  await type(el.querySelector('textarea[name="body"]'), 'Stay indoors.');
+  await act(async () => { button(el, 'Post').click(); });
+  expect(titles(el)).toEqual(['Typhoon advisory']);
+});
+
 test('Delete asks first, then removes the post', async () => {
   useAuth.mockReturnValue({ user: { role: { name: 'DRRMO_Officer' } }, canPostNews: true });
   newsApi.feed.mockResolvedValue({ results: [post('a', { can_edit: true }), post('b')], next_before: null });
