@@ -46,7 +46,7 @@ class PurokCountTests(FireSetupMixin, TestCase):
 
     def test_the_endpoint_gives_levels_and_leaves_out_zeros(self):
         data = get(PurokLevelsView, types='Fire').data
-        self.assertEqual(data['thresholds'], {'years': 5, 'moderate': 3, 'extreme': 5})
+        self.assertEqual(data['thresholds'], {'years': 5, 'moderate': 2, 'extreme': 4})
         self.assertCountEqual(data['results'], [
             {'purok': self.near.id, 'type': 'Fire', 'count': 3, 'level': 'Orange'},
             {'purok': self.far.id, 'type': 'Fire', 'count': 1, 'level': 'Green'},
@@ -88,16 +88,16 @@ class AreaHistoryTests(RecordMixin, TestCase):
         self.record(self.home, self.near, hazard=self.flood)
         self.record(self.home, self.near, hazard=self.flood)
         data = self.area(barangay=self.home.id, types='Fire,Flood').data
-        self.assertEqual((data['count'], data['puroks'][0]['level']), (4, 'Green'))
-        # 4 in all would be Orange; each type's 2 is Green, and by_type says so
-        self.assertEqual(data['puroks'][0]['by_type'], {'Fire': {'count': 2, 'level': 'Green'},
-                                                        'Flood': {'count': 2, 'level': 'Green'}})
+        self.assertEqual((data['count'], data['puroks'][0]['level']), (4, 'Orange'))
+        # 4 in all would be Red; each type's 2 is Orange, and by_type says so
+        self.assertEqual(data['puroks'][0]['by_type'], {'Fire': {'count': 2, 'level': 'Orange'},
+                                                        'Flood': {'count': 2, 'level': 'Orange'}})
 
     def test_purok_view_and_none_view(self):
         self.history(self.near, 2)
         self.record(self.home)
         purok = self.area(barangay=self.home.id, purok=self.near.id).data
-        self.assertEqual((purok['count'], purok['level'], purok['puroks'], purok['unplaced']), (2, 'Green', [], 0))
+        self.assertEqual((purok['count'], purok['level'], purok['puroks'], purok['unplaced']), (2, 'Orange', [], 0))
         self.assertEqual(purok['purok'], {'id': self.near.id, 'name': 'Purok Near', 'parent': ''})
         none = self.area(barangay=self.home.id, purok='none').data
         self.assertEqual((none['count'], none['level'], none['purok']['name']), (1, None, 'Purok not recorded'))
