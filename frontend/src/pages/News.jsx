@@ -4,7 +4,27 @@ import NewsCard from '../components/News/NewsCard';
 import AnnouncementForm from '../components/News/AnnouncementForm';
 import { useAuth } from '../context/AuthContext';
 import { newsApi } from '../api/newsApi';
+import seal from '../assets/images/logo1.png';
 import './css/News.css';
+
+// Grey stand-ins for the first page while it loads
+function Skeletons() {
+  return (
+    <div className="nw-list" aria-busy="true" aria-label="Loading the news">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="nw-card nw-skeleton" aria-hidden="true">
+          <div className="nw-card-head">
+            <span className="nw-skel nw-skel-avatar" />
+            <span className="nw-skel-lines"><span className="nw-skel" /><span className="nw-skel nw-skel-short" /></span>
+          </div>
+          <span className="nw-skel nw-skel-title" />
+          <span className="nw-skel" />
+          <span className="nw-skel nw-skel-short" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /**
  * The public newsfeed: what DRRMO and BFP announced and the hazard alerts
@@ -82,9 +102,11 @@ export default function News() {
       <PublicNavbar />
       <main className="nw-wrap">
         <header className="nw-header">
-          <div>
-            <h1>News</h1>
-            <p>Announcements from DRRMO and BFP, and the hazard alerts that went out in Talisay City.</p>
+          <img className="nw-header-seal" src={seal} alt="" />
+          <div className="nw-header-text">
+            <p className="nw-eyebrow">Talisay City, Cebu</p>
+            <h1>News &amp; Advisories</h1>
+            <p>Official updates from Talisay City DRRMO and BFP, and every hazard alert GeoAlert sent.</p>
           </div>
           {canPostNews && (
             <button type="button" className="nw-btn nw-btn-primary" onClick={() => setEditing('new')}>
@@ -99,9 +121,12 @@ export default function News() {
             <button type="button" className="nw-btn nw-btn-ghost" onClick={load}>Try again</button>
           </div>
         ) : posts === null ? (
-          <p className="nw-empty">Loading the news…</p>
+          <Skeletons />
         ) : posts.length === 0 ? (
-          <p className="nw-empty">No news yet.</p>
+          <div className="nw-empty">
+            <p className="nw-empty-title">No news yet</p>
+            <p>Announcements and hazard alerts will appear here as they are posted.</p>
+          </div>
         ) : (
           <div className="nw-list">
             {posts.map((post) => (

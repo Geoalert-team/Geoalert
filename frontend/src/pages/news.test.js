@@ -43,6 +43,15 @@ async function type(input, value) {
   });
 }
 
+test('an official header with the city seal, and placeholder cards while loading', async () => {
+  newsApi.feed.mockReturnValueOnce(new Promise(() => {})); // never answers
+  const el = await render();
+  expect(el.querySelector('h1').textContent).toBe('News & Advisories');
+  expect(el.querySelector('.nw-header img').getAttribute('src')).toMatch(/logo1/);
+  expect(el.querySelectorAll('.nw-skeleton').length).toBeGreaterThan(0);
+  expect(el.textContent).not.toMatch('Loading');
+});
+
 test('the feed loads, and Load more appends the next page until the end', async () => {
   newsApi.feed
     .mockResolvedValueOnce({ results: [post('a'), post('b')], next_before: '2026-11-04T01:00:00+00:00' })

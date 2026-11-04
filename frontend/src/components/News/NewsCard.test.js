@@ -3,12 +3,14 @@ import { createRoot } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import NewsCard from './NewsCard';
 
+const hoursAgo = (h) => new Date(Date.now() - h * 3600 * 1000).toISOString();
+
 const ANNOUNCEMENT = {
   kind: 'announcement', id: 'a1', title: 'Typhoon advisory', body: 'Line one\nLine two', photo_url: null,
-  source: 'DRRMO', published_at: '2026-11-04T02:00:00+00:00', edited_at: null, can_edit: false,
+  source: 'DRRMO', published_at: hoursAgo(2), edited_at: null, can_edit: false,
 };
 const ALERT = {
-  kind: 'alert', id: 'z1', hazard_type: 'Fire', severity: 'Orange', published_at: '2026-11-04T01:00:00+00:00',
+  kind: 'alert', id: 'z1', hazard_type: 'Fire', severity: 'Orange', published_at: hoursAgo(1),
   barangay: 'Home', puroks: ['Purok Near'], status: 'active', map_link: '/map?zone=z1',
 };
 
@@ -26,33 +28,55 @@ async function render(props) {
 }
 const buttons = (el) => [...el.querySelectorAll('button')].map((b) => b.textContent.trim());
 
-test('an announcement shows its office, title, date and text with its line breaks', async () => {
+test('a DRRMO announcement is posted under the city seal, marked official, with when and its text', async () => {
   const el = await render({ post: ANNOUNCEMENT });
-  expect(el.querySelector('.nw-source').textContent).toBe('DRRMO');
+  expect(el.querySelector('.nw-office').textContent).toBe('Talisay City DRRMO');
+  expect(el.querySelector('.nw-avatar img').getAttribute('src')).toMatch(/logo1/);
+  expect(el.querySelector('.nw-official').textContent).toMatch('Official');
+  const time = el.querySelector('time');
+  expect(time.textContent).toBe('2 hrs ago');
+  expect(time.getAttribute('title')).toMatch(/\d{4}/); // the full date on hover
   expect(el.querySelector('h3').textContent).toBe('Typhoon advisory');
-  expect(el.textContent).toMatch(/Nov 4, 2026/);
-  const body = el.querySelector('.nw-body');
-  expect(body.textContent).toBe('Line one\nLine two');
-  expect(el.textContent).not.toMatch(/edited/);
+  expect(el.querySelector('.nw-body').textContent).toBe('Line one\nLine two');
+  expect(el.textContent).not.toMatch(/Edited/);
+});
+
+test('a BFP announcement is posted under the fire emblem', async () => {
+  const el = await render({ post: { ...ANNOUNCEMENT, source: 'BFP' } });
+  expect(el.querySelector('.nw-office').textContent).toBe('BFP Talisay City');
+  expect(el.querySelector('.nw-avatar.is-bfp svg')).not.toBeNull();
+  expect(el.querySelector('.nw-avatar img')).toBeNull();
 });
 
 test('an edited announcement says so', async () => {
-  const el = await render({ post: { ...ANNOUNCEMENT, edited_at: '2026-11-04T03:00:00+00:00' } });
-  expect(el.textContent).toMatch(/edited/);
+  const el = await render({ post: { ...ANNOUNCEMENT, edited_at: hoursAgo(1) } });
+  expect(el.textContent).toMatch(/Edited/);
+});
+
+test('long text folds behind See more; short text does not', async () => {
+  const long = Array.from({ length: 12 }, (_, i) => `Line ${i + 1}`).join('\n');
+  const el = await render({ post: { ...ANNOUNCEMENT, body: long } });
+  expect(el.querySelector('.nw-body').classList.contains('is-folded')).toBe(true);
+  await act(async () => { [...el.querySelectorAll('button')].find((b) => b.textContent === 'See more').click(); });
+  expect(el.querySelector('.nw-body').classList.contains('is-folded')).toBe(false);
+  expect(buttons(el)).toEqual(['See less']);
+  expect(buttons(await render({ post: ANNOUNCEMENT }))).toEqual([]);
 });
 
 test('HTML typed into a post shows as text', async () => {
   const el = await render({ post: { ...ANNOUNCEMENT, title: '<b>x</b>', body: '<img src=x onerror=alert(1)>' } });
   expect(el.querySelector('h3').textContent).toBe('<b>x</b>');
   expect(el.querySelector('b')).toBeNull();
-  expect(el.querySelector('img')).toBeNull();
+  expect(el.querySelector('.nw-body img')).toBeNull();
 });
 
-test('an alert post names the hazard, level and place, with the map while active', async () => {
+test('an alert post comes from GeoAlert with the hazard badge, level, place, status and the map while active', async () => {
   const el = await render({ post: ALERT });
+  expect(el.querySelector('.nw-office').textContent).toBe('GeoAlert Talisay');
+  expect(el.querySelector('.nw-avatar-badge svg')).not.toBeNull();
   expect(el.textContent).toMatch('Fire alert (Moderate) for Home · Purok Near');
   expect(el.querySelector('.nw-status').textContent).toBe('Active');
-  expect(el.querySelector('a[href="/map?zone=z1"]')).not.toBeNull();
+  expect(el.querySelector('a[href="/map?zone=z1"]').textContent).toMatch('View on map');
 });
 
 test('an alert whose hazard type is gone still shows', async () => {
