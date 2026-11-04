@@ -22,6 +22,7 @@ import "./css/PublicNavbar.css";
 const PUBLIC_LINKS = [
   { to: "/", label: "Home" },
   { to: "/map", label: "Map" },
+  { to: "/news", label: "News" },
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
   { to: "/what-to-do", label: "What to do" },

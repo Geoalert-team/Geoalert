@@ -1,0 +1,99 @@
+/* =========================================================
+   The newsfeed: the News page (pages/News.jsx), its cards
+   (components/News/NewsCard.jsx), the post form and, on the
+   home page, Latest updates. Prefix: nw-
+   Colours follow the public pages (PublicHome.css).
+   ========================================================= */
+
+.nw-page,
+.nw-latest {
+  --nw-navy: #1c2e4a;
+  --nw-navy-hover: #2a4268;
+  --nw-heading: #1c2e4a;
+  --nw-body: #43516a;
+  --nw-soft: #6a778d;
+  --nw-line: #dde3ec;
+  --nw-mist: #f2f5f9;
+  --nw-white: #ffffff;
+  --nw-active: #d64545;
+  --nw-active-tint: #fcebeb;
+  --nw-resolved: #1f9d55;
+  --nw-resolved-tint: #e8f6ee;
+  --nw-bfp: #a3122a;
+  --nw-bfp-tint: #fbe9ec;
+  --nw-font-head: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+}
+
+.nw-page { min-height: 100vh; background: var(--nw-mist); color: var(--nw-body); }
+.nw-wrap { max-width: 760px; margin: 0 auto; padding: 36px 16px 64px; }
+
+.nw-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.nw-header h1 { margin: 0; font-family: var(--nw-font-head); font-size: clamp(1.8rem, 4vw, 2.4rem); color: var(--nw-heading); }
+.nw-header p { margin: 6px 0 0; }
+
+.nw-list { display: flex; flex-direction: column; gap: 14px; }
+.nw-empty { padding: 32px 16px; text-align: center; color: var(--nw-soft); }
+.nw-more { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 18px; }
+
+/* ---------- Cards ---------- */
+.nw-card {
+  padding: 18px 20px;
+  border: 1px solid var(--nw-line);
+  border-radius: 14px;
+  background: var(--nw-white);
+  box-shadow: 0 4px 14px rgba(28, 46, 74, .05);
+  overflow-wrap: anywhere;
+}
+.nw-card h3 { margin: 8px 0 0; font-family: var(--nw-font-head); font-size: 1.1rem; color: var(--nw-heading); }
+.nw-card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .82rem; color: var(--nw-soft); }
+.nw-body { margin: 8px 0 0; white-space: pre-line; line-height: 1.55; }
+.nw-photo { display: block; width: 100%; max-height: 360px; margin-top: 12px; object-fit: cover; border-radius: 10px; }
+
+.nw-source { padding: 2px 10px; border-radius: 999px; font-weight: 800; font-size: .75rem; background: #e8edf5; color: var(--nw-navy); }
+.nw-source.is-bfp { background: var(--nw-bfp-tint); color: var(--nw-bfp); }
+
+.nw-card-alert { border-left: 4px solid var(--nw-hazard, var(--nw-navy)); }
+.nw-hazard-icon { display: inline-flex; width: 26px; height: 26px; align-items: center; justify-content: center; border-radius: 8px; background: var(--nw-mist); color: var(--nw-hazard, var(--nw-navy)); }
+.nw-hazard-icon svg { width: 16px; height: 16px; fill: currentColor; }
+.nw-status { padding: 2px 10px; border-radius: 999px; font-weight: 800; font-size: .75rem; }
+.nw-status.is-active { background: var(--nw-active-tint); color: var(--nw-active); }
+.nw-status.is-resolved { background: var(--nw-resolved-tint); color: var(--nw-resolved); }
+.nw-map-link { display: inline-block; margin-top: 10px; font-weight: 700; color: var(--nw-navy); }
+
+.nw-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+/* ---------- Buttons ---------- */
+.nw-btn {
+  padding: 8px 16px; border-radius: 10px; border: 1px solid var(--nw-line);
+  font: inherit; font-weight: 700; cursor: pointer; background: var(--nw-white); color: var(--nw-navy);
+}
+.nw-btn:disabled { opacity: .6; cursor: default; }
+.nw-btn-primary { background: var(--nw-navy); border-color: var(--nw-navy); color: var(--nw-white); }
+.nw-btn-primary:hover:not(:disabled) { background: var(--nw-navy-hover); }
+.nw-btn-ghost:hover:not(:disabled) { background: var(--nw-mist); }
+.nw-btn-danger { color: var(--nw-active); }
+.nw-btn-danger-solid { background: var(--nw-active); border-color: var(--nw-active); color: var(--nw-white); }
+
+/* ---------- Form and confirm dialogs ---------- */
+.nw-backdrop {
+  position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center;
+  padding: 16px; background: rgba(28, 46, 74, .55);
+}
+.nw-dialog {
+  width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; padding: 22px;
+  border-radius: 16px; background: var(--nw-white); color: var(--nw-body);
+}
+.nw-dialog h2 { margin: 0; font-family: var(--nw-font-head); font-size: 1.25rem; color: var(--nw-heading); }
+.nw-dialog-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.nw-close { border: 0; background: none; font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--nw-soft); }
+.nw-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.nw-field { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-weight: 700; font-size: .88rem; color: var(--nw-heading); }
+.nw-field input:not([type="file"]),
+.nw-field textarea {
+  padding: 10px 12px; border: 1px solid var(--nw-line); border-radius: 10px;
+  font: inherit; font-weight: 400; color: var(--nw-body); resize: vertical;
+}
+.nw-field-error,
+.nw-error { color: var(--nw-active); font-size: .85rem; font-weight: 600; }
+.nw-preview { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.nw-preview img { width: 120px; height: 80px; object-fit: cover; border-radius: 8px; }

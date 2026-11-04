@@ -12,7 +12,7 @@ jest.mock('./ResidentAlertBell', () => () => <div data-testid="alerts" />);
 beforeAll(() => { global.IS_REACT_ACT_ENVIRONMENT = true; });
 afterEach(() => { delete window.matchMedia; });
 
-const PUBLIC = ['Home', 'Map', 'About', 'Contact', 'What to do'];
+const PUBLIC = ['Home', 'Map', 'News', 'About', 'Contact', 'What to do'];
 const staff = (role) => ({ user: { full_name: 'Juan Dela Cruz', role: { name: role } }, logout: jest.fn() });
 
 function render(auth, { narrow = false } = {}) {

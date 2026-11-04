@@ -141,6 +141,8 @@ export function AuthProvider({ children }) {
   const canCloseFires =
     user &&
     ["DRRMO_Officer", "System_Admin", "BFP_Personnel"].includes(user.role?.name || user.role);
+  // Posting to the newsfeed: the same people (the server checks each post)
+  const canPostNews = canCloseFires;
 
   return (
     <AuthContext.Provider
@@ -152,6 +154,7 @@ export function AuthProvider({ children }) {
         logout,
         canPublish,
         canCloseFires,
+        canPostNews,
         setUser,
         loggingOut,
       }}>
