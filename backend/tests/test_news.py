@@ -6,15 +6,19 @@ that went out. Against a real database; photos go to a temporary folder.
 import io
 import shutil
 import tempfile
+from datetime import timedelta
 
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from PIL import Image
 from rest_framework.test import APIRequestFactory, force_authenticate
 
 from apps.accounts.models import Role, User
 from apps.admin_dashboard.models import AuditLog
+from apps.hazards.models import HazardAlert
 from apps.news.models import Announcement
 from apps.news.views import NewsDetailView, NewsListView
 from tests.fire_setup import FireSetupMixin
@@ -152,3 +156,115 @@ class NewsWriteTests(NewsTestCase):
         name = gone.photo.name
         self.delete(self.officer, gone.pk)
         self.assertFalse(default_storage.exists(name))
+
+
+class NewsFeedTests(NewsTestCase):
+    def feed(self, user=None, **params):
+        request = APIRequestFactory().get('/api/news/', params)
+        if user:
+            force_authenticate(request, user=user)
+        return NewsListView.as_view()(request)
+
+    def ago(self, minutes):
+        return timezone.now() - timedelta(minutes=minutes)
+
+    def went_out(self, zone, minutes_ago, severity=None):
+        alert = HazardAlert.objects.create(hazard_zone=zone, issued_by=self.officer, hazard_type=zone.hazard_type,
+                                           severity=severity or zone.severity)
+        HazardAlert.objects.filter(pk=alert.pk).update(created_at=self.ago(minutes_ago))
+        return HazardAlert.objects.get(pk=alert.pk)
+
+    def posted(self, user, minutes_ago, **data):
+        post = self.announce(user, **data)
+        Announcement.objects.filter(pk=post.pk).update(created_at=self.ago(minutes_ago),
+                                                       updated_at=self.ago(minutes_ago))
+        return Announcement.objects.get(pk=post.pk)
+
+    def alerts(self, response):
+        return [r for r in response.data['results'] if r['kind'] == 'alert']
+
+    def test_public_newest_first_mixing_both(self):
+        old = self.posted(self.officer, 120)
+        zone = self.zone(self.near)
+        self.went_out(zone, 60)
+        new = self.posted(self.bfp, 0)
+        results = self.feed().data['results']
+        self.assertEqual([(r['kind'], r['id']) for r in results],
+                         [('announcement', str(new.id)), ('alert', str(zone.id)), ('announcement', str(old.id))])
+
+    def test_alert_post_shows_the_zone(self):
+        zone = self.zone(self.near)
+        self.report(self.near, hazard_zone=zone, status='Validated')
+        first = self.went_out(zone, 30)
+        self.went_out(zone, 10)
+        [post] = self.alerts(self.feed())
+        self.assertEqual(
+            {k: post[k] for k in ('hazard_type', 'severity', 'barangay', 'puroks', 'status', 'map_link')},
+            {'hazard_type': 'Fire', 'severity': 'Orange', 'barangay': 'Home', 'puroks': ['Purok Near'],
+             'status': 'active', 'map_link': f'/map?zone={zone.id}'})
+        self.assertEqual(parse_datetime(post['published_at']), first.created_at)
+
+    def test_a_raised_zone_is_one_post(self):
+        zone = self.zone(self.near, severity='Red')
+        first = self.went_out(zone, 30, severity='Orange')
+        self.went_out(zone, 10, severity='Red')
+        posts = self.alerts(self.feed())
+        self.assertEqual(len(posts), 1)
+        self.assertEqual(posts[0]['severity'], 'Red')
+        self.assertEqual(parse_datetime(posts[0]['published_at']), first.created_at)
+
+    def test_a_resolved_zone_shows_resolved_without_a_map_link(self):
+        zone = self.zone(self.near, status='Resolved')
+        self.went_out(zone, 30)
+        [post] = self.alerts(self.feed())
+        self.assertEqual((post['status'], post['map_link']), ('resolved', None))
+
+    def test_sample_withdrawn_and_held_zones_are_left_out(self):
+        self.went_out(self.zone(self.near, is_sample=True), 30)
+        self.went_out(self.zone(self.near, status='Retracted'), 20)
+        self.zone(self.near, status='Awaiting_Approval', severity='Red')  # held: no alert went out
+        self.assertEqual(self.alerts(self.feed()), [])
+
+    def test_paging_with_before(self):
+        for minutes in (30, 20, 10):
+            self.posted(self.officer, minutes)
+        first = self.feed(limit=2).data
+        self.assertEqual(len(first['results']), 2)
+        self.assertIsNotNone(first['next_before'])
+        second = self.feed(limit=2, before=first['next_before']).data
+        self.assertEqual(len(second['results']), 1)
+        self.assertIsNone(second['next_before'])
+
+    def test_bad_paging_values(self):
+        self.assertIn('before', self.feed(before='yesterday').data)
+        self.assertEqual(self.feed(before='yesterday').status_code, 400)
+        self.assertIn('limit', self.feed(limit='abc').data)
+        Announcement.objects.bulk_create([Announcement(title=f'Post {i}', body='Text', source='DRRMO')
+                                          for i in range(31)])
+        self.assertEqual(len(self.feed(limit=99).data['results']), 30)
+
+    def test_can_edit_follows_who_is_asking(self):
+        bfps = self.posted(self.bfp, 20)
+        drrmos = self.posted(self.officer, 10)
+        can = lambda user: {r['id']: r['can_edit'] for r in self.feed(user).data['results']}
+        self.assertEqual(can(None), {str(bfps.id): False, str(drrmos.id): False})
+        self.assertEqual(can(self.bfp), {str(bfps.id): True, str(drrmos.id): False})
+        self.assertEqual(can(self.other_bfp), {str(bfps.id): False, str(drrmos.id): False})
+        self.assertEqual(can(self.officer), {str(bfps.id): True, str(drrmos.id): True})
+
+    def test_a_post_outlives_its_authors_account(self):
+        post = self.posted(self.bfp, 10)
+        self.bfp.delete()
+        [row] = self.feed(self.officer).data['results']
+        self.assertEqual((row['id'], row['source'], row['can_edit']), (str(post.id), 'BFP', True))
+
+    def test_announcement_post_shape(self):
+        post = self.posted(self.officer, 5, photo=image_file())
+        [row] = self.feed().data['results']
+        self.assertEqual({k: row[k] for k in ('kind', 'title', 'body', 'source', 'edited_at')},
+                         {'kind': 'announcement', 'title': 'Typhoon advisory', 'body': 'Stay indoors.',
+                          'source': 'DRRMO', 'edited_at': None})
+        self.assertTrue(row['photo_url'].startswith('http'))
+        self.patch(self.officer, post.pk, {'title': 'Typhoon advisory (updated)'})
+        [row] = self.feed().data['results']
+        self.assertIsNotNone(row['edited_at'])
