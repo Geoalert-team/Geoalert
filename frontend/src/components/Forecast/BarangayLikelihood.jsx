@@ -3,19 +3,20 @@ import { Link } from 'react-router-dom';
 import { historyApi } from '../../api/historyApi';
 import ForecastPeriodPicker from './ForecastPeriodPicker';
 import {
-  FORECAST_DISCLAIMER, SEVERITY_WORD, defaultPeriod, likelihoodInfo, periodIn, periodLabel, periodMonth,
+  FORECAST_DISCLAIMER, SEVERITY_WORD, chanceText, defaultPeriod, likelihoodInfo, periodIn, periodLabel, periodMonth,
   periodParams, periodPastHeader, periodYearsText, withMonth,
 } from './forecastLevels';
 import './forecast.css';
 
 /**
  * Which barangays a month, a month in a given year, or the week around a
- * date has tended to hit, and with what. Pick the period; pick a barangay
+ * date is likely to hit, and with what. Pick the period; pick a barangay
  * row to see its whole year. A period that has started also shows what
  * actually happened in it.
  *
- * Rule-based seasonal statistics from the archive (backend
- * apps/history/forecast.py), not AI and not a weather forecast.
+ * Counted from the archive (backend apps/history/forecast.py), or from a
+ * trained model for the hazard types whose model beat that counting
+ * (apps/history/model_forecast.py). Not a weather forecast.
  *
  * Props:
  *   compact         dashboard card: top rows only, no month profile
@@ -50,6 +51,12 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
   const shown = compact ? rows.slice(0, limit) : rows;
   // What actually happened, once a period with a year has started
   const outcome = data?.outcome;
+  const modelled = data?.model_hazards || [];
+  const showChance = !compact && rows.some((r) => r.method === 'model');
+  let barNote = 'Bar height is the share of past years with at least one event in that month.';
+  if (data?.profile_method === 'model') {
+    barNote = `Bar height is ${barangay ? 'the model\'s' : 'the average barangay\'s'} chance of at least one event in that month.`;
+  }
 
   return (
     <div className="fc">
@@ -70,7 +77,7 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
         </p>
       )}
 
-      {data && data.limited && (
+      {data && data.limited && !modelled.length && (
         <p className="fc-note">
           Only {data.years.length} past year{data.years.length === 1 ? '' : 's'} on record for {periodIn(period)}, so
           these levels are rough.
@@ -93,6 +100,7 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
               <th scope="col">Hazard</th>
               <th scope="col">Likelihood</th>
               <th scope="col">{periodPastHeader(period)}</th>
+              {showChance && <th scope="col">Chance</th>}
               {outcome && <th scope="col">{outcome.complete ? 'What happened' : 'So far'}</th>}
               {!compact && <th scope="col">Usual severity</th>}
             </tr>
@@ -126,6 +134,7 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
                     </span>
                   </td>
                   <td>{periodYearsText(r, period)}</td>
+                  {showChance && <td>{chanceText(r) || '-'}</td>}
                   {outcome && <td>{r.actual ? `${r.actual} event${r.actual === 1 ? '' : 's'}` : 'None'}</td>}
                   {!compact && <td>{SEVERITY_WORD[r.typical_severity] || '-'}</td>}
                 </tr>
@@ -173,7 +182,7 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
               );
             })}
           </ol>
-          <p className="fc-sub">Bar height is the share of past years with at least one event in that month.</p>
+          <p className="fc-sub">{barNote}</p>
         </div>
       )}
 
@@ -188,16 +197,28 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
       {!compact && (
         <details className="db-method">
           <summary>How this is calculated</summary>
+          {modelled.length > 0 && (
+            <p>
+              The likelihood for {modelled.join(' and ')} comes from a trained model, a Poisson
+              regression. From every real record it learns how many events to expect in each barangay
+              in each month, using the barangay, the month, its land area and how many puroks it has
+              for that area. That gives the chance of at least one event in the month: 25% or more is
+              High, 15% or more is Moderate, and anything less is Low. For an exact date the chance
+              shown is for that week and the level stays the month&rsquo;s. With a year picked, it is
+              trained only on what came before that period. The accuracy check on this page shows how
+              it did on months it never saw.
+            </p>
+          )}
           <p>
+            {modelled.length > 0 && 'Any other hazard type is counted. '}
             For each barangay and hazard type, the system looks at the same month in each past year
             on the record (up to ten years), or for an exact date the week around it (three days
             either side), and counts the years that had at least one event. With a year picked, only
             the years before it count, so a past period can be checked against what happened. A year
             counts half as much for every three years back, so recent seasons matter more. At least
             60% of years, or two or more events expected in the month, is High; at least 30% is
-            Moderate; anything less that still happened is Low. It is plain counting, with no AI or
-            machine learning, and every figure can be checked against the archived records on the
-            History page.
+            Moderate; anything less that still happened is Low. It is plain counting, and every
+            figure can be checked against the archived records on the History page.
           </p>
         </details>
       )}

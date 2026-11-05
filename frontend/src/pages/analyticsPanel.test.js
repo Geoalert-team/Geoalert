@@ -15,6 +15,7 @@ jest.mock('../api/historyApi', () => ({
   historyApi: {
     list: () => Promise.resolve([]),
     forecast: () => Promise.resolve({ results: [], years: [], basis: { records: 0, sample_records: 0 } }),
+    forecastAccuracy: () => Promise.resolve({ hazards: [] }),
   },
 }));
 const { reportsApi } = require('../api/reportApi');
@@ -31,5 +32,5 @@ test('the outlook and likelihood load on their own when the figures fail', async
   });
   expect(el.textContent).toContain('Analytics could not be loaded right now.');
   const headings = [...el.querySelectorAll('h2')].map((h) => h.textContent);
-  expect(headings).toEqual(expect.arrayContaining(['Seasonal outlook', 'Likelihood by barangay']));
+  expect(headings).toEqual(expect.arrayContaining(['Seasonal outlook', 'Likelihood by barangay', 'Model accuracy']));
 });

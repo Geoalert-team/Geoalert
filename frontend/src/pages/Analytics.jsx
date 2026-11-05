@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import CategoryBars from '../components/Charts/CategoryBars';
 import BarangayLikelihood from '../components/Forecast/BarangayLikelihood';
+import ForecastAccuracy from '../components/Forecast/ForecastAccuracy';
 import SeasonalOutlook from '../components/Forecast/SeasonalOutlook';
 import ActivityBand from '../components/Analytics/ActivityBand';
 import ResponseBand from '../components/Analytics/ResponseBand';
@@ -31,7 +32,8 @@ const toRows = (rows, key, label = (r) => r[key] || 'Unspecified', color) =>
  *   Response       how fast alerts were read and reports reviewed
  *   Month by month the four measures as small multiples
  *   Outlook        the next three months, from the whole archive
- *   Likelihood     which barangays a month tends to hit
+ *   Likelihood     which barangays a month is likely to hit
+ *   Model accuracy how the likelihood's trained model did on months it never saw
  *   Breakdowns     zones by type and severity, and every barangay's activity
  *
  * The outlook and likelihood used to live on the History page, which is now
@@ -155,9 +157,13 @@ export default function AnalyticsPanel() {
       <div className="db-card">
         <h2>Likelihood by barangay</h2>
         <p className="db-card-sub">
-          Which barangays a month, a month and year, or a date has tended to hit, from the same time of year in past years
+          How likely each barangay is to be hit in a month, a month and year, or the week of a date, from past records
         </p>
         <BarangayLikelihood hazard={pickedName || ''} excludeSamples={!includeSamples} />
+      </div>
+
+      <div className="db-card">
+        <ForecastAccuracy />
       </div>
 
       {data && (

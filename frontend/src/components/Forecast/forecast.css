@@ -21,7 +21,7 @@
 .fc-note { margin: 0; font-size: .8rem; line-height: 1.45; color: var(--db-soft, #5b6577); }
 .fc-more { margin: 0; font-size: .8rem; color: var(--db-soft, #5b6577); }
 
-.fc-profile h3 { margin: 4px 0 2px; font-size: .95rem; color: var(--db-heading, #1c2e4a); }
+.fc-profile h3, .fc-accuracy h3 { margin: 4px 0 2px; font-size: .95rem; color: var(--db-heading, #1c2e4a); }
 .fc-sub { margin: 0; font-size: .78rem; color: var(--db-soft, #5b6577); }
 .fc-months { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin: 10px 0 6px; padding: 0; list-style: none; }
 .fc-months button { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; font: inherit; }
@@ -32,6 +32,6 @@
 .fc-months li.is-current .fc-bar-wrap { outline: 2px solid var(--db-navy, #1c2e4a); outline-offset: 1px; }
 
 @media (max-width: 560px) {
-  .fc-table th:nth-child(4), .fc-table td:nth-child(4) { display: none; }
+  .fc-table:not(.fc-table-whole) th:nth-child(4), .fc-table:not(.fc-table-whole) td:nth-child(4) { display: none; }
   .fc-bar-wrap { height: 52px; }
 }

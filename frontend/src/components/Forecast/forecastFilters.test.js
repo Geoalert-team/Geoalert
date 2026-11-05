@@ -108,6 +108,57 @@ test('the dashboard card sends the rest to Analytics, not History', async () => 
   expect(el.textContent).not.toContain('Historical Data');
 });
 
+const modelled = (extra = {}) => ({
+  ...forecast('Fire'), model_hazards: ['Fire'], profile_method: 'model',
+  results: [{ ...row(1), hazard_type: 'Fire', method: 'model', probability: 0.234 }], ...extra,
+});
+
+test('a model row shows its chance beside the level', async () => {
+  historyApi.forecast.mockResolvedValue(modelled());
+  const el = await render(<BarangayLikelihood hazard="Fire" />);
+  const heads = [...el.querySelectorAll('th')].map((th) => th.textContent);
+  expect(heads).toContain('Chance');
+  expect(el.querySelector('tbody tr').children[heads.indexOf('Chance')].textContent).toBe('23%');
+});
+
+test('counting rows get no chance column', async () => {
+  historyApi.forecast.mockResolvedValue(forecast('Flood'));
+  const el = await render(<BarangayLikelihood hazard="Flood" />);
+  expect([...el.querySelectorAll('th')].map((th) => th.textContent)).not.toContain('Chance');
+});
+
+test('the method names the model and the hazard types it covers', async () => {
+  historyApi.forecast.mockResolvedValue(modelled());
+  const el = await render(<BarangayLikelihood hazard="Fire" />);
+  expect(el.querySelector('.db-method').textContent).toContain('Fire comes from a trained model');
+  expect(el.querySelector('.db-method').textContent).not.toContain('no AI');
+});
+
+test('with no model in use the method still says it is counting', async () => {
+  historyApi.forecast.mockResolvedValue(forecast('Flood'));
+  const el = await render(<BarangayLikelihood hazard="Flood" />);
+  expect(el.querySelector('.db-method').textContent).not.toContain('trained model');
+  expect(el.querySelector('.db-method').textContent).toContain('counts the years');
+});
+
+test('the year chart says what its bars are', async () => {
+  historyApi.forecast.mockResolvedValue(modelled());
+  const el = await render(<BarangayLikelihood hazard="Fire" />);
+  expect(el.querySelector('.fc-profile').textContent).toContain("average barangay's chance");
+  historyApi.forecast.mockResolvedValue(forecast('Flood'));
+  await el.rerender(<BarangayLikelihood hazard="Flood" />);
+  expect(el.querySelector('.fc-profile').textContent).toContain('share of past years');
+});
+
+test('short history is only called rough while counting sets the levels', async () => {
+  historyApi.forecast.mockResolvedValue(modelled({ limited: true }));
+  const el = await render(<BarangayLikelihood hazard="Fire" />);
+  expect(el.textContent).not.toContain('these levels are rough');
+  historyApi.forecast.mockResolvedValue({ ...forecast('Flood'), limited: true });
+  await el.rerender(<BarangayLikelihood hazard="Flood" />);
+  expect(el.textContent).toContain('these levels are rough');
+});
+
 test('the full table points at the History archive for the records', async () => {
   historyApi.forecast.mockResolvedValue(forecast(''));
   const el = await render(<BarangayLikelihood />);

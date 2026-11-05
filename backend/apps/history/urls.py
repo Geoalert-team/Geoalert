@@ -3,6 +3,7 @@ from apps.history.views import (
     HistoricalRecordListView,
     HistoricalRecordDetailView,
     HistoricalForecastView,
+    ForecastAccuracyView,
     PurokLevelsView,
     AreaHistoryView,
     EventOptionsView,
@@ -14,6 +15,8 @@ from apps.history.import_views import HistoryImportView
 urlpatterns = [
     path('',           HistoricalRecordListView.as_view(),   name='history-list'),
     path('forecast/', HistoricalForecastView.as_view(),     name='history-forecast'),
+    # How each hazard type's trained model did against counting on months it never saw
+    path('forecast/accuracy/', ForecastAccuracyView.as_view(), name='history-forecast-accuracy'),
     # Per purok and hazard type: how often it was hit and the level that gives
     path('purok-levels/', PurokLevelsView.as_view(),         name='history-purok-levels'),
     # One barangay's past hazards, or one purok's in it
