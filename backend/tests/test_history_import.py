@@ -35,7 +35,21 @@ def workbook_bytes(sheets):
     return out.getvalue()
 
 
-HEADERS = [['header'], ['header'], ['header']]
+def header_row(**cells):
+    """Row 1 of a log: {column letter: header}, the rest blank."""
+    row = [None] * 23
+    for col, text in cells.items():
+        row[ord(col) - ord('A')] = text
+    return row
+
+
+# The real logs' first rows (then two more header rows), as the import checks them
+FIRE_HEAD = [header_row(A='Date of Fire\n (date-month-year)', B='Time of Alarm', E='City / Municipality',
+                        F='Exact Location', W='Alarm'), ['header'], ['header']]
+EVENT_HEAD = [header_row(A='Date of Event', B='Time of Event', F='Exact Location\n(Purok / Sitio, Barangay)',
+                         G='Hazard Type'), ['header'], ['header']]
+SPLIT_HEAD = [header_row(A='Date of Event', B='Hazard', F='Barangay', G='Purok / Sitio / Area')]
+HEADERS = FIRE_HEAD
 
 
 def fire_row(city='TALISAY CITY', location='12 RIZAL ST, BRGY HOME', day=datetime(2024, 3, 5)):
@@ -52,10 +66,10 @@ FIRE_LOG = workbook_bytes({'Sheet1': HEADERS + [fire_row(), fire_row(city='BACOL
 FLOOD_ROW = [datetime(2021, 6, 12), 1855, 'VI', 'NEGROS OCCIDENTAL', 'Talisay City', 'Riverside', 'FLOOD',
              'RIVER OVERFLOW', 'Heavy rain', None, None, 12, 40, 'Water knee-deep in the riverside homes.']
 FLOOD_LOG = workbook_bytes({
-    'Flood': HEADERS + [FLOOD_ROW],
-    'Landslide': HEADERS,
-    'By Barangay': [['header'], [datetime(2021, 6, 12), 'FLOOD', 'VI', 'NEGROS OCCIDENTAL', 'Talisay City',
-                                 'Home', None, None, 12]],
+    'Flood': EVENT_HEAD + [FLOOD_ROW],
+    'Landslide': EVENT_HEAD,
+    'By Barangay': SPLIT_HEAD + [[datetime(2021, 6, 12), 'FLOOD', 'VI', 'NEGROS OCCIDENTAL', 'Talisay City',
+                                  'Home', None, None, 12]],
 })
 
 
@@ -99,7 +113,7 @@ class HistoryImportViewTests(FireSetupMixin, TestCase):
                          (self.flood, self.home, 'RIVER OVERFLOW'))
 
     def test_a_flood_log_missing_a_sheet_is_refused_not_read_as_fires(self):
-        response = self.post(workbook_bytes({'Flood': HEADERS + [FLOOD_ROW]}))
+        response = self.post(workbook_bytes({'Flood': EVENT_HEAD + [FLOOD_ROW]}))
         self.assertEqual(response.status_code, 400)
         self.assertIn('By Barangay', response.data['file'])
 
@@ -107,6 +121,21 @@ class HistoryImportViewTests(FireSetupMixin, TestCase):
         response = self.post(workbook_bytes({'History': HEADERS + [fire_row()]}))
         self.assertEqual(response.status_code, 400)
         self.assertIn('exported from the History page', response.data['file'])
+
+    def test_some_other_spreadsheet_is_refused_by_its_first_row(self):
+        hydrants = workbook_bytes({'Sheet1': [['No.', 'Barangay', 'Location', 'Status']] + [fire_row()]})
+        response = self.post(hydrants, save='true')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("doesn't look like the BFP fire log", response.data['file'])
+        self.assertIn('Date of Fire (A)', response.data['file'])
+        self.assertFalse(HistoricalRecord.objects.exists())
+
+    def test_a_flood_log_with_a_wrong_sheet_is_refused(self):
+        wrong = workbook_bytes({'Flood': [['Name', 'Amount']] + [FLOOD_ROW], 'Landslide': EVENT_HEAD,
+                                'By Barangay': SPLIT_HEAD})
+        response = self.post(wrong)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("The Flood sheet doesn't look like the flood and landslide log", response.data['file'])
 
     def test_only_an_excel_workbook(self):
         self.assertEqual(self.post(b'a,b', name='log.csv').status_code, 400)

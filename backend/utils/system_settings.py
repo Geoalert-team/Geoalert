@@ -48,11 +48,11 @@ SETTINGS = {
         'Only past events from this many years back count toward a purok\'s level.',
     ),
     'history.moderate_at': (
-        3, 2, 50, 'events', 'Past events for orange (Moderate)',
+        2, 2, 50, 'events', 'Past events for orange (Moderate)',
         'A purok with at least this many past events in the period is Moderate.',
     ),
     'history.extreme_at': (
-        5, 3, 100, 'events', 'Past events for red (Extreme)',
+        4, 3, 100, 'events', 'Past events for red (Extreme)',
         'A purok with at least this many past events in the period is Extreme.',
     ),
 }

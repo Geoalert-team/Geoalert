@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import HotlineGrid from '../components/Hotlines/HotlineGrid';
+import LatestNews from '../components/News/LatestNews';
 import logo from '../assets/images/logo1.png';
 import photo1 from '../assets/images/p1.jpg';
 import photo2 from '../assets/images/p2.jpg';
@@ -177,6 +178,9 @@ export default function PublicHome() {
             </div>
           </div>
         </section>
+
+        {/* ============ LATEST UPDATES (the newsfeed; hidden when empty) ============ */}
+        <LatestNews />
 
         {/* ============ HAZARDS ============ */}
         <section className="ph-section ph-section-tint">

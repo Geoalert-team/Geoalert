@@ -30,6 +30,9 @@ Likelihood levels, from the weighted share of years with an event:
 Too little history makes a share meaningless (one year out of one is
 "100%"), so a result based on fewer than MIN_YEARS years is marked
 `limited`, and the page says so instead of hiding it.
+
+This counting is also what the trained model in model_forecast.py has to
+beat: a hazard type stays on it until a model does.
 """
 
 from calendar import monthrange
@@ -132,6 +135,11 @@ def likelihood(counts_by_year, weights):
     return share, expected, hit
 
 
+def rank_rows(rows):
+    """Worst first, in place: the level, then the chance, then the expected number."""
+    rows.sort(key=lambda r: (-LEVELS.index(r['level']), -r['probability'], -r['expected_events'], r['barangay']))
+
+
 def _typical_severity(severities):
     """The most common severity; on a tie, the worse one."""
     if not severities:
@@ -213,7 +221,7 @@ def seasonal_forecast(events, month, now, max_years=MAX_YEARS, day=None, year=No
         if started:
             row['actual'] = actual[key]
         rows.append(row)
-    rows.sort(key=lambda r: (-LEVELS.index(r['level']), -r['probability'], -r['expected_events'], r['barangay']))
+    rank_rows(rows)
 
     return {
         'month': month,

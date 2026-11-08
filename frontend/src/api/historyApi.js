@@ -12,10 +12,15 @@ export const historyApi = {
   detail: (id) =>
     client.get(`/api/history/${id}/`).then((r) => r.data),
 
-  // Seasonal likelihood per barangay for a month (rule-based, see backend apps/history/forecast.py).
+  // Likelihood per barangay for a month: counted (backend apps/history/forecast.py), or from a
+  // trained model for the hazard types in model_hazards (apps/history/model_forecast.py).
   // params: month (1-12), hazard_type_name, barangay (adds that barangay's 12-month profile)
   forecast: (params) =>
     client.get('/api/history/forecast/', { params }).then((r) => r.data),
+
+  // How each hazard type's trained model did against counting, on months it never saw
+  forecastAccuracy: () =>
+    client.get('/api/history/forecast/accuracy/').then((r) => r.data),
 
   // Per purok and hazard type: past events in the period and their level,
   // { thresholds, results: [{ purok, type, count, level }] }. types: names, all when omitted.

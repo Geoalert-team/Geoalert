@@ -16,7 +16,7 @@ import { hazardsApi } from '../api/hazardsApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { historyApi } from '../api/historyApi';
 import {
-  LIKELIHOOD, FORECAST_DISCLAIMER, defaultPeriod, likelihoodInfo, periodIn, periodLabel, periodParams, periodYearsText,
+  LIKELIHOOD, FORECAST_DISCLAIMER, chanceText, defaultPeriod, likelihoodInfo, periodIn, periodLabel, periodParams, periodYearsText,
   yearSpan,
 } from '../components/Forecast/forecastLevels';
 import ForecastPeriodPicker from '../components/Forecast/ForecastPeriodPicker';
@@ -68,8 +68,9 @@ const TILE_FAIL_LIMIT = 6;
 // (components/Map/purokLevels.js).
 const VIEWS = [
   { key: 'past', label: 'Past hazards', note: null },
-  // Seasonal likelihood per barangay for a chosen month, from past years.
-  // Rule-based counting (backend apps/history/forecast.py), not AI.
+  // Likelihood per barangay for a chosen month, from past records: counted
+  // (backend apps/history/forecast.py) or from a trained model where one has
+  // passed its test (apps/history/model_forecast.py).
   { key: 'likely', label: 'Likely by month', note: FORECAST_DISCLAIMER },
 ];
 
@@ -800,7 +801,7 @@ export default function PublicMap() {
                   const happened = (r) => (r.actual == null ? '' : `; ${r.actual || 'none'} happened`);
                   tip = rows.length
                     ? `<strong>${name}</strong><br>${rows.slice(0, 3)
-                      .map((r) => `${r.hazard_type}: ${likelihoodInfo(r.level).label} (${periodYearsText(r, likelyPeriod)}${happened(r)})`)
+                      .map((r) => `${r.hazard_type}: ${likelihoodInfo(r.level).label}${chanceText(r) && `, about ${chanceText(r)}`} (${periodYearsText(r, likelyPeriod)}${happened(r)})`)
                       .join('<br>')}`
                     : `<strong>${name}</strong><br>Nothing on record in ${periodIn(likelyPeriod)} in past years`;
                 }

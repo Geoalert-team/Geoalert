@@ -60,6 +60,49 @@ def kind_of(source):
     return FLOODS if set(fl.EVENT_SHEETS) & set(names) else FIRE
 
 
+# Row 1 of each log, as (column, a word its header has, the header's name):
+# a workbook whose first row doesn't have them is some other spreadsheet,
+# and reading it as a log only reports every row as "outside the city"
+FIRE_HEADERS = (('A', 'date', 'Date of Fire'), ('B', 'time', 'Time of Alarm'),
+                ('F', 'location', 'Exact Location'), ('W', 'alarm', 'Alarm'))
+EVENT_HEADERS = (('A', 'date', 'Date of Event'), ('F', 'location', 'Exact Location'), ('G', 'hazard', 'Hazard Type'))
+SPLIT_HEADERS = (('A', 'date', 'Date of Event'), ('B', 'hazard', 'Hazard'), ('F', 'barangay', 'Barangay'))
+
+
+def _headers_found(ws, wanted):
+    first = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), ())
+    first = tuple(first) + (None,) * 26
+    return all(word in str(first[ord(col) - ord('A')] or '').lower() for col, word, _ in wanted)
+
+
+def _expected(wanted):
+    return ', '.join(f'{name} ({col})' for col, _, name in wanted)
+
+
+def check_layout(source, kind):
+    """Raise ImportProblem when the workbook isn't laid out as the log it was taken for."""
+    import openpyxl
+
+    wb = openpyxl.load_workbook(source, read_only=True, data_only=True)
+    try:
+        if kind == FIRE:
+            if not _headers_found(wb.worksheets[0], FIRE_HEADERS):
+                raise ImportProblem(
+                    "This doesn't look like the BFP fire log: its first row should name "
+                    f'{_expected(FIRE_HEADERS)}. Check that you picked the right file. The flood and '
+                    'landslide log is the workbook with the Flood, Landslide and By Barangay sheets.')
+            return
+        # A missing sheet is reported by read_workbook, with the sheets it needs
+        for sheet, wanted in [(s, EVENT_HEADERS) for s in fl.EVENT_SHEETS] + [(fl.SPLIT_SHEET, SPLIT_HEADERS)]:
+            if sheet in wb.sheetnames and not _headers_found(wb[sheet], wanted):
+                raise ImportProblem(
+                    f"The {sheet} sheet doesn't look like the flood and landslide log: its first row "
+                    f'should name {_expected(wanted)}.')
+    finally:
+        wb.close()
+        _rewind(source)
+
+
 def purok_index():
     """({barangay id: [purok names]}, {(barangay id, purok name): purok id})."""
     by_barangay, ids = {}, {}
@@ -74,6 +117,7 @@ def import_fires(source, save=False):
     fire = HazardType.objects.filter(name__iexact='Fire').first()
     if fire is None:
         raise ImportProblem('There is no "Fire" hazard type. Run seed_data first.')
+    check_layout(source, FIRE)
     try:
         rows = bfp.read_sheet(source)
     except Exception:
@@ -102,6 +146,7 @@ def import_floods(source, save=False, include_warnings=False, replace=False):
     missing = sorted(set(fl.HAZARDS.values()) - set(types))
     if missing:
         raise ImportProblem(f'There is no hazard type named {", ".join(missing)}. Run seed_data first.')
+    check_layout(source, FLOODS)
     try:
         events, splits = fl.read_workbook(source)
     except ValueError as e:

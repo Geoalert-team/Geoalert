@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import date, timedelta
 
@@ -13,6 +14,8 @@ from apps.history.serializers import STAFF_ONLY_FIELDS, HistoricalRecordDetailSe
 from utils.audit import log_event
 from utils.permissions import IsBFPPersonnel, IsDRRMOOfficer, is_bfp
 from utils.sampling import TRUTHY
+
+logger = logging.getLogger(__name__)
 
 
 def _filtered(request):
@@ -232,14 +235,39 @@ class AreaHistoryView(APIView):
         return Response(area_history(barangay, purok, _type_names(request), since, staff))
 
 
+def _forecast_events():
+    """Every historical record as the forecast reads it, months in local time."""
+    from apps.history.forecast import as_local
+
+    records = HistoricalRecord.objects.values(
+        'barangay_id', 'barangay__name', 'hazard_type__name',
+        'occurred_at', 'severity_level', 'is_sample',
+    )
+    tz = timezone.get_current_timezone()
+    return [
+        {
+            'barangay_id': r['barangay_id'],
+            'barangay': r['barangay__name'],
+            'hazard': r['hazard_type__name'],
+            'when': as_local(r['occurred_at'], tz),
+            'severity': r['severity_level'],
+            'is_sample': r['is_sample'],
+        }
+        for r in records
+    ]
+
+
 class HistoricalForecastView(APIView):
     """
     GET /api/history/forecast/?month=11
     Seasonal likelihood per barangay and hazard type for a month, from the
     historical record. Public: residents see it as a heads-up, not an alert.
 
-    Rule-based statistics only (see apps/history/forecast.py): how often
-    that month was hit in past years, recent years counting more.
+    Counting (apps/history/forecast.py): how often that month was hit in past
+    years, recent years counting more. A hazard type whose trained model beat
+    that counting on held-back months takes the model's chance and level
+    instead (apps/history/model_forecast.py), named in `model_hazards`, each
+    of its rows marked `method: model`.
 
       ?month=1-12            defaults to next month
       ?year=2024             with month: that month in that year, read from
@@ -259,7 +287,7 @@ class HistoricalForecastView(APIView):
 
     def get(self, request):
         from apps.history.forecast import (
-            MAX_YEARS, as_local, drop_samples, seasonal_forecast, seasonal_profile,
+            MAX_YEARS, drop_samples, seasonal_forecast, seasonal_profile,
         )
 
         now = timezone.localtime()
@@ -298,24 +326,8 @@ class HistoricalForecastView(APIView):
         except ValueError:
             return Response({'error': 'barangay must be an id.'}, status=400)
 
-        records = HistoricalRecord.objects.values(
-            'barangay_id', 'barangay__name', 'hazard_type__name',
-            'occurred_at', 'severity_level', 'is_sample',
-        )
-        tz = timezone.get_current_timezone()
-        events = [
-            {
-                'barangay_id': r['barangay_id'],
-                'barangay': r['barangay__name'],
-                'hazard': r['hazard_type__name'],
-                'when': as_local(r['occurred_at'], tz),
-                'severity': r['severity_level'],
-                'is_sample': r['is_sample'],
-            }
-            for r in records
-        ]
         events = drop_samples(
-            events, (request.query_params.get('exclude_samples') or '').strip().lower() in TRUTHY,
+            _forecast_events(), (request.query_params.get('exclude_samples') or '').strip().lower() in TRUTHY,
         )
         picked = [e for e in events if not hazard or (e['hazard'] or '').lower() == hazard.lower()]
 
@@ -328,9 +340,35 @@ class HistoricalForecastView(APIView):
             'records': len(picked),
             'sample_records': sum(1 for e in picked if e['is_sample']),
             'method': f'Share of past years with an event in {"the week around this date" if day else "this month"}; '
-                      'a year counts half as much every 3 years back. Rule-based, no AI.',
+                      'a year counts half as much every 3 years back.',
         }
+        result['model_hazards'] = []
+        result['profile_method'] = 'counting'
+        try:
+            # The counting above stands on its own: a model problem never takes the forecast down
+            from apps.history import model_forecast
+            model_forecast.use_models(result, events, month, day=day, hazard=hazard, barangay=barangay,
+                                      today=now.date())
+        except Exception:
+            logger.exception('The likelihood model failed; serving the counting.')
         return Response(result)
+
+
+class ForecastAccuracyView(APIView):
+    """
+    GET /api/history/forecast/accuracy/
+    How each hazard type's model did against counting on the months it never
+    saw, and whether it is in use. Real records only, whatever the page shows.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            from apps.history.model_forecast import accuracy_reports
+            return Response({'hazards': accuracy_reports(_forecast_events(), timezone.localdate())})
+        except Exception:
+            logger.exception('The likelihood model could not be tested.')
+            return Response({'error': 'The model could not be tested right now.'}, status=503)
 
 
 class EventOptionsView(APIView):

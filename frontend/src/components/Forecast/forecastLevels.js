@@ -1,5 +1,6 @@
-// Seasonal likelihood levels from GET /api/history/forecast/. Rule-based
-// statistics on past seasons; shown as a heads-up, never as an alert.
+// Likelihood levels from GET /api/history/forecast/: counted from past seasons,
+// or from a trained model where one has passed its test. Shown as a heads-up,
+// never as an alert.
 
 export const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -14,6 +15,9 @@ export const LIKELIHOOD = {
 };
 
 export const likelihoodInfo = (level) => LIKELIHOOD[level] || LIKELIHOOD.None;
+
+/** "23%" on a model's row; counting has no chance to give, only a share of years */
+export const chanceText = (row) => (row.method === 'model' ? `${Math.round(row.probability * 100)}%` : '');
 
 /** 1-12 for next month, the default view: what to prepare for. */
 export function nextMonth(now = new Date()) {
@@ -115,6 +119,6 @@ export function periodYearsText(row, p) {
 export const SEVERITY_WORD = { Red: 'Extreme', Orange: 'Moderate', Green: 'Low' };
 
 export const FORECAST_DISCLAIMER =
-  'Based on how often this happened at the same time of year in past years. '
+  'Based on past records for each barangay and the time of year. '
   + 'It is a heads-up for preparing, not a warning that a hazard is coming. '
   + 'Live alerts come only from the DRRMO.';

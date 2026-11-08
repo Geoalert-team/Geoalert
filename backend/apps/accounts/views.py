@@ -180,12 +180,16 @@ class LoginView(APIView):
             )
             return Response(INVALID, status=status.HTTP_401_UNAUTHORIZED)
 
-        # Password is correct — reset lockout tracking either way.
+        # Password is correct. Without 2FA that is a full sign-in: reset the
+        # lockout tracking. With 2FA it is only half of one, so the count
+        # stays until the code is right too; clearing it here let rounds of
+        # wrong codes go on for ever, each new password check wiping the last.
         # `auth_user`, not the earlier `user`, since authenticate() may have
         # rehashed the password in the DB and `user` was loaded before that.
-        auth_user.failed_login_count = 0
-        auth_user.locked_until = None
-        auth_user.save(update_fields=['failed_login_count', 'locked_until'])
+        if not auth_user.two_factor_enabled:
+            auth_user.failed_login_count = 0
+            auth_user.locked_until = None
+            auth_user.save(update_fields=['failed_login_count', 'locked_until'])
 
         # If 2FA is on, stop here — don't start a logged-in session yet.
         # Stash which user passed the password step in this (still
@@ -281,7 +285,10 @@ class TwoFactorVerifyView(APIView):
         request.session.pop('pending_2fa_user_id', None)
         request.session.pop('pending_2fa_tries', None)
         user.last_login = timezone.now()
-        user.save(update_fields=['last_login'])
+        # Password and code both right: now the failed sign-ins are cleared
+        user.failed_login_count = 0
+        user.locked_until = None
+        user.save(update_fields=['last_login', 'failed_login_count', 'locked_until'])
         login(request, user)
         start_session_clock(request)
         log_event(request, 'LOGIN_SUCCESS', 'app_user', user.id, f'{user.email} (with 2FA)', user=user)

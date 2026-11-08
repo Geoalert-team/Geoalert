@@ -135,6 +135,9 @@ export const ACTION_META = {
   VERIFY_HAZARD: { label: 'Ground confirmation', tone: 'info', icon: 'check' },
   GENERATE_REPORT: { label: 'Generated report', tone: 'neutral', icon: 'list' },
   IMPORT_HISTORY: { label: 'Imported history', tone: 'info', icon: 'list' },
+  POST_NEWS: { label: 'Posted news', tone: 'good', icon: 'list' },
+  EDIT_NEWS: { label: 'Edited news', tone: 'info', icon: 'edit' },
+  DELETE_NEWS: { label: 'Deleted news', tone: 'bad', icon: 'x' },
   CONFIG_CHANGED: { label: 'Changed a setting', tone: 'warn', icon: 'shield' },
 };
 

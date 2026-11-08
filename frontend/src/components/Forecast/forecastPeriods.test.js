@@ -1,5 +1,5 @@
 import {
-  YEARS, defaultPeriod, periodIn, periodLabel, periodMonth, periodParams, periodPastHeader, periodYearsText, withMonth,
+  YEARS, chanceText, defaultPeriod, periodIn, periodLabel, periodMonth, periodParams, periodPastHeader, periodYearsText, withMonth,
   yearSpan,
 } from './forecastLevels';
 
@@ -37,6 +37,11 @@ test('labels for each mode', () => {
   expect([MONTH, DATE].map(periodPastHeader)).toEqual(['Past Novembers', 'Past years, week of Nov 15']);
   const row = { years_hit: 3, years_considered: 4 };
   expect([MONTH_YEAR, DATE].map((p) => periodYearsText(row, p))).toEqual(['3 of 4 past Novembers', '3 of 4 past years']);
+});
+
+test('only the model gives a chance; counting has none to show', () => {
+  expect(chanceText({ method: 'model', probability: 0.234 })).toBe('23%');
+  expect(chanceText({ probability: 0.6 })).toBe('');
 });
 
 test('moving to another month keeps the mode, and a date its day where it can', () => {

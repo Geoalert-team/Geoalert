@@ -322,6 +322,19 @@ class IncidentReportListCreateView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        # Barangay personnel speak for their own barangay only: a report filed
+        # for another one would alert, and be counted against, a place they
+        # don't represent. An older account with no barangay set is let
+        # through, as alert routing already does for such accounts.
+        own = request.user.assigned_barangay
+        chosen = serializer.validated_data.get('barangay')
+        if (request.user.role and request.user.role.name == 'Barangay_Personnel'
+                and own is not None and chosen is not None and chosen.id != own.id):
+            return Response(
+                {'barangay': f'You can only report for Barangay {own.name}, the barangay your account is assigned to.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         # One transaction around the report and its photos. An upload that
         # fails halfway would otherwise leave a report claiming pictures it
         # does not have, which is worse than a submission that plainly

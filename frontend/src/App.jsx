@@ -6,6 +6,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PublicHome from "./pages/PublicHome";
 import PublicMap from "./pages/PublicMap";
+import News from "./pages/News";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import WhatToDo from "./pages/WhatToDo";
@@ -44,6 +45,7 @@ function AppRoutes() {
       {/* Public, no login required */}
       <Route path="/" element={<PublicHome />} />
       <Route path="/map" element={<PublicMap />} />
+      <Route path="/news" element={<News />} />
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/what-to-do" element={<WhatToDo />} />
