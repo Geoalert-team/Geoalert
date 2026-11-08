@@ -1,38 +1,38 @@
 barangay,name,kind,parent,lat,lng,placed_by,confidence,sources,note
-Biasong,Purok Mahayahay,purok,,,,,,fire log,
+Biasong,Purok Mahayahay,purok,,10.240388,123.827137,Google Maps place,medium,fire log; fire log research 2026-11-06,
 Biasong,Central,sitio,,10.242974,123.830640,"Overture addresses (3) ""Central Biasong""",medium,fire log; Overture Maps,Central Biasong Rd
 Biasong,Sitio Laguna,sitio,,10.239241,123.827243,Wikimapia outline,high,fire log; Wikimapia,
 Biasong,Purok Mahogany,purok,Sitio Laguna,10.238110,123.827680,"Overture address ""Purok Mahogany"", 100 m from Sitio Laguna",medium,fire log; Overture Maps,
 Biasong,Zone 2,zone,,10.237120,123.829270,Overture: barangay hall and chapel addressed Zone 2,medium,fire log; Overture Maps,
 Biasong,Zone 3,zone,,10.236190,123.832210,"Overture addresses (2) ""Zone 3"" on the highway",low,fire log; Overture Maps,
-Biasong,Purok Mabuhast,purok,Zone 3,,,,,fire log,
+Biasong,Purok Mabuhast,purok,Zone 3,10.236190,123.832210,"estimated inside Zone 3 (fire log: Zone 3, Purok Mabuhast); exact spot in the sitio unknown",low,fire log; research 2026-11-08,position inside its parent estimated
 Biasong,San Lucas,sitio,,10.242755,123.833056,OpenStreetMap place,high,DSWD DROMIC; Visayan Electric; fire log; OpenStreetMap; news 2025-2026,
-Biasong,Sitio Botoy,sitio,,,,,,Visayan Electric,
+Biasong,Sitio Botoy,sitio,,10.241630,123.828030,"address: PUROK KAWAYANAN, SITIO BUTOY (Overture); it holds Purok Kawayan, at the same address",low,Visayan Electric; research 2026-11-08,one listing; spelled Butoy there
 Biasong,Purok Kawayan,purok,Sitio Botoy,10.241630,123.828030,"Overture address ""Purok Kawayanan, Sitio Butoy""",medium,Visayan Electric; Overture Maps,
 Biasong,Ranger,sitio,,10.246400,123.831380,Overture addresses (2) on Ranger St,medium,Visayan Electric; Overture Maps,"fire log also has ""Purok Ranger, Pooc"""
-Biasong,Purok Birde,purok,,,,,,Visayan Electric,its notices name no road found on the map in Biasong
+Biasong,Purok Birde,purok,,10.243393,123.832937,"estimated from outage notice: 3 neighbours within 309 m (Purok Malipayon, Ranger, San Lucas), set 70 m off their middle; shares the estimate with 1 other name(s), order unknown",low,Visayan Electric; research 2026-11-08,its notices name no road found on the map in Biasong
 Biasong,Purok Gumamela,purok,,,,,,Visayan Electric,its notices name no road found on the map in Biasong
 Biasong,Purok Malipayon,purok,,10.242360,123.833020,"OpenStreetMap place ""Malipayon""",high,Visayan Electric; Overture Maps,
-Biasong,Purok Maryland,purok,,,,,,Visayan Electric,
-Biasong,Purok Pag-asa,purok,,,,,,Visayan Electric,its notices name no road found on the map in Biasong
+Biasong,Purok Maryland,purok,San Lucas,10.242437,123.833828,"name on the pin: Purok Maryland, San Lucas, Biasong",medium,Visayan Electric; Google Maps 2026-11-08,"position approximate; parent from: Google addresses: Purok Maryland, San Lucas, Biasong"
+Biasong,Purok Pag-asa,purok,,10.244283,123.832033,"estimated from outage notice: 3 neighbours within 309 m (Purok Malipayon, Ranger, San Lucas), set 70 m off their middle; shares the estimate with 1 other name(s), order unknown",low,Visayan Electric; research 2026-11-08,its notices name no road found on the map in Biasong
 Biasong,Purok Makulay,purok,San Lucas,10.242380,123.833570,"Overture address ""Purok Makulay, San Lucas""",low,Overture Maps,
 Biasong,Purok Orchids,purok,,10.247790,123.833920,"Overture address ""Purok Orchids Peace Subdivision""",low,Overture Maps,
 Biasong,Palm River Subdivision,subdivision,,10.244038,123.832695,"Overture place ""Palm River Subdivision"" and addresses (3)",medium,fire log; Overture Maps,
 Biasong,Raphael Homes,subdivision,,10.242540,123.828690,"OpenStreetMap area ""Raphael Homes""",high,fire log; OpenStreetMap,
 Biasong,Pueblo San Ricardo,subdivision,,10.248027,123.831788,OpenStreetMap outline,high,OpenStreetMap; Wikimapia,
 Biasong,Puerto del Sol Subdivision,subdivision,,10.240120,123.826748,Wikimapia outline,high,Wikimapia,
-Bulacao,Sitio Alegre,sitio,,,,,,fire log,
+Bulacao,Sitio Alegre,sitio,,10.269250,123.845610,Google Maps pin,medium,fire log; fire log research 2026-11-06,
 Bulacao,Sitio Paglaum,sitio,,10.267129,123.847965,Wikimapia place,high,fire log; Visayan Electric,also spelled Paglaom
 Bulacao,Upper Kabanayan,sitio,Sitio Kabanayan,,,,,fire log; SunStar 2014 hazard list; news 2025-2026,news also spells it Cabanayan
 Bulacao,Sitio Kabanayan,sitio,,10.273698,123.843391,"Overture place ""Cabanayan, Bulacao"", with 5 more listings",medium,Overture Maps; Visayan Electric; SunStar 2023,also spelled Cabanayan
 Bulacao,Lower Kabanayan,sitio,Sitio Kabanayan,10.272346,123.843987,"Overture addresses (4) ""Lower Kabanayan""",medium,Overture Maps; Visayan Electric; SunStar 2023,"SunStar 2023: Lower Kabanayan, Sta. Lucia Road"
 Bulacao,Crosan,sitio,,10.274421,123.846299,Wikimapia place,high,fire log; Visayan Electric; news 2025-2026,notices spell it Cruzan
-Bulacao,Purok Malinawon,purok,,,,,,Visayan Electric,its notices name no road found on the map in Bulacao
-Bulacao,Purok Mangihatagon,purok,,,,,,Visayan Electric,its notices name no road found on the map in Bulacao
+Bulacao,Purok Malinawon,purok,,10.265523,123.846768,"estimated from outage notice: 4 neighbours within 239 m (Mansueto Subdivision, Plainville, Purok Panaghiusa, Sitio Paglaum), set 70 m off their middle; shares the estimate with 3 other name(s), order unknown",low,Visayan Electric; research 2026-11-08,its notices name no road found on the map in Bulacao
+Bulacao,Purok Mangihatagon,purok,,10.265292,123.845895,"estimated from outage notice: 4 neighbours within 239 m (Mansueto Subdivision, Plainville, Purok Panaghiusa, Sitio Paglaum), set 70 m off their middle; shares the estimate with 3 other name(s), order unknown",low,Visayan Electric; research 2026-11-08,its notices name no road found on the map in Bulacao
 Bulacao,Purok Panaghiusa,purok,,10.265814,123.845073,outage notices (3) along Mansueto Drive,low,Visayan Electric,
 Bulacao,Plainville,subdivision,,10.264223,123.847581,OpenStreetMap outline,high,Visayan Electric; OpenStreetMap,
-Bulacao,Sitio Holy Child,sitio,,,,,,Visayan Electric,its notices name no road found on the map in Bulacao
-Bulacao,Kalubihan,sitio,,,,,,Visayan Electric,its notices name no road found on the map in Bulacao
+Bulacao,Sitio Holy Child,sitio,,10.266151,123.845662,"estimated from outage notice: 4 neighbours within 239 m (Mansueto Subdivision, Plainville, Purok Panaghiusa, Sitio Paglaum), set 70 m off their middle; shares the estimate with 3 other name(s), order unknown",low,Visayan Electric; research 2026-11-08,its notices name no road found on the map in Bulacao
+Bulacao,Kalubihan,sitio,,10.266382,123.846535,"estimated from outage notice: 4 neighbours within 239 m (Mansueto Subdivision, Plainville, Purok Panaghiusa, Sitio Paglaum), set 70 m off their middle; shares the estimate with 3 other name(s), order unknown",low,Visayan Electric; research 2026-11-08,its notices name no road found on the map in Bulacao
 Bulacao,Mansueto Subdivision,subdivision,,10.266180,123.844240,"OpenStreetMap area ""Mansueto Subdivision""",high,Visayan Electric; Overture Maps,
 Bulacao,Sitio Longdream,sitio,,10.270650,123.838740,"Overture place ""Sitio Longdream""",medium,Overture Maps,
 Bulacao,Sitio Villabusca,sitio,,10.268480,123.846120,"Overture place ""Sitio Villabusca Bulacao, Talisay City""",medium,Overture Maps,
@@ -40,13 +40,13 @@ Bulacao,Villa Verna IV Subdivision,subdivision,,10.273237,123.845161,Wikimapia o
 Bulacao,Mighty Villa Subdivision,subdivision,,10.268010,123.850969,Wikimapia outline,high,Wikimapia; OpenStreetMap,OSM has its Mighty Villa Street
 Bulacao,Purok Matinabangon,purok,,10.262143,123.850092,"OpenStreetMap place ""Matinabangon"", tagged a purok of Bulacao",high,OpenStreetMap; Overture Maps,"an Overture address 160 m west, across the Tabunok line, had placed it in Tabunok"
 Cadulawan,Lower Mahayahay,sitio,Sitio Mahayahay,10.276298,123.843254,"Overture place ""Mahayahay Manggahan"", 200 m from its Purok Kamunggay",low,fire log; Overture Maps,
-Cadulawan,Upper Mahayahay,sitio,Sitio Mahayahay,,,,,fire log,
+Cadulawan,Upper Mahayahay,sitio,Sitio Mahayahay,10.279288,123.842392,estimated inside Sitio Mahayahay (fire log and its name); exact spot in the sitio unknown,low,fire log; research 2026-11-08,position inside its parent estimated
 Cadulawan,Purok Kamunggay,purok,Lower Mahayahay,10.276130,123.845200,"Overture address ""Purok Kamungay, Candulawan""",low,fire log; Overture Maps,
-Cadulawan,Zone II (Lower),zone,,,,,,fire log; city profile 2010,"fire log: ""Lower Candulawan""; its notices name no road found on the map in Cadulawan"
-Cadulawan,Purok Mangga,purok,Zone II (Lower),,,,,fire log,its notices name no road found on the map in Cadulawan
+Cadulawan,Zone II (Lower),zone,,10.278342,123.841811,"estimated from outage notice: 2 neighbours within 203 m (Purok Mangga, Purok Tambis), set 70 m off their middle; shares the estimate with 1 other name(s), order unknown",low,fire log; city profile 2010; research 2026-11-08,"fire log: ""Lower Candulawan""; its notices name no road found on the map in Cadulawan"
+Cadulawan,Purok Mangga,purok,Zone II (Lower),10.278312,123.844188,Google Maps place,medium,fire log; fire log research 2026-11-06,its notices name no road found on the map in Cadulawan
 Cadulawan,Purok Boongon,purok,,10.278797,123.843461,"OpenStreetMap: Candulawan Barangay Hall, which stands in it",medium,fire log; CDN 2024; OpenStreetMap,"CDN 2024: ""barangay hall at Purok Boongon"""
 Cadulawan,Purok Nangka,purok,,,,,,CDN 2024,
-Cadulawan,Purok Chicos,purok,,,,,,Visayan Electric,its notices name no road found on the map in Cadulawan
+Cadulawan,Purok Chicos,purok,,10.278970,123.842917,"estimated from outage notice: 2 neighbours within 203 m (Purok Mangga, Purok Tambis), set 70 m off their middle; shares the estimate with 1 other name(s), order unknown",low,Visayan Electric; research 2026-11-08,its notices name no road found on the map in Cadulawan
 Cadulawan,Sitio Tubod,sitio,,,,,,Visayan Electric,its notices name no road found on the map in Cadulawan
 Cadulawan,Zone I,zone,,,,,,city profile 2010; SunStar 2014 hazard list,
 Cadulawan,Sitio Mahayahay,sitio,,10.279288,123.842392,"Overture address ""Mahayahay, Candulawan"", 90 m from the barangay hall",medium,fire log; Visayan Electric; Overture Maps,Upper and Lower Mahayahay are its parts
@@ -54,38 +54,38 @@ Cadulawan,Sitio Little Bamboo,sitio,,,,,,SunStar 2014 hazard list,
 Cadulawan,Zone IV (Proper),zone,,,,,,city profile 2010,
 Cadulawan,Zone V (Upper),zone,,,,,,city profile 2010,
 Cadulawan,Vista Grande,subdivision,,10.279777,123.836265,OpenStreetMap outline,high,Visayan Electric; OpenStreetMap,
-Cadulawan,Purok Miracle,purok,,10.279460,123.841800,"Overture address ""Purok Miracle, Candulawan""",low,Overture Maps,
+Cadulawan,Purok Miracle,purok,,10.275756,123.843294,name on the pin: Purok miracle (Google Maps),low,Overture Maps,
 Cadulawan,Purok Tambis,purok,,10.279000,123.840540,"Overture addresses (2) ""Purok Tambis, Candulawan""",medium,Overture Maps,
-Camp IV,Purok Sambag,purok,Sitio Proper,,,,,fire log; camp4talisay.com,
+Camp IV,Purok Sambag,purok,Sitio Proper,10.320908,123.820364,estimated inside Sitio Proper (camp4talisay.com); exact spot in the sitio unknown,low,fire log; camp4talisay.com; research 2026-11-08,position inside its parent estimated
 Camp IV,Sitio Proper,sitio,,10.320908,123.820364,"OpenStreetMap: Camp 4 Barangay Hall (""Proper"" is the barangay centre)",low,camp4talisay.com; OpenStreetMap,"camp4talisay.com: hanging bridge at ""Purok Sambag, Sitio Proper"""
 Camp IV,Cambawog Upper,sitio,,10.309506,123.816231,"Overture listing ""Cambawog, Camp 3, Talisay City""; the point lies in Camp IV",low,fire log; Visayan Electric; Overture Maps,notices list Cambawog with Purok Pinya and Purok Chicos
-Camp IV,Purok Pinya,purok,Cambawog Upper,,,,,fire log,its notices name no road found on the map in Camp IV
-Camp IV,Purok Santol,purok,,,,,,fire log,SunStar 2024: a cliff on the road where an SUV fell
-Camp IV,Sitio Caolong,sitio,,,,,,fire log; news 2025-2026,
-Camp IV,Purok Lubi,purok,Sitio Caolong,10.326540,123.815529,"Overture address ""Puron Lubi, Camp 4""",low,fire log; news 2025-2026; Overture Maps,
+Camp IV,Purok Pinya,purok,Cambawog Upper,10.309506,123.816231,"estimated inside Cambawog Upper (fire log: Cambawog Upper, Purok Pinya; camp4talisay.com); exact spot in the sitio unknown",low,fire log; research 2026-11-08,its notices name no road found on the map in Camp IV; position inside its parent estimated
+Camp IV,Purok Santol,purok,Sitio Camp 5,10.326201,123.808563,"Reports place Sitio Santol on Manipis Road by the viewing deck, 40 m from the Camp IV line; barangay site lists Purok Santol under Sitio Camp-5; DPWH ",low,fire log; fire log research 2026-11-06,SunStar 2024: a cliff on the road where an SUV fell; parent from: camp4talisay.com: Camp-5 > Santol
+Camp IV,Sitio Caolong,sitio,,10.317859,123.818825,"nearby address: Google place Purok Lubi, 8R99+4GW, Sitio Caolong",low,fire log; news 2025-2026; Google Maps 2026-11-08,position approximate
+Camp IV,Purok Lubi,purok,Sitio Caolong,10.317859,123.818825,name on the pin: Purok Lubi (Google Maps),low,fire log; news 2025-2026; Overture Maps,
 Camp IV,Sitio Languyon,sitio,,,,,,city profile 2010,
 Camp IV,Sitio Pangi,sitio,,10.333760,123.804977,Wikimapia outline,high,Wikimapia,
 Camp IV,Sitio Nangka,sitio,,,,,,news 2025-2026,hanging bridge lost to Typhoon Tino; its notices name no road found on the map in Camp IV
-Camp IV,Sitio Camp 5,sitio,,,,,,SunStar 2014 hazard list,SunStar also lists a Camp 5 in Manipis
+Camp IV,Sitio Camp 5,sitio,,10.325680,123.806800,barangay site lists Camp-5 as a Camp IV sitio; name on the pin: Camp 5 manipis (Google Maps),medium,SunStar 2014 hazard list; camp4talisay.com; research 2026-11-08,"SunStar also lists a Camp 5 in Manipis; pin 99 m over the PSA line, in Manipis"
 Camp IV,Sitio Curba,sitio,,,,,,landslide log; CDN 2021,a landslide spot on the Manipis road
 Camp IV,Purok Saging,purok,,,,,,Bombo Radyo 2026,
 Cansojong,Kimba,sitio,,10.256855,123.850629,street in its address (Rafael Rabaya Street),medium,Wikipedia 2017; fire log; Inquirer,"fire log also lists ""Kimba, San Roque"""
-Cansojong,Sitio Atisan,sitio,,10.248821,123.855913,street in its address (Base Street),medium,Wikipedia 2017; fire log,also spelled Antisan
+Cansojong,Sitio Atisan,sitio,,10.252569,123.855071,name on the pin: Atisan (Google Maps),medium,Wikipedia 2017; fire log,also spelled Antisan
 Cansojong,Sitio Mahayahay,sitio,,10.247666,123.855460,Wikimapia outline,high,Wikimapia; Wikipedia 2017; fire log,
-Cansojong,Sitio Ibacan,sitio,,,,,,Wikipedia 2017; fire log,also spelled Ibacan; BFP spelling; was Sitio Ebacan
+Cansojong,Sitio Ibacan,sitio,,10.248780,123.853320,Google Maps pin,medium,Wikipedia 2017; fire log; fire log research 2026-11-06,also spelled Ibacan; BFP spelling; was Sitio Ebacan
 Cansojong,Sitio Caneba,sitio,,10.250348,123.854677,"outage notices (3) along P. Labuca Street, Rafael Rabaya Street",low,fire log,
 Cansojong,Bravo,sitio,,10.256850,123.850637,outage notices (5) along Rafael Rabaya Street,low,fire log,
-Cansojong,Sitio Casare,sitio,,,,,,Wikipedia 2017; fire log,
+Cansojong,Sitio Casare,sitio,,10.253556,123.852975,"estimated: halfway between Sitio Kimberly and Sitio Limonsito, the two sitios the 2010 city profile lists next to it; exact spot unknown",low,Wikipedia 2017; fire log; city profile 2010; Philstar 2022,No map source names it. Philstar 2022 places an arrest there beside South Road Properties. The boundary is an estimate.
 Cansojong,Sitio Asan,sitio,,10.245845,123.851424,Wikimapia outline,high,Visayan Electric; Wikimapia,
 Cansojong,Sitio Balut,sitio,,10.246700,123.852788,Wikimapia outline,high,Visayan Electric; Wikimapia,notices spell it Balot
-Cansojong,Sitio Maya-maya,sitio,,,,,,Visayan Electric,its notices name no road found on the map in Cansojong
+Cansojong,Sitio Maya-maya,sitio,,10.247527,123.851909,name on the pin: PUROK MAYA-MAYA,medium,Visayan Electric; Google Maps 2026-11-08,its notices name no road found on the map in Cansojong
 Cansojong,Sitio Ibabao,sitio,,,,,,Wikipedia 2017,
 Cansojong,Sitio Panaghi-usa,sitio,,10.251614,123.853086,"outage notices (5) along Cebu South Coastal Road, Rafael Rabaya Street, San Francisco Drive, Vicente H. Garces Street",low,Wikipedia 2017,
 Cansojong,Sitio Mushroom,sitio,,10.248180,123.854450,Overture addresses (2) on Mushroom St,medium,Wikipedia 2017; Overture Maps,
 Cansojong,Zodiac Riverside,sitio,,,,,,Wikipedia 2017,
 Cansojong,Villa Laguna,sitio,,,,,,Wikipedia 2017,
-Cansojong,Sitio Limonsito,sitio,,,,,,Wikipedia 2017,
-Cansojong,Sitio Kimberly,sitio,,,,,,Wikipedia 2017,
+Cansojong,Sitio Limonsito,sitio,,10.253380,123.856520,"address: Door 2, Sitio Lemonsito (Google Maps); named as a Cansojong sitio in the 2010 profile and Wikipedia 2017",low,Wikipedia 2017; research 2026-11-08,"one address; pin 12 m over the PSA line, in San Roque"
+Cansojong,Sitio Kimberly,sitio,,10.253731,123.849429,"address: Raylie Pisonet, Sitio Kimberly; Kimberly SDA Church 15 m away (Google Maps)",medium,Wikipedia 2017; research 2026-11-08,
 Cansojong,Sitio Kisarca,sitio,Kimba,10.253280,123.852550,"Overture place ""Sitio Kisarca, Kimba Cansojong"" (two pins 700 m apart)",low,Overture Maps,
 Cansojong,South City Homes,subdivision,,10.254635,123.847172,OpenStreetMap outline,high,OpenStreetMap; Wikimapia,
 Cansojong,Alberlyn South Subdivision,subdivision,,10.254614,123.849532,OpenStreetMap outline,high,OpenStreetMap; Wikimapia,
@@ -96,18 +96,18 @@ Cansojong,Santa Teresa Village,subdivision,,10.253064,123.845684,Wikimapia outli
 Cansojong,Garden Village,subdivision,,10.247436,123.848994,Wikimapia outline,high,Wikimapia,
 Dumlog,Zone 3,zone,,10.247873,123.841492,street in its address (J. P. Rizal Street),medium,fire log,
 Dumlog,Zone 5,zone,,10.240280,123.840190,"Overture addresses (3) ""Zone 5, Dumlog""",low,fire log; Overture Maps,
-Dumlog,Purok Saging,purok,Zone 5,,,,,fire log,
+Dumlog,Purok Saging,purok,Zone 5,10.240280,123.840190,"estimated inside Zone 5 (fire log: Purok Saging, Zone 5); exact spot in the sitio unknown",low,fire log; research 2026-11-08,position inside its parent estimated
 Dumlog,Sitio Paglaom,sitio,,10.245646,123.834572,"Overture ""Tulay sa Kinabuhi"", Burgos St., ""Sitio Paglaum, Dumlog""",low,fire log; flood log; Overture Maps,also spelled Paglaum
 Dumlog,Sitio Bahala,sitio,,10.252728,123.835667,estimated: the Dumlog bank opposite Purok Isla Verde,low,flood log; Philstar 2025; Visayan Electric,Philstar 2025 names Purok Isla Verde and Sitio Bahala as two riverside communities; position approximate
-Dumlog,Sitio Tugas,sitio,,,,,,fire log,
+Dumlog,Sitio Tugas,sitio,,10.240000,123.838700,"estimated: middle of the low Dumlog places MGB lists with it, by Dumlog Gym",low,fire log; Philstar 2012; SunStar 2024; DSWD DROMIC,position approximate
 Dumlog,Ramona 1,sitio,,10.251060,123.840564,"OpenStreetMap street ""Ramona Village Street""",low,fire log; OpenStreetMap,
-Dumlog,Purok Kamatis,purok,Ramona 1,,,,,fire log,
-Dumlog,Upper Riverside,sitio,,,,,,fire log,
-Dumlog,Sta. Cruz,sitio,,,,,,fire log,
+Dumlog,Purok Kamatis,purok,Ramona 1,10.249875,123.840258,"nearby address: 2 homes give Purok Kamatis, Ramona Village",low,fire log; Google Maps 2026-11-08,position approximate
+Dumlog,Upper Riverside,sitio,,10.250040,123.836750,"Google Maps addresses: Zone II Upper Riverside, Jose Rizal St",medium,fire log; fire log research 2026-11-06,
+Dumlog,Sta. Cruz,sitio,,10.238850,123.840040,"Google Maps: Sta. Cruz chapel, Ernesto Bascon St",medium,fire log; fire log research 2026-11-06,
 Dumlog,Purok Botig,purok,,10.247031,123.842919,outage notices (1) along J. P. Rizal Street,low,Visayan Electric,order along road unknown
 Dumlog,Purok Kalabasa,purok,,10.248814,123.839584,outage notices (6) along J. P. Rizal Street,low,Visayan Electric,order along road unknown
 Dumlog,Purok Okra,purok,,10.248080,123.841142,outage notices (2) along J. P. Rizal Street,low,Visayan Electric,order along road unknown
-Dumlog,Sitio Santo Nino,sitio,,,,,,Wikimapia,
+Dumlog,Sitio Santo Nino,sitio,,10.238720,123.841570,Wikimapia place: Sitio Santo Nino; MGB 2012 names Santo Nino among the flood-prone sitios of Dumlog,high,Wikimapia; research 2026-11-08,
 Dumlog,Deca Homes,subdivision,,10.237810,123.838350,"OpenStreetMap area ""Deca Homes - Baywalk Talisay""",high,fire log; OpenStreetMap; Overture Maps,
 Dumlog,Sitio Kamalig,sitio,,10.243950,123.839050,"Overture addresses (2) ""Sitio Kamalig, Dumlog""",medium,Overture Maps,
 Dumlog,Sitio Litmon,sitio,,10.239820,123.841700,"Overture addresses (3) ""Sitio Litmon/Letmon, Dumlog""",medium,Overture Maps,
@@ -115,11 +115,11 @@ Dumlog,Sitio Romahan,sitio,,10.238890,123.836110,"Overture place ""Sitio Romahan
 Dumlog,Sitio San Jose,sitio,,10.248010,123.837950,"Overture place ""Sitio San Jose, Dumlog""",medium,Overture Maps,
 Dumlog,Sitio Limonsituhan,sitio,,10.241500,123.839200,"Overture address ""Zone 6 Bascon St., Sitio Limonsituhan""",low,Overture Maps,
 Dumlog,Purok Acasia,purok,,10.244930,123.839130,"Overture address ""Purok Acasia, Burgos St, Brgy Dumlog""",low,Overture Maps,
-Dumlog,Purok Gemelina,purok,,10.241830,123.838340,"Overture address ""Zone 6, Purok Gemelina, Bascon St., Dumlog""",low,Overture Maps,
+Dumlog,Purok Gemelina,purok,Zone 6,10.241830,123.838340,"Overture address ""Zone 6, Purok Gemelina, Bascon St., Dumlog""",low,Overture Maps,"parent from: Overture: Zone 6, Purok Gemelina, Bascon St., Dumlog"
 Dumlog,Purok Guyabano,purok,,10.239970,123.841680,"Overture address ""Purok Guyabano, Dumlog""",low,Overture Maps,
-Dumlog,Purok Miracle Fruit,purok,,10.243480,123.841070,"Overture address ""Dumlog Purok Miracle Fruit""",low,Overture Maps,
+Dumlog,Purok Miracle Fruit,purok,Sitio Florida,10.243480,123.841070,"Overture address ""Dumlog Purok Miracle Fruit""",low,Overture Maps,"parent from: Overture: Dumlog Purok Miracle Fruit, Florida Extension"
 Dumlog,Deca Homes Phase 2,subdivision,,10.237090,123.835745,Wikimapia outline,high,Wikimapia,"Wikimapia: ""DECA Homes Baywalk Talisay Phase 2"""
-Jaclupan,Camp 2,sitio,,,,,,fire log,
+Jaclupan,Camp 2,sitio,,10.289744,123.820468,"Google address: campo 2, EEA village. The pin falls 400 m over the Maghaway line on the PSA outline, but DPWH pins Sitio Tinubdan, Purok Narra and Sit",low,fire log; fire log research 2026-11-06,
 Jaclupan,Camp III,sitio,,10.305473,123.815095,outage notices (2) along Toledo - Tabunok Road,low,Visayan Electric,
 Jaclupan,Sitio Kawayan,sitio,,10.303569,123.816303,outage notices (2) along Toledo - Tabunok Road,low,Visayan Electric,also listed as a purok
 Jaclupan,Purok Avocado,purok,,10.307277,123.815398,outage notices (2) along Toledo - Tabunok Road,low,Visayan Electric,position along road approximate
@@ -136,7 +136,7 @@ Lagtang,Purok 1,purok,,,,,,fire log,
 Lagtang,Tigib,sitio,,10.265724,123.838259,"outage notices (1) along Molave Extension, Sambag Street",low,fire log; SunStar 2014 hazard list,order along road unknown; position along road approximate
 Lagtang,Sitio Sta. Catalina,sitio,,10.267381,123.836634,outage notices (1) along Ilang-ilang Street,low,SunStar 2014 hazard list,
 Lagtang,Tangub,sitio,,,,,,fire log,
-Lagtang,Purok Makugihon,purok,,10.277948,123.826953,"outage notices (1) along Ilang-ilang Street, Molave Extension, Toledo - Tabunok Road",low,fire log,
+Lagtang,Purok Makugihon,purok,,10.268984,123.829310,name on the pin: Purok Makugihon (Google Maps),low,fire log,
 Lagtang,Molave,sitio,,10.265716,123.838258,street named after it (Molave Street),medium,fire log,Molave Street
 Lagtang,Sitio Ilang-Ilang,sitio,,10.267835,123.837546,street named after it (Ilang-ilang Street),medium,fire log; Visayan Electric,Ilang-ilang Rd
 Lagtang,Sitio Luna,sitio,,10.277948,123.826953,"outage notices (6) along Molave Extension, Toledo - Tabunok Road",low,Visayan Electric; fire log,
@@ -158,7 +158,7 @@ Lagtang,Sitio Tungasan,sitio,,10.267788,123.833272,street named after it (Tungas
 Lagtang,Sitio Lupa,sitio,,10.278090,123.826990,"Overture address ""Purok Neemtree, Sitio Lupa, Brgy. Lagtang""",low,Overture Maps,
 Lagtang,Purok Lawis,purok,,10.270030,123.831500,"Overture address ""Kishanta, Purok Lawis""",low,Overture Maps,
 Lagtang,Purok Liwanag,purok,Sitio Ilang-Ilang,10.267020,123.835080,"Overture address ""Ilang-Ilang Purok Liwanag"", Lagtang",low,Overture Maps,
-Lawaan I,Kalmar,sitio,,10.259088,123.828130,street in its address (Natalio Bacalso Avenue),medium,fire log,A. Bacalso St
+Lawaan I,Kalmar,sitio,,10.255627,123.827445,name on the pin: Sitio Kalmar (Google Maps),medium,fire log,A. Bacalso St
 Lawaan I,Roseville,sitio,,10.262476,123.824438,outage notices (13) along Maghaway Road,low,Visayan Electric,
 Lawaan I,Seaview Heights,subdivision,,10.261441,123.822768,Wikimapia outline,high,fire log; Visayan Electric,
 Lawaan I,Tierra Grande,subdivision,,10.264420,123.822210,"Overture address ""Tierra Grande Camella Homes""",medium,fire log; Overture Maps,
@@ -167,14 +167,14 @@ Lawaan I,Mundo Ville,subdivision,,10.256487,123.827800,"OpenStreetMap place ""Mu
 Lawaan II,Purok Guyabano,purok,,10.254142,123.831713,"outage notices (3) along Cebu South Coastal Road, Garnet Street, Gold Street, Natalio Bacalso Avenue, Pearl Street",low,fire log,order along road unknown
 Lawaan II,Sitio Gumamela,sitio,,10.251410,123.832410,"Overture address ""Sitio Gumamela""",low,Wikipedia 2017; fire log; Overture Maps,
 Lawaan II,Sitio Iba,sitio,,10.253703,123.833677,outage notices (6) along Cebu South Coastal Road,low,Visayan Electric; fire log,
-Lawaan II,Purok Rambutan,purok,Sitio Iba,,,,,Visayan Electric; fire log,its notices name no road found on the map in Lawaan II
+Lawaan II,Purok Rambutan,purok,Sitio Iba,10.259144,123.832954,name on the pin: Purok rambutan,medium,Visayan Electric; fire log; Google Maps 2026-11-08,its notices name no road found on the map in Lawaan II
 Lawaan II,Purok Avocado,purok,,10.254858,123.828618,"outage notices (3) along Cebu South Coastal Road, Garnet Street, Gold Street, Natalio Bacalso Avenue, Pearl Street",low,Visayan Electric,order along road unknown; position along road approximate
 Lawaan II,Sitio Bayabas,sitio,,10.254591,123.829763,"outage notices (3) along Cebu South Coastal Road, Garnet Street, Gold Street, Natalio Bacalso Avenue, Pearl Street",low,Visayan Electric,order along road unknown; position along road approximate
-Lawaan II,Sitio Bonbon,sitio,,,,,,Visayan Electric,its notices name no road found on the map in Lawaan II
+Lawaan II,Sitio Bonbon,sitio,,10.256361,123.829828,"estimated from outage notice: 3 neighbours within 427 m (Purok Avocado, Purok Rambutan, Sitio Bayabas), set 70 m off their middle",low,Visayan Electric; research 2026-11-08,its notices name no road found on the map in Lawaan II
 Lawaan II,Sitio Kaimito,sitio,,10.256940,123.831910,"Overture address ""Sitio Caimito, A. Bacaltos St., Lawaan II""",medium,Visayan Electric; Wikipedia 2017; Overture Maps,also spelled Caimito
-Lawaan II,Sitio Lemoncito,sitio,,,,,,Visayan Electric; Wikipedia 2017,also spelled Lemonsito
-Lawaan II,Sitio Puso-an,sitio,,,,,,Wikipedia 2017,its notices name no road found on the map in Lawaan II
-Lawaan II,Sitio Gangan,sitio,,,,,,Wikipedia 2017,
+Lawaan II,Sitio Lemoncito,sitio,,10.260080,123.832220,"address: Sitio Lemoncito, Lawaan II, Talisay City (Overture); second address 200 m away: Sombria, Sitio Lemonsito (Google Maps)",low,Visayan Electric; Wikipedia 2017; research 2026-11-08,also spelled Lemonsito; two addresses
+Lawaan II,Sitio Puso-an,sitio,,10.251792,123.835019,name on the pin: Sitio Puso-an,medium,Wikipedia 2017; Google Maps 2026-11-08,its notices name no road found on the map in Lawaan II
+Lawaan II,Sitio Gangan,sitio,,10.250798,123.834082,"nearby address: Madrinan Building, Sitio Gangan",low,Wikipedia 2017; Google Maps 2026-11-08,position approximate
 Lawaan II,Sitio Oregano,sitio,,10.254683,123.829371,outage notices (1) along Cebu South Coastal Road,low,Wikipedia 2017,
 Lawaan II,Sitio Luy-a,sitio,,10.250870,123.835460,"Overture address ""Sitio Luy-a Lawaan 2""",low,Wikipedia 2017; Overture Maps,
 Lawaan II,Sitio Sombria,sitio,,10.254286,123.831071,"outage notices (1) along Cebu South Coastal Road, Cong. A. Bacaltos Street, Fidel Bas Street",low,Wikipedia 2017,
@@ -199,23 +199,23 @@ Lawaan III,San Jose Village,subdivision,,10.266153,123.829884,Wikimapia outline,
 Lawaan III,Upper Cadicay,sitio,,10.266920,123.827958,Wikimapia: Upper Cadicay Basketball Court,high,Wikimapia,"Purok Grapes is listed as ""Upper Cadicay Purok Grapes"""
 Linao,Sitio Antipolo,sitio,,10.268654,123.812782,"Overture place ""Antipolo, Linao, Talisay City"", 300 m past the Linao line",low,fire log; Visayan Electric; Overture Maps,its notices name no road found on the map in Linao
 Linao,Sitio San Miguel,sitio,,10.262240,123.817060,Overture: San Miguel Linao Chapel and Covered Court,high,fire log; Visayan Electric; Overture Maps,
-Linao,Purok Yellow Bell,purok,Sitio San Miguel,,,,,fire log,
+Linao,Purok Yellow Bell,purok,Sitio San Miguel,10.262240,123.817060,"estimated inside Sitio San Miguel (fire log: Purok Yellow Bell, Sitio San Miguel); exact spot in the sitio unknown",low,fire log; research 2026-11-08,position inside its parent estimated
 Linao,Sitio Upper,sitio,,10.264279,123.817912,"Overture addresses (3) ""Upper Linao""",medium,fire log; Visayan Electric; Overture Maps,its notices name no road found on the map in Linao
-Linao,Purok Dancing Lady,purok,Sitio Upper,,,,,fire log,
+Linao,Purok Dancing Lady,purok,Sitio Upper,10.264279,123.817912,"estimated inside Sitio Upper (fire log: Dancing Lady, Upper, Linao); exact spot in the sitio unknown",low,fire log; research 2026-11-08,position inside its parent estimated
 Linao,Sitio San Roque,sitio,,,,,,fire log; Visayan Electric,its notices name no road found on the map in Linao
 Linao,Purok Ilang-Ilang,purok,Sitio San Roque,,,,,fire log,
 Linao,Sitio Lower,sitio,,10.257070,123.820330,"Overture addresses (3) ""Lower Linao""",medium,fire log; Visayan Electric; Overture Maps,its notices name no road found on the map in Linao
 Linao,Sitio San Antonio,sitio,,10.265820,123.816190,"Overture place ""San Antonio Linao Talisay City""",medium,fire log; Visayan Electric; Overture Maps,
 Linao,Sitio Pajo,sitio,,10.261140,123.819870,"Overture place ""Pajo, Linao, Talisay City""",medium,fire log; Visayan Electric; Overture Maps,
 Linao,Bougainvillea Village,subdivision,,10.264877,123.818423,Wikimapia outline,high,fire log; OpenStreetMap,
-Linao,Moonlight Hill,subdivision,,,,,,fire log,
+Linao,Moonlight Hill,subdivision,,10.266840,123.815110,name on the pin: Moonlight Hill Compound (Google Maps); fire log and outage notice say Linao,medium,fire log; research 2026-11-08,pin 37 m over the PSA line
 Linao,Sitio Hagdanan,sitio,,,,,,Overture Maps,its notices name no road found on the map in Linao
 Linao,Purok Rose,purok,Sitio Hagdanan,10.258300,123.820240,"Overture address ""Sitio Hagdanan Purok Rose, Linao""",low,Overture Maps,
 Linao,Azienda Genova,subdivision,,10.268584,123.818225,"OpenStreetMap place ""Azienda Genova"", in Linao by OSM, 300 m past the PSA Linao line",low,fire log; OpenStreetMap,
 Linao,Christian Ville,subdivision,,10.254667,123.819480,"OpenStreetMap area ""Christian Ville""",high,OpenStreetMap,OSM also has Christian Ville Road in Mohon
-Maghaway,Purok Sambag 2,purok,,,,,,Visayan Electric; fire log,its notices name no road found on the map in Maghaway
+Maghaway,Purok Sambag 2,purok,,10.273860,123.814130,"SunStar: the 15 Apr 2024 fire (same date, P480,000, first alarm) hit the convent of the Sisters of St. Francis of Perpetual Adoration in Maghaway. Sea",low,Visayan Electric; fire log; fire log research 2026-11-06,its notices name no road found on the map in Maghaway
 Maghaway,Sitio Lawis,sitio,,10.281923,123.817223,Wikimapia place,high,Visayan Electric; Wikimapia; fire log,
-Maghaway,Purok Lomboy 2,purok,Sitio Lawis,,,,,fire log; Visayan Electric,notices: Lumboy
+Maghaway,Purok Lomboy 2,purok,Sitio Lawis,10.281923,123.817223,"estimated inside Sitio Lawis (fire log: Lomboy 2, Lawis); exact spot in the sitio unknown",low,fire log; Visayan Electric; research 2026-11-08,notices: Lumboy; position inside its parent estimated
 Maghaway,Sitio EEA,sitio,,10.285484,123.820142,Wikimapia outline,high,Wikimapia,
 Maghaway,Sitio Ibo,sitio,,10.283370,123.822290,Wikimapia outline,high,Wikimapia,
 Maghaway,Sitio Dikyam,sitio,,10.270511,123.825903,Wikimapia outline,high,Wikimapia,
@@ -230,31 +230,31 @@ Manipis,Purok Kaimito,purok,,,,,,GMA News,
 Manipis,Camp 6,sitio,,10.320982,123.786523,"OpenStreetMap: Manipis Elementary School, formerly Camp 6 Elementary School",high,landslide log; OpenStreetMap,OSM addr:neighbourhood=Camp 6; the barangay hall is beside it
 Manipis,Sitio Langoyon,sitio,,,,,,landslide log; ABS-CBN 2022; CDN 2021,CDN spells it Languyon; a landslide spot on the Manipis road
 Manipis,Camp 8,sitio,,10.315027,123.789380,OpenStreetMap place,high,OpenStreetMap,
-Manipis,Sitio Camp 5,sitio,,10.315124,123.789116,street named after it (Camp 8 Road),medium,SunStar 2014 hazard list,SunStar also lists a Camp 5 in Camp IV
+Manipis,Sitio Camp 5,sitio,,10.325680,123.806800,"name on the pin: Camp 5 manipis, talisay city, cebu (Google Maps)",medium,SunStar 2014 hazard list,SunStar also lists a Camp 5 in Camp IV
 Manipis,Nagoyon,sitio,,,,,,SunStar 2014 hazard list,"SunStar: ""Proper Nagoyon""; spelling unconfirmed"
 Manipis,Purok Araw-Araw,purok,,10.321840,123.780760,"Overture place ""Manokan sa Purok Araw-Araw"", Toledo-Manipis Rd",medium,Overture Maps,
 Mohon,Upper Mohon,sitio,,10.255533,123.821429,OpenStreetMap place,high,fire log; OpenStreetMap,
-Mohon,Purok Bontory,purok,Upper Mohon,,,,,fire log,
+Mohon,Purok Bontory,purok,Upper Mohon,10.255533,123.821429,"estimated inside Upper Mohon (fire log: Bontory, Upper Mohon); exact spot in the sitio unknown",low,fire log; research 2026-11-08,position inside its parent estimated
 Mohon,Sitio Libo,sitio,,10.247299,123.819447,Wikimapia outline,high,Visayan Electric; Wikimapia,
 Mohon,Sitio Candaya,sitio,,10.250620,123.826142,"outage notices (2) along Cong. A. Bacaltos Street, Fidel Bas Street",low,Visayan Electric,
-Mohon,Sitio Lower,sitio,,,,,,Visayan Electric,its notices name no road found on the map in Mohon
+Mohon,Sitio Lower,sitio,,10.251900,123.830700,"three Overture addresses ""Lower"" / ""Lower Mojon"" round Santo Nino Parish, Mohon",low,Visayan Electric; research 2026-11-08,its notices name no road found on the map in Mohon
 Mohon,Sitio Nazareno,sitio,,10.248813,123.829292,outage notices (1) along Castor Belleza Street,low,Visayan Electric,position along road approximate
 Mohon,Saint Michael,sitio,,10.249369,123.826421,outage notices (1) along Castor Belleza Street,low,Visayan Electric,position along road approximate
 Mohon,Purok Kamunggay,purok,,10.251501,123.825689,OpenStreetMap place,high,OpenStreetMap,
 Mohon,Purok Mangga 3,purok,,10.252409,123.826261,OpenStreetMap place,high,OpenStreetMap,
-Mohon,Purok Santol,purok,,10.251432,123.827285,OpenStreetMap place,high,OpenStreetMap,
+Mohon,Purok Santol,purok,Zone 3,10.251432,123.827285,OpenStreetMap place,high,OpenStreetMap,"parent from: Overture: Purok Santol, Zone 3, Mohon"
 Mohon,Valley View Village,subdivision,,10.250414,123.827441,OpenStreetMap place,high,OpenStreetMap; Visayan Electric,
 Mohon,Purok Nangka,purok,Upper Mohon,10.254180,123.824660,"Overture addresses (3) ""Purok Nangka, Upper Mohon""",medium,Overture Maps,
 Mohon,Sitio Day-as,sitio,Upper Mohon,10.250670,123.826180,"Overture: Our Lady of Fatima Day-as Chapel, Upper Mohon",medium,Overture Maps,
 Mohon,Sitio Greenforest,sitio,,10.247810,123.824600,"Overture address ""Sitio Greenforest, Mohon""",medium,Overture Maps,
 Mohon,Boxhill Residences,subdivision,,10.250395,123.820661,OpenStreetMap outline,high,OpenStreetMap,part of it lies in Linao
 Poblacion,Sitio Miramar,sitio,,10.241749,123.845504,Wikimapia outline,high,Wikimapia,"fire log: ""Marimar Phase 2"""
-Poblacion,Purok Alubati,purok,Sitio Miramar,,,,,fire log,
-Poblacion,Sitio Libra,sitio,,,,,,DSWD DROMIC; fire log,also spelled Labra
+Poblacion,Purok Alubati,purok,Sitio Miramar,10.241749,123.845504,"estimated inside Sitio Miramar (fire log: Purok Alubati, Marimar Phase 2); exact spot in the sitio unknown",low,fire log; research 2026-11-08,position inside its parent estimated
+Poblacion,Sitio Libra,sitio,,10.241364,123.847825,name on the pin: Sitio Libra,medium,DSWD DROMIC; fire log; Google Maps 2026-11-08,also spelled Labra
 Poblacion,Purok Kamunggay,purok,Sitio Libra,10.247050,123.847140,Overture: Libra Chapel - Purok Kamunggay,medium,fire log; Overture Maps,
 Poblacion,Tres Alinos,sitio,,10.241773,123.847317,"outage notices (1) along Burgos Street, Cabalan Street, J. P. Rizal Street, Los Marteres Street, Main Street, P. del Rosario Street, Tres Aliños Street, Vicente H. Garces Street",low,fire log,position along road approximate
-Poblacion,Purok Saluyot,purok,Tres Alinos,,,,,fire log,
-Poblacion,Garden,sitio,,10.241773,123.847317,"outage notices (2) along Burgos Street, Cabalan Street, J. P. Rizal Street, P. del Rosario Street",low,fire log,
+Poblacion,Purok Saluyot,purok,Tres Alinos,10.245980,123.847830,"address on the pin: Purok Saluyot, P. Del Rosario (Google Maps); fire log: Tres Alinos, Purok Saluyot",medium,fire log; research 2026-11-08,
+Poblacion,Garden,sitio,,10.246393,123.848816,name on the pin: Sitio Garden (Overture),low,fire log,
 Poblacion,Sitio Litmon,sitio,,10.243971,123.844980,"outage notices (1) along Burgos Street, Cabalan Street, J. P. Rizal Street, Los Marteres Street, Main Street, P. del Rosario Street, Tres Aliños Street, Vicente H. Garces Street",low,fire log; OpenStreetMap,OSM: Sitio Letmon Chapel; position along road approximate
 Poblacion,Purok Bantiyong,purok,,10.243971,123.844980,"outage notices (1) along Burgos Street, Cabalan Street, J. P. Rizal Street, P. del Rosario Street",low,DSWD DROMIC,General Luna St
 Poblacion,Carmen Village,subdivision,,10.248651,123.845254,Wikimapia outline,high,fire log,
@@ -262,8 +262,8 @@ Poblacion,Purok Repolyo,purok,,10.243540,123.850510,"Overture address ""Malayan 
 Poblacion,Purok Patatas,purok,,10.243330,123.847500,"Overture address ""Purok 19 Patatas, Rizal St""",low,Overture Maps,
 Poblacion,Purok Talong,purok,,10.243330,123.845430,"Overture address ""Sarihville Subd., T. Camomot St, Purok Talong""",low,Overture Maps,
 Pooc,Purok Ranger,purok,,10.244138,123.824227,"outage notices (2) along Burgos Street, Cong. A. Bacaltos Street",low,fire log,
-Pooc,Sitio Centro,sitio,,,,,,city profile 2010; fire log,
-Pooc,Sitio Tabay,sitio,,,,,,fire log,
+Pooc,Sitio Centro,sitio,,10.238350,123.823710,nearby address: Centro Store,low,city profile 2010; fire log; Visayan Electric; SunStar 2024,position approximate
+Pooc,Sitio Tabay,sitio,,10.238830,123.822460,Google Maps address,medium,fire log; fire log research 2026-11-06,
 Pooc,Sitio Tambis,sitio,,10.241450,123.824160,"Overture addresses (3) ""Sitio Tambis, Pooc""",medium,city profile 2010; fire log; Overture Maps,
 Pooc,Zone 5,zone,,,,,,fire log,
 Pooc,Sitio Kanipaan,sitio,,10.238400,123.822290,"Overture addresses (2) ""Sitio Kanipaan""",medium,fire log; Overture Maps,
@@ -281,10 +281,10 @@ Pooc,Sea Breeze Homes,subdivision,,10.245773,123.824152,OpenStreetMap outline,hi
 Pooc,Sitio Borromeo,sitio,,10.238170,123.824280,"Overture addresses (2) ""Sitio Borromeo, Pooc""",medium,Overture Maps,
 Pooc,Bayswater,subdivision,,10.244347,123.827883,OpenStreetMap outline,high,OpenStreetMap; Wikimapia,"OSM: ""Bayswater Talisay""; Wikimapia: ""Bayswater Talisay- Pooc""; part of it lies past the Pooc line"
 San Isidro,Sitio Crossing,sitio,,10.259127,123.846985,"Overture place ""Nonoc Crossing, San Isidro""",low,fire log; Overture Maps,
-San Isidro,Greenville,subdivision,,10.252484,123.839225,outage notices (2) along San Isidro Road,low,fire log; Visayan Electric; OpenStreetMap,OSM: Green Village
+San Isidro,Greenville,subdivision,,10.258235,123.838348,name on the pin: Greenville Subdivision (Overture),low,fire log; Visayan Electric; OpenStreetMap,OSM: Green Village
 San Isidro,Purok Day Care,purok,Greenville,,,,,fire log,
 San Isidro,Sitio Salvador,sitio,,10.256773,123.839824,"outage notices (4) along Cebu South Coastal Road, Rafael Rabaya Street, San Isidro Road",low,fire log,
-San Isidro,Purok Labayan,purok,Sitio Salvador,,,,,fire log,
+San Isidro,Purok Labayan,purok,Sitio Salvador,10.256773,123.839824,"estimated inside Sitio Salvador (fire log: Purok Labayan, Sitio Salvador); exact spot in the sitio unknown",low,fire log; research 2026-11-08,position inside its parent estimated
 San Isidro,Zone 2 Proper,zone,,,,,,fire log,
 San Isidro,Zone 3,zone,,10.256860,123.839841,outage notices (3) along San Isidro Road,low,Visayan Electric,
 San Isidro,Purok Siba,purok,,10.255464,123.841880,"OpenStreetMap street ""Purok Siba Street""",medium,Visayan Electric; fire log; OpenStreetMap,"OSM also calls the street ""Purok Siba Street Zone 3"""
@@ -304,8 +304,8 @@ San Isidro,South Glendale,subdivision,,10.259834,123.838837,OpenStreetMap outlin
 San Isidro,Miami Homes,subdivision,,10.259402,123.844707,Wikimapia place,high,Wikimapia; OpenStreetMap,"OSM has its Miami Homes Street; its Wikimapia outline isn't used, as it hems Sitio Tiago in against Sacred Heart Village"
 San Roque,Sitio Laray,sitio,,10.260217,123.856208,Wikimapia outline,high,Visayan Electric; fire log; Wikimapia; DSWD DROMIC,
 San Roque,Purok Sambag,purok,Sitio Laray,10.256578,123.859258,outage notices (14) along Cebu South Coastal Road,low,fire log,
-San Roque,Purok Macopa,purok,Sitio Laray,,,,,Visayan Electric; fire log,its notices name no road found on the map in San Roque
-San Roque,Purok Kabayoan 2,purok,Sitio Laray,,,,,fire log; Visayan Electric,
+San Roque,Purok Macopa,purok,Sitio Laray,10.260263,123.855113,name on the pin: Purok Macopa Chapel,medium,Visayan Electric; fire log; Google Maps 2026-11-08,its notices name no road found on the map in San Roque
+San Roque,Purok Kabayoan 2,purok,Sitio Laray,10.260217,123.856208,"estimated inside Sitio Laray (fire log: Kabayoan 2, Sitio Laray); exact spot in the sitio unknown",low,fire log; Visayan Electric; research 2026-11-08,position inside its parent estimated
 San Roque,Sitio Ughay,sitio,,10.255580,123.858710,"Wikimapia place ""Ughai Subdivision"", with Overture ""Ughai 2 Subdivision"" and 4 listings",medium,fire log; Visayan Electric; Wikimapia; Overture Maps,also spelled Ughai
 San Roque,Purok Calachuchi,purok,Sitio Ughay,10.254472,123.854574,outage notices (5) along Rafael Rabaya Street,low,Visayan Electric; fire log,"""Ughay 1""; position along road approximate"
 San Roque,Sitio Ramona,sitio,,10.261107,123.849375,street in its address (Dawis Road),medium,fire log,Dawis Rd
@@ -318,7 +318,7 @@ San Roque,Purok Agoho,purok,,10.257931,123.866663,"outage notices (6) along Cebu
 San Roque,Purok Altis,purok,,10.257931,123.866663,outage notices (1) along Cebu South Coastal Road,low,Visayan Electric,
 San Roque,Purok Bakasi,purok,,10.254359,123.854756,outage notices (5) along Rafael Rabaya Street,low,Visayan Electric,position along road approximate
 San Roque,Purok Batong,purok,,10.254588,123.854387,outage notices (4) along Rafael Rabaya Street,low,Visayan Electric,position along road approximate
-San Roque,Purok Bayabas,purok,,,,,,Visayan Electric,
+San Roque,Purok Bayabas,purok,Sitio Laray,10.259021,123.855538,"address on the pin: Fahomai, Purok Bayabas Laray (Google Maps)",medium,Visayan Electric; research 2026-11-08,
 San Roque,Purok Bayang,purok,,10.255013,123.853685,outage notices (6) along Rafael Rabaya Street,low,Visayan Electric,
 San Roque,Purok Chicos,purok,,10.257981,123.866531,"outage notices (9) along Cebu South Coastal Road, Rafael Rabaya Street",low,Visayan Electric,
 San Roque,Purok Guyabano,purok,,10.254234,123.854957,outage notices (7) along Rafael Rabaya Street,low,Visayan Electric,
@@ -332,7 +332,7 @@ San Roque,Purok Pugapo,purok,,10.258566,123.865088,"outage notices (6) along Ceb
 San Roque,Purok San Rafael,purok,,10.256578,123.859258,"outage notices (10) along Cebu South Coastal Road, Rafael Rabaya Street",low,Visayan Electric,
 San Roque,Purok Santan,purok,,10.252122,123.858399,outage notices (6) along Rafael Rabaya Street,low,Visayan Electric,
 San Roque,Purok Taloroton,purok,,10.256578,123.859258,"outage notices (6) along Cebu South Coastal Road, Rafael Rabaya Street, Vicente H. Garces Street",low,Visayan Electric,order along road unknown; position along road approximate
-San Roque,Purok Tambis,purok,,10.253253,123.856545,outage notices (5) along Rafael Rabaya Street,low,Visayan Electric,
+San Roque,Purok Tambis,purok,Sitio Kimba,10.253253,123.856545,outage notices (5) along Rafael Rabaya Street,low,Visayan Electric,"parent from: Overture and Google: Purok Tambis, Kimba, San Roque"
 San Roque,Purok Tilapia,purok,,10.253914,123.855471,outage notices (11) along Rafael Rabaya Street,low,Visayan Electric,
 San Roque,Purok Okra,purok,,10.256696,123.850906,outage notices (2) along Rafael Rabaya Street,low,Visayan Electric,
 San Roque,Purok Avocado,purok,Sitio Laray,10.254160,123.860850,"Overture address ""V.H. Garces St., Purok Avocado Laray, San Roque""",low,Overture Maps,
@@ -344,14 +344,14 @@ San Roque,Greenfield Village,subdivision,Sitio Laray,10.262098,123.854184,Wikima
 San Roque,Coastal View Subdivision,subdivision,,10.258535,123.860590,Wikimapia outline,high,Wikimapia,
 Tabunok,Sitio Neighborhood,sitio,,10.263897,123.843787,Wikimapia outline,high,Wikimapia; fire log,
 Tabunok,Sitio Mananga II,sitio,,10.262621,123.834787,Wikimapia place,high,DSWD DROMIC; fire log; news 2025-2026,
-Tabunok,Purok Rizal,purok,Sitio Mananga II,,,,,fire log,
+Tabunok,Purok Rizal,purok,Sitio Mananga II,10.262621,123.834787,"estimated inside Sitio Mananga II (fire log: Purok Rizal, Mananga 2); exact spot in the sitio unknown",low,fire log; research 2026-11-08,position inside its parent estimated
 Tabunok,Sitio Mananga I,sitio,,10.261897,123.836136,street named after it (Mananga Ⅱ Street),medium,DSWD DROMIC,
 Tabunok,Purok Suliman,purok,,10.262534,123.841154,"outage notices (1) along Colis Street, Natalio Bacalso Avenue, Rafael Rabaya Street, Victoria Street",low,fire log; Visayan Electric,"fire log: Purok Suliman, Nunez Compound; BFP spelling; was Purok Soliman"
 Tabunok,Sitio Kalubihan,sitio,,10.262533,123.844912,Wikimapia outline,high,Wikimapia; fire log,
 Tabunok,Sitio Nonoc,sitio,,10.261275,123.844878,street named after it (Nonoc Road),medium,fire log,
 Tabunok,Purok Matinahuron,purok,Sitio Nonoc,10.261006,123.846725,"outage notices (1) along Nonoc Road, Santo Nino Street, Tiago Street",low,fire log,
 Tabunok,Sitio Mahayahay,sitio,,10.264581,123.837742,outage notices (8) along Rafael Rabaya Street,low,fire log; Visayan Electric,
-Tabunok,Purok Alisto,purok,,,,,,fire log,
+Tabunok,Purok Alisto,purok,Sitio Kalubihan,10.263460,123.845340,Google Maps pin,medium,fire log; fire log research 2026-11-06,"parent from: Google: Purok Alisto, Kalubihan, Nonoc Rd"
 Tabunok,Purok Juan Luna,purok,,10.263981,123.839749,outage notices (1) along Molave Street,low,Visayan Electric,order along road unknown; position along road approximate
 Tabunok,Purok Melchora,purok,,10.264273,123.839519,outage notices (1) along Molave Street,low,Visayan Electric,order along road unknown; position along road approximate
 Tabunok,Sitio Paraiso,sitio,,10.265168,123.838775,outage notices (1) along Molave Street,low,Visayan Electric,order along road unknown; position along road approximate
@@ -379,13 +379,279 @@ Tangke,Sitio Galaxy,sitio,,10.250008,123.861888,street named after it (Galaxy St
 Tangke,Sitio Kalinaw,sitio,,10.259995,123.870288,Wikimapia outline,high,Visayan Electric; Wikimapia; OpenStreetMap,OSM: Kalinao
 Tangke,Sitio San Rafael,sitio,,10.258601,123.868958,Wikimapia outline,high,Visayan Electric; Wikimapia,
 Tapul,Sitio Napo,sitio,,10.289910,123.808533,Wikimapia outline,high,DSWD DROMIC; fire log; Wikimapia,Wikimapia: Sitio Napu
-Tapul,Sitio Catican,sitio,,,,,,fire log,
+Tapul,Sitio Catican,sitio,,10.289850,123.813030,"name on the pin: Katikan, Napu, Tapul (Google Maps); fire log: Purok 7, Sitio Catican",medium,fire log; research 2026-11-08,
 Tapul,Sitio Hawanay,sitio,,10.306768,123.793119,OpenStreetMap place,high,OpenStreetMap,
 Tapul,Sitio Campo,sitio,,,,,,SunStar 2014 hazard list,
-Tapul,Purok 1,purok,,,,,,Visayan Electric,its notices name no road found on the map in Tapul
+Tapul,Purok 1,purok,,10.293163,123.805792,name on the pin: Napu Purok 1 Lower; two shops give Purok 1 Napu,medium,Visayan Electric; Google Maps 2026-11-08,its notices name no road found on the map in Tapul
 Tapul,Purok 2,purok,,,,,,Visayan Electric,its notices name no road found on the map in Tapul
 Tapul,Purok 3,purok,,10.289939,123.805397,Wikimapia outline,high,Visayan Electric; Wikimapia,
-Tapul,Purok 4,purok,,,,,,Visayan Electric; fire log,its notices name no road found on the map in Tapul
+Tapul,Purok 4,purok,,10.290100,123.800950,Google Maps pin,medium,Visayan Electric; fire log; fire log research 2026-11-06,its notices name no road found on the map in Tapul
 Tapul,Purok 5,purok,,,,,,Visayan Electric,its notices name no road found on the map in Tapul
 Tapul,Purok 6,purok,,,,,,Visayan Electric,its notices name no road found on the map in Tapul
-Tapul,Purok 7,purok,Sitio Catican,,,,,Visayan Electric; fire log; SunStar 2014 hazard list,its notices name no road found on the map in Tapul
+Tapul,Purok 7,purok,Sitio Catican,10.289850,123.813030,"estimated inside Sitio Catican (fire log: Purok 7, Sitio Catican); its old point was Google's default Tapul pin",medium,Visayan Electric; fire log; SunStar 2014 hazard list; fire log research 2026-11-06,"DOUBTFUL: the point sits exactly on Google's label point for the barangay (a default pin, not the place); search again; its notices name no road found on the map in Tapul"
+Biasong,Purok Crocolandia,purok,,10.241861,123.833199,Overture: Crocolandia | Talisay,medium,Overture,
+Biasong,Purok Madasigon,purok,Central,10.242484,123.828768,Google Maps: Purok Madasigon,medium,Google Maps,
+Biasong,Purok Pidanna,purok,,10.241151,123.831360,Google Maps: Biasong talisay purok pidanna,medium,Google Maps,"DOUBTFUL: the point sits exactly on Google's label point for the barangay (a default pin, not the place); search again"
+Bulacao,Purok Mapailubon,purok,,10.264155,123.851070,Google Maps: Purok Mapailubon,medium,Google Maps,
+Bulacao,Purok Mapasalamaton,purok,,10.267016,123.844359,Google Maps: Purok Mapasalamaton,medium,Google Maps,
+Bulacao,Sitio Bridgeville,sitio,,10.269781,123.846294,Google Maps: Bridgeville Community Chapel,medium,Google Maps,
+Bulacao,Sitio Los Feliz,sitio,,10.270976,123.840149,Overture: Los Feliz Village,medium,Overture,
+Cadulawan,Purok Guyabano,purok,,10.280035,123.840806,Google Maps: Purok Guyabano Candulawan,medium,Google Maps,
+Cadulawan,Purok Singuelas,purok,,10.275223,123.839164,Google Maps: Purok singuelas candulawan,medium,Google Maps,
+Cadulawan,Sitio Camachili,sitio,,10.276600,123.845345,Google Maps: Sitio camachili brgy candulawan talisay city cebu,medium,Google Maps,
+Cadulawan,Sitio Manggahan,sitio,Sitio Mahayahay,10.276298,123.843262,Overture: Mahayahay Manggahan,medium,Overture,
+Cansojong,Sitio Daghang Bayut,sitio,,10.249815,123.856053,Google Maps: SITIO DAGHANG BAYUT,medium,Google Maps,
+Cansojong,Sitio Olango,sitio,,10.252964,123.852115,Google Maps: Sitio Olango Kapilya,medium,Google Maps,
+Cansojong,Sitio Uldog,sitio,,10.254018,123.846298,"Overture: Uldog, Talisay City",medium,Overture,
+Dumlog,Purok Bugnay,purok,Sitio Litmon,10.244991,123.839733,Google Maps: Purok Bugnay Litmon Dumlog Talisay,medium,Google Maps,
+Dumlog,Purok Kamansilis,purok,Sitio Kamalig,10.243667,123.837755,Google Maps: Purok Kamansilis Sitio Kamalig,medium,Google Maps,
+Dumlog,Sitio Baybay,sitio,,10.236212,123.837962,Google Maps: Sitio Baybay Dumlog talisay,medium,Google Maps,
+Dumlog,Sitio Florida,sitio,,10.243246,123.840714,Overture: KFC Compound Florida Subdivision,medium,Overture,
+Dumlog,Zone 6,zone,,10.238308,123.836205,Google Maps: Zone-6 Sitio Roma Dumlog talisay city,medium,Google Maps,
+Jaclupan,Purok Caimito,purok,,10.298274,123.818344,Google Maps: PUROK CAIMITO,medium,Google Maps,
+Jaclupan,Purok Kolo,purok,,10.302135,123.817170,Google Maps: Purok Kolo,medium,Google Maps,
+Jaclupan,Purok Sabana,purok,,10.300295,123.810422,Google Maps: Purok Sabana,medium,Google Maps,"DOUBTFUL: the point sits exactly on Google's label point for the barangay (a default pin, not the place); search again"
+Jaclupan,Sitio Badbad,sitio,,10.298820,123.821147,Google Maps: Sitio Badbad Chapel (Bugna),medium,Google Maps,
+Jaclupan,Sitio Bugna,sitio,,10.298820,123.821147,Google Maps: Sitio Badbad Chapel (Bugna),medium,Google Maps,
+Jaclupan,Sitio Dike,sitio,,10.294979,123.818531,"nearby address: JC Store, 7RV9+XCR, Sitio Dike",low,Google Maps; Google Maps 2026-11-08,moved 2026-11-08: the earlier pin sat on Google's barangay label point
+Lagtang,Sitio Hilltop,sitio,,10.268673,123.836116,Google Maps: Hilltop,medium,Google Maps,
+Lagtang,Sitio Pier 7,sitio,,10.268835,123.832741,Overture: Pier 7 Lagtang Talisay City Cebu,medium,Overture,
+Lagtang,Sitio Sambagan,sitio,,10.270618,123.833534,Overture: Sambagan Lagtang Talisay City,medium,Overture,
+Lagtang,Sitio Sapa-sapa,sitio,,10.270030,123.836750,Google Maps: Sapa-sapa basketball court,medium,Google Maps,
+Lawaan I,Purok Neem Tree 1,purok,,10.256601,123.822985,Google Maps: Upper lawaan Purok Neem tree 1 Talisay City Cebu,medium,Google Maps,"DOUBTFUL: the point sits exactly on Google's label point for the barangay (a default pin, not the place); search again"
+Lawaan II,Purok Orange,purok,Sitio Luy-a,10.250869,123.835472,Overture: Purok Orange Youth Association,medium,Overture,
+Lawaan II,Sitio Gawad Kalinga,sitio,,10.254998,123.834131,Google Maps: Gawad Kalinga (GK) Mananga Lawaan II,medium,Google Maps,
+Lawaan III,Purok Bayabas,purok,,10.264286,123.833083,Google Maps: Purok Bayabas,medium,Google Maps,
+Lawaan III,Purok Ondo,purok,,10.262773,123.831834,Google Maps: PUROK ONDO,medium,Google Maps,
+Linao,Sitio Candaya,sitio,,10.253435,123.819824,"Overture: Candaya, Mohon Talisay",medium,Overture,
+Linao,Sitio Didos,sitio,,10.264636,123.819442,Google Maps: Didos,medium,Google Maps,
+Maghaway,Maghaway Proper,sitio,,10.274083,123.819001,Wikimapia: Maghaway Proper,medium,Wikimapia,
+Maghaway,Purok Avocado 1,purok,,10.284883,123.814729,Google Maps: Purok Avocado 1 Maghaway San Roque Chapel,medium,Google Maps,
+Maghaway,Purok Mangga 3,purok,,10.272427,123.823823,Google Maps: Purok Mangga 3 Maghaway Talisay City Cebu,medium,Google Maps,
+Maghaway,Purok Sambag 1,purok,,10.273928,123.819192,Google Maps: Purok Sambag 1-A,medium,Google Maps,
+Maghaway,Sitio Babao,sitio,,10.284940,123.814613,Google Maps: Maghaway Babao Covered Court,medium,Google Maps,
+Manipis,Purok Mahogany,purok,,10.315079,123.789170,Google Maps: Purok Mahogany,medium,Google Maps,
+Manipis,Sitio Campinsa,sitio,,10.319027,123.792634,Google Maps: BASYAW – Campinsa Manipis Switzerland,medium,Google Maps,
+Poblacion,Sitio Kalubihan,sitio,,10.241082,123.846434,Google Maps: Kalubihan Basketball Court,medium,Google Maps,
+Poblacion,Sitio Rojaluca,sitio,,10.245001,123.848029,Google Maps: Rojaluca Sta Cruz Chapel,medium,Google Maps,
+Pooc,Purok Sunrise 1,purok,Sitio Sunrise,10.240148,123.825744,"Google Maps: Purok Sunrise 1, Kapilya",medium,Google Maps,
+San Isidro,Purok Vischoa,purok,,10.255933,123.836231,Google Maps: VISCHOA,medium,Google Maps,
+San Roque,Purok Banog,purok,Sitio Kimba,10.257211,123.853681,Google Maps: Kimba Daruhan Drive Purok Banog,medium,Google Maps,
+San Roque,Purok Kawayan,purok,,10.259698,123.852051,Google Maps: PUROK KAWAYAN DAWIS,medium,Google Maps,
+San Roque,Sitio Noah,sitio,,10.259227,123.867947,OpenStreetMap: Isla Noah,medium,OpenStreetMap,
+San Roque,Sitio Sawsawan,sitio,,10.256243,123.864960,Overture: Sawsawan San Roque Talisay City,medium,Overture,
+Tabunok,Purok Maalagaron,purok,,10.260814,123.843517,Google Maps: PUROK MAALAGARON,medium,Google Maps,
+Tabunok,Purok Sangi,purok,,10.265467,123.841309,"Overture: Sangi Tabunok Talisay City, Cebu",medium,Overture,
+Tabunok,Sitio Dawis,sitio,,10.260288,123.848257,Google Maps: Dawis Side 6045,medium,Google Maps,
+Tangke,Sitio Kilawan,sitio,,10.251728,123.864707,Wikimapia: Juling's Kilawan,medium,Wikimapia,
+Tapul,Tapul Proper,sitio,,10.290514,123.801158,Wikimapia: Tapul Proper,medium,Wikimapia,
+Maghaway,Casa Mira,subdivision,,10.270049,123.812153,"Google pin is 57 m past the Maghaway line, and its address says Sandayong, Minglanilla. The area would start at the nearest point inside Maghaway",low,fire log research 2026-11-06,
+San Isidro,Vergara Village,subdivision,,10.254510,123.842120,Google pin for Vergara Subdivision; BIR lists Vergara Village,medium,fire log research 2026-11-06,
+San Isidro,Zone 2,zone,,10.259010,123.841650,"Four business addresses give Zone 2 around this point: on San Isidro Road, in Treasureville and in Sacred Heart Village (Overture). SunStar 2019 gives",medium,fire log research 2026-11-06,
+San Roque,Along Cebu South Coastal Road,purok,,10.258305,123.864101,Road strip kept so fires on this road keep an area,low,"estimated area, fire log",
+Cansojong,Along Uldog Street,purok,,10.254959,123.845562,Road strip kept so fires on this road keep an area,low,"estimated area, fire log",
+Dumlog,Along Burgos Street,purok,,10.244348,123.841807,Road strip kept so fires on this road keep an area,low,"estimated area, fire log",
+Bulacao,Along Natalio Bacalso Avenue,purok,,10.269649,123.845841,Road strip kept so fires on this road keep an area,low,"estimated area, fire log",
+Biasong,Malibu Residences,subdivision,,10.247576,123.834607,Google Maps: Biasong Talisay City Cebu malibu residences,medium,Google Maps,
+Biasong,Peace Subdivision,subdivision,,10.247339,123.833945,Wikimapia: Peace Subdivision Home-Owner's Association,high,Wikimapia,
+Biasong,Villa Donna Subdivision,subdivision,,10.236855,123.831091,"Google Maps: Block 8 Lot 13 Elena St. Villa Donna Subdivision, Biasong, Talis",medium,Google Maps,
+Bulacao,Hillside Subdivision,subdivision,,10.270656,123.841994,Google Maps: Hillside Village,medium,Google Maps,
+Bulacao,LG Southville Subdivision,subdivision,,10.265687,123.849251,"Overture: Phase 2 LG Southville Bulacao Cebu ciy, Cebu",medium,Overture,
+Tabunok,Maharlika Village,subdivision,,10.267694,123.841366,Wikimapia: Maharlika Village,high,Wikimapia,
+Bulacao,Mingcourt Village,subdivision,,10.269404,123.839908,Wikimapia: Mingcourt Village,high,Wikimapia,
+Bulacao,New Frontier Subdivision,subdivision,,10.269376,123.841844,Google Maps: New Frontier,medium,Google Maps,
+Bulacao,Saint Barachiel Subdivision,subdivision,,10.265133,123.845167,Wikimapia: Saint Barachiel Subdivision,high,Wikimapia,
+Bulacao,South Gate Subdivision,subdivision,,10.269808,123.846779,Overture: South Gate,medium,Overture,
+Bulacao,Villa Verna Subdivision,subdivision,,10.273544,123.845145,Map outline: Villa Verna IV Subdivision,high,Map outline,
+Cadulawan,Pacific Heights,subdivision,,10.275655,123.838164,Wikimapia: Pacific Heights,high,Wikimapia,
+Bulacao,Villa Estelita Subdivision,subdivision,,10.270511,123.839375,Wikimapia: Villa Estelita Subdivision,high,Wikimapia,
+Cansojong,Caneba Urban Poor Village,subdivision,,10.254023,123.851520,Google Maps: Caneba Urban Poor Village,medium,Google Maps,
+Cansojong,Fortune Plains Village,subdivision,,10.252540,123.853161,"Google Maps: Plantar Apartment,Fortune Plains Village, Cansojong Talisay City",medium,Google Maps,
+Cansojong,Jinky's Subdivision,subdivision,,10.253642,123.849938,Wikimapia: jinky's subdivision,high,Wikimapia,
+Cansojong,Maglasang Subdivision,subdivision,,10.250934,123.853346,Wikimapia: Maglasang Subdivision,high,Wikimapia,
+Cansojong,Recoletos Village,subdivision,,10.251475,123.855024,Wikimapia: Recoletos Village,high,Wikimapia,
+Cansojong,Remville Subdivision,subdivision,,10.251472,123.855925,"Google Maps: Lot 620, Remville Subdivision",medium,Google Maps,
+Cansojong,Sacred Homes Subdivision,subdivision,,10.252940,123.854285,"Google Maps: Plantar Apartment L, Sacred Homes Subdivision",medium,Google Maps,
+Cansojong,Stero Homes,subdivision,,10.246423,123.850807,Google Maps: STERO HOMES TALISAY,medium,Google Maps,
+Cansojong,Villa Lucita Subdivision,subdivision,,10.256811,123.846216,Google Maps: Villa Lucita Subdivision,medium,Google Maps,
+Dumlog,Alden Compound,subdivision,,10.247178,123.838561,Wikimapia: ALDEN Compound,high,Wikimapia,
+Dumlog,Azcona Compound,subdivision,,10.246494,123.839592,Wikimapia: Azcona Compound,high,Wikimapia,
+Dumlog,Champaka Compound,subdivision,,10.244247,123.841103,Overture: Champaka Compound,medium,Overture,
+Dumlog,Fernandez Subdivision,subdivision,,10.243958,123.841206,Wikimapia: Fernandez Subdivision,high,Wikimapia,
+Dumlog,Larida Village,subdivision,,10.245596,123.839826,name on the pin: Larida Ville,medium,Google Maps; Google Maps 2026-11-08,moved 2026-11-08: the earlier pin sat on Google's barangay label point
+Dumlog,San Pio Subdivision,subdivision,,10.239637,123.839095,Wikimapia: San Pio Subdivision,high,Wikimapia,
+Dumlog,South Covina,subdivision,,10.239919,123.842681,Wikimapia: South Covina Residences,high,Wikimapia,
+Lagtang,Preciousville Subdivision,subdivision,,10.272137,123.830737,Google Maps: Preciousville Subdivision,medium,Google Maps,
+Lagtang,Riverview Village,subdivision,,10.264801,123.834351,Wikimapia: Riverview Village,high,Wikimapia,
+Lagtang,Santa Catalina Subdivision,subdivision,,10.269094,123.838394,Overture: Santa Catalina Subdivision,medium,Overture,
+Lawaan III,Alpha Executive Homes,subdivision,,10.261549,123.829819,Wikimapia: Alpha Executive Homes,high,Wikimapia,
+Lawaan I,Azienda Roma,subdivision,,10.261216,123.822444,OpenStreetMap: Azienda Roma,high,OpenStreetMap,
+Lawaan I,Marywood Subdivision,subdivision,,10.263366,123.824676,OpenStreetMap: Marywood Subdivision,high,OpenStreetMap,
+Lawaan I,Tahoma Village,subdivision,,10.254035,123.826415,Google Maps: Tahoma Village,medium,Google Maps,
+Lawaan III,Azienda Lombardi,subdivision,,10.264195,123.824966,Overture: Azienda Lombardi Talisay,medium,Overture,
+Lawaan II,Gentle Peace Subdivision,subdivision,,10.252067,123.833799,Wikimapia: Gentle Peace Subdivision,high,Wikimapia,
+Lawaan II,GK Mananga,subdivision,,10.254956,123.834083,OpenStreetMap: GK Mananga,high,OpenStreetMap,
+Lawaan III,Antara,subdivision,,10.264620,123.832001,Google Maps: Wide studio Antara Residences Talisay - Apartment with City View,medium,Google Maps,
+Lawaan III,Great Homes Subdivision,subdivision,,10.263626,123.831185,Google Maps: Great Homes Subdivision,medium,Google Maps,
+Lawaan III,Hermelie Homes,subdivision,,10.262712,123.833152,Wikimapia: Hermelie Homes,high,Wikimapia,
+Linao,Saint Therese Homes,subdivision,,10.263987,123.816808,Google Maps: Saint Therese Homes Linao Talisay,medium,Google Maps,
+Maghaway,Azienda Genova,subdivision,,10.268894,123.818192,Wikimapia: Azienda Genova (Camella),high,Wikimapia,
+Maghaway,Azienda Subdivision,subdivision,,10.271862,123.819418,Wikimapia: Azienda Subdivision,high,Wikimapia,
+Maghaway,Azienda Venezia,subdivision,,10.271552,123.821075,Overture: Azienda Venezia,medium,Overture,
+Maghaway,"Lessandra Palermo, Camella",subdivision,,10.268578,123.824216,Google Maps: Lessandra Palermo Camella Lawaan Talisay,medium,Google Maps,
+Maghaway,Prime Hills Residences,subdivision,,10.282578,123.817192,Google Maps: PRIME HILLS RESIDENCES,medium,Google Maps,
+Mohon,Lovely Homes Subdivision,subdivision,,10.250957,123.824879,Wikimapia: Lovely Homes Subdivision,high,Wikimapia,
+Mohon,Monterey Homes Subdivision,subdivision,,10.250340,123.831471,Wikimapia: Monterey Homes Subdivision,high,Wikimapia,
+Lawaan II,Santa Monica Estate,subdivision,,10.251143,123.832748,Overture: Santa Monica Estate,medium,Overture,
+Mohon,Serenis South,subdivision,,10.249572,123.824317,"Google Maps: House 162, Sunflower Street, Serenis South Subdivision, Mohon, T",medium,Google Maps,
+Mohon,Villa Plantana,subdivision,,10.246943,123.822068,Google Maps: Villa Plantana Subdivision,medium,Google Maps,
+Cansojong,Fortune Homes Subdivision,subdivision,,10.244625,123.850290,Wikimapia: Fortune Homes Subdivision,high,Wikimapia,
+Poblacion,Lariosa Compound,subdivision,,10.241507,123.845925,Wikimapia: Lariosa Compound,high,Wikimapia,
+Poblacion,Sarihville Subdivision,subdivision,,10.242936,123.845209,Overture (5 addresses): Sarihville Subdivision,medium,Overture,
+Pooc,Escala at Corona del Mar,subdivision,,10.240721,123.820641,Overture: Escala AT CORONA DEL MAR,medium,Overture,
+Pooc,Villa Solana Subdivision,subdivision,,10.242709,123.822877,Wikimapia: Villa Solana Subdivision,high,Wikimapia,
+Pooc,Woodway Townhomes,subdivision,,10.243488,123.825129,Wikimapia: Woodway Townhomes Subdivision,high,Wikimapia,
+San Isidro,Cabusas Compound,subdivision,,10.259597,123.845941,Wikimapia: Cabusas compound,high,Wikimapia,
+San Isidro,Garces Royal Garden Residences,subdivision,,10.258599,123.841023,OpenStreetMap: Garces Royal Garden Residences,high,OpenStreetMap,
+San Isidro,Lines Townhomes,subdivision,,10.260101,123.843296,Google Maps: Lines Town Homes,medium,Google Maps,
+San Isidro,Peaceville Subdivision,subdivision,,10.258854,123.838851,Wikimapia: Peaceville Subdivision,high,Wikimapia,
+San Isidro,Treasureville Subdivision,subdivision,,10.259156,123.841381,Wikimapia: San Isidro - Treasureville,high,Wikimapia,
+San Roque,88 Brookside,subdivision,,10.253050,123.861798,Wikimapia: 88 Brookside,high,Wikimapia,
+San Roque,Asterra Townhomes,subdivision,,10.258994,123.848373,Wikimapia: Asterra Townhomes,high,Wikimapia,
+San Roque,Bihai Subdivision,subdivision,,10.258573,123.856976,Google Maps: BIHAI Subdivision,medium,Google Maps,
+San Roque,Bonanza Subdivision,subdivision,,10.259920,123.857239,Overture: Bonanza Subdivision,medium,Overture,
+San Roque,Fatima Village,subdivision,,10.257421,123.849989,Google Maps: Fatima Village,medium,Google Maps,
+San Roque,Green Meadows Subdivision,subdivision,,10.258765,123.849301,Wikimapia: New Green Meadows Subdivision,high,Wikimapia,
+San Roque,Ughai Subdivision,subdivision,,10.255580,123.858710,Wikimapia: Ughai Subdivision,high,Wikimapia,
+Tabunok,Bacalso Compound,subdivision,,10.264602,123.840128,OpenStreetMap: Bacalso Compound,high,OpenStreetMap,
+Tabunok,Easy Access Subdivision,subdivision,,10.259768,123.847630,Wikimapia: Easy Access Subdivision,high,Wikimapia,
+Tabunok,Elkwood Homes,subdivision,,10.262897,123.836969,Google Maps: Elkwood Homes Subdivision Talisay City,medium,Google Maps,
+Tabunok,Fairchild Subdivision,subdivision,,10.263988,123.845964,Google Maps: Fairchild Subdivision,medium,Google Maps,
+Lagtang,Harmonis Residences,subdivision,,10.263487,123.835271,Google Maps: Harmonis Residences,medium,Google Maps,
+Tabunok,Tali Plains Subdivision,subdivision,,10.261040,123.848681,Wikimapia: Tali Plains Subdivision,high,Wikimapia,
+Tabunok,Victoria Village,subdivision,,10.260538,123.839544,Google Maps: Victoria Village,medium,Google Maps,
+Tangke,Alayon Cresmer Homes,subdivision,,10.251875,123.858660,Google Maps: Alayon Cresmer Homes,medium,Google Maps,
+Tangke,Almond Drive,subdivision,,10.252863,123.863347,Google Maps: Almond Drive,medium,Google Maps,
+Dumlog,Univille Homes,subdivision,,10.244991,123.839733,Google Maps place: UNIVILLE DUMLOG,medium,Google Maps place,
+Bulacao,Princess Village,subdivision,,10.273311,123.846520,Google Maps card: Princess Vill Subd.,medium,Google Maps card,
+Dumlog,Belleza Compound,subdivision,,10.250575,123.838828,Google Maps place: Belleza Compound,medium,Google Maps place,
+Pooc,UC Homes,subdivision,,10.242321,123.822671,Google Maps place: UC Homes Subdivision,medium,Google Maps place,
+Lawaan I,Along Cebu South Coastal Road,purok,,10.255381,123.827076,Road strip kept so fires on this road keep an area,low,"estimated area, fire log",
+Dumlog,Purok Ilang-Ilang,purok,,10.247223,123.838152,name on the pin: Purok ILang ilang Dumlog Talisay City Cebu,medium,Google Maps,
+Linao,Purok Daisy,purok,Sitio San Miguel,10.264392,123.817513,name on the pin: PUROK DAISY,medium,Google Maps,
+Pooc,Purok 5B,purok,Sitio Tambis,10.241371,123.821646,"nearby address: Rodora's Garden, Purok 5b Tambis",low,Google Maps; Google Maps 2026-11-08,moved 2026-11-08: the earlier pin sat on Google's barangay label point
+Pooc,Purok 4,purok,Sitio Sunrise,10.241116,123.826635,"name on the pin: Purok 4,Sunrise,Pooc,Talisay,City,Cebu",medium,Google Maps,
+San Roque,Purok Maya,purok,,10.252471,123.859369,name on the pin: Purok Maya,medium,Google Maps,
+San Roque,Purok Mahogany,purok,,10.262833,123.850760,name on the pin: Purok Mahogany,medium,Google Maps,
+Bulacao,Casa Ville Subdivision,subdivision,,10.271434,123.846621,name on the pin: Casa Ville Subdivision,medium,Google Maps,
+Bulacao,Green Homes Subdivision,subdivision,,10.267470,123.842089,name on the pin: Green Homes Subdivision,medium,Google Maps,
+San Isidro,Maple Residences,subdivision,,10.260305,123.838791,name on the pin: Maple Residences Talisay,medium,Google Maps,
+San Roque,Tiara del Sur,subdivision,,10.261512,123.850882,name on the pin: Tiara Del Sur Subdivision,medium,Google Maps,
+San Roque,William Lines Subdivision,subdivision,,10.259392,123.850712,name on the pin: William Lines,medium,Overture landuse,
+Tabunok,Happy Homes Subdivision,subdivision,,10.266404,123.839138,name on the pin: Happy Homes Subdivision,medium,Google Maps,
+Lagtang,Purok Kasadya,purok,,10.268559,123.830440,name on the pin: Purok Kasadya,medium,Google Maps,
+Lagtang,Purok Neemtree,purok,Sitio Lupa,10.268704,123.836613,name on the pin: Purok Neemtree,medium,Google Maps,
+Manipis,Sitio Telepono,sitio,,10.322364,123.779332,name on the pin: TELEPONO Gym,medium,Google Maps,
+San Isidro,San Isidro Village,subdivision,,10.255501,123.840608,name on the pin: San Isidro Village,medium,Google Maps,
+Biasong,Perez Drive Subdivision,subdivision,,10.245859,123.832891,name on the pin: F.C Perez Drive,medium,Google Maps,
+Cadulawan,Smyrna Subdivision,subdivision,,10.275132,123.845411,name on the pin: Smyrna Subdivision,medium,Google Maps,"Listed under Bulacao, but the pin falls in Cadulawan"
+Dumlog,Smyrna Homes,subdivision,,10.241310,123.839987,name on the pin: SMYRNA - DUMLOG Homes Subdivision,medium,Google Maps,
+Bulacao,Tuastumban,subdivision,,10.269542,123.842282,name on the pin: Tuastumban Subdivision 1st St.,medium,Google Maps,"Listed under Dumlog, but the pin falls in Bulacao"
+Maghaway,Richview Heights,subdivision,,10.268743,123.813282,name on the pin: Richview Heights,medium,Google Maps,"Listed under Linao, but the pin falls in Maghaway"
+San Isidro,Sabido Compound,subdivision,,10.254306,123.839809,name on the pin: Sabido Compound,medium,Google Maps,"Listed under Tabunok, but the pin falls in San Isidro"
+Biasong,Paseo Eustaquia,subdivision,,10.248127,123.830946,name on the pin: ​Paseo Feliz & Paseo Eustaquia,medium,Google Maps,"Listed under Mohon, but the pin falls in Biasong"
+Dumlog,Sitio Minggoy,sitio,,10.246810,123.837176,name on the pin: Sitio Minggoy Homeowners Association,medium,Google Maps,"Listed under San Isidro, but the pin falls in Dumlog"
+Dumlog,Sitio Puwa,sitio,,10.250511,123.836819,name on the pin: Isla Puwa,medium,Google Maps,"Listed under San Isidro, but the pin falls in Dumlog"
+Biasong,Purok Nipa,purok,Sitio Laguna,10.240622,123.827109,nearby address: elmer barber shop,low,Google Maps,
+Biasong,Zone 1,zone,,10.238889,123.827458,nearby address: Yuleses Beach Resort,low,Overture,
+Bulacao,Purok Rabaya,purok,,10.266610,123.844615,"nearby address, scattered: Dawis Road",low,Overture,
+Camp IV,Sitio Bogo,sitio,,10.314156,123.817818,nearby address: CONVERGENCE AND SPECIAL SUPPORT PROGRAM (CSSP) - BASIC INFRASTRU,low,DPWH,
+Cansojong,Sitio San Roque,sitio,,10.252646,123.849632,"nearby address, scattered: Nicolball Pickleball Court",low,Overture,
+Dumlog,Purok Lemonsito,purok,,10.242546,123.839692,"estimated from outage notice: Zone 3, Purok Talisay",low,2 neighbours within 621 m,
+Dumlog,Purok Madecacao,purok,,10.237814,123.836305,nearby address: ABALLE'S SARI-SARI STORE,low,Google Maps,
+Dumlog,Purok Narra,purok,Sitio Kamalig,10.249485,123.842524,nearby address: Cathy Apartments,low,Google Maps,"DOUBTFUL: the point sits exactly on Google's label point for the barangay (a default pin, not the place); search again; parent from: Google: Cathy Apartments, Sitio Kamalig, Purok Narra"
+Dumlog,Purok Talisay,purok,,10.237218,123.837891,name on the pin: Talisay City National High School - TCNHS,low,Overture,
+Dumlog,Zone 4,zone,,10.247408,123.838774,"nearby address, scattered: Del Technician ",low,Overture,
+Dumlog,Zone 9,zone,,10.249097,123.839043,nearby address: Q-Med Medical and Diagnostic Clinic,low,Overture,
+Jaclupan,Purok Lubi,purok,Sitio Ibo,10.283020,123.822240,"name on the pin: Camp 2, Ibo, Purok Lubi, Jaclupan (Google Maps)",low,2 neighbours within 183 m,
+Jaclupan,Purok Tambis,purok,,10.304935,123.813863,nearby address: CONVERGENCE AND SPECIAL SUPPORT PROGRAM -BASIC INFRASTRUCTURE PR,low,DPWH,
+Jaclupan,Sitio Acacia,sitio,,10.305656,123.815759,"estimated from outage notice: Purok Avocado, Purok Kasagingan",low,2 neighbours within 183 m,
+Jaclupan,Sitio Ibo,sitio,Camp 2,10.283550,123.822370,"name on the pin: Sitio Ibo basketball court, Jaclupan, Camp 2 (Google Maps)",low,7 neighbours within 672 m,
+Lagtang,Purok Caimitohan,purok,Sitio Tungasan,10.278090,123.826996,nearby address: Jhefprox Catering Events and Styling,low,Overture,
+Lagtang,Zone 2,zone,Sitio Hollow Block,10.264413,123.835609,nearby address: Fajardo Junior's Junk Shop,low,Overture,
+Lagtang,Zone 3,zone,Sitio Ilang-Ilang,10.267191,123.835823,nearby address: Reyal Litson Manok,low,Overture,
+Lawaan I,Purok Palmera,purok,,10.259957,123.825449,"nearby address: Mona Borke Apartment, lawaa 1, Talisay Cebu",low,Google Maps,
+Lawaan I,Sitio Kamagayan,sitio,,10.261736,123.825110,road in outage notice: Maghaway Road,low,Visayan Electric + OpenStreetMap,
+Lawaan I,Sitio Pajo,sitio,,10.261736,123.825110,road in outage notice: Maghaway Road,low,Visayan Electric + OpenStreetMap,
+Lawaan II,Purok Saging,purok,,10.254281,123.831148,"estimated from outage notice: Purok Avocado, Sitio Mangga",low,2 neighbours within 284 m,
+Lawaan III,Lower Caduldulan,sitio,Caduldulan,10.262192,123.830484,nearby address: Amarah's Place,low,Google Maps,
+Lawaan III,Purok Cherries,purok,,10.262192,123.830484,nearby address: Amarah's Place,low,Google Maps,
+Lawaan III,Purok Pomelo,purok,,10.263108,123.832417,"estimated from outage notice: Sitio Crusher, Purok Cadicay, Purok Grapes, Purok Lumboy",low,6 neighbours within 487 m,
+Lawaan III,Sitio Riverside,sitio,,10.266330,123.830138,road in outage notice: Molave St.,low,Visayan Electric + OpenStreetMap,
+Linao,Purok Sampaguita,purok,,10.263162,123.816388,nearby address: Gamboa's Apartment,low,Google Maps,
+Linao,Sitio Molila,sitio,,10.255439,123.821877,nearby address: Trust Rent A Car,low,Overture,
+Linao,Sitio Orchid Bell,sitio,,10.255744,123.818573,nearby address: nahmee prints,low,Overture,
+Maghaway,Sitio Bulahan,sitio,,10.272018,123.821115,road in outage notice: Maghaway Road,low,Visayan Electric + OpenStreetMap,
+Maghaway,Sitio Daku,sitio,,10.272018,123.821115,road in outage notice: Maghaway Road,low,Visayan Electric + OpenStreetMap,
+Mohon,Purok Kamunggay 2,purok,,10.251796,123.826149,nearby address: Monobloc Construction Supplies,low,Overture,
+Mohon,Sitio Ranger,sitio,,10.248494,123.825053,"estimated from outage notice: Sitio Libo, Sitio Nazareno, Saint Michael",low,3 neighbours within 628 m,
+Mohon,Zone 3,zone,,10.250806,123.827584,nearby address: Joah's Food and Baking Tools,low,Overture,
+Poblacion,Sitio Cabalan,sitio,,10.246153,123.848176,nearby address: 5C.A.C's Laundry Express,low,Overture,
+San Isidro,Purok Kalachuchi,purok,,10.254151,123.838684,"estimated from outage notice: Zone 3, Isla Verde, Corazon Village",low,3 neighbours within 330 m,
+San Isidro,Purok Masagana,purok,,10.256741,123.838444,"estimated from outage notice: Zone 3, Sitio Pangpang, Sitio Mahayag, Art Ville",low,5 neighbours within 429 m,
+San Isidro,Sitio Nonoc,sitio,,10.259516,123.846138,nearby address: Cabusas Apartment,low,Overture,
+San Isidro,Zone 1,zone,,10.259557,123.846107,nearby address: Love and Hope Community Care Centre Cebu,low,Overture,
+San Isidro,Zone 4,zone,,10.254561,123.840134,"estimated from outage notice: Zone 3, Corazon Village",low,2 neighbours within 256 m,
+San Isidro,Zone 6,zone,,10.256574,123.838768,nearby address: Ana's Lechon - Talisay,low,Overture,
+San Roque,Sitio Gimbuangan,sitio,,10.257060,123.861197,road in outage notice: Cebu South Coastal Road,low,Visayan Electric + OpenStreetMap,
+San Roque,Sitio Plangganahan,sitio,,10.255681,123.857894,"estimated from outage notice: Sitio Laray, Purok Sambag, Purok Ilang-Ilang, Sitio Kimba",low,6 neighbours within 534 m,
+Tabunok,Zone 1,zone,,10.261877,123.842216,nearby address: Outset Autospa,low,Overture,
+Cansojong,Sitio Abalo,sitio,,10.248400,123.857700,estimated: Cansojong shore beside Abalo Road and Abalo Beach,low,"fire log; Cebu Daily News 2015, 2026; SunStar; Banat 2026",position approximate
+Cadulawan,GBC Subdivision,subdivision,,10.276710,123.840590,"name on the pin: G.B.C Subdivision, St. Vincent Chapel",medium,Google Maps; Visayan Electric; city profile 2010,
+Dumlog,Sta. Theresa Village I,subdivision,,10.250383,123.840938,name on the pin: Sta theresa village 1,medium,Google Maps 2026-11-08,position approximate
+Maghaway,Purok Lomboy 1,purok,,10.281768,123.818223,name on the pin: a store labelled PUROk lomboy 1,medium,Google Maps 2026-11-08,position approximate
+San Roque,Purok Love Birds,purok,,10.256128,123.853914,name on the pin: Purok lovebirds,medium,Google Maps 2026-11-08,position approximate
+Tabunok,Sitio Kawatan,sitio,,10.262165,123.835385,name on the pin: Barrio Kawatan,medium,Google Maps 2026-11-08,position approximate
+Bulacao,AAC Compound,subdivision,,10.272337,123.846276,name on the pin: AAC International Seventh-day Adventist Church,low,Google Maps 2026-11-08,position approximate
+Dumlog,Reubenville Subdivision,subdivision,,10.245967,123.842780,"nearby address: JRKJ Residences, Reubenville Subdivision, Purok Opal",low,Google Maps 2026-11-08,position approximate
+Lawaan II,New San Lorenzo Ruiz Village,subdivision,,10.252324,123.830405,nearby address: a church in New San Lorenzo Ruiz Village,low,Google Maps 2026-11-08,position approximate
+Lawaan III,Purok Tambis,purok,Sitio Crusher,10.263860,123.832000,"nearby address: 2 places give Purok Tambis, Selma Crusher",low,Google Maps 2026-11-08,position approximate
+Camp IV,Sitio Crossing,sitio,,10.324117,123.819168,name on the pin: St. Joseph Chapel - Crossing Camp 4 (Overture),medium,research 2026-11-08,position approximate
+Cansojong,Casa de la Paz,subdivision,,10.254961,123.845727,name on the pin: Casa dela Paz (Google Maps),medium,research 2026-11-08,position approximate
+Dumlog,Florida County,subdivision,,10.242600,123.840270,"name on the pin: Florida County Subdivision (Google Maps); an Overture address agrees, 90 m away",medium,research 2026-11-08,position approximate
+Lagtang,Gabison Compound,subdivision,,10.268096,123.830596,name on the pin: GABISON COMPOUND (Google Maps),medium,research 2026-11-08,position approximate
+Lawaan I,St. Ignatius De Loyola Townhomes,subdivision,,10.257928,123.830250,"name on the pin: St. Ignatius De Loyola Townhomes (Google Maps, Overture)",medium,research 2026-11-08,position approximate
+Maghaway,St. Arnold Janssen Village,subdivision,,10.272840,123.822623,"name on the pin: St. Arnold Janssen Village (Google Maps, Overture)",medium,research 2026-11-08,position approximate
+Cadulawan,Casilda Homes,subdivision,,10.274689,123.845748,name on the pin: Casilda Homes (Google Maps),medium,research 2026-11-08,"Listed under Bulacao, but the pin falls in Cadulawan"
+Dumlog,Sta. Rita Ville,subdivision,,10.248443,123.842393,"nearby addresses: 2 places give Sta. Rita Ville, Jose Rizal St (Google Maps, Overture)",low,research 2026-11-08,position approximate
+Bulacao,Gotianuy Subdivision,subdivision,,10.271628,123.843544,"nearby address: RandomHaus Printing, Gotianuy Compound (Overture)",low,research 2026-11-08,position approximate
+Cadulawan,Purok 17,purok,,10.278329,123.838287,"nearby address: ""Cadulawan sta cruz purok17"" (Overture)",low,research 2026-11-08,position approximate
+Tabunok,Nuñez Compound,subdivision,,10.262591,123.836510,"nearby address: Four Paws Pet Center, Nunez Compound, Purok Soliman (Overture)",low,research 2026-11-08,position approximate
+Linao,Camella Homes,subdivision,,10.257829,123.818741,"nearby address: Tierra Grande Basketball Court, Camella homes (Overture)",low,research 2026-11-08,position approximate
+Tabunok,Ruiz Compound,subdivision,,10.263418,123.842322,"nearby address: ""Compound, Ruiz Street"" (Google Maps)",low,research 2026-11-08,position approximate
+Mohon,San Rafael Homes de Cebu,subdivision,Sitio Libo,10.247620,123.819050,"OpenStreetMap place tagged is_in Sitio Libo; Google Maps and Overture ""Sitio Libo Road""",high,research 2026-11-08,
+Mohon,Maple Ville,subdivision,,10.248500,123.828440,name on the pin: Mapleville Subdivision (Google Maps),medium,research 2026-11-08,
+Maghaway,Talisay View Homes,subdivision,,10.273750,123.820820,name on the pin: Talisay Viewhomes (Google Maps),medium,research 2026-11-08,
+San Roque,Skyview Village,subdivision,Sitio Laray,10.260000,123.857890,name on the pin: Skyview Village Laray San Roque Talisay (Overture),medium,research 2026-11-08,pin 46 m over the PSA line
+Pooc,Rosepike Residences,subdivision,,10.239400,123.824040,name on the pin: Rosepike Pooc Talisay (Google Maps),medium,research 2026-11-08,
+Linao,Casa Lucia,subdivision,,10.267110,123.815530,name on the pin: CASA LUCIA SRP LINAO TALISAY (Google Maps),medium,research 2026-11-08,pin 63 m over the PSA line
+Linao,Abucejo Subdivision,subdivision,,10.266730,123.814810,name on the pin: Abucejo Compound (Google Maps),medium,research 2026-11-08,pin 27 m over the PSA line
+Bulacao,Rustyville Subdivision,subdivision,,10.272569,123.843571,name on the pin: Rustyville Subdivision (Google Maps),medium,research 2026-11-08,
+Lagtang,Saint Gabriel Village,subdivision,,10.265532,123.833786,name on the pin: St. Gabriel Village (Google Maps),medium,research 2026-11-08,
+Lawaan III,Luzminda Estate Park Subdivision,subdivision,,10.262988,123.826461,name on the pin: Luzminda Estate Park Subdivision (Google Maps),medium,research 2026-11-08,
+Lawaan III,Purok Avocado,purok,Sitio Pungsod,10.262717,123.832283,"two home addresses give Sitio Pungsod, Purok Avocado (Google Maps)",medium,research 2026-11-08,
+Lagtang,Sitio Luyongan,sitio,,10.280940,123.825310,"address: 7RJG+94G, Sitio Luyungan (Google Maps); notices spell it Luyungan too",low,research 2026-11-08,one address
+San Isidro,Sta. Theresa Village II,subdivision,,10.252500,123.842430,"name on the pin: Santa Theresa Village 2 (Google Maps), beside Sta. Teresa Village (Overture)",medium,research 2026-11-08,
+Mohon,Sitio Gumamela,sitio,,10.251600,123.832200,"two addresses say Sitio Gumamela, 60 m apart (Google Maps)",medium,research 2026-11-08,"pins 53 to 102 m over the PSA line, in Lawaan II"
+Poblacion,Anelan Compound,subdivision,,10.243470,123.843170,name on the pin: Anelan Compound (Google Maps),medium,research 2026-11-08,"pin 109 m over the PSA line, in Dumlog"
+Jaclupan,Sitio Tinubdan,sitio,Camp 2,10.288560,123.819490,"name on the pin: Camp 2, Tinubdan, Purok Lumboy (Google Maps)",medium,research 2026-11-08,pin 127 m over the PSA line
+Jaclupan,Purok Lumboy,purok,Sitio Tinubdan,10.288560,123.819490,"name on the pin: Camp 2, Tinubdan, Purok Lumboy (Google Maps)",medium,research 2026-11-08,shares its sitio's pin
+Lawaan I,Merrywood Townhomes,subdivision,,10.263430,123.824680,"name on the pin: MerryWood Subdivision (Google Maps), Merrywood Townhomes (Overture)",medium,research 2026-11-08,"BIR lists it under Lawaan II but both pins are in Lawaan I, 899 m from Lawaan II"
+Camp IV,Purok Caimito,purok,Sitio Bogo,10.314156,123.817818,estimated inside Sitio Bogo (camp4talisay.com); exact spot in the sitio unknown,low,research 2026-11-08,position inside its parent estimated
+Camp IV,Purok Mangga,purok,Sitio Crossing,10.324117,123.819168,estimated inside Sitio Crossing (camp4talisay.com); exact spot in the sitio unknown,low,research 2026-11-08,position inside its parent estimated
+Lagtang,Purok Panas,purok,Sitio Pier 7,10.268835,123.832741,estimated inside Sitio Pier 7 (outage notice: Purok Panas Pier 7); exact spot in the sitio unknown,low,research 2026-11-08,position inside its parent estimated
+Lawaan II,Lower Sombria,sitio,Sitio Sombria,10.254286,123.831071,estimated inside Sitio Sombria (its name; Overture and Google addresses); exact spot in the sitio unknown,low,research 2026-11-08,position inside its parent estimated
+Linao,Upper San Miguel,sitio,Sitio San Miguel,10.262240,123.817060,estimated inside Sitio San Miguel (its name; addresses); exact spot in the sitio unknown,low,research 2026-11-08,position inside its parent estimated
+Pooc,Purok Sunrise 7,purok,Sitio Sunrise,10.239046,123.824129,"estimated inside Sitio Sunrise (numbered series Purok Sunrise 1, 3, 4 in Sitio Sunrise); exact spot in the sitio unknown",low,research 2026-11-08,position inside its parent estimated
+Cansojong,Along Cebu South Coastal Road,purok,,10.252705,123.848000,Road strip kept so fires on this road keep an area,low,"estimated area, fire log",
+Pooc,Along Burgos Street,purok,,10.247444,123.828138,Road strip kept so fires on this road keep an area,low,"estimated area, fire log",

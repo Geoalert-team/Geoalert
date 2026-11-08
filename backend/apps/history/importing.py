@@ -12,6 +12,7 @@ from pathlib import Path
 
 from django.db import transaction
 
+from apps.barangays.aliases import canonical
 from apps.barangays.models import Barangay, Purok
 from apps.hazards.models import HazardType
 from apps.history import bfp
@@ -112,6 +113,21 @@ def purok_index():
     return by_barangay, ids
 
 
+def placed_ids(placed, barangays, ids):
+    """
+    The purok ids of [(barangay, area)] from fire_places.csv. These links live
+    nowhere else, so a name that isn't loaded stops the run instead of losing one.
+    """
+    by_name = {canonical(b.name): b.id for b in barangays}
+    found = set()
+    for barangay, area in placed:
+        pk = ids.get((by_name.get(canonical(barangay)), area))
+        if pk is None:
+            raise ImportProblem(f'fire_places.csv names an area that is not loaded: {area} in {barangay}.')
+        found.add(pk)
+    return found
+
+
 def import_fires(source, save=False):
     """The BFP fire log: its report (bfp_import.plan_import), with the fires saved when save."""
     fire = HazardType.objects.filter(name__iexact='Fire').first()
@@ -124,14 +140,16 @@ def import_fires(source, save=False):
         raise ImportProblem('The fire log could not be read. Is it the BFP .xlsx?')
     by_barangay, ids = purok_index()
     existing = set(HistoricalRecord.objects.filter(source_ref__isnull=False).values_list('source_ref', flat=True))
-    records, report = plan_fires(rows, existing, list(Barangay.objects.all()), by_barangay,
-                                 load_link_index(PUROK_DATA))
+    barangays = list(Barangay.objects.all())
+    records, report = plan_fires(rows, existing, barangays, by_barangay, load_link_index(PUROK_DATA))
     if save:
         with transaction.atomic():
             for rec in records:
-                purok_name = rec.pop('purok_name')
+                purok_name, placed = rec.pop('purok_name'), rec.pop('placed')
                 record = HistoricalRecord.objects.create(hazard_type=fire, **rec)
-                if purok_name:
+                if placed:
+                    record.puroks.set(placed_ids(placed, barangays, ids))
+                elif purok_name:
                     record.puroks.add(ids[(rec['barangay'].id, purok_name)])
     return report
 

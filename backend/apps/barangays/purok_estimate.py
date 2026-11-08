@@ -630,7 +630,9 @@ def to_map(geom, to_lnglat):
 
 
 def polygons(geom):
-    """The polygons in a shape, whatever kind it is (cutting can leave lines and points too)."""
+    """The polygons in a shape, whatever kind it is (cutting can leave lines, points or nothing too)."""
+    if geom.empty:
+        return []
     if geom.geom_type == 'Polygon':
         return [geom]
     if geom.geom_type in ('MultiPolygon', 'GeometryCollection'):

@@ -159,7 +159,9 @@ def source_ref(when, location):
 
 
 def is_talisay(row):
-    return _text(row.get('city')).upper().startswith('TALISAY')
+    """The City column, or an address that names Talisay (the column is mistyped now and then)."""
+    return (_text(row.get('city')).upper().startswith('TALISAY')
+            or 'TALISAY' in _text(row.get('location')).upper())
 
 
 # --- Closing a fire in the app: the log's columns G onward ------------------

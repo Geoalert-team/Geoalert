@@ -58,6 +58,14 @@ class PlanImportTests(SimpleTestCase):
         _, report = plan_import(rows, set(), [ROQUE], {ROQUE.id: ['Purok Sambag', 'Sitio Laray']}, index)
         self.assertEqual(report['linked_by'], {'purok': 1, 'sitio': 1})
 
+    def test_a_placed_address_counts_as_linked_and_carries_its_areas(self):
+        index = LinkIndex()
+        index.places['UNMATCHED ROAD, BRGY SAN ROQUE'] = [('San Roque', 'Purok Sambag')]
+        [rec], report = plan_import([row(location='Unmatched Road, Brgy San Roque')], set(), [ROQUE],
+                                    {ROQUE.id: ['Purok Sambag']}, index)
+        self.assertEqual(rec['placed'], [('San Roque', 'Purok Sambag')])
+        self.assertEqual((report['linked'], report['barangay_only'], report['linked_by']), (1, 0, {'placed': 1}))
+
     def test_existing_refs_are_skipped(self):
         r = row()
         records, report = plan_import([r], {bfp.source_ref(bfp.parse_when(r['date'], r['time']), r['location'])},

@@ -538,6 +538,14 @@ class PolygonsTests(SimpleTestCase):
         self.assertEqual(len(pe.polygons(MultiPolygon(a, b))), 2)
         self.assertEqual(len(pe.polygons(GeometryCollection(a, LineString((0, 0), (1, 1))))), 1)
 
+    def test_an_empty_polygon_is_not_a_piece(self):
+        # Cutting an area to its barangay can leave nothing: San Roque, 2026-11-08 rebuild
+        a, b = Polygon.from_bbox((0, 0, 1, 1)), Polygon.from_bbox((2, 0, 3, 1))
+        nothing = a.intersection(b)
+        self.assertTrue(nothing.empty)
+        self.assertEqual(pe.polygons(nothing), [])
+        self.assertEqual(len(pe.polygons(GeometryCollection(a, Polygon()))), 1)
+
 
 class LandmarksFromOsmTests(SimpleTestCase):
     def test_places_become_points_and_streets_lines(self):

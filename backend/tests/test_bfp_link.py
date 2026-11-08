@@ -13,7 +13,7 @@ from django.test import SimpleTestCase
 
 from apps.barangays.purok_estimate import norm_name
 from apps.history.bfp_link import (explain_link, find_purok, link_address, load_link_index, load_variants,
-                                   split_address, street_key, street_parts)
+                                   placed_areas, split_address, street_key, street_parts)
 
 # The 22 barangays as the shared database spells them
 B = ['Biasong', 'Bulacao', 'Cadulawan', 'Camp IV', 'Cansojong', 'Dumlog', 'Jaclupan', 'Lagtang', 'Lawaan I',
@@ -162,6 +162,21 @@ class LinkIndexTests(SimpleTestCase):
     def test_missing_files_are_skipped(self):
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(load_link_index(Path(d)), {})
+
+    def test_a_placed_address_gives_its_barangay_and_every_area(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / 'fire_places.csv').write_text(
+                'barangay,address,areas,why\nLinao,"Fidel Bas St., Linao",Purok Rose + Sitio Lower,two areas\n',
+                encoding='utf-8')
+            index = load_link_index(Path(d))
+        self.assertEqual(placed_areas('fidel bas st.,  LINAO', index),
+                         [('Linao', 'Purok Rose'), ('Linao', 'Sitio Lower')])
+
+    def test_an_address_nobody_placed_gives_nothing(self):
+        self.assertEqual(placed_areas('Fidel Bas St., Linao', index_from()), [])
+
+    def test_a_plain_variants_dict_has_no_placements(self):
+        self.assertEqual(placed_areas('Fidel Bas St., Linao', {}), [])
 
 
 class ExplainLinkTests(SimpleTestCase):

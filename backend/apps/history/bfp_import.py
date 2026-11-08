@@ -11,7 +11,7 @@ from collections import Counter
 
 from apps.barangays.purok_estimate import norm_name
 from apps.history import bfp
-from apps.history.bfp_link import explain_link, split_address
+from apps.history.bfp_link import explain_link, placed_areas, split_address
 
 
 def _new_report(read):
@@ -112,15 +112,19 @@ def plan_import(rows, existing_refs, barangays, puroks_by_barangay, variants):
         if not bfp.severity_for_alarm(row['alarm'])[1]:
             report['unknown_alarms'][row['alarm']] += 1
         barangay, purok_name, rule = explain_link(row['location'], barangays, puroks_by_barangay, variants)
+        placed = placed_areas(row['location'], variants)
         if barangay is None:
             report['no_barangay'].append(row['row'])
+        elif placed:
+            report['linked'] += 1
+            report['linked_by']['placed'] += 1
         elif purok_name:
             report['linked'] += 1
             report['linked_by'][rule] += 1
         else:
             report['barangay_only'] += 1
             _note_unlinked(report, row, barangay, puroks_by_barangay.get(barangay.id, []))
-        records.append(_record(row, when, ref, barangay, purok_name))
+        records.append({**_record(row, when, ref, barangay, purok_name), 'placed': placed})
 
     report['imported'] = len(records)
     report['unknown_alarms'] = dict(report['unknown_alarms'])

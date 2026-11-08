@@ -9,8 +9,8 @@ from apps.barangays.models import Barangay
 from apps.hazards.models import HazardType
 from apps.history import bfp
 from apps.history.bfp_import import plan_import
-from apps.history.bfp_link import link_address, load_link_index
-from apps.history.importing import PUROK_DATA, ImportProblem, import_fires, purok_index
+from apps.history.bfp_link import link_address, load_link_index, placed_areas
+from apps.history.importing import PUROK_DATA, ImportProblem, import_fires, placed_ids, purok_index
 from apps.history.models import HistoricalRecord
 
 
@@ -81,7 +81,13 @@ class Command(BaseCommand):
             for record in (HistoricalRecord.objects.filter(source_ref__startswith='bfp:')
                            .prefetch_related('puroks')):
                 barangay, purok_name = link_address(record.location_text, barangays, puroks_by_barangay, variants)
-                new = {ids[(barangay.id, purok_name)]} if purok_name else set()
+                placed = placed_areas(record.location_text, variants)
+                try:
+                    new = placed_ids(placed, barangays, ids)
+                except ImportProblem as e:
+                    raise CommandError(str(e))
+                if not placed and purok_name:
+                    new = {ids[(barangay.id, purok_name)]}
                 linked += bool(new)
                 barangay_only += bool(barangay and not new)
                 if new == {p.id for p in record.puroks.all()} and record.barangay_id == (barangay and barangay.id):
@@ -98,7 +104,7 @@ class Command(BaseCommand):
         for key in ('read', 'imported', 'skipped_existing', 'linked', 'barangay_only'):
             self.stdout.write(f'{key} {report[key]}')
         by = report.get('linked_by', {})
-        self.stdout.write('linked by: ' + ', '.join(f'{r} {by.get(r, 0)}' for r in ('purok', 'sitio', 'landmark', 'street')))
+        self.stdout.write('linked by: ' + ', '.join(f'{r} {by.get(r, 0)}' for r in ('purok', 'sitio', 'landmark', 'street', 'placed')))
         for key, label in (('outside_city', 'outside city'), ('duplicates', 'duplicates'),
                            ('bad_date', 'bad dates'), ('no_barangay', 'no barangay')):
             self.stdout.write(f'{label}: {report[key]}')

@@ -110,3 +110,11 @@ class RefTests(SimpleTestCase):
     def test_only_talisay_rows_count(self):
         self.assertTrue(bfp.is_talisay({'city': 'Talisay_City_c'}))
         self.assertFalse(bfp.is_talisay({'city': 'Toledo_City'}))
+
+    def test_a_talisay_address_counts_when_the_city_column_names_another_city(self):
+        # Row 87 of the log: a Talisay address typed under Toledo_City
+        row = {'city': 'Toledo_City', 'location': 'SRP Mananga Bridge, San Isidro, Talisay City Cebu'}
+        self.assertTrue(bfp.is_talisay(row))
+
+    def test_another_city_with_another_address_does_not_count(self):
+        self.assertFalse(bfp.is_talisay({'city': 'Toledo_City', 'location': 'Poblacion, Toledo City, Cebu'}))

@@ -167,7 +167,15 @@ class PlaceKeys(dict):
 
 
 class LinkIndex(dict):
-    """{canonical barangay: PlaceKeys}, the same shape load_variants gives, so find_purok reads either."""
+    """
+    {canonical barangay: PlaceKeys}, the same shape load_variants gives, so
+    find_purok reads either. places holds the fires placed by hand
+    (fire_places.csv): {address_key: [(barangay, area)]}.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.places = {}
 
     def keys_for(self, barangay_name):
         return self.setdefault(canonical(barangay_name), PlaceKeys())
@@ -247,12 +255,22 @@ def _read(path):
         return list(csv.DictReader(fh))
 
 
+def address_key(text):
+    return ' '.join((text or '').upper().split())
+
+
+def placed_areas(text, index):
+    """[(barangay, area)] fire_places.csv gives this address, or [] if nobody placed it by hand."""
+    return getattr(index, 'places', {}).get(address_key(text), [])
+
+
 def load_link_index(data_dir):
     """
     Every way an address can name an area, per barangay, from the purok data
     folder: other spellings (name_variants.csv), an unplaced purok's nearest
-    placed sitio (purok_points.csv), and the landmarks and streets the build
-    put in an area (place_areas.csv). A file that isn't there is skipped.
+    placed sitio (purok_points.csv), the landmarks and streets the build put
+    in an area (place_areas.csv), and the fires placed by hand
+    (fire_places.csv). A file that isn't there is skipped.
     """
     data_dir = Path(data_dir)
     index = LinkIndex()
@@ -281,6 +299,10 @@ def load_link_index(data_dir):
             index.keys_for(row['barangay']).landmarks.append((_words_of(row['place']), row['area']))
         elif row['kind'] == 'street' and float(row['share'] or 0) >= STREET_SHARE:
             index.add(row['barangay'], street_key(row['place']), row['area'], 'street')
+
+    for row in _read(data_dir / 'fire_places.csv'):
+        index.places[address_key(row['address'])] = [(row['barangay'], area.strip())
+                                                     for area in row['areas'].split(' + ')]
     return index
 
 
