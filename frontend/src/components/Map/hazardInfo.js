@@ -92,7 +92,8 @@ export function guidanceFor(type) {
   return GUIDANCE[hazardKey(type)];
 }
 
-export const DRRMO_HOTLINE = { label: '(032) 407-5928', tel: 'tel:+63324075928' };
+// Same number as the DRRMO card in components/Hotlines/HotlineGrid.jsx
+export const DRRMO_HOTLINE = { label: '(0969) 453-6321', tel: 'tel:+639694536321' };
 
 // Used to sort a barangay's hazards, most serious first
 export const SEVERITY_RANK = { Red: 3, Orange: 2, Green: 1 };
