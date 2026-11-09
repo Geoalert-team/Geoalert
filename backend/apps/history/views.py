@@ -23,7 +23,8 @@ def _filtered(request):
     (records, None) narrowed by ?barangay, ?purok, ?severity, ?date_from and
     ?date_to, or (None, error response). The hazard type is left to the caller.
     """
-    records = HistoricalRecord.objects.select_related('hazard_type', 'barangay')
+    # Sent once per record, the barangay's outline was most of this query's data
+    records = HistoricalRecord.objects.select_related('hazard_type', 'barangay').defer('barangay__boundary')
 
     barangay = request.query_params.get('barangay')
     purok = (request.query_params.get('purok') or '').strip()

@@ -1,4 +1,5 @@
 from django.contrib.gis.db import models
+from django.db import connection
 
 
 class Barangay(models.Model):
@@ -48,6 +49,21 @@ class Purok(models.Model):
 
     def __str__(self):
         return f'{self.name}, {self.barangay}'
+
+    @classmethod
+    def outlines_version(cls):
+        """
+        A fingerprint that changes when a purok or its barangay is added,
+        edited or removed. load_puroks writes in bulk and often from another
+        laptop, so no signal or local cache would see it; Postgres gives every
+        new version of a row a new xmin, and reading those reads no outlines.
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT md5(string_agg(p.prk_id::text || ':' || p.xmin::text || ':' || b.xmin::text, "
+                "',' ORDER BY p.prk_id)) FROM purok p JOIN barangay b ON b.brgy_id = p.brgy_id"
+            )
+            return cursor.fetchone()[0] or 'empty'
 
     @classmethod
     def member_counts(cls):

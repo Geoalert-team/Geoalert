@@ -67,7 +67,7 @@ def is_fresh(request, etag):
     return etag in [t.strip().removeprefix('W/') for t in sent.split(',') if t.strip()]
 
 
-def cached_body(etag, build):
+def cached_body(etag, build, keep=REFRESH_EVERY):
     """
     The response body for this exact tag, built at most once.
 
@@ -78,7 +78,7 @@ def cached_body(etag, build):
     rebuilds and the rest are handed its copy.
 
     `build` returns a plain dict. Use only on endpoints that answer every
-    caller the same way.
+    caller the same way. `keep` is how long to hold it, in seconds.
     """
     key = f'geoalert:map-body:{etag}'
     try:
@@ -88,7 +88,7 @@ def cached_body(etag, build):
     if body is None:
         body = build()
         try:
-            cache.set(key, body, REFRESH_EVERY)
+            cache.set(key, body, keep)
         except Exception:
             pass  # no cache: built every time, as before
     return body

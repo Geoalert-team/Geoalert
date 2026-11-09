@@ -48,8 +48,13 @@ Open `https://your-domain.com`. If this is a new, empty database, also run:
 ```bash
 cd /opt/geoalert/backend
 sudo -u geoalert -H env DJANGO_SETTINGS_MODULE=config.settings.production venv/bin/python manage.py seed_data
+sudo -u geoalert -H env DJANGO_SETTINGS_MODULE=config.settings.production venv/bin/python manage.py load_barangays
+sudo -u geoalert -H env DJANGO_SETTINGS_MODULE=config.settings.production venv/bin/python manage.py load_puroks
 sudo -u geoalert -H env DJANGO_SETTINGS_MODULE=config.settings.production venv/bin/python manage.py createsuperuser
 ```
+
+A new database has no past hazard records. Sign in as DRRMO and import them
+from the import page.
 
 ## Before real people use it
 

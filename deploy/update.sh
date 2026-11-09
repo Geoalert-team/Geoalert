@@ -31,6 +31,9 @@ echo "== Checking"
 for _ in $(seq 1 30); do
   if curl -fsS -o /dev/null -H "Host: ${SITE#https://}" -H "X-Forwarded-Proto: https" http://127.0.0.1:8000/api/auth/csrf/; then
     echo "GeoAlert is answering."
+    # Builds the purok layer now, so the first visitor doesn't wait for it
+    curl -fsS -o /dev/null --max-time 120 -H "Host: ${SITE#https://}" -H "X-Forwarded-Proto: https" \
+      http://127.0.0.1:8000/api/barangays/puroks/ || echo "The purok layer will be built on the first map visit."
     exit 0
   fi
   sleep 1
