@@ -21,7 +21,7 @@ Sign in to the server as root, then:
 
 ```bash
 apt-get update && apt-get install -y git
-git clone -b merge-scout https://github.com/Geoalert-team/Geoalert.git /opt/geoalert
+git clone -b feature/geoalert-updates https://github.com/Geoalert-team/Geoalert.git /opt/geoalert
 bash /opt/geoalert/deploy/setup.sh your-domain.com
 ```
 
@@ -63,7 +63,7 @@ accounts you no longer need.
 
 ## Releasing new code
 
-Push to the branch, then on the server:
+Push to `feature/geoalert-updates`, then on the server:
 
 ```bash
 bash /opt/geoalert/deploy/update.sh
