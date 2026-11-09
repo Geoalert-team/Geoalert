@@ -1,6 +1,5 @@
-import { byPurok, filledPuroks, historyLine, purokLevel, splitFills, thresholdText, typeNoun, areaTitle } from './purokLevels';
+import { byPurok, filledPuroks, historyLine, purokLevel, splitFills, typeNoun, areaTitle } from './purokLevels';
 
-const T = { years: 5, moderate: 3, extreme: 5 };
 const RESULTS = [
   { purok: 7, type: 'Fire', count: 2, level: 'Green' },
   { purok: 7, type: 'Flood', count: 4, level: 'Orange' },
@@ -53,8 +52,6 @@ test('the hover line and the copy', () => {
   expect(historyLine(levels.get('7'), ['Landslide'], 5)).toBe('No landslides in the last 5 years');
   expect(historyLine(levels.get('8'), ['Fire', 'Flood'], 5)).toBe('No past hazards in the last 5 years');
   expect(historyLine(levels.get('7'), [], 5)).toBe('');
-  expect(thresholdText(T)).toBe('1–2 · 3–4 · 5+ past events in the last 5 years');
-  expect(thresholdText({ years: 3, moderate: 2, extreme: 3 })).toBe('1 · 2 · 3+ past events in the last 3 years');
   expect(typeNoun(['Fire'], 1)).toBe('fire');
   expect(typeNoun(['Fire', 'Flood'], 2)).toBe('past hazards');
   expect(areaTitle(21, ['Fire'], 5)).toBe('21 fires in the last 5 years');

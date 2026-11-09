@@ -3,6 +3,10 @@ from .base import *
 DEBUG = False
 
 SECURE_SSL_REDIRECT = True
+# Nginx ends HTTPS and passes requests on over plain HTTP. Only it can set
+# this header, so it is believed only behind a proxy (BEHIND_PROXY in base.py).
+if BEHIND_PROXY:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True

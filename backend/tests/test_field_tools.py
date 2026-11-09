@@ -4,23 +4,11 @@ from types import SimpleNamespace
 from django.contrib.gis.geos import MultiPolygon, Point, Polygon
 from django.test import SimpleTestCase
 
-from apps.hazards.field_views import read_point
 from apps.hazards.models import HazardZone, ZoneFieldMark
 
 
 def square(x0, y0, x1, y1):
     return Polygon(((x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0)), srid=4326)
-
-
-class ReadPointTests(SimpleTestCase):
-    def test_reads_either_spelling(self):
-        self.assertEqual(read_point({'lat': '10.2', 'lng': '123.8'}).coords, (123.8, 10.2))
-        self.assertEqual(read_point({'latitude': 10.2, 'longitude': 123.8}).coords, (123.8, 10.2))
-
-    def test_rejects_nonsense(self):
-        self.assertIsNone(read_point({'lat': 'x', 'lng': 1}))
-        self.assertIsNone(read_point({'lat': 100, 'lng': 1}))
-        self.assertIsNone(read_point({}))
 
 
 class MarkDisagreementTests(SimpleTestCase):

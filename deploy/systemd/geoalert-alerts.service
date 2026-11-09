@@ -1,0 +1,15 @@
+[Unit]
+Description=GeoAlert alert jobs (held Extreme alerts, unread reminders, stale-zone nudges)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=geoalert
+WorkingDirectory=/opt/geoalert/backend
+Environment=DJANGO_SETTINGS_MODULE=config.settings.production
+ExecStart=/opt/geoalert/backend/venv/bin/python manage.py release_pending_alerts --loop
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

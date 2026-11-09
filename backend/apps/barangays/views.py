@@ -1,6 +1,3 @@
-from django.shortcuts import render
-
-# Create your views here.
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -9,7 +6,7 @@ from rest_framework import status
 from apps.barangays.models import Barangay, Purok
 from apps.hazards.models import HazardZone
 from apps.barangays.serializers import (
-    BarangayGeoSerializer, BarangaySerializer, PurokGeoSerializer, sitio_leftovers,
+    BarangayGeoSerializer, PurokGeoSerializer, sitio_leftovers,
 )
 
 

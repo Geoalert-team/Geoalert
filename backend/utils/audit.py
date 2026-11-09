@@ -7,13 +7,13 @@ same shape and the Logs tab can render them all the same way.
 """
 
 from apps.admin_dashboard.models import AuditLog
+from utils.login_throttle import throttle_ip
 
 
 def client_ip(request):
-    forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
-    if forwarded:
-        return forwarded.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR')
+    """The visitor's address, by the same rule as the login throttle, so a forged header can't reach the log."""
+    ip = throttle_ip(request)
+    return None if ip == 'unknown' else ip
 
 
 def log_event(request, action, table='', target_id='', details='', user=None):

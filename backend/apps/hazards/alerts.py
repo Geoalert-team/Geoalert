@@ -26,10 +26,8 @@ logger = logging.getLogger(__name__)
 
 # Extreme alerts wait this long for a second officer, then go out anyway.
 # Long enough for someone on duty to look; short enough that an empty
-# office at 2 AM can't hold back a warning.
-# This is the default; a System Administrator can change it from the
-# configuration panel, so code reads approval_window().
-APPROVAL_WINDOW = timedelta(minutes=10)
+# office at 2 AM can't hold back a warning. A System Administrator sets it
+# from the configuration panel.
 
 
 def approval_window():
@@ -45,7 +43,6 @@ def needs_second_approval(severity):
 
 # An Extreme alert nobody in a barangay has opened after this long is sent
 # to them again, once, and the publisher is told who hasn't read it.
-REMIND_AFTER = timedelta(minutes=15)  # default; see remind_after()
 
 
 def remind_after():
@@ -255,7 +252,7 @@ def issue_alert(zone, issued_by, manual_ids=None, suffix=''):
 
 def release_overdue_approvals(now=None):
     """
-    Send every Extreme alert that has waited past APPROVAL_WINDOW without a
+    Send every Extreme alert that has waited past approval_window() without a
     second officer. Returns how many went out.
 
     There is no task scheduler in this project, so this runs whenever
@@ -345,7 +342,7 @@ def release_overdue_approvals(now=None):
 def remind_unread_extreme(now=None):
     """
     Re-send Extreme alerts that barangay personnel haven't opened after
-    REMIND_AFTER, once per alert, and tell the officer who published it
+    remind_after(), once per alert, and tell the officer who published it
     which barangays haven't read it. Returns how many alerts were followed up.
 
     Only personnel are reminded: they act on the ground, and DRRMO already

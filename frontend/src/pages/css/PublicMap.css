@@ -217,7 +217,6 @@
   font-weight: 700;
   font-size: .88rem;
 }
-.pm-pill-sample { background: #fdf5de; color: #7a5700; }
 .pm-pill-error { background: #fcebeb; color: #a12f2f; }
 
 /* ---------- Legend ---------- */
@@ -239,52 +238,6 @@
 .pm-legend ul { display: grid; gap: 6px; }
 .pm-legend li { display: flex; align-items: center; gap: 10px; font-size: .9rem; }
 .pm-legend-dot { width: 12px; height: 12px; border-radius: 50%; }
-
-/* ---------- Map pins ---------- */
-.pm-pin-wrap { background: none; border: 0; }
-
-.pm-pin {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  margin: 2px;
-  border: 3px solid var(--pm-white, #fff);
-  border-radius: 50%;
-  background: var(--pin);
-  box-shadow: 0 4px 12px rgba(28, 46, 74, .35);
-  cursor: pointer;
-  transition: transform .2s ease;
-}
-.pm-pin svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: #fff;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.pm-pin:hover { transform: scale(1.1); }
-.pm-pin.is-selected {
-  transform: scale(1.25);
-  box-shadow: 0 0 0 4px rgba(28, 46, 74, .35), 0 6px 16px rgba(28, 46, 74, .4);
-}
-
-/* Soft pulse on high-risk pins so they stand out */
-.pm-pin.is-high::after {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  border: 3px solid var(--pin);
-  animation: pm-pulse 2s ease-out infinite;
-}
-@keyframes pm-pulse {
-  from { transform: scale(1); opacity: .7; }
-  to { transform: scale(1.9); opacity: 0; }
-}
 
 /* ---------- Details panel ---------- */
 .pm-panel {
@@ -613,14 +566,13 @@
   .pm *, .pm *::before, .pm *::after { transition: none !important; animation: none !important; }
 }
 /* Ground confirmation from the barangay, shown only once answered */
-.pm-verified, .pm-disputed {
+.pm-disputed {
   margin: 12px 0 0;
   padding: 10px 12px;
   border-radius: 10px;
   font-size: .86rem;
   line-height: 1.45;
 }
-.pm-verified { background: #e8f6ee; color: #16693a; border-left: 3px solid #1f9d55; }
 .pm-disputed { background: #fcebeb; color: #a12f2f; border-left: 3px solid #d64545; }
 /* Officer view on a hazard: who has opened its alert */
 .hp-receipts {

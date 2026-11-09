@@ -75,6 +75,11 @@ Running it on more than one machine is safe: nothing is sent twice. On your own 
 while developing you don't need it.
 
 --------------------------------------------------------------------------------
+Deploying
+
+See deploy/README.md.
+
+--------------------------------------------------------------------------------
 Tests
 
 GitHub runs them on every push and pull request (the Actions tab): the backend tests on

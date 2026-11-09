@@ -1,0 +1,2 @@
+# The server runs these on Linux, where Windows line endings break them
+deploy/** text eol=lf

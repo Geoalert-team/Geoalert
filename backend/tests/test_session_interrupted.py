@@ -1,7 +1,6 @@
 """
 A request whose session another request deleted while it ran (a logout in a
-second tab, an expired session ended by a parallel request, the dev server's
-fresh-tab sign-out) answers normally, signed out, instead of Django's bare
+second tab, an expired session ended by a parallel request) answers normally, signed out, instead of Django's bare
 400 "SessionInterrupted": the reset-password page and the app's start-up
 showed that 400 as an error.
 """
@@ -45,3 +44,43 @@ class ConcurrentLogoutTests(TestCase):
 
         SessionMiddleware(view)(request)
         self.assertEqual(engine.SessionStore(session_key=key).load()['last_activity'], 42)
+
+
+class StaleCookieTests(TestCase):
+    """
+    A request still carrying a session that has since been replaced (it left
+    the browser before a new sign-in finished) must not clear the cookie: by
+    the time its answer lands, the browser's cookie is the new session's.
+    """
+
+    def request_with_cookie(self, key):
+        request = RequestFactory().get('/api/notifications/')
+        request.COOKIES[settings.SESSION_COOKIE_NAME] = key
+        return request
+
+    def test_an_answer_for_a_replaced_session_leaves_the_cookie_alone(self):
+        store = engine.SessionStore()
+        store['_auth_user_id'] = '1'
+        store.create()
+        key = store.session_key
+        engine.SessionStore(session_key=key).delete()  # a new sign-in replaced it
+
+        def view(req):
+            req.session.get('_auth_user_id')  # the request looks up who it is
+            return HttpResponse('ok')
+
+        response = SessionMiddleware(view)(self.request_with_cookie(key))
+        self.assertNotIn(settings.SESSION_COOKIE_NAME, response.cookies)
+        self.assertEqual(response['Vary'], 'Cookie')
+
+    def test_signing_out_still_clears_the_cookie(self):
+        store = engine.SessionStore()
+        store['_auth_user_id'] = '1'
+        store.create()
+
+        def view(req):
+            req.session.flush()
+            return HttpResponse('ok')
+
+        response = SessionMiddleware(view)(self.request_with_cookie(store.session_key))
+        self.assertEqual(response.cookies[settings.SESSION_COOKIE_NAME].value, '')
