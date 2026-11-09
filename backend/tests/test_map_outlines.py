@@ -2,8 +2,11 @@
 The map's heaviest data. Outlines are read from the database only when
 something draws them, and the purok layer is rebuilt only when it has changed.
 """
+import gzip
+import json
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.cache import cache
 from django.db import connection, transaction
@@ -97,6 +100,15 @@ class PurokLayerCacheTests(TestCase):
         self.assertEqual(again.content, b'')
         # Nginx marks the tag as weak when it compresses the answer
         self.assertEqual(self.client.get(self.URL, HTTP_IF_NONE_MATCH=f'W/{etag}').status_code, 304)
+
+    def test_a_compressed_answer_still_gets_the_short_reply_next_time(self):
+        gzip_first = ['django.middleware.gzip.GZipMiddleware', *settings.MIDDLEWARE]
+        with override_settings(MIDDLEWARE=gzip_first):
+            first = self.client.get(self.URL, HTTP_ACCEPT_ENCODING='gzip')
+            self.assertEqual(first['Content-Encoding'], 'gzip')
+            self.assertIn('Purok Sambag', [f['properties']['name'] for f in json.loads(gzip.decompress(first.content))['features']])
+            again = self.client.get(self.URL, HTTP_IF_NONE_MATCH=first['ETag'], HTTP_ACCEPT_ENCODING='gzip')
+        self.assertEqual(again.status_code, 304)
 
     def test_a_browser_with_an_old_copy_gets_the_new_one(self):
         etag = self.client.get(self.URL)['ETag']

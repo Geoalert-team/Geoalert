@@ -1,5 +1,8 @@
 # Deploying GeoAlert
 
+This guide is for a rented Linux server. For free hosting on Vercel and Render,
+follow [FREE_HOSTING.md](FREE_HOSTING.md) instead.
+
 One Ubuntu server runs everything: Nginx serves the website and passes the API
 to Gunicorn, and a second service runs the alert jobs. The database and photo
 storage stay on Supabase.
