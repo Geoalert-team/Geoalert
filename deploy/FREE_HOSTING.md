@@ -130,15 +130,19 @@ the cron job (step 5), then push.
    | Framework | Create React App |
    | Root Directory | `frontend` |
 
-3. Add one environment variable: `REACT_APP_API_URL` set to
-   `https://geoalert-talisay.vercel.app`.
-4. Deploy.
-5. In the project's settings, set the **production branch** to
-   `feature/geoalert-updates`, then deploy that branch.
+   Add no environment variables. The built website calls its own address, and
+   `vercel.json` forwards `/api/` to Render.
+3. Deploy. This first build comes from `main` and may fail; that's expected.
+4. In **Settings > Environments > Production**, set **Branch Tracking** to
+   `feature/geoalert-updates`. Push to that branch to build it. Don't press
+   **Redeploy** on a `main` deployment: Redeploy rebuilds the same branch.
+5. Under **Domains**, add `geoalert-talisay.vercel.app` if the project got a
+   different address, and always open the site there. Sign-in works only on the
+   address listed in Render's `CSRF_TRUSTED_ORIGINS`, not on the long
+   per-deployment addresses.
 
-If Vercel gives you a different address, use it for `REACT_APP_API_URL` and, on
-Render, for `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `CORS_ORIGIN` and
-`FRONTEND_URL`.
+To use a different address, put it in Render's `ALLOWED_HOSTS`,
+`CSRF_TRUSTED_ORIGINS`, `CORS_ORIGIN` and `FRONTEND_URL`.
 
 ## 5. Keep the backend awake
 

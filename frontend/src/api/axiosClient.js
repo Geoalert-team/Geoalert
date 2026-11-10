@@ -1,8 +1,19 @@
 import axios from 'axios';
 import { errorMessage } from './errorMessage';
 
+// Where the backend is. A production build calls its own address, and Vercel
+// (or Nginx on a server) forwards /api/ to Django, so the browser talks to one
+// origin and the session cookie works. In development it is runserver.
+// REACT_APP_API_URL overrides both; stray spaces and a trailing slash are
+// dropped, since a pasted value often carries them.
+export function apiBase(env = process.env) {
+  const url = (env.REACT_APP_API_URL || '').trim().replace(/\/+$/, '');
+  if (url) return url;
+  return env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
+}
+
 const client = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
+  baseURL: apiBase(),
   withCredentials: true, // send/receive the Django session cookie
   headers: { 'Content-Type': 'application/json' },
 });
