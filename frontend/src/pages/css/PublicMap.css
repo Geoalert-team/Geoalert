@@ -553,9 +553,14 @@
     max-height: 62%;
     border-radius: 24px 24px 0 0;
     transform: translateY(calc(100% + 24px));
+    /* With only a max-height the sheet has no fixed height, so the inner
+       box's height: 100% would grow with its content and never scroll.
+       As a flex column, the inner box shrinks to the sheet and scrolls. */
+    display: flex;
+    flex-direction: column;
   }
   .pm-panel.is-open { transform: translateY(0); }
-  .pm-panel-inner { padding: 20px; }
+  .pm-panel-inner { padding: 20px; height: auto; min-height: 0; flex: 0 1 auto; }
 
   .pm-legend.is-hidden-mobile,
   .pm-status.is-hidden-mobile { display: none; }
