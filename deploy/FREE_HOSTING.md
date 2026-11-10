@@ -11,15 +11,28 @@ time, so use a paid server before anyone relies on GeoAlert in a real emergency
 Screens on these sites change often, so a button may be named slightly
 differently from what's written here.
 
-## 1. Choose the database
+## 1. The database
 
-The live site uses whichever database you give it. If that's the one your
-laptops use, testing on a laptop changes live data, so a separate Supabase
-project is safer.
+The live site uses the team's current Supabase project, which already has
+everything it needs. In step 3 you copy its `DB_*` and `SUPABASE_S3_*` values
+from your `backend/.env`, except `DB_PORT`, which stays `6543`. On that port
+Render borrows a connection only while it answers a request, which leaves the 15
+regular connections for the laptops.
 
-**To use a new project:** create it in the Singapore region, create a storage
-bucket and S3 access keys for it, then put its details in `backend/.env` on one
-laptop for a moment and run:
+Because the laptops and the live site share one database:
+
+- **Testing on a laptop changes the live site.** Test reports, alerts, imports
+  and deletions show up for the public straight away.
+- **Check before running `migrate` from another branch.** A change that removes
+  or renames something breaks the live site, so ask whoever looks after the
+  deployment first.
+- **Give each teammate their own account**, and change the shared test
+  passwords before going public (step 7).
+
+### If the live site moves to its own project later
+
+Create the new project in the Singapore region, with a storage bucket and S3
+access keys. Put its details in `backend/.env` on one laptop for a moment and run:
 
 ```bash
 cd backend
@@ -137,5 +150,10 @@ own.
   address exactly, starting with `https://`.
 - **Bad Request (400) from the backend:** the address is missing from
   `ALLOWED_HOSTS`.
+- **"Too many clients" or "max clients" in Render's logs:** check that Render's
+  `DB_PORT` is `6543`.
+- **The first forecast after a restart is slow:** that's normal. Loading the
+  forecast's model takes about half a minute on the free plan, and it's quick
+  after that.
 - **Everything stopped mid-month:** you may have used up Render's 5 GB of data or
   750 hours. It resets at the start of the next month.
