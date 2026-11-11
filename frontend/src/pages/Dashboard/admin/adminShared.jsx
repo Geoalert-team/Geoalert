@@ -83,6 +83,12 @@ export const ACTION_META = {
   POST_NEWS: { label: 'Posted news', tone: 'good', icon: 'list' },
   EDIT_NEWS: { label: 'Edited news', tone: 'info', icon: 'edit' },
   DELETE_NEWS: { label: 'Deleted news', tone: 'bad', icon: 'x' },
+  ADD_VIDEO: { label: 'Added a video', tone: 'good', icon: 'list' },
+  EDIT_VIDEO: { label: 'Edited a video', tone: 'info', icon: 'edit' },
+  DELETE_VIDEO: { label: 'Deleted a video', tone: 'bad', icon: 'x' },
+  ADD_VIDEO_CATEGORY: { label: 'Added a video category', tone: 'good', icon: 'list' },
+  RENAME_VIDEO_CATEGORY: { label: 'Renamed a video category', tone: 'info', icon: 'edit' },
+  DELETE_VIDEO_CATEGORY: { label: 'Deleted a video category', tone: 'bad', icon: 'x' },
   CONFIG_CHANGED: { label: 'Changed a setting', tone: 'warn', icon: 'shield' },
 };
 

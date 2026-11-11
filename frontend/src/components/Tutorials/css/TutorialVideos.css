@@ -1,0 +1,360 @@
+/* Tutorial videos on the What To Do page (components/Tutorials).
+   The wt- player and playlist rules moved here from WhatToDo.css unchanged. */
+
+/* ---------- Videos ---------- */
+.wt-videos {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.wt-player {
+  overflow: hidden;
+  border: 1px solid var(--ph-line);
+  border-radius: var(--ph-radius-lg);
+  background: var(--ph-white);
+}
+.wt-player-frame {
+  aspect-ratio: 16 / 9;
+  background: var(--ph-navy);
+}
+.wt-player-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+.wt-player-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+}
+.wt-player-info h3 { margin-top: 6px; font-size: 1.2rem; font-weight: 800; }
+
+.wt-video-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--ph-pill);
+  background: var(--ph-mist);
+  color: var(--ph-navy);
+  font-weight: 700;
+  font-size: .8rem;
+}
+
+.wt-youtube-link {
+  color: var(--ph-navy);
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+
+/* As tall as the player, scrolling the rest: height 0 keeps a long list from
+   stretching the row, and min-height then fills what the player sets */
+.wt-playlist {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  height: 0;
+  min-height: 100%;
+  padding-right: 6px;
+  overflow-y: auto;
+}
+.wt-playlist-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 10px;
+  border: 2px solid transparent;
+  border-radius: var(--ph-radius);
+  background: var(--ph-mist);
+  text-align: left;
+  font-family: var(--ph-font-body);
+  cursor: pointer;
+  transition: border-color .2s ease, background-color .2s ease;
+}
+.wt-playlist-item:hover { background: #e7ecf3; }
+.wt-playlist-item.is-active { border-color: var(--ph-navy); background: var(--ph-white); }
+.wt-playlist-item img {
+  width: 120px;
+  aspect-ratio: 16 / 9;
+  flex-shrink: 0;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #cfd7e3;
+}
+.wt-playlist-item strong { display: block; color: var(--ph-heading); font-size: .96rem; line-height: 1.35; }
+.wt-playlist-item small { color: var(--ph-soft); font-size: .85rem; }
+
+@media (max-width: 1000px) {
+  .wt-videos { grid-template-columns: 1fr; }
+  /* Stacked under the player: the page scrolls, not the list */
+  .wt-playlist { height: auto; min-height: 0; padding-right: 0; overflow-y: visible; }
+}
+
+/* ---------- Category chips ---------- */
+.tv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.tv-chip {
+  padding: 7px 16px;
+  border: 1px solid var(--ph-line);
+  border-radius: var(--ph-pill);
+  background: var(--ph-white);
+  color: var(--ph-navy);
+  font-family: var(--ph-font-body);
+  font-weight: 700;
+  font-size: .9rem;
+  cursor: pointer;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+.tv-chip:hover { border-color: var(--ph-navy); }
+.tv-chip.is-active { border-color: var(--ph-navy); background: var(--ph-navy); color: #fff; }
+
+/* ---------- Player additions ---------- */
+.wt-player-frame video { width: 100%; height: 100%; display: block; background: #000; }
+.tv-description { margin-top: 6px; color: var(--ph-soft); line-height: 1.5; white-space: pre-line; }
+
+/* An uploaded video has no thumbnail: a play tile the size of YouTube's */
+.tv-thumb-mp4 {
+  display: grid;
+  place-items: center;
+  width: 120px;
+  aspect-ratio: 16 / 9;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--ph-navy);
+}
+.tv-thumb-mp4 svg { width: 28px; height: 28px; fill: #fff; }
+
+/* ---------- Category picker (in the Add videos form) ---------- */
+.tv-picker { display: grid; gap: 8px; }
+.tv-picker-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tv-field-label { color: var(--ph-heading); font-weight: 700; font-size: .92rem; }
+.tv-picker select,
+.tv-picker input {
+  min-width: 200px;
+  padding: 8px 10px;
+  border: 1px solid var(--ph-line);
+  border-radius: 8px;
+  background: var(--ph-white);
+  font-family: var(--ph-font-body);
+  font-size: .95rem;
+}
+
+/* ---------- Add videos form (staff only) ---------- */
+.tv-form {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px 22px;
+  border: 1px solid var(--ph-line);
+  border-radius: var(--ph-radius-lg);
+  background: var(--ph-white);
+}
+.tv-form-head h3 { font-size: 1.15rem; font-weight: 800; color: var(--ph-heading); }
+
+.tv-media { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.tv-media-box {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--ph-line);
+  border-radius: var(--ph-radius);
+  background: var(--ph-mist);
+}
+.tv-media-box textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--ph-line);
+  border-radius: 8px;
+  font-family: var(--ph-font-body);
+  font-size: .95rem;
+  resize: vertical;
+}
+.tv-drop { border-style: dashed; border-width: 2px; }
+.tv-drop p { color: var(--ph-soft); }
+.tv-file-btn { position: relative; overflow: hidden; }
+/* The real input stays reachable for keyboards and screen readers, over the label */
+.tv-file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.tv-note { color: var(--ph-soft); font-size: .88rem; }
+
+.tv-rows { display: grid; gap: 10px; padding: 0; list-style: none; }
+.tv-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 180px;
+  gap: 14px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid var(--ph-line);
+  border-left-width: 4px;
+  border-radius: 12px;
+}
+.tv-row-ok { border-left-color: var(--ph-low); }
+.tv-row-bad { border-left-color: var(--ph-high); background: var(--ph-high-tint); }
+.tv-row-done { border-left-color: var(--ph-navy); opacity: .8; }
+.tv-row-thumb img,
+.tv-row-thumb video,
+.tv-row-thumb .tv-thumb-mp4 {
+  width: 140px;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #000;
+}
+.tv-row-fields { display: grid; gap: 6px; min-width: 0; }
+.tv-row-source { color: var(--ph-soft); font-size: .82rem; overflow-wrap: anywhere; }
+.tv-row-fields input,
+.tv-row-fields textarea,
+.tv-row-fields select {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--ph-line);
+  border-radius: 8px;
+  background: var(--ph-white);
+  font-family: var(--ph-font-body);
+  font-size: .93rem;
+}
+.tv-row-status { display: grid; justify-items: end; gap: 6px; text-align: right; }
+.tv-row-state { font-weight: 700; font-size: .88rem; color: var(--ph-heading); }
+.tv-row-error { color: #a32d2d; font-size: .85rem; }
+.tv-row-remove {
+  width: 34px;
+  height: 34px;
+  padding: 6px;
+  border: 1px solid var(--ph-line);
+  border-radius: 50%;
+  background: var(--ph-white);
+  cursor: pointer;
+}
+.tv-row-remove svg { fill: none; stroke: #a32d2d; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tv-row-remove:hover { border-color: var(--ph-high); }
+
+.tv-progress {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 20px;
+  overflow: hidden;
+  border-radius: var(--ph-pill);
+  background: var(--ph-mist);
+}
+.tv-progress-bar { position: absolute; inset: 0 auto 0 0; background: var(--ph-navy); transition: width .2s ease; }
+.tv-progress-text {
+  position: relative;
+  display: block;
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+  mix-blend-mode: difference;
+}
+
+.tv-form-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
+.tv-done { margin-right: auto; font-weight: 800; color: var(--ph-low); }
+.tv-primary {
+  padding: 9px 20px;
+  border: 0;
+  border-radius: var(--ph-pill);
+  background: var(--ph-navy);
+  color: #fff;
+  font-family: var(--ph-font-body);
+  font-weight: 700;
+  cursor: pointer;
+}
+.tv-primary:hover:not(:disabled) { background: var(--ph-navy-hover); }
+.tv-primary:disabled { opacity: .45; cursor: not-allowed; }
+
+@media (max-width: 760px) {
+  .tv-media { grid-template-columns: 1fr; }
+  .tv-row { grid-template-columns: 1fr; }
+  .tv-row-status { justify-items: start; text-align: left; }
+}
+
+/* ---------- Staff tools on the section ---------- */
+/* ---------- Category header: small label, ‹ name ›, description ---------- */
+.tv-head { margin-bottom: 28px; }
+.ph-section-head .tv-eyebrow {
+  margin: 0 0 6px;
+  color: var(--ph-soft);
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.tv-title-row { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.tv-arrow {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--ph-line);
+  border-radius: 50%;
+  background: var(--ph-white);
+  cursor: pointer;
+  transition: border-color .2s ease, background-color .2s ease;
+}
+.tv-arrow svg { width: 20px; height: 20px; fill: none; stroke: var(--ph-navy); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.tv-arrow:hover,
+.tv-arrow:focus-visible { border-color: var(--ph-navy); background: var(--ph-mist); }
+/* The neighbour's name, shown on hover and on keyboard focus. Not laid out
+   until shown (display, not opacity), so a hidden tip can't widen a phone's
+   page; and anchored to the arrow's outer edge, so it opens toward the middle
+   of the page and never past the screen's edge. */
+.tv-arrow::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  z-index: 2;
+  display: none;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--ph-navy);
+  color: #fff;
+  font-family: var(--ph-font-body);
+  font-size: .8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.tv-arrow-prev::after { left: 0; }
+.tv-arrow-next::after { right: 0; }
+.tv-arrow:focus-visible::after { display: block; }
+/* Only where hovering is real: on a touch screen a tap would leave it stuck */
+@media (hover: hover) {
+  .tv-arrow:hover::after { display: block; }
+}
+.ph-section-head .tv-category-description { margin-top: 10px; }
+
+/* ---------- Chips with the staff tools beside them ---------- */
+.tv-nav-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.tv-nav-row .tv-chips { margin-bottom: 0; }
+.tv-staff-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Edit and Delete under the chosen playlist card only */
+.tv-item-tools { display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px; }
+.tv-picker-edit { display: grid; gap: 8px; max-width: 520px; }
+.tv-picker-edit input,
+.tv-picker-edit textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--ph-line);
+  border-radius: 8px;
+  background: var(--ph-white);
+  font-family: var(--ph-font-body);
+  font-size: .95rem;
+  resize: vertical;
+}

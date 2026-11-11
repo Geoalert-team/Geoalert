@@ -7,6 +7,7 @@ import { guidanceApi } from '../api/guidanceApi';
 
 jest.mock('../context/AuthContext', () => ({ useAuth: jest.fn() }));
 jest.mock('../components/Navbar/PublicNavbar', () => () => null);
+jest.mock('../components/Tutorials/TutorialVideos', () => () => null);
 jest.mock('../api/hazardsApi', () => ({
   hazardsApi: { types: () => Promise.resolve([{ id: 1, name: 'Flood' }, { id: 2, name: 'Landslide' }, { id: 3, name: 'Fire' }]) },
 }));

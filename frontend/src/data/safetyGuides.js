@@ -169,18 +169,3 @@ export const UNIVERSAL_TIPS = [
     text: 'Pack enough water, food and medicine to last your family at least three days.',
   },
 ];
-
-// First aid training videos.
-// "id" is the part after watch?v= in a YouTube link.
-export const VIDEOS = [
-  { id: 'gn6xt1ca8A0', hazard: 'First aid', title: 'How to use your first aid kit' },
-  { id: 'ea1RJUOiNfQ', hazard: 'First aid', title: 'How to do the primary survey' },
-  { id: 'GmqXqwSV3bo', hazard: 'First aid', title: 'The recovery position' },
-  { id: 'NxO5LvgqZe0', hazard: 'First aid', title: 'How to treat severe bleeding' },
-  { id: '2v8vlXgGXwE', hazard: 'First aid', title: 'How to treat a fracture' },
-  { id: 'fKzdiuseEIw', hazard: 'First aid', title: 'How to bandage a hand' },
-  { id: 'PwfBGkBXkFA', hazard: 'First aid', title: 'How to make a sling' },
-  { id: '4e7evinsfm0', hazard: 'First aid', title: 'How to treat cuts and grazes' },
-  { id: 'Uqy2IUhYkVA', hazard: 'First aid', title: 'What to do if someone has a spinal cord injury' },
-  { id: '0jps5SZlTdo', hazard: 'First aid', title: 'How to bandage a sprain' },
-];

@@ -2,11 +2,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import { hazardIconPath } from '../components/Map/hazardInfo';
-import { GUIDES, PHASES, UNIVERSAL_TIPS, VIDEOS } from '../data/safetyGuides';
+import { GUIDES, PHASES, UNIVERSAL_TIPS } from '../data/safetyGuides';
 import { hazardsApi } from '../api/hazardsApi';
 import { guidanceApi } from '../api/guidanceApi';
 import { useAuth } from '../context/AuthContext';
 import GuidanceEditor from '../components/Guidance/GuidanceEditor';
+import TutorialVideos from '../components/Tutorials/TutorialVideos';
 import { guidanceError, stepsFrom } from '../utils/guidance';
 import logo from '../assets/images/logo1.png';
 import './css/PublicHome.css';
@@ -66,7 +67,6 @@ export default function WhatToDo() {
   const filtersActive = searchParams.has('hazard') || searchParams.has('phase') || Boolean(qParam);
 
   const [packed, setPacked] = useState({});
-  const [videoId, setVideoId] = useState(VIDEOS[0]?.id);
 
   const [hazardTypeMap, setHazardTypeMap] = useState({}); // { Flood: 1, ... }
   const [liveArticles, setLiveArticles] = useState([]);
@@ -207,17 +207,10 @@ export default function WhatToDo() {
     }
   }
 
-  const sortedVideos = [...VIDEOS].sort(
-    (a, b) => Number(b.hazard === hazard) - Number(a.hazard === hazard),
-  );
-  const activeVideo = VIDEOS.find((v) => v.id === videoId) || VIDEOS[0];
-
   const packedCount = guide.supplies.filter((item) => packed[`${hazard}:${item}`]).length;
 
   function chooseHazard(name) {
     applyFilters({ hazard: name, phase: DEFAULT_PHASE });
-    const firstVideo = VIDEOS.find((v) => v.hazard === name);
-    if (firstVideo) setVideoId(firstVideo.id);
   }
 
   function toggleSupply(item) {
@@ -560,64 +553,7 @@ export default function WhatToDo() {
           </div>
         </section>
 
-        {/* ============ VIDEOS ============ */}
-        <section className="ph-section">
-          <div className="ph-container">
-            <div className="ph-section-head">
-              <h2>First aid videos</h2>
-              <p>Short first aid lessons. Watch and share them with your family.</p>
-            </div>
-
-            {activeVideo && (
-              <div className="wt-videos">
-                <div className="wt-player">
-                  <div className="wt-player-frame">
-                    <iframe
-                      key={activeVideo.id}
-                      src={`https://www.youtube-nocookie.com/embed/${activeVideo.id}`}
-                      title={activeVideo.title}
-                      allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="wt-player-info">
-                    <div>
-                      <span className="wt-video-tag">{activeVideo.hazard}</span>
-                      <h3>{activeVideo.title}</h3>
-                    </div>
-                    <a className="wt-youtube-link" href={`https://www.youtube.com/watch?v=${activeVideo.id}`} target="_blank" rel="noopener noreferrer">
-                      Watch on YouTube
-                    </a>
-                  </div>
-                </div>
-
-                <ul className="wt-playlist" aria-label="More videos">
-                  {sortedVideos.map((video) => (
-                    <li key={video.id}>
-                      <button
-                        type="button"
-                        className={`wt-playlist-item ${video.id === activeVideo.id ? 'is-active' : ''}`}
-                        aria-current={video.id === activeVideo.id}
-                        onClick={() => setVideoId(video.id)}
-                      >
-                        <img
-                          src={`https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`}
-                          alt=""
-                          loading="lazy"
-                        />
-                        <span>
-                          <strong>{video.title}</strong>
-                          <small>{video.hazard}</small>
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </section>
+        <TutorialVideos />
       </main>
 
       {/* ============ FOOTER ============ */}
