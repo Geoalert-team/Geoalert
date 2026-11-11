@@ -1,6 +1,6 @@
-import { drawsShading, hazardAreas, hazardAt, hazardPuroks, markerSpots } from './hazardPins';
+import { hazardAreas, hazardAt, hazardPuroks, markerSpots } from './hazardPins';
 
-test('a report-made fire is one marker per purok, no shading', () => {
+test('a report-made fire is one marker per purok', () => {
   const fire = {
     id: 'z',
     position: [10, 123],
@@ -10,14 +10,11 @@ test('a report-made fire is one marker per purok, no shading', () => {
     { key: 'z:0', position: [10.1, 123.1], purok: 'Purok Sambag' },
     { key: 'z:1', position: [10.2, 123.2], purok: null },
   ]);
-  expect(drawsShading(fire)).toBe(false);
 });
 
-test('a drawn zone keeps one marker and its shading', () => {
+test('a drawn zone keeps one marker', () => {
   const flood = { id: 'f', position: [10, 123], pins: [] };
   expect(markerSpots(flood)).toEqual([{ key: 'f', position: [10, 123], purok: null }]);
-  expect(drawsShading(flood)).toBe(true);
-  expect(drawsShading({ id: 'g', position: [10, 123] })).toBe(true);
 });
 
 // Two square puroks side by side: Sambag 0-1, Lubi 1-2 (lng), both lat 0-1

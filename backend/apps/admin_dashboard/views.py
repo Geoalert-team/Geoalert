@@ -8,7 +8,6 @@ from rest_framework import status
 from django.db.models import Count, Q
 from django.utils import timezone
 
-from apps.accounts.models import User
 from apps.hazards.models import HazardZone, HazardAlert
 from apps.notifications.models import Notification
 from apps.guidance.models import GuidanceContent
@@ -23,6 +22,7 @@ from apps.admin_dashboard.serializers import (
     generate_temp_password,
 )
 from utils.permissions import IsSystemAdmin, IsDRRMOOfficer
+from utils.audit import client_ip
 from utils.health import system_health
 
 
@@ -30,7 +30,7 @@ def log_action(user, action, target_table='', target_id='', details='', request=
     """Helper to create an audit log entry."""
     ip = None
     if request:
-        ip = request.META.get('REMOTE_ADDR')
+        ip = client_ip(request)
     AuditLog.objects.create(
         user=user,
         action=action,

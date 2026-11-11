@@ -60,7 +60,6 @@
 }
 .drm-report-photo:hover img { border-color: var(--db-heading); }
 .drm-report-photo:focus-visible { outline: 2px solid var(--db-heading); outline-offset: 3px; }
-.drm-photo-missing { margin-top: 8px; font-size: .78rem; color: var(--db-soft); font-style: italic; }
 
 @media (max-width: 520px) {
   .drm-report-photo img { max-width: 100%; }
@@ -79,14 +78,6 @@
 .drm-hazard-icon svg { width: 55%; height: 55%; }
 .drm-hazard-md { width: 42px; height: 42px; }
 .drm-hazard-lg { width: 52px; height: 52px; border-radius: 14px; }
-
-/* Impact chips */
-.drm-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.drm-chip { padding: 2px 9px; border-radius: 7px; background: var(--db-mist); color: var(--db-soft); font-size: .78rem; }
-.drm-chip strong { font-weight: 800; }
-.drm-chip.is-bad  { background: var(--bad-tint);  color: var(--bad); }
-.drm-chip.is-warn { background: var(--warn-tint); color: var(--warn); }
-.drm-chip.is-info { background: var(--info-tint); color: var(--info); }
 
 /* ---------- Detail modal ---------- */
 .drm-detail { padding-top: 14px; }

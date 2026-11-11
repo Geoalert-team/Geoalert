@@ -82,3 +82,49 @@ jobs:
         run: npm test -- --watchAll=false
       - name: Production build
         run: npm run build
+
+  docker:
+    name: Server image starts and answers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: geoalert
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image Render builds
+        run: docker build -t geoalert-backend backend
+      - name: Start it the way Render does
+        run: >-
+          docker run -d --name backend --network host
+          -e PORT=10000 -e SECRET_KEY=ci-only-not-a-secret
+          -e DB_NAME=geoalert -e DB_USER=postgres -e DB_PASSWORD=postgres
+          -e DB_HOST=127.0.0.1 -e DB_PORT=5432 -e DB_SSLMODE=disable
+          -e ALLOWED_HOSTS=geoalert.test -e BEHIND_PROXY=True
+          geoalert-backend
+      - name: Set up its database
+        run: docker exec backend python manage.py migrate --noinput
+      - name: The forecast's libraries load
+        run: docker exec backend python -c "import sklearn.linear_model, sklearn.metrics"
+      - name: It answers
+        run: |
+          ask() { curl -fsS -o /dev/null -H 'Host: geoalert.test' -H 'X-Forwarded-Proto: https' "http://127.0.0.1:10000$1"; }
+          for _ in $(seq 1 60); do ask /api/auth/csrf/ && break; sleep 2; done
+          ask /api/auth/csrf/
+          ask /api/barangays/puroks/
+          ask /api/hazards/
+          ask "/api/history/forecast/?month=12"
+      - name: Server log
+        if: always()
+        run: docker logs backend

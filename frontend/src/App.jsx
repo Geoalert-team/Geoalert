@@ -1,6 +1,7 @@
 import React, { useLayoutEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthContext";
+import Gate from "./components/Gate";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -14,21 +15,6 @@ import Dashboard from "./pages/Dashboard";
 import HistoricalData from "./pages/HistoricalData";
 import Security from "./pages/Security";
 import ReportingAnalytics from "./pages/ReportingAnalytics";
-
-function Gate({ children, roles }) {
-  const { user, loading } = useAuth();
-  const { pathname } = useLocation();
-  if (loading) return <p style={{ padding: 24 }}>Checking session…</p>;
-  if (!user) return <Navigate to="/login" replace />;
-  // A password an administrator set has to be replaced first; the server
-  // refuses everything else until it is.
-  if (user.must_change_password && pathname !== "/app/security") {
-    return <Navigate to="/app/security" replace />;
-  }
-  const roleName = user.role?.name || user.role;
-  if (roles && !roles.includes(roleName)) return <Navigate to="/app/dashboard" replace />;
-  return children;
-}
 
 function AppRoutes() {
   const { pathname } = useLocation();

@@ -21,7 +21,6 @@ lookups and the one transaction.
 """
 import hashlib
 import re
-from datetime import datetime
 
 from apps.barangays.aliases import canonical, match_barangay
 from apps.history import bfp

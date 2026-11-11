@@ -38,12 +38,9 @@ from utils.audit import log_event
 from utils.session_limits import start_session_clock
 from utils.system_settings import get_setting
 
-# F1 lockout: this many wrong passwords locks the account for LOCK_MINUTES.
-# These are the defaults; a System Administrator can change both from the
-# configuration panel (utils/system_settings.py), so code reads them through
-# max_failed_logins() and lock_minutes().
-MAX_FAILED_LOGINS = 5
-LOCK_MINUTES = 15
+# F1 lockout: this many wrong passwords locks the account for a while. A
+# System Administrator sets both from the configuration panel
+# (utils/system_settings.py).
 
 
 def max_failed_logins():

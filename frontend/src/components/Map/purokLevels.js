@@ -14,11 +14,6 @@ const RANK = { Green: 1, Orange: 2, Red: 3 };
 const LABEL = { Green: 'Low', Orange: 'Moderate', Red: 'Extreme' };
 const NOUNS = { Flood: 'flood', Landslide: 'landslide', Fire: 'fire' };
 
-// Highest first, as the legend lists them
-export const PUROK_LEVELS = ['Red', 'Orange', 'Green'].map((code) => ({
-  code, label: LABEL[code], color: SEVERITY[code].color,
-}));
-
 const period = (years) => `in the last ${years === 1 ? 'year' : `${years} years`}`;
 
 // /api/history/purok-levels/ results as purok id (string) → { type: { count, level } }
@@ -90,12 +85,6 @@ export function historyLine(entry, types, years) {
     .filter((t) => entry?.[t]?.count)
     .map((t) => `${entry[t].count} ${typeNoun([t], entry[t].count)} (${LABEL[entry[t].level]})`);
   return parts.length ? parts.join(', ') : `No ${typeNoun(types, 2)} ${period(years)}`;
-}
-
-// "1–2 · 3–4 · 5+ past events in the last 5 years"
-export function thresholdText(t) {
-  const span = (a, b) => (a === b ? `${a}` : `${a}–${b}`);
-  return `${span(1, t.moderate - 1)} · ${span(t.moderate, t.extreme - 1)} · ${t.extreme}+ past events ${period(t.years)}`;
 }
 
 // The panel's summary: "21 fires in the last 5 years"
