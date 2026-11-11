@@ -59,6 +59,11 @@ named puroks. The landmarks are downloaded once and kept in `.hazard_cache`
 | Google Maps (one name at a time) and a Wikimapia rescan | Pins and addresses for sitios, puroks and subdivisions added on 2026-11-08 | Public listings | 2026-11-08 |
 | BIR zonal values via ren.ph, Bulacao ("Barangay Road (Nat'l Rd- Candulawan Bdry)") | Estimated area of the fire logged as "Candulawan, Bulacao" | Public record | 2026-11-08 |
 | Philstar/The Freeman 2022 (Sitio Cassare, Cansojong) | That the sitio exists and lies beside South Road Properties; its point is an estimate | News report | 2026-11-08 |
+| Google Maps result cards saved by the 2026-11-06 to 11-08 searches, checked again against every name on file | Pins for Sitio Hawod (Bulacao), Purok Butyog (Lawaan III), Purok Scarlet (Linao), Purok Opal (Dumlog), Purok Maloloy-on (Tabunok); the parent each names | Public listings | 2026-11-10 |
+| Supreme Court, People v. Cabañero, G.R. No. 207229 (2017), via lawphil.net | "Sitio Jawod, Barangay Bulacao, Talisay City" (= Sitio Hawod) | Public record | 2026-11-10 |
+| Overture and OpenStreetMap places; Visayan Electric notices; BFP fire log | Joanna Legacy Homes (Biasong), beside Palm River Subdivision | As above | 2026-11-10 |
+| Google Maps searches for "purok" and "sitio" from points 350 m apart (500 m in the uplands), plus saved result cards | Pins for Purok Magtalisay (Dumlog), Purok Kamansilis (Maghaway), Purok Hannos and Purok Masinabtanon (Tabunok); better pins for Purok Avocado and Purok Chicos (San Roque) and Purok Banana (Jaclupan); "Napu Purok 1" chapel and pins putting Tapul's Purok 1 in Sitio Napo. The four new puroks' sitio or zone is the one their pin falls in; no source names it | Public listings | 2026-11-11 |
+| BIR zonal values via ren.ph, all 22 barangays | Subdivision and sitio names per barangay, checked against the map (nearly all were already on it) | Public record | 2026-11-11 |
 | PhilAtlas (PSA 2015 census) | Households per barangay | PSA open data | 2026-10-23 |
 | Microsoft Global ML Building Footprints | Where the houses are (sizes the areas) | ODbL 1.0 | 2026-10-23 |
 

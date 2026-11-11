@@ -4,18 +4,18 @@ Biasong,Biasong Elementary School,landmark,Peace Subdivision,1.0
 Biasong,Bulwagang Pambarangay ng Biasong,landmark,Zone 2,1.0
 Biasong,Malibu Residences Clubhouse,landmark,Sitio Botoy,1.0
 Biasong,NEWSIM TRAINING SITE,landmark,Zone 2,1.0
-Biasong,Burgos Street,street,Ranger,0.625
-Biasong,Corinthans Street,street,Purok Maryland,0.614
-Biasong,F.C.Perez Drive,street,Perez Drive Subdivision,0.857
+Biasong,Burgos Street,street,Ranger,0.636
+Biasong,Corinthans Street,street,Purok Maryland,0.627
+Biasong,F.C.Perez Drive,street,Perez Drive Subdivision,0.881
 Biasong,Fidel Bas Street,street,Purok Orchids,1.0
-Biasong,Mananga River,street,Purok Maryland,0.354
+Biasong,Mananga River,street,Purok Maryland,0.353
 Biasong,New Horizon Road,street,Puerto del Sol Subdivision,1.0
 Biasong,Pacific Street,street,Puerto del Sol Subdivision,1.0
 Biasong,Paseo Anastacia,street,Pueblo San Ricardo,0.829
 Biasong,Paseo Feliz,street,Pueblo San Ricardo,1.0
 Biasong,Paseo Ponciana,street,Pueblo San Ricardo,1.0
 Biasong,Sandy Shores Lane,street,Puerto del Sol Subdivision,1.0
-Biasong,Sunset Street,street,Puerto del Sol Subdivision,0.886
+Biasong,Sunset Street,street,Puerto del Sol Subdivision,0.854
 Bulacao,Barangay Hall,landmark,Rustyville Subdivision,1.0
 Bulacao,Bulacao Barangay Hall,landmark,Rustyville Subdivision,1.0
 Bulacao,Bulacao Elementary School,landmark,Gotianuy Subdivision,1.0
@@ -25,19 +25,19 @@ Bulacao,East Visayan Academy,landmark,AAC Compound,1.0
 Bulacao,Santa Catalina Chapel,landmark,Villa Estelita Subdivision,1.0
 Bulacao,South Town Centre,landmark,Purok Mapasalamaton,1.0
 Bulacao,1st Street,street,Tuastumban,0.708
-Bulacao,3rd Street,street,Sitio Holy Child,0.417
+Bulacao,3rd Street,street,Sitio Holy Child,0.422
 Bulacao,6th Street,street,Plainville,1.0
 Bulacao,7th Street,street,Plainville,1.0
 Bulacao,8th Street Extension,street,Plainville,1.0
-Bulacao,9th Street,street,Purok Mangihatagon,0.901
-Bulacao,Abores Street,street,Hillside Subdivision,0.576
+Bulacao,9th Street,street,Purok Mangihatagon,0.858
+Bulacao,Abores Street,street,Hillside Subdivision,0.518
 Bulacao,Andrin Street,street,Purok Mapailubon,0.575
 Bulacao,Bulacao River,street,AAC Compound,0.24
 Bulacao,Mansueto Drive,street,Saint Barachiel Subdivision,0.408
-Bulacao,Mansueto Road,street,Mansueto Subdivision,0.5
+Bulacao,Mansueto Road,street,Mansueto Subdivision,0.502
 Bulacao,Mighty Villa Street,street,Mighty Villa Subdivision,1.0
-Bulacao,Natalio Bacalso Avenue,street,Sitio Alegre,0.338
-Bulacao,Rio de Janeiro Street,street,Gotianuy Subdivision,0.331
+Bulacao,Natalio Bacalso Avenue,street,Sitio Alegre,0.323
+Bulacao,Rio de Janeiro Street,street,Gotianuy Subdivision,0.338
 Bulacao,Rose Street,street,Saint Barachiel Subdivision,1.0
 Bulacao,Sacramento Street,street,Gotianuy Subdivision,0.695
 Bulacao,Saint John Street,street,Mingcourt Village,1.0
@@ -132,75 +132,75 @@ Dumlog,Life Giver Christian Ministries Inc.,landmark,Sitio Santo Nino,1.0
 Dumlog,Sitio Letmon Chapel,landmark,Purok Saging,1.0
 Dumlog,Talisay City National High School,landmark,Purok Botig,1.0
 Dumlog,Unico Department Store,landmark,Belleza Compound,1.0
-Dumlog,Amazon Street,street,Zone 6,1.0
-Dumlog,Armourhead Street,street,San Pio Subdivision,0.578
+Dumlog,Amazon Street,street,Purok Magtalisay,0.403
+Dumlog,Armourhead Street,street,San Pio Subdivision,0.619
 Dumlog,Aruana Street,street,Deca Homes,0.654
 Dumlog,Bahia Solano Street,street,Deca Homes Phase 2,1.0
 Dumlog,Balos Beach Street,street,Deca Homes Phase 2,1.0
 Dumlog,Boracay Street,street,Deca Homes Phase 2,1.0
-Dumlog,Burgos Street,street,Purok Okra,0.237
+Dumlog,Burgos Street,street,Purok Lemonsito,0.212
 Dumlog,Cahabon Street,street,Zone 5,1.0
-Dumlog,Canizares Street,street,Reubenville Subdivision,0.504
+Dumlog,Canizares Street,street,Purok Opal,0.623
 Dumlog,Catfish Street,street,Deca Homes,1.0
-Dumlog,Cebu South Coastal Road,street,Purok Kamatis,0.52
-Dumlog,Central Biasong,street,Purok Botig,0.822
+Dumlog,Cebu South Coastal Road,street,Purok Kamatis,0.473
+Dumlog,Central Biasong,street,Purok Botig,0.576
 Dumlog,Champagne Beach Street,street,Deca Homes Phase 2,1.0
 Dumlog,Champaka Compound,street,Champaka Compound,1.0
 Dumlog,Colorado Street,street,Sitio Tugas,1.0
-Dumlog,Congo Street,street,Zone 5,1.0
-Dumlog,Danube Street,street,San Pio Subdivision,0.512
+Dumlog,Congo Street,street,Purok Magtalisay,1.0
+Dumlog,Danube Street,street,San Pio Subdivision,0.561
 Dumlog,El Nido Street,street,Deca Homes Phase 2,1.0
 Dumlog,Emperor Street,street,Purok Talisay,0.401
 Dumlog,Ernesto Bascon Street,street,Smyrna Homes,0.203
-Dumlog,Euphrates Street,street,San Pio Subdivision,0.245
-Dumlog,Fidel Bas Street,street,Upper Riverside,0.728
+Dumlog,Euphrates Street,street,Purok Magtalisay,0.435
+Dumlog,Fidel Bas Street,street,Zone 4,0.531
 Dumlog,Flagfin Street,street,Deca Homes,1.0
 Dumlog,Gardner Bay Street,street,Deca Homes Phase 2,1.0
 Dumlog,Grand Anse Street,street,Deca Homes Phase 2,1.0
 Dumlog,Hamlet Street,street,Purok Madecacao,0.886
 Dumlog,Hammerhead Street,street,Purok Talisay,0.841
-Dumlog,Hammerjaw Street,street,Deca Homes,0.705
-Dumlog,J. P. Rizal Street,street,Zone 3,0.722
+Dumlog,Hammerjaw Street,street,Deca Homes,0.706
+Dumlog,J. P. Rizal Street,street,Zone 3,0.489
 Dumlog,Koi Street,street,Purok Madecacao,1.0
 Dumlog,Longfin Street,street,Sitio Baybay,0.624
-Dumlog,Mananga River,street,Sitio Paglaom,0.548
-Dumlog,Mananga Street,street,Zone 5,0.901
-Dumlog,Mekong Street,street,San Pio Subdivision,0.593
-Dumlog,Memuru Street,street,Sitio Tugas,0.739
+Dumlog,Mananga River,street,Sitio Paglaom,0.526
+Dumlog,Mananga Street,street,Zone 5,1.0
+Dumlog,Mekong Street,street,San Pio Subdivision,0.544
+Dumlog,Memuru Street,street,Sitio Tugas,0.506
 Dumlog,Mississippi Street,street,Zone 6,0.884
 Dumlog,Mosman Street,street,Zone 5,1.0
 Dumlog,Nihiwatu Beach Street,street,Deca Homes Phase 2,1.0
-Dumlog,Nile Street,street,Sitio Romahan,0.545
+Dumlog,Nile Street,street,Purok Magtalisay,0.601
 Dumlog,Opaleye Street,street,Purok Talisay,0.933
 Dumlog,Ottawa Street,street,Zone 6,1.0
 Dumlog,Palui Island Street,street,Deca Homes Phase 2,1.0
 Dumlog,Panama Beach Street,street,Deca Homes Phase 2,1.0
-Dumlog,Piranha Street,street,Deca Homes,0.504
+Dumlog,Piranha Street,street,San Pio Subdivision,0.521
 Dumlog,Playa Paraiso Street,street,Deca Homes Phase 2,1.0
 Dumlog,Porto da Barra Street,street,Deca Homes Phase 2,1.0
-Dumlog,Ramona Village Street,street,Belleza Compound,0.344
+Dumlog,Ramona Village Street,street,Belleza Compound,0.348
 Dumlog,Rhine Street,street,Sitio Tugas,1.0
-Dumlog,Rio Grande Street,street,Sitio Tugas,0.795
-Dumlog,San Isidro Road,street,Belleza Compound,0.424
+Dumlog,Rio Grande Street,street,Sitio Tugas,0.798
+Dumlog,San Isidro Road,street,Belleza Compound,0.617
 Dumlog,Santa Monica Street,street,Deca Homes Phase 2,1.0
 Dumlog,Stingray Street,street,Sitio Baybay,0.75
 Dumlog,Thames Street,street,Zone 5,1.0
-Dumlog,Tigris Street,street,San Pio Subdivision,0.893
+Dumlog,Tigris Street,street,Purok Magtalisay,0.397
 Dumlog,Tres Alinos Street,street,Deca Homes Phase 2,1.0
-Dumlog,Tres Aliños Street,street,Sitio Santo Nino,0.284
+Dumlog,Tres Aliños Street,street,Sitio Santo Nino,0.287
 Dumlog,Tulum Street,street,Deca Homes Phase 2,1.0
 Dumlog,Volga Street,street,Sitio Tugas,1.0
 Dumlog,Whale Street,street,Purok Talisay,0.736
-Dumlog,Wheaton Street,street,Deca Homes,0.91
+Dumlog,Wheaton Street,street,Deca Homes,0.903
 Dumlog,Whitehaven Beach Street,street,Deca Homes Phase 2,1.0
 Dumlog,Wineglass Bay Street,street,Deca Homes Phase 2,1.0
-Dumlog,Yangze Street,street,San Pio Subdivision,0.864
+Dumlog,Yangze Street,street,San Pio Subdivision,0.84
 Dumlog,Yarra Street,street,Zone 5,1.0
 Dumlog,Zion Drive,street,Smyrna Homes,1.0
 Jaclupan,Barangay Hall,landmark,Purok Kolo,1.0
 Jaclupan,Jaclupan Barangay Hall,landmark,Purok Kolo,1.0
 Jaclupan,Jaclupan Covered Court,landmark,Purok Kolo,1.0
-Jaclupan,Jaclupan Elementary School,landmark,Purok Kolo,1.0
+Jaclupan,Jaclupan Elementary School,landmark,Purok Banana,1.0
 Jaclupan,Jaclupan National High School,landmark,Purok Kolo,1.0
 Jaclupan,Manguilamon Elementary School,landmark,Purok Tambis,1.0
 Jaclupan,Bulacao River,street,Camp 2,1.0
@@ -301,19 +301,19 @@ Lawaan II,Sapphire Street,street,Fairview Village,1.0
 Lawaan II,Topaz Street,street,Fairview Village,1.0
 Lawaan III,Barangay Hall,landmark,Purok Nangka,1.0
 Lawaan III,Ferguson Memorial Baptist Church,landmark,Sitio Pagtambayayong,1.0
-Lawaan III,Iglesia ni Cristo,landmark,Caduldulan,1.0
+Lawaan III,Iglesia ni Cristo,landmark,Purok Grapes,1.0
 Lawaan III,Lawa-an Ⅲ Barangay Hall,landmark,Purok Nangka,1.0
 Lawaan III,Lawa-an Ⅲ Barangay Health Station,landmark,Purok Nangka,1.0
 Lawaan III,Lawa-an Ⅲ Elementary School,landmark,Sitio Crusher,1.0
 Lawaan III,Lawa-an Ⅲ National High School,landmark,Purok Nangka,1.0
 Lawaan III,Robinsons Supermarket,landmark,Purok Cherries,1.0
 Lawaan III,St Joseph The Foster Father of Jesus Chapel,landmark,San Jose Village,1.0
-Lawaan III,Amistoso Street,street,Azienda Lombardi,1.0
+Lawaan III,Amistoso Street,street,Sitio Pagtambayayong,1.0
 Lawaan III,Lawaan 3 Street,street,Hermelie Homes,0.259
 Lawaan III,Magay Street,street,Kamagayan Village,1.0
-Lawaan III,Maghaway Road,street,Sitio Villa Raya,0.524
+Lawaan III,Maghaway Road,street,Sitio Villa Raya,0.516
 Lawaan III,Mahogany Street,street,Kamagayan Village,0.981
-Lawaan III,Mananga River,street,Purok Pomelo,0.55
+Lawaan III,Mananga River,street,Purok Tambis,0.548
 Lawaan III,Molave Street,street,San Jose Village,1.0
 Lawaan III,Narra Street,street,San Jose Village,0.998
 Lawaan III,Natalio Bacalso Avenue,street,Purok Orange,1.0
@@ -322,33 +322,33 @@ Lawaan III,Yakal Street,street,San Jose Village,1.0
 Linao,Barangay Hall,landmark,Sitio Upper,1.0
 Linao,Linao Barangay Hall,landmark,Sitio Upper,1.0
 Linao,Linao Elementary School,landmark,Sitio Orchid Bell,1.0
-Linao,Puregold,landmark,Upper San Miguel,1.0
-Linao,South Coast Centre,landmark,Upper San Miguel,1.0
+Linao,Puregold,landmark,Purok Yellow Bell,1.0
+Linao,South Coast Centre,landmark,Purok Scarlet,1.0
 Linao,Bienvenido Street,street,Sitio Didos,1.0
-Linao,Chicos Street,street,Sitio San Miguel,0.961
+Linao,Chicos Street,street,Sitio San Miguel,0.947
 Linao,Christian Ville Road,street,Purok Rose,0.756
-Linao,Fidel Bas Street,street,Purok Rose,0.499
-Linao,Linao Road,street,Upper San Miguel,0.311
-Linao,Natalio Bacalso Avenue,street,Camella Homes,0.664
+Linao,Fidel Bas Street,street,Purok Rose,0.494
+Linao,Linao Road,street,Purok Daisy,0.249
+Linao,Natalio Bacalso Avenue,street,Camella Homes,0.473
 Maghaway,Barangay Hall,landmark,Purok Lomboy 2,1.0
 Maghaway,Maghaway Barangay Hall,landmark,Purok Lomboy 2,1.0
 Maghaway,Maghaway Covered Court,landmark,Purok Lomboy 2,1.0
 Maghaway,Maghaway Elementary School,landmark,Sitio Abacajan,1.0
 Maghaway,Maghaway National High School,landmark,Purok Lomboy 2,1.0
 Maghaway,Amistoso Street,street,Purok Kulo 3,0.934
-Maghaway,Kolot Street,street,Purok Kulo 3,0.838
-Maghaway,Linao Road,street,Purok Sambag 2,0.644
+Maghaway,Kolot Street,street,Purok Kulo 3,0.712
+Maghaway,Linao Road,street,Purok Sambag 2,0.543
 Maghaway,Maghaway Road,street,Sitio Abacajan,0.506
-Maghaway,Mananga River,street,Sitio EEA,0.298
+Maghaway,Mananga River,street,Sitio Ibo,0.212
 Maghaway,Tapul Road,street,Purok Avocado 1,0.488
-Maghaway,Tapul-Maghaway Road,street,Purok Lomboy 2,0.399
-Maghaway,Toledo - Tabunok Road,street,Sitio EEA,0.741
-Maghaway,Via Dela Scala,street,Azienda Firenze,0.448
-Maghaway,Via Giotto,street,Azienda Subdivision,0.75
+Maghaway,Tapul-Maghaway Road,street,Purok Lomboy 2,0.398
+Maghaway,Toledo - Tabunok Road,street,Purok Kamansilis,0.259
+Maghaway,Via Dela Scala,street,Azienda Firenze,0.434
+Maghaway,Via Giotto,street,Azienda Subdivision,0.723
 Maghaway,Via Paladio,street,Azienda Firenze,1.0
 Maghaway,Via Pietro,street,Azienda Subdivision,0.749
-Maghaway,Via Romana,street,Azienda Firenze,0.545
-Maghaway,Via Strozzi,street,Azienda Genova,0.88
+Maghaway,Via Romana,street,Azienda Firenze,0.554
+Maghaway,Via Strozzi,street,Azienda Genova,0.733
 Maghaway,Via Vasari,street,Azienda Firenze,1.0
 Maghaway,Via Vespucci,street,Azienda Firenze,1.0
 Maghaway,Via Vittorio,street,Azienda Firenze,1.0
@@ -496,13 +496,13 @@ San Isidro,Yellow Street,street,Purok Vischoa,0.651
 San Roque,Barangay Hall,landmark,Sitio San Roque Proper,1.0
 San Roque,Bulwagang Barangay ng San Roque,landmark,Sitio San Roque Proper,1.0
 San Roque,Cebu Evergreen Memorial Park,landmark,Purok Agoho,1.0
-San Roque,Dynamic Herb-Borromeo Bros.,landmark,Purok Taloroton,1.0
+San Roque,Dynamic Herb-Borromeo Bros.,landmark,Purok Chicos,1.0
 San Roque,Laray Elementary School,landmark,Sitio Gimbuangan,1.0
-San Roque,Our Lady of Consolation Parish -Recoletos de Laray,landmark,Skyview Village,1.0
+San Roque,Our Lady of Consolation Parish -Recoletos de Laray,landmark,Purok Avocado,1.0
 San Roque,Pap's Fitness Gym,landmark,Skyview Village,1.0
 San Roque,San Roque Elementary School,landmark,Sitio San Roque Proper,1.0
 San Roque,San Roque National High School,landmark,Sitio San Roque Proper,1.0
-San Roque,St. Ignatius de Loyola Preparatory School Inc.,landmark,Purok San Rafael,1.0
+San Roque,St. Ignatius de Loyola Preparatory School Inc.,landmark,Purok Taloroton,1.0
 San Roque,The Flying Pig Park,landmark,Along Cebu South Coastal Road,1.0
 San Roque,1st Street,street,Jamestown,1.0
 San Roque,2nd Street,street,Jamestown,1.0
@@ -511,7 +511,7 @@ San Roque,4th Street,street,Jamestown,1.0
 San Roque,5th Street,street,Jamestown,1.0
 San Roque,Amber Street,street,Tiara del Sur,1.0
 San Roque,Amethyst Street,street,Tiara del Sur,0.88
-San Roque,Bulacao River,street,Purok Altis,1.0
+San Roque,Bulacao River,street,Purok Agoho,1.0
 San Roque,Cebu South Coastal Road,street,Along Cebu South Coastal Road,0.311
 San Roque,Citrine Street,street,Tiara del Sur,0.935
 San Roque,Dawis Road,street,Plainville 2,0.338
@@ -533,43 +533,43 @@ Tabunok,Gaisano Grand Fiesta Mall,landmark,Purok Sangi,1.0
 Tabunok,Golden FUS Department Store,landmark,Purok Makatarunganon,1.0
 Tabunok,Happy Mart,landmark,Purok Makatarunganon,1.0
 Tabunok,Kaking Department Store,landmark,Bacalso Compound,1.0
-Tabunok,River of Praise,landmark,Purok Juan Luna,1.0
+Tabunok,River of Praise,landmark,Purok Suliman,1.0
 Tabunok,Saint Joseph Parish,landmark,Sitio Panaghiusa,1.0
 Tabunok,San Isidro Multipurpose Activity Center,landmark,Victoria Village,1.0
 Tabunok,Seventh Day Adventist Church,landmark,Purok Lopez Jaena,1.0
 Tabunok,Shopwell,landmark,Purok Rizal,1.0
-Tabunok,Tabunoc Central Elementary School,landmark,Purok Juan Luna,1.0
+Tabunok,Tabunoc Central Elementary School,landmark,Zone 2,1.0
 Tabunok,Tabunok Barangay Hall,landmark,Purok Maalagaron,1.0
-Tabunok,Tabunok National High School,landmark,Purok Makatarunganon,1.0
+Tabunok,Tabunok National High School,landmark,Zone 2,1.0
 Tabunok,Tabunok Sports Complex,landmark,Purok Rizal,1.0
 Tabunok,3rd Street,street,Fairchild Subdivision,1.0
-Tabunok,7th Street,street,Fairchild Subdivision,0.682
-Tabunok,8th Street,street,Fairchild Subdivision,0.884
-Tabunok,8th Street Extension,street,Zone 1,1.0
-Tabunok,9th Street,street,Zone 1,0.818
+Tabunok,7th Street,street,Fairchild Subdivision,1.0
+Tabunok,8th Street,street,Fairchild Subdivision,1.0
+Tabunok,8th Street Extension,street,Fairchild Subdivision,1.0
+Tabunok,9th Street,street,Purok Maloloy-on,0.507
 Tabunok,B Street,street,Victoria Village,1.0
 Tabunok,C Street,street,Purok Lopez Jaena,0.638
 Tabunok,First Street,street,Tali Plains Subdivision,1.0
-Tabunok,H. Block Street,street,Sitio Mahayahay,0.743
+Tabunok,H. Block Street,street,Sitio Mahayahay,0.746
 Tabunok,Mananga River,street,Zone 3,0.686
 Tabunok,Mananga Ⅱ Street,street,Sitio Mananga I,1.0
 Tabunok,Mansueto Drive,street,Fairchild Subdivision,0.792
-Tabunok,Mansueto Road,street,Zone 2,0.882
+Tabunok,Mansueto Road,street,Zone 1,0.882
 Tabunok,Molave Extension,street,Happy Homes Subdivision,1.0
-Tabunok,Molave Street,street,Bacalso Compound,0.494
-Tabunok,Natalio Bacalso Avenue,street,Purok Makatarunganon,0.177
-Tabunok,Nonoc Road,street,Sitio Nonoc,0.867
-Tabunok,Rafael Rabaya Street,street,Purok Juan Luna,0.249
-Tabunok,Ruiz Drive,street,Ruiz Compound,0.495
-Tabunok,San Isidro Road,street,Purok Suliman,0.991
-Tabunok,Sangi Road,street,Purok Sangi,0.477
-Tabunok,Santo Nino Street,street,Sitio Nonoc,0.814
+Tabunok,Molave Street,street,Bacalso Compound,0.489
+Tabunok,Natalio Bacalso Avenue,street,Purok Sangi,0.249
+Tabunok,Nonoc Road,street,Purok Mabini,0.248
+Tabunok,Rafael Rabaya Street,street,Purok Juan Luna,0.24
+Tabunok,Ruiz Drive,street,Purok Suliman,0.404
+Tabunok,San Isidro Road,street,Purok Hannos,0.695
+Tabunok,Sangi Road,street,Purok Sangi,0.687
+Tabunok,Santo Nino Street,street,Sitio Nonoc,0.82
 Tabunok,Second Street,street,Tali Plains Subdivision,1.0
-Tabunok,Tabulasan Street,street,Purok Kalinaw,0.999
-Tabunok,Tabunok Flyover,street,Purok Juan Luna,0.498
+Tabunok,Tabulasan Street,street,Purok Kalinaw,0.848
+Tabunok,Tabunok Flyover,street,Purok Juan Luna,0.526
 Tabunok,Third Street,street,Tali Plains Subdivision,1.0
 Tabunok,Tiago Street,street,Purok Malipayon,1.0
-Tabunok,Victoria Street,street,Victoria Village,0.506
+Tabunok,Victoria Street,street,Victoria Village,0.49
 Tangke,Barangay Hall,landmark,Sitio Galaxy,1.0
 Tangke,Barangay Tangke Health Center,landmark,Sitio Magay,1.0
 Tangke,Bulwagang Barangay ng Tangke,landmark,Sitio Galaxy,1.0
@@ -596,6 +596,6 @@ Tapul,Bulwagang Barangay ng Tapul,landmark,Tapul Proper,1.0
 Tapul,Hawanay Elementary School,landmark,Sitio Hawanay,1.0
 Tapul,Tapul Elementary School,landmark,Purok 1,1.0
 Tapul,Tapul National High School,landmark,Purok 1,1.0
-Tapul,Camp 8 Road,street,Along Camp 8 Road,0.559
-Tapul,Hawanay Road,street,Along Hawanay Road,0.635
-Tapul,Tapul Road,street,Purok 7,0.394
+Tapul,Camp 8 Road,street,Along Camp 8 Road,0.768
+Tapul,Hawanay Road,street,Along Camp 8 Road,0.635
+Tapul,Tapul Road,street,Purok 1,0.441

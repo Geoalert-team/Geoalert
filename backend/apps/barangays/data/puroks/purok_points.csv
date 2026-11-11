@@ -123,7 +123,7 @@ Jaclupan,Camp 2,sitio,,10.289744,123.820468,"Google address: campo 2, EEA villag
 Jaclupan,Camp III,sitio,,10.305473,123.815095,outage notices (2) along Toledo - Tabunok Road,low,Visayan Electric,
 Jaclupan,Sitio Kawayan,sitio,,10.303569,123.816303,outage notices (2) along Toledo - Tabunok Road,low,Visayan Electric,also listed as a purok
 Jaclupan,Purok Avocado,purok,,10.307277,123.815398,outage notices (2) along Toledo - Tabunok Road,low,Visayan Electric,position along road approximate
-Jaclupan,Purok Banana,purok,,10.304383,123.815807,outage notices (1) along Toledo - Tabunok Road,low,Visayan Electric,position along road approximate
+Jaclupan,Purok Banana,purok,,10.302690,123.816880,"Google Maps place ""Jaclupan purok banana 1""",medium,Visayan Electric,position along road approximate; research 2026-11-11 C: moved 222 m from the outage-notice estimate to the Google place pin
 Jaclupan,Purok Kasagingan,purok,,10.304036,123.816120,outage notices (1) along Toledo - Tabunok Road,low,Visayan Electric,position along road approximate
 Jaclupan,Sitio Ipilipil,sitio,,10.303776,123.816252,outage notices (1) along Toledo - Tabunok Road,low,Visayan Electric,position along road approximate
 Jaclupan,Sitio Tabok Sapa,sitio,,10.306379,123.815141,outage notices (2) along Toledo - Tabunok Road,low,Visayan Electric,position along road approximate
@@ -320,7 +320,7 @@ San Roque,Purok Bakasi,purok,,10.254359,123.854756,outage notices (5) along Rafa
 San Roque,Purok Batong,purok,,10.254588,123.854387,outage notices (4) along Rafael Rabaya Street,low,Visayan Electric,position along road approximate
 San Roque,Purok Bayabas,purok,Sitio Laray,10.259021,123.855538,"address on the pin: Fahomai, Purok Bayabas Laray (Google Maps)",medium,Visayan Electric; research 2026-11-08,
 San Roque,Purok Bayang,purok,,10.255013,123.853685,outage notices (6) along Rafael Rabaya Street,low,Visayan Electric,
-San Roque,Purok Chicos,purok,,10.257981,123.866531,"outage notices (9) along Cebu South Coastal Road, Rafael Rabaya Street",low,Visayan Electric,
+San Roque,Purok Chicos,purok,,10.259000,123.859880,"Google Maps place ""KAWAYANAN (purok chicos)""",medium,Visayan Electric,research 2026-11-11 C: moved 737 m from the outage-notice estimate to the Google place pin
 San Roque,Purok Guyabano,purok,,10.254234,123.854957,outage notices (7) along Rafael Rabaya Street,low,Visayan Electric,
 San Roque,Purok Humay-humay,purok,,,,,,Visayan Electric,its notices name no road found on the map in San Roque
 San Roque,Purok Kalabasa,purok,,10.255491,123.852871,outage notices (4) along Rafael Rabaya Street,low,Visayan Electric,position along road approximate
@@ -335,7 +335,7 @@ San Roque,Purok Taloroton,purok,,10.256578,123.859258,"outage notices (6) along 
 San Roque,Purok Tambis,purok,Sitio Kimba,10.253253,123.856545,outage notices (5) along Rafael Rabaya Street,low,Visayan Electric,"parent from: Overture and Google: Purok Tambis, Kimba, San Roque"
 San Roque,Purok Tilapia,purok,,10.253914,123.855471,outage notices (11) along Rafael Rabaya Street,low,Visayan Electric,
 San Roque,Purok Okra,purok,,10.256696,123.850906,outage notices (2) along Rafael Rabaya Street,low,Visayan Electric,
-San Roque,Purok Avocado,purok,Sitio Laray,10.254160,123.860850,"Overture address ""V.H. Garces St., Purok Avocado Laray, San Roque""",low,Overture Maps,
+San Roque,Purok Avocado,purok,Sitio Laray,10.259670,123.857480,"Google Maps place ""Purok Avocado Laray""",medium,Overture Maps,"research 2026-11-11 C: moved 716 m from the Overture address point to the Google place pin, which names its sitio (Laray)"
 San Roque,Purok Kalapati,purok,Sitio Kimba,10.255870,123.852470,"Overture address ""Purok Kalapati, R. Rabaya St., Kimba San Roque""",low,Overture Maps,
 San Roque,Purok Sayaw,purok,Sitio Kadarohan,10.257930,123.855030,"Overture address ""Purok Sayaw, Daruhan Drive""",low,Overture Maps,
 San Roque,Jamestown,subdivision,Sitio Laray,10.262105,123.852762,OpenStreetMap outline,high,OpenStreetMap; Wikimapia,
@@ -382,7 +382,7 @@ Tapul,Sitio Napo,sitio,,10.289910,123.808533,Wikimapia outline,high,DSWD DROMIC;
 Tapul,Sitio Catican,sitio,,10.289850,123.813030,"name on the pin: Katikan, Napu, Tapul (Google Maps); fire log: Purok 7, Sitio Catican",medium,fire log; research 2026-11-08,
 Tapul,Sitio Hawanay,sitio,,10.306768,123.793119,OpenStreetMap place,high,OpenStreetMap,
 Tapul,Sitio Campo,sitio,,,,,,SunStar 2014 hazard list,
-Tapul,Purok 1,purok,,10.293163,123.805792,name on the pin: Napu Purok 1 Lower; two shops give Purok 1 Napu,medium,Visayan Electric; Google Maps 2026-11-08,its notices name no road found on the map in Tapul
+Tapul,Purok 1,purok,Sitio Napo,10.293163,123.805792,name on the pin: Napu Purok 1 Lower; two shops give Purok 1 Napu,medium,Visayan Electric; Google Maps 2026-11-08,"its notices name no road found on the map in Tapul; research 2026-11-11 A: parent fix, chapel ""Napu Purok 1 Lower"" and ""Purok 1 Napu Tapul"" (Google and Apple, 3 pins)"
 Tapul,Purok 2,purok,,,,,,Visayan Electric,its notices name no road found on the map in Tapul
 Tapul,Purok 3,purok,,10.289939,123.805397,Wikimapia outline,high,Visayan Electric; Wikimapia,
 Tapul,Purok 4,purok,,10.290100,123.800950,Google Maps pin,medium,Visayan Electric; fire log; fire log research 2026-11-06,its notices name no road found on the map in Tapul
@@ -655,3 +655,13 @@ Linao,Upper San Miguel,sitio,Sitio San Miguel,10.262240,123.817060,estimated ins
 Pooc,Purok Sunrise 7,purok,Sitio Sunrise,10.239046,123.824129,"estimated inside Sitio Sunrise (numbered series Purok Sunrise 1, 3, 4 in Sitio Sunrise); exact spot in the sitio unknown",low,research 2026-11-08,position inside its parent estimated
 Cansojong,Along Cebu South Coastal Road,purok,,10.252705,123.848000,Road strip kept so fires on this road keep an area,low,"estimated area, fire log",
 Pooc,Along Burgos Street,purok,,10.247444,123.828138,Road strip kept so fires on this road keep an area,low,"estimated area, fire log",
+Bulacao,Sitio Hawod,sitio,,10.268640,123.842590,"Google Maps place ""Sitio Hawod brgy.bulacao""",medium,"Google Maps; Overture ""Hawod Compound Bulacao""; Supreme Court G.R. No. 207229 (2017): ""Sitio Jawod, Barangay Bulacao, Talisay City""",research 2026-11-10 A
+Lawaan III,Purok Butyog,purok,Lower Caduldulan,10.262400,123.831070,"Google Maps place ""Purok Butyog - Lower Kadul""",medium,Google Maps,research 2026-11-10 A: parent named on the pin
+Linao,Purok Scarlet,purok,Sitio San Miguel,10.261310,123.816060,"Google Maps address ""Purok Scarlet, San Miguel""",low,Google Maps,research 2026-11-10 A: parent named in the address
+Dumlog,Purok Opal,purok,Reubenville Subdivision,10.246370,123.841950,"Google Maps place ""Reuben Ville Purok Opal""",medium,"Google Maps (2 places: ""Reuben Ville Purok Opal""; ""Reubenville Subdivision, Purok Opal, Canizares Street"")",research 2026-11-10 A: parent named on the pin
+Biasong,Joanna Legacy Homes,subdivision,,10.244320,123.832280,"Overture and OpenStreetMap place ""Joanna Legacy Homes""",medium,"Overture; OpenStreetMap; Visayan Electric notices; BFP fire log (""Palm River Subdivision, Joanna Homes"")",research 2026-11-10 A
+Tabunok,Purok Maloloy-on,purok,Sitio Nonoc,10.262080,123.845820,"Google Maps place ""Purok Maloloy-on"" (address ""sto.Nino street SMI nonoc tabunok"")",medium,Google Maps,research 2026-11-10 A: parent named in the address
+Dumlog,Purok Magtalisay,purok,Sitio Romahan,10.239170,123.836470,"Google Maps place ""Purok Magtalisay, Dumlog""",medium,Google Maps,research 2026-11-11 B: parent by location only
+Maghaway,Purok Kamansilis,purok,Sitio EEA,10.284110,123.820260,"Google Maps place ""Purok Kamansilis""",medium,Google Maps,research 2026-11-11 B: parent by location only
+Tabunok,Purok Hannos,purok,Zone 2,10.260980,123.840710,"Google Maps place ""Purok Hannos""",medium,Google Maps,research 2026-11-11 B: parent by location only
+Tabunok,Purok Masinabtanon,purok,Tali Plains Subdivision,10.261660,123.849520,"Google Maps place ""Purok Masinabtanon"" (Dawis Rd)",medium,Google Maps,research 2026-11-11 B: parent by location only
