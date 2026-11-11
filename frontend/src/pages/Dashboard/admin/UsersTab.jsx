@@ -15,12 +15,13 @@ function CredentialsDialog({ info, onClose }) {
     navigator.clipboard.writeText(text).then(() => setCopied(what)).catch(() => setCopied(''));
   }
 
-  const loginDetails = `GeoAlert Talisay staff account\nEmail: ${info.email}\nTemporary password: ${info.password}\nPlease change your password after signing in.`;
+  const idLine = info.employeeId ? `Employee ID: ${info.employeeId}\n` : '';
+  const loginDetails = `GeoAlert Talisay staff account\n${idLine}Email: ${info.email}\nTemporary password: ${info.password}\nPlease change your password after signing in.`;
 
   return (
     <Modal
       title={info.created ? 'Account created' : 'Password reset'}
-      subtitle={info.name ? `${info.name} · ${info.email}` : info.email}
+      subtitle={[info.name, info.employeeId, info.email].filter(Boolean).join(' · ')}
       onClose={onClose}
       width={480}
       labelId="adm-cred-title"
@@ -101,6 +102,7 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
       setCredentials({
         created: true,
         name: result.user?.full_name,
+        employeeId: result.user?.employee_id,
         email: result.user?.email || payload.email,
         password: result.temporary_password,
       });
@@ -114,7 +116,10 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
     try {
       if (kind === 'reset') {
         const result = await adminApi.users.resetPassword(user.id);
-        setCredentials({ created: false, name: user.full_name, email: user.email, password: result.temporary_password });
+        setCredentials({
+          created: false, name: user.full_name, employeeId: user.employee_id,
+          email: user.email, password: result.temporary_password,
+        });
       } else if (kind === 'deactivate') {
         await adminApi.users.deactivate(user.id);
         notify(`${user.full_name} can no longer sign in.`);

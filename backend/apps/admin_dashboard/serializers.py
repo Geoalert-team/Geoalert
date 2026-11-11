@@ -80,16 +80,17 @@ class UserWriteSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(max_length=60, required=False, allow_blank=True, allow_null=True)
     suffix = serializers.CharField(max_length=10, required=False, allow_blank=True, allow_null=True)
     phone = serializers.CharField(max_length=20, required=False, allow_blank=True, allow_null=True)
-    employee_id = serializers.CharField(max_length=30, required=False, allow_blank=True, allow_null=True)
     position = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True)
     # Older clients still send a single full_name; accepted when no name parts are given.
     full_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
 
     class Meta:
         model = User
+        # employee_id is left out: the model assigns it (see accounts/models.py),
+        # and one sent by a client is ignored rather than stored.
         fields = [
             'id', 'full_name', 'first_name', 'middle_initial', 'last_name', 'suffix',
-            'email', 'phone', 'employee_id', 'position',
+            'email', 'phone', 'position',
             'role_id', 'assigned_barangay_id',
         ]
 
@@ -129,17 +130,6 @@ class UserWriteSerializer(serializers.ModelSerializer):
             others = others.exclude(pk=self.instance.pk)
         if others.exists():
             raise serializers.ValidationError('An account with this email already exists.')
-        return value
-
-    def validate_employee_id(self, value):
-        value = clean_text(value)
-        if not value:
-            return None
-        others = User.objects.filter(employee_id__iexact=value)
-        if self.instance:
-            others = others.exclude(pk=self.instance.pk)
-        if others.exists():
-            raise serializers.ValidationError('Another account already uses this employee ID.')
         return value
 
     def validate_role_id(self, value):

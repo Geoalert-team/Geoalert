@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { barangaysApi } from '../../../api/barangaysApi';
 import {
-  BARANGAY_ROLE, Icon, Modal, OTHER_POSITION, ROLE_META, SUFFIXES,
-  fieldErrors, phoneDigits, positionsFor, roleMeta, roleName,
+  BARANGAY_ROLE, EMPLOYEE_ID_PREFIXES, Icon, Modal, ROLE_META, SUFFIXES,
+  fieldErrors, phoneDigits, roleMeta, roleName,
 } from './adminShared';
 
 const EMPTY = {
   first_name: '', middle_initial: '', last_name: '', suffix: '',
-  email: '', phone: '', employee_id: '', position: '',
+  email: '', phone: '', position: '',
   role_id: '', assigned_barangay_id: '',
 };
 
@@ -29,7 +29,6 @@ function formFromUser(user) {
     suffix: user.suffix || '',
     email: user.email || '',
     phone: digits ? `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}` : user.phone || '',
-    employee_id: user.employee_id || '',
     position: user.position || '',
     role_id: user.role?.id ? String(user.role.id) : '',
     assigned_barangay_id: user.assigned_barangay?.id ? String(user.assigned_barangay.id) : '',
@@ -82,38 +81,15 @@ export default function UserFormModal({ user, roles, onClose, onSave }) {
   );
   const needsBarangay = roleName(selectedRole) === BARANGAY_ROLE;
 
-  // Designations offered for the chosen role. An account being edited may
-  // carry a position typed before this list existed, so a value that isn't
-  // on the list falls through to the free-text box rather than vanishing.
-  const positions = useMemo(() => positionsFor(selectedRole), [selectedRole]);
-  const [customPosition, setCustomPosition] = useState(false);
-  const showCustomPosition =
-    customPosition || (!!form.position && !positions.includes(form.position));
-  const positionValue = showCustomPosition
-    ? OTHER_POSITION
-    : (positions.includes(form.position) ? form.position : '');
-
-  function pickPosition(value) {
-    if (value === OTHER_POSITION) {
-      setCustomPosition(true);
-      set('position', '');
-    } else {
-      setCustomPosition(false);
-      set('position', value);
-    }
-  }
-
-  // A designation belongs to a role: "Barangay Secretary" is not a thing a
-  // DRRMO officer can be. Changing the role drops a position the new role
-  // doesn't offer, rather than leaving a mismatched one in place.
-  function pickRole(id) {
-    set('role_id', id);
-    const next = positionsFor(roles.find((r) => String(r.id) === String(id)));
-    if (form.position && !next.includes(form.position)) {
-      set('position', '');
-      setCustomPosition(false);
-    }
-  }
+  // The server gives the employee ID (DRRMO-0001, BRGY-0014, ...) when the
+  // account is first saved, and it never changes after that, not even when
+  // the role does. The form only shows it.
+  const idPrefix = selectedRole ? EMPLOYEE_ID_PREFIXES[roleName(selectedRole)] || 'USER' : null;
+  const employeeIdHint = editing
+    ? (user.employee_id ? 'Given by the system. It can’t be changed.' : 'Given when this account is saved with a role.')
+    : idPrefix
+      ? `Given when you save, as the next ${idPrefix}- number.`
+      : 'Given when you save. Choose a role first.';
 
   // Barangay names come from the map's GeoJSON endpoint
   useEffect(() => {
@@ -149,7 +125,6 @@ export default function UserFormModal({ user, roles, onClose, onSave }) {
       suffix: form.suffix,
       email: form.email.trim(),
       phone: `+63${phoneDigits(form.phone)}`,
-      employee_id: form.employee_id.trim(),
       position: form.position.trim(),
       role_id: Number(form.role_id),
       assigned_barangay_id: needsBarangay ? Number(form.assigned_barangay_id) : null,
@@ -311,7 +286,7 @@ export default function UserFormModal({ user, roles, onClose, onSave }) {
                     name="role"
                     value={r.id}
                     checked={checked}
-                    onChange={() => pickRole(String(r.id))}
+                    onChange={() => set('role_id', String(r.id))}
                   />
                   <span className="adm-role-option-icon"><Icon name={meta.icon} size={18} /></span>
                   <span className="adm-role-option-text">
@@ -326,42 +301,23 @@ export default function UserFormModal({ user, roles, onClose, onSave }) {
           {err('role') && <p className="adm-field-error">{err('role')}</p>}
 
           <div className="adm-form-grid adm-grid-2" style={{ marginTop: 16 }}>
-            <Field
-              label="Position / designation"
-              required
-              error={err('position')}
-              hint={!selectedRole ? 'Choose a role first.' : undefined}
-            >
-              <select
-                value={positionValue}
-                onChange={(e) => pickPosition(e.target.value)}
-                disabled={!selectedRole}
-              >
-                <option value="">
-                  {selectedRole ? 'Select a designation' : 'Choose a role first'}
-                </option>
-                {positions.map((title) => (
-                  <option key={title} value={title}>{title}</option>
-                ))}
-                {selectedRole && <option value={OTHER_POSITION}>Other…</option>}
-              </select>
-              {showCustomPosition && (
-                <input
-                  style={{ marginTop: 8 }}
-                  value={form.position}
-                  onChange={(e) => set('position', e.target.value)}
-                  placeholder={(ROLE_META[roleName(selectedRole)] || {}).positionHint || 'Type the designation'}
-                  autoComplete="off"
-                  aria-label="Position or designation"
-                />
-              )}
-            </Field>
-            <Field label="Employee ID" optional error={err('employee_id')}>
+            <Field label="Position / designation" required error={err('position')}>
               <input
-                value={form.employee_id}
-                onChange={(e) => set('employee_id', e.target.value)}
-                placeholder="e.g. TC-2026-0142"
+                value={form.position}
+                onChange={(e) => set('position', e.target.value)}
+                placeholder={(ROLE_META[roleName(selectedRole)] || {}).positionHint || 'e.g. Barangay Secretary'}
+                maxLength={100}
                 autoComplete="off"
+              />
+            </Field>
+            <Field label="Employee ID" hint={employeeIdHint}>
+              <input
+                value={editing ? user.employee_id || '' : ''}
+                placeholder={idPrefix ? `${idPrefix}-####` : 'Automatic'}
+                readOnly
+                tabIndex={-1}
+                aria-readonly="true"
+                className="adm-input-auto"
               />
             </Field>
             {needsBarangay && (

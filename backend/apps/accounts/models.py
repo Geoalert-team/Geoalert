@@ -1,6 +1,29 @@
+import re
 import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.db import models
+from django.db import IntegrityError, models, transaction
+
+
+# Employee IDs are given by the system, not typed by an administrator: the
+# role's prefix and the next number for that prefix, e.g. DRRMO-0001,
+# BRGY-0014. An ID stays with its person when their role later changes, so a
+# number never moves to someone else. Migration 0005 numbers the older
+# accounts the same way, in the order they were created.
+EMPLOYEE_ID_PREFIXES = {
+    'System_Admin':       'ADMIN',
+    'DRRMO_Officer':      'DRRMO',
+    'Barangay_Personnel': 'BRGY',
+    'BFP_Personnel':      'BFP',
+}
+
+
+def next_employee_id(role_name):
+    """The next free ID for this role: one past the highest number in use."""
+    prefix = EMPLOYEE_ID_PREFIXES.get(role_name, 'USER')
+    pattern = re.compile(rf'^{prefix}-(\d+)$')
+    taken = User.objects.filter(employee_id__startswith=f'{prefix}-').values_list('employee_id', flat=True)
+    numbers = [int(m.group(1)) for value in taken if (m := pattern.match(value))]
+    return f'{prefix}-{max(numbers, default=0) + 1:04d}'
 
 
 class Role(models.Model):
@@ -53,7 +76,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name           = models.CharField(max_length=60, null=True, blank=True, db_column='user_last_name')
     suffix              = models.CharField(max_length=10, null=True, blank=True, db_column='user_suffix')
     phone               = models.CharField(max_length=20, null=True, blank=True, db_column='user_phone')
-    employee_id         = models.CharField(max_length=30, null=True, blank=True, db_column='user_employee_id')
+    # Assigned in save(), never typed; see EMPLOYEE_ID_PREFIXES above.
+    employee_id         = models.CharField(max_length=30, null=True, blank=True, unique=True,
+                                           db_column='user_employee_id')
     position            = models.CharField(max_length=100, null=True, blank=True, db_column='user_position')
     assigned_barangay   = models.ForeignKey(
         'barangays.Barangay', on_delete=models.SET_NULL, null=True, blank=True,
@@ -88,6 +113,30 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f'{self.full_name} ({self.email})'
+
+    def save(self, *args, **kwargs):
+        # An account gets its employee ID the first time it is saved with a
+        # role. One without a role (a bare createsuperuser) waits until an
+        # administrator gives it one.
+        if self.employee_id or not self.role_id:
+            return super().save(*args, **kwargs)
+
+        if kwargs.get('update_fields') is not None:
+            kwargs['update_fields'] = {*kwargs['update_fields'], 'employee_id'}
+
+        # Two accounts saved at the same moment can pick the same number. The
+        # unique index refuses the second; it then takes the next number.
+        attempts = 5
+        for attempt in range(attempts):
+            self.employee_id = next_employee_id(self.role.name)
+            try:
+                with transaction.atomic(using=kwargs.get('using')):
+                    return super().save(*args, **kwargs)
+            except IntegrityError:
+                clash = User.objects.filter(employee_id=self.employee_id).exclude(pk=self.pk).exists()
+                self.employee_id = None
+                if not clash or attempt == attempts - 1:
+                    raise
 
     def compose_full_name(self):
         """'Juan D. Dela Cruz Jr.' from the name parts, or '' if there are none."""

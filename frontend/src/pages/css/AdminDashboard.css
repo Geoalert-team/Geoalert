@@ -226,6 +226,9 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
 .adm input::placeholder { color: #9aa5b6; }
 .adm input:focus, .adm select:focus { outline: none; border-color: var(--db-navy-hover); box-shadow: var(--adm-focus); }
 .adm input:disabled, .adm select:disabled { background: var(--db-mist); color: var(--db-soft); }
+/* A value the system fills in (employee ID): readable, but plainly not a box to type in */
+.adm input.adm-input-auto { background: var(--db-mist); color: var(--db-heading); font-weight: 700; letter-spacing: .02em; cursor: default; }
+.adm input.adm-input-auto:focus { border-color: var(--adm-line-strong); box-shadow: none; }
 .adm-select { width: auto !important; min-width: 150px; cursor: pointer; }
 
 .adm-date { display: inline-flex; align-items: center; gap: 8px; font-size: .84rem; font-weight: 700; color: var(--db-soft); }
