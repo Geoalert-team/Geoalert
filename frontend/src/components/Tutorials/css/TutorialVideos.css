@@ -115,6 +115,41 @@
 
 /* ---------- Player additions ---------- */
 .wt-player-frame video { width: 100%; height: 100%; display: block; background: #000; }
+
+/* A YouTube video before it plays: its thumbnail with a play button. The
+   480-wide fallback is 4:3 with black bars; cover crops them off. */
+.tv-poster {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: var(--ph-navy);
+  cursor: pointer;
+}
+.tv-poster img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.tv-poster-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(16, 24, 40, .78);
+  transform: translate(-50%, -50%);
+  transition: background-color .2s ease, transform .2s ease;
+}
+.tv-poster-play svg { width: 34px; height: 34px; margin-left: 4px; fill: #fff; }
+.tv-poster:hover .tv-poster-play,
+.tv-poster:focus-visible .tv-poster-play { background: #e5322d; transform: translate(-50%, -50%) scale(1.06); }
+.tv-poster:focus-visible { outline: 3px solid var(--ph-navy); outline-offset: -3px; }
+@media (max-width: 600px) {
+  .tv-poster-play { width: 56px; height: 56px; }
+  .tv-poster-play svg { width: 26px; height: 26px; }
+}
 .tv-description { margin-top: 6px; color: var(--ph-soft); line-height: 1.5; white-space: pre-line; }
 
 /* An uploaded video has no thumbnail: a play tile the size of YouTube's */

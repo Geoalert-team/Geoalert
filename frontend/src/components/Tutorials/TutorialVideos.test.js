@@ -58,7 +58,9 @@ test('the header is the chosen category, opening on the first A to Z', async () 
   await click(chip(el, 'First Aid'));
   expect(el.querySelector('h2').textContent).toBe('First Aid');
   expect(el.querySelector('.tv-category-description').textContent).toBe('Bandaging and bleeding');
-  expect(el.querySelector('iframe').getAttribute('src')).toBe('https://www.youtube-nocookie.com/embed/2v8vlXgGXwE');
+  // The thumbnail first; YouTube's player loads on play (VideoPlayer.test.js)
+  expect(el.querySelector('.tv-poster').getAttribute('aria-label')).toBe('Play: How to treat a fracture');
+  expect(el.querySelector('.tv-poster img').getAttribute('src')).toBe('https://i.ytimg.com/vi/2v8vlXgGXwE/maxresdefault.jpg');
   expect(el.querySelector('.wt-youtube-link').getAttribute('href')).toBe('https://www.youtube.com/watch?v=2v8vlXgGXwE');
 });
 
@@ -205,7 +207,7 @@ test('Delete category warns, deletes it with its videos, and shows the first cat
   await click(inDialog(el, 'Delete'));
   expect(tutorialsApi.removeCategory).toHaveBeenCalledWith('c2');
   expect(el.querySelector('h2').textContent).toBe('First Aid');
-  expect(el.querySelector('iframe')).not.toBeNull();
+  expect(el.querySelector('.tv-poster').getAttribute('aria-label')).toBe('Play: How to treat a fracture');
 });
 
 test('a failed delete says why', async () => {

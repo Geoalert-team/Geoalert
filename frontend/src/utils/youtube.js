@@ -37,4 +37,8 @@ export function parseYouTubeId(text) {
 
 export const youtubeEmbed = (id) => `https://www.youtube-nocookie.com/embed/${id}`;
 export const youtubeThumb = (id) => `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
+// The player's own picture before it plays: 1280 wide, which not every video has,
+// and 480 wide, which every video has
+export const youtubeLargeThumb = (id) => `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+export const youtubeStandardThumb = (id) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 export const youtubeWatch = (id) => `https://www.youtube.com/watch?v=${id}`;
