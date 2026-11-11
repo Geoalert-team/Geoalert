@@ -23,6 +23,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.tutorials.list_cache import rows
 from apps.tutorials.models import TutorialVideo, VideoCategory
 from apps.tutorials.serializers import (
     BAD_LINK, TutorialVideoSerializer, TutorialVideoWriteSerializer, VideoCategorySerializer, name_taken,
@@ -48,7 +49,8 @@ def video_data(video, request):
 
 class VideoListView(PublicReadStaffWrite, APIView):
     def get(self, request):
-        videos = TutorialVideo.objects.select_related('category')
+        # The rows are cached, never this response: each request signs its own MP4 links
+        videos = rows('videos', lambda: list(TutorialVideo.objects.select_related('category')))
         return Response(TutorialVideoSerializer(videos, many=True, context={'request': request}).data)
 
     def post(self, request):
@@ -129,7 +131,7 @@ def save_category(serializer):
 
 class CategoryListView(PublicReadStaffWrite, APIView):
     def get(self, request):
-        return Response(VideoCategorySerializer(categories(), many=True).data)
+        return Response(VideoCategorySerializer(rows('categories', lambda: list(categories())), many=True).data)
 
     def post(self, request):
         serializer = VideoCategorySerializer(data=request.data)

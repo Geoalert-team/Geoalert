@@ -5,10 +5,12 @@ Against a real database; uploads go to a temporary folder; YouTube is mocked.
 """
 import shutil
 import tempfile
+import time
 import uuid
 from unittest.mock import Mock, patch
 
 import requests
+from django.core.cache import cache
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, transaction
@@ -125,6 +127,9 @@ LOCAL_FILES = {
     'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
 }
 MP4_HEAD = b'\x00\x00\x00\x18ftypmp42'
+# The public lists are cached: each test gets its own empty cache, never the
+# file cache the dev server keeps its sessions in
+LOCMEM = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'tutorial-tests'}}
 
 
 def mp4(name='drill.mp4', data=MP4_HEAD + b'\x00' * 64):
@@ -154,7 +159,7 @@ class Mp4CheckTests(SimpleTestCase):
         self.assertEqual(file.content_type, 'video/mp4')
 
 
-@override_settings(MEDIA_ROOT=MEDIA, STORAGES=LOCAL_FILES)
+@override_settings(MEDIA_ROOT=MEDIA, STORAGES=LOCAL_FILES, CACHES=LOCMEM)
 class TutorialApiTestCase(TestCase):
     @classmethod
     def tearDownClass(cls):
@@ -162,6 +167,8 @@ class TutorialApiTestCase(TestCase):
         shutil.rmtree(MEDIA, ignore_errors=True)
 
     def setUp(self):
+        cache.clear()
+
         def user(name, role):
             return User.objects.create_user(email=f'{name}@test.ph', password='x', full_name=name.title(),
                                             role=Role.objects.get_or_create(name=role)[0])
@@ -360,6 +367,95 @@ class CategoryApiTests(TutorialApiTestCase):
             self.assertEqual(self.create('New', user).status_code, 403)
             self.assertEqual(self.rename(self.drills, 'New', user).status_code, 403)
             self.assertEqual(self.drop(self.drills, user).status_code, 403)
+
+
+class CachedListTests(TutorialApiTestCase):
+    """
+    The two public lists come from the cache while nothing changes, so a surge
+    of residents before a typhoon doesn't queue on Supabase's 15 pooler
+    connections.
+    """
+    def videos(self, **request_extra):
+        return VideoListView.as_view()(self.factory.get('/api/tutorials/', **request_extra))
+
+    def categories(self):
+        return CategoryListView.as_view()(self.factory.get('/api/tutorials/categories/'))
+
+    def test_a_repeat_read_makes_no_query(self):
+        first_videos, first_categories = self.videos().data, self.categories().data
+        with self.assertNumQueries(0):
+            videos, categories = self.videos(), self.categories()
+        self.assertEqual((videos.status_code, categories.status_code), (200, 200))
+        self.assertEqual(len(videos.data), 10)
+        self.assertEqual(videos.data, first_videos)
+        self.assertEqual([(c['name'], c['video_count']) for c in categories.data],
+                         [('Drills', 0), ('First Aid', 10)])
+        self.assertEqual(categories.data, first_categories)
+
+    def titles(self, category):
+        return [v['title'] for v in self.videos().data if v['category']['name'] == category]
+
+    def counts(self):
+        return {c['name']: c['video_count'] for c in self.categories().data}
+
+    def changed(self, write):
+        # The lists are refreshed once the change commits, as on the live site
+        with self.captureOnCommitCallbacks(execute=True):
+            response = write()
+        self.assertLess(response.status_code, 300, response.data)
+
+    def test_every_change_shows_on_the_next_read(self):
+        self.titles('Drills'), self.counts()   # both lists are now cached
+        seeded = TutorialVideo.objects.get(youtube_id='gn6xt1ca8A0')
+
+        self.changed(lambda: self.add(source_type='youtube', youtube_url=ID))
+        self.assertEqual(self.titles('Drills'), ['Flood drill'])
+        self.assertEqual(self.counts(), {'Drills': 1, 'First Aid': 10})
+
+        self.changed(lambda: self.edit(seeded, title='Using your first aid kit'))
+        self.assertEqual(self.titles('First Aid')[0], 'Using your first aid kit')
+
+        self.changed(lambda: self.remove(seeded))
+        self.assertNotIn('Using your first aid kit', self.titles('First Aid'))
+        self.assertEqual(self.counts(), {'Drills': 1, 'First Aid': 9})
+
+        self.changed(lambda: self.call(CategoryListView, 'post', '/api/tutorials/categories/', self.officer,
+                                       {'name': 'Typhoon Response'}))
+        self.assertEqual(self.counts(), {'Drills': 1, 'First Aid': 9, 'Typhoon Response': 0})
+
+        # A video carries its category's name, so a rename refreshes the video list too
+        self.changed(lambda: self.call(CategoryDetailView, 'patch', f'/api/tutorials/categories/{self.drills.pk}/',
+                                       self.officer, {'name': 'Earthquake Drills'}, pk=self.drills.pk))
+        self.assertEqual(self.titles('Earthquake Drills'), ['Flood drill'])
+
+        self.changed(lambda: self.call(CategoryDetailView, 'delete', f'/api/tutorials/categories/{self.drills.pk}/',
+                                       self.officer, pk=self.drills.pk))
+        self.assertEqual(self.titles('Earthquake Drills'), [])
+        self.assertEqual(self.counts(), {'First Aid': 9, 'Typhoon Response': 0})
+
+    def test_a_change_this_server_never_hears_of_shows_within_a_minute(self):
+        self.titles('First Aid')   # cached
+        # A teammate's laptop shares the database but not this cache: update() sends no signal
+        TutorialVideo.objects.filter(youtube_id='gn6xt1ca8A0').update(title='Changed on a laptop')
+        self.assertNotIn('Changed on a laptop', self.titles('First Aid'))
+        with patch('django.core.cache.backends.locmem.time.time', return_value=time.time() + 61):
+            self.assertIn('Changed on a laptop', self.titles('First Aid'))
+
+    def test_an_mp4_link_is_made_for_each_request(self):
+        # On Supabase the link is signed for an hour, so a cached link would go dead
+        self.changed(lambda: self.add(source_type='upload', file=mp4()))
+        plain = [v['file_url'] for v in self.videos().data if v['file_url']]
+        secure = [v['file_url'] for v in self.videos(secure=True).data if v['file_url']]   # from the cache
+        self.assertRegex(plain[0], r'^http://testserver/media/tutorials/')
+        self.assertRegex(secure[0], r'^https://testserver/media/tutorials/')
+
+    def test_a_broken_cache_still_answers_from_the_database(self):
+        broken = Mock(**{f'{name}.side_effect': OSError('No space left on device') for name in ('get', 'set', 'add')})
+        with patch('apps.tutorials.list_cache.cache', broken):
+            self.assertEqual(len(self.titles('First Aid')), 10)
+            self.assertEqual(self.counts(), {'Drills': 0, 'First Aid': 10})
+            self.changed(lambda: self.add(source_type='youtube', youtube_url=ID))   # a save still succeeds
+            self.assertEqual(self.titles('Drills'), ['Flood drill'])
 
 
 class YouTubeCheckTests(TutorialApiTestCase):
