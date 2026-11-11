@@ -142,7 +142,8 @@
   transform: translate(-50%, -50%);
   transition: background-color .2s ease, transform .2s ease;
 }
-.tv-poster-play svg { width: 34px; height: 34px; margin-left: 4px; fill: #fff; }
+/* No nudge: the path already sits right of its box's middle, which centers a triangle by eye */
+.tv-poster-play svg { width: 34px; height: 34px; fill: #fff; }
 .tv-poster:hover .tv-poster-play,
 .tv-poster:focus-visible .tv-poster-play { background: #e5322d; transform: translate(-50%, -50%) scale(1.06); }
 .tv-poster:focus-visible { outline: 3px solid var(--ph-navy); outline-offset: -3px; }
