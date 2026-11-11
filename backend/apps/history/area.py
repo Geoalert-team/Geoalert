@@ -10,8 +10,9 @@ with no purok are its "Purok not recorded" ones; they colour no purok.
 Levels follow apps/history/purok_levels.py: each hazard type is counted on
 its own, and a purok over several types takes the highest of its levels.
 """
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 
+from apps.barangays.models import Purok
 from apps.history.models import HistoricalRecord
 from apps.history.purok_levels import RANK, level_for, purok_counts, thresholds
 
@@ -64,7 +65,9 @@ def area_history(barangay, purok, types, since, staff):
         records = records.filter(occurred_at__gte=since)
     if types:
         records = records.filter(hazard_type__name__in=types)
-    records = records.select_related('hazard_type').prefetch_related('puroks').order_by('-occurred_at', 'id')
+    # An event lists its puroks by name, so their outlines stay behind
+    named = Prefetch('puroks', queryset=Purok.objects.defer('boundary'))
+    records = records.select_related('hazard_type').prefetch_related(named).order_by('-occurred_at', 'id')
     events = [_event(r, staff) for r in records]
     result = {'count': len(events), 'thresholds': t, 'events': events, 'puroks': [], 'unplaced': 0}
 

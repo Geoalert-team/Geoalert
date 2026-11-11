@@ -14,10 +14,6 @@ export function markerSpots(item) {
   return pins.map((p, i) => ({ key: `${item.id}:${i}`, position: [p.lat, p.lng], purok: p.purok_name ?? null }));
 }
 
-export function drawsShading(item) {
-  return !(item.pins && item.pins.length);
-}
-
 /**
  * The puroks a hazard is in, for the map to outline while its panel is
  * open: the ones its reports name, else the purok under each of its pins

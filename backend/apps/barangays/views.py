@@ -1,6 +1,3 @@
-from django.shortcuts import render
-
-# Create your views here.
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -9,8 +6,12 @@ from rest_framework import status
 from apps.barangays.models import Barangay, Purok
 from apps.hazards.models import HazardZone
 from apps.barangays.serializers import (
-    BarangayGeoSerializer, BarangaySerializer, PurokGeoSerializer, sitio_leftovers,
+    BarangayGeoSerializer, PurokGeoSerializer, sitio_leftovers,
 )
+from utils import map_version
+
+# A new version of the outlines is a new entry, so this only clears out old ones
+PUROK_LAYER_KEEP = 30 * 24 * 60 * 60
 
 
 class BarangayListView(APIView):
@@ -37,9 +38,19 @@ class PurokListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        puroks = list(Purok.objects.select_related('barangay').order_by('barangay__name', 'name'))
-        context = {'members': Purok.member_counts(), 'leftovers': sitio_leftovers(puroks)}
-        return Response(PurokGeoSerializer(puroks, many=True, context=context).data)
+        # About 1 MB that only changes when someone loads new outlines
+        etag = f'"{Purok.outlines_version()}"'
+        if map_version.is_fresh(request, etag):
+            return map_version.tag(Response(status=status.HTTP_304_NOT_MODIFIED), etag)
+
+        def build():
+            # Each purok only shows its barangay's name, not its outline
+            puroks = list(Purok.objects.select_related('barangay').defer('barangay__boundary')
+                          .order_by('barangay__name', 'name'))
+            context = {'members': Purok.member_counts(), 'leftovers': sitio_leftovers(puroks)}
+            return dict(PurokGeoSerializer(puroks, many=True, context=context).data)
+
+        return map_version.tag(Response(map_version.cached_body(etag, build, PUROK_LAYER_KEEP)), etag)
 
 
 class BarangayDetailView(APIView):

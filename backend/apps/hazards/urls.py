@@ -13,12 +13,8 @@ from apps.hazards.views import (
     HazardLayerListView,
 )
 from apps.hazards.fire_close_views import FireCloseView
-from apps.hazards.field_views import ZoneFieldMarkDetailView, ZoneFieldMarksView
 
 urlpatterns = [
-    path('<uuid:pk>/marks/',  ZoneFieldMarksView.as_view(),         name='hazard-marks'),
-    path('<uuid:pk>/marks/<uuid:mark_id>/', ZoneFieldMarkDetailView.as_view(),
-         name='hazard-mark-detail'),
     path('',                  HazardZoneListView.as_view(),         name='hazard-list'),
     path('awaiting/',         HazardZoneAwaitingListView.as_view(), name='hazard-awaiting'),
     path('<uuid:pk>/approve/', HazardZoneApproveView.as_view(),      name='hazard-approve'),

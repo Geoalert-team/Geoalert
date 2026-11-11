@@ -1,0 +1,10 @@
+# Passwords stay out of the image: Render passes them in as settings
+.env
+.env.*
+venv/
+.cache/
+media/
+staticfiles/
+tests/
+__pycache__/
+*.pyc

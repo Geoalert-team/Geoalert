@@ -32,13 +32,16 @@ def throttle_ip(request):
     X-Forwarded-For is whatever the client chose to send, so trusting it
     would let an attacker pick a new "address" per try. Only behind a
     reverse proxy (settings.BEHIND_PROXY) is the last entry trusted: that
-    is the one the proxy itself added. Otherwise REMOTE_ADDR, which the
+    is the one the proxy itself added. With Vercel in front of that proxy
+    (settings.FORWARDED_FOR_TRUST_FIRST) it is the first entry, which Vercel
+    overwrites with the visitor's address. Otherwise REMOTE_ADDR, which the
     client can't choose.
     """
     if getattr(settings, 'BEHIND_PROXY', False):
         forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
         if forwarded:
-            return forwarded.split(',')[-1].strip()
+            entry = 0 if getattr(settings, 'FORWARDED_FOR_TRUST_FIRST', False) else -1
+            return forwarded.split(',')[entry].strip()
     return request.META.get('REMOTE_ADDR') or 'unknown'
 
 

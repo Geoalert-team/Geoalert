@@ -39,7 +39,7 @@ class HazardZone(models.Model):
         ('Retracted', 'Retracted'),
         # An Extreme alert waiting for a second DRRMO officer. Off the public
         # map and nobody notified yet. Goes Active when approved, or on its
-        # own after APPROVAL_WINDOW so an empty office can't hold back a
+        # own after the approval window so an empty office can't hold back a
         # typhoon warning.
         ('Awaiting_Approval', 'Awaiting approval'),
         # A fire that is out: the all-clear has gone and it is off the map,

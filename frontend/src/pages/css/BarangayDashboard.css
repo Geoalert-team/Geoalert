@@ -141,7 +141,6 @@
 }
 @media (max-width: 560px) {
   .brg-area { grid-template-columns: 1fr; }
-  .brg-steppers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .brg-submit .adm-btn { width: 100%; }
   .brg-guide-body { padding-left: 14px; }
 }

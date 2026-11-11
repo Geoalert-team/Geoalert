@@ -21,6 +21,12 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {'console': {'class': 'logging.StreamHandler'}},
     'root': {'handlers': ['console'], 'level': 'DEBUG'},
+    # The photo storage libraries log every step of signing a link, key ID
+    # included, which buries the request lines. Warnings still show.
+    'loggers': {
+        name: {'level': 'WARNING'}
+        for name in ('boto3', 'botocore', 's3transfer', 'urllib3')
+    },
 }
 
 SESSION_COOKIE_SAMESITE = 'Lax'

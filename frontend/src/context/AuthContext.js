@@ -1,19 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { authApi } from "../api/authApi";
 import { primeCsrf } from "../api/axiosClient";
 
 const AuthContext = createContext(null);
-
-// True the first time the app loads in a browser tab, false on refreshes.
-function isFreshTab() {
-  try {
-    if (sessionStorage.getItem("geoalert-tab-started")) return false;
-    sessionStorage.setItem("geoalert-tab-started", "1");
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 // A logout the server hasn't confirmed yet. Remembered so a reload can't sign
 // someone back in because the database was unreachable when they logged out.
@@ -48,10 +37,38 @@ async function endServerSession() {
   }
 }
 
+// Pauses before asking the server again who is signed in, in milliseconds.
+const CHECK_RETRIES = [1000, 3000];
+
+// Who is signed in. Only 401/403 mean nobody is. A server restarting or a
+// database hiccup says nothing about the session, and reading it as "signed
+// out" sent people to the login page with their session still alive.
+async function checkSession() {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return { me: await authApi.me(), unknown: false };
+    } catch (error) {
+      if (error?.status === 401 || error?.status === 403) return { me: null, unknown: false };
+      if (attempt === CHECK_RETRIES.length) return { me: null, unknown: true };
+      await new Promise((resolve) => setTimeout(resolve, CHECK_RETRIES[attempt]));
+    }
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  // The server couldn't be asked. Not the same as signed out: see Gate.
+  const [sessionUnknown, setSessionUnknown] = useState(false);
+
+  const recheckSession = useCallback(async () => {
+    setLoading(true);
+    const { me, unknown } = await checkSession();
+    setUser(me);
+    setSessionUnknown(unknown);
+    setLoading(false);
+  }, []);
 
   // The backend ends a session after 30 minutes idle or 12 hours in total.
   // Drop the user here so the route guard sends them to the login page,
@@ -89,26 +106,16 @@ export function AuthProvider({ children }) {
         // the next request that needs the cookie gets it, or says what failed
       }
 
-      // Development only: every fresh browser tab (like the one `npm start`
-      // opens) starts logged out. Refreshing the page keeps you logged in.
-      const freshDevTab = process.env.NODE_ENV === "development" && isFreshTab();
-      if (freshDevTab || isLogoutPending()) {
+      if (isLogoutPending()) {
         await endServerSession();
         setUser(null);
         setLoading(false);
         return;
       }
 
-      try {
-        const me = await authApi.me();
-        setUser(me);
-      } catch {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
+      await recheckSession();
     })();
-  }, []);
+  }, [recheckSession]);
 
   // Step 1: email + password. Returns { require2fa: true } instead of
   // logging in, if the account has 2FA enabled.
@@ -118,6 +125,7 @@ export function AuthProvider({ children }) {
       return { require2fa: true };
     }
     setLogoutPending(false);
+    setSessionUnknown(false);
     setUser(res.user);
     return { require2fa: false };
   }
@@ -126,6 +134,7 @@ export function AuthProvider({ children }) {
   async function verifyLoginCode(code) {
     const res = await authApi.verifyLoginCode(code);
     setLogoutPending(false);
+    setSessionUnknown(false);
     setUser(res.user);
   }
 
@@ -156,6 +165,8 @@ export function AuthProvider({ children }) {
       value={{
         user,
         loading,
+        sessionUnknown,
+        recheckSession,
         login,
         verifyLoginCode,
         logout,

@@ -1,34 +1,8 @@
-/* =========================================================
-   Public map: GIS-style layers
-   Hazard levels, legend extras, north arrow and scale bar.
-   ========================================================= */
-
-/* Hazard levels: smooth edges when zoomed in (the layer is already softened) */
-.pm .pm-levels { image-rendering: auto; }
-
-/* Barangay names, spaced out like map labels */
-.pm .pm-brgy-label {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  color: #1a1a1a;
-  font-family: var(--pm-font-body);
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: .12em;
-  white-space: nowrap;
-  text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 2px #fff;
-  pointer-events: none;
-}
-.pm .pm-brgy-label::before { display: none; }
 
 
 /* ---------- Legend ---------- */
 .pm-legend { max-height: calc(100% - 120px); overflow-y: auto; }
 .pm-legend-swatch { width: 16px; height: 12px; border-radius: 2px; flex-shrink: 0; }
-.pm-legend-line { flex-shrink: 0; width: 22px; height: 0; border-top: 3px solid; }
-.pm-legend-line.is-boundary { border-top-width: 1.5px; border-color: #2b2b2b; }
 .pm-legend-note {
   max-width: 230px;
   margin-top: 8px;
