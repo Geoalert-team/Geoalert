@@ -218,8 +218,8 @@ test('the card shows the new sub line, the combined note, the attribution and ev
   const el = await withRain(rain);
   expect(el.textContent).toContain('Every hazard always uses its model; counting is only the benchmark it is tested against, and this card says when a model does not beat it.');
   expect(el.textContent).toContain('Built from the three tested models; not tested on its own.');
-  expect(el.textContent).toContain('Rain data by Open-Meteo.com (CC BY 4.0), processed into hazard chances by GeoAlert');
-  expect([...el.querySelectorAll('a')].map((a) => a.getAttribute('href'))).toEqual(['https://open-meteo.com/', 'https://creativecommons.org/licenses/by/4.0/']);
+  expect(el.textContent).toContain('Rain data from NASA POWER (CC BY 4.0), processed into hazard chances by GeoAlert');
+  expect([...el.querySelectorAll('a')].map((a) => a.getAttribute('href'))).toEqual(['https://power.larc.nasa.gov/', 'https://creativecommons.org/licenses/by/4.0/']);
   expect([...el.querySelectorAll('.fc-limits li')].map((li) => li.textContent)).toEqual(rain.limits);
 });
 

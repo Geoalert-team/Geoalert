@@ -246,10 +246,11 @@ export const FORECAST_DISCLAIMER =
   + 'Live alerts come only from the DRRMO.';
 
 // Required beside any place Open-Meteo data are shown (CC BY 4.0)
+// NASA POWER data have no restrictions on use (CC BY 4.0); the POWER Project asks to be credited
 export const RAIN_ATTRIBUTION = {
-  text: 'Rain data by Open-Meteo.com (CC BY 4.0), processed into hazard chances by GeoAlert',
+  text: 'Rain data from NASA POWER (CC BY 4.0), processed into hazard chances by GeoAlert',
   links: [
-    { label: 'Open-Meteo.com', href: 'https://open-meteo.com/' },
+    { label: 'NASA POWER', href: 'https://power.larc.nasa.gov/' },
     { label: 'CC BY 4.0', href: 'https://creativecommons.org/licenses/by/4.0/' },
   ],
 };

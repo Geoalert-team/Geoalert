@@ -1,18 +1,18 @@
 {
-  "generated": "2026-11-12T11:33:52+08:00",
+  "generated": "2026-11-13T00:57:19+08:00",
   "study": {
     "start": "2021-01-01",
     "end": "2025-12-31"
   },
   "files": {
-    "rain_sha1": "d23553fc810f622647292b7b898ae08609fa8a70",
+    "rain_sha1": "9717b5a3f6425cb44894c1edb114734a2b5d1bb4",
     "terrain_sha1": "f3e782fa3b42b7a6d9505dd7daf2440df41718bd",
     "exclusions_sha1": "387df3cad65999b568bda82b1d5f8832cf5a0f76"
   },
   "hazards": {
     "Flood": {
       "hazard": "Flood",
-      "tested_at": "2026-11-12T11:32:31+08:00",
+      "tested_at": "2026-11-13T00:56:24+08:00",
       "rows": 40172,
       "positives": 18,
       "prevalence": 0.00044807328487503736,
@@ -65,29 +65,29 @@
         }
       ],
       "winner": "logistic_regression",
-      "leader": "logistic_regression",
+      "leader": "xgboost",
       "calibrated_all_folds": false,
       "candidates": {
         "logistic_regression": {
-          "mean_log_loss": 0.0024328809502002324,
+          "mean_log_loss": 0.0029676019818826505,
           "pooled": {
-            "log_loss": 0.0024307505681318902,
-            "brier": 0.00043067145892069895,
-            "roc_auc": 0.9296068439257519,
-            "pr_auc": 0.5004415077500856
+            "log_loss": 0.002965108394037828,
+            "brier": 0.0004529657243476618,
+            "roc_auc": 0.9593076107743549,
+            "pr_auc": 0.054325793216381396
           },
           "intervals": {
             "log_loss": [
-              0.0005330635527706191,
-              0.005599361018012139
+              0.0005403289913632144,
+              0.007563546721271247
             ],
             "brier": [
-              4.131600189012797e-05,
-              0.0012050658438051583
+              4.1151564475930306e-05,
+              0.0012935443900409182
             ],
             "pr_auc": [
-              0.0002122078554422239,
-              0.6871940559440559
+              0.0003852577087994506,
+              0.2587833685894967
             ]
           },
           "per_year": [
@@ -95,9 +95,9 @@
               "year": 2023,
               "rows": 8030,
               "positives": 0,
-              "expected": 2.6698320533064424,
-              "log_loss": 0.00033322015627989756,
-              "brier": 1.3657309456814279e-06,
+              "expected": 1.94273357943439,
+              "log_loss": 0.00024219877206898798,
+              "brier": 4.2926664841535695e-07,
               "roc_auc": null,
               "pr_auc": null
             },
@@ -105,9 +105,9 @@
               "year": 2024,
               "rows": 8052,
               "positives": 0,
-              "expected": 0.7857592104033946,
-              "log_loss": 9.798220329642775e-05,
-              "brier": 1.3729429530462735e-07,
+              "expected": 1.88750882864469,
+              "log_loss": 0.0002346297039573658,
+              "brier": 3.723820391978952e-07,
               "roc_auc": null,
               "pr_auc": null
             },
@@ -115,11 +115,11 @@
               "year": 2025,
               "rows": 8030,
               "positives": 11,
-              "expected": 3.433773231109784,
-              "log_loss": 0.006867440491024372,
-              "brier": 0.0012916908971776185,
-              "roc_auc": 0.9065514856760648,
-              "pr_auc": 0.5027563216596305
+              "expected": 2.942118306025377,
+              "log_loss": 0.008425977469621598,
+              "brier": 0.0013593355061151213,
+              "roc_auc": 0.946014579011212,
+              "pr_auc": 0.11843260467738032
             }
           ],
           "calibrated": [
@@ -134,25 +134,25 @@
           ]
         },
         "random_forest": {
-          "mean_log_loss": 0.003212768714437007,
+          "mean_log_loss": 0.003551517022945393,
           "pooled": {
-            "log_loss": 0.0032099521668600374,
-            "brier": 0.000452197195247356,
-            "roc_auc": 0.832006216264131,
-            "pr_auc": 0.03114945327826841
+            "log_loss": 0.0035484538588934802,
+            "brier": 0.0004552529620991567,
+            "roc_auc": 0.8502136840794987,
+            "pr_auc": 0.004862611705707982
           },
           "intervals": {
             "log_loss": [
-              0.0006397439794737559,
-              0.0076904740523576435
+              0.0006101171624747713,
+              0.00891491078554913
             ],
             "brier": [
-              4.129965921975342e-05,
-              0.00128909306298303
+              4.1116360700710115e-05,
+              0.0013022415594946663
             ],
             "pr_auc": [
-              6.0536588791036046e-05,
-              0.5618691772365141
+              8.094267006552272e-05,
+              0.021841033841371902
             ]
           },
           "per_year": [
@@ -160,9 +160,9 @@
               "year": 2023,
               "rows": 8030,
               "positives": 0,
-              "expected": 2.5967190842940377,
-              "log_loss": 0.0003240792754580722,
-              "brier": 1.2525512160867132e-06,
+              "expected": 2.410789296948793,
+              "log_loss": 0.0003005309218065021,
+              "brier": 4.96552627054889e-07,
               "roc_auc": null,
               "pr_auc": null
             },
@@ -170,9 +170,9 @@
               "year": 2024,
               "rows": 8052,
               "positives": 0,
-              "expected": 1.01215248258182,
-              "log_loss": 0.00012583257007955627,
-              "brier": 1.3850079531552385e-07,
+              "expected": 1.5626901479954158,
+              "log_loss": 0.00019428922204856473,
+              "brier": 3.082221834237619e-07,
               "roc_auc": null,
               "pr_auc": null
             },
@@ -180,11 +180,11 @@
               "year": 2025,
               "rows": 8030,
               "positives": 11,
-              "expected": 2.917067130646343,
-              "log_loss": 0.009188394297773392,
-              "brier": 0.0013564390507017673,
-              "roc_auc": 0.8373295241982112,
-              "pr_auc": 0.43905005387344764
+              "expected": 1.8872095775301265,
+              "log_loss": 0.010159730924981113,
+              "brier": 0.0013662005354319663,
+              "roc_auc": 0.8479293496128514,
+              "pr_auc": 0.033907701243334386
             }
           ],
           "calibrated": [
@@ -199,25 +199,25 @@
           ]
         },
         "xgboost": {
-          "mean_log_loss": 0.002458112806021684,
+          "mean_log_loss": 0.0025394435310526144,
           "pooled": {
-            "log_loss": 0.0024558852840727307,
-            "brier": 0.00039911002891100173,
-            "roc_auc": 0.7849315946905259,
-            "pr_auc": 0.2402093964658004
+            "log_loss": 0.0025372447514900014,
+            "brier": 0.00040783143891281136,
+            "roc_auc": 0.7720539698465926,
+            "pr_auc": 0.4224752377661105
           },
           "intervals": {
             "log_loss": [
-              0.0005765683006499345,
-              0.005077455752101572
+              0.0005580874036876243,
+              0.005624415105925728
             ],
             "brier": [
-              4.560079493586301e-05,
-              0.0010493205036596434
+              4.085240202426403e-05,
+              0.0011208152462994544
             ],
             "pr_auc": [
-              4.541723992006922e-05,
-              0.8468999621278144
+              4.135478268061701e-05,
+              0.896633320415244
             ]
           },
           "per_year": [
@@ -225,9 +225,9 @@
               "year": 2023,
               "rows": 8030,
               "positives": 0,
-              "expected": 2.6520299911499023,
-              "log_loss": 0.0003696982348045799,
-              "brier": 6.233442926123392e-05,
+              "expected": 0.23554688692092896,
+              "log_loss": 2.9339973055128258e-05,
+              "brier": 1.321272678675435e-08,
               "roc_auc": null,
               "pr_auc": null
             },
@@ -235,9 +235,9 @@
               "year": 2024,
               "rows": 8052,
               "positives": 0,
-              "expected": 0.13469287753105164,
-              "log_loss": 1.674874996920993e-05,
-              "brier": 4.140053688238142e-08,
+              "expected": 1.0032938718795776,
+              "log_loss": 0.00012958113042857889,
+              "brier": 9.130719337923341e-06,
               "roc_auc": null,
               "pr_auc": null
             },
@@ -245,11 +245,11 @@
               "year": 2025,
               "rows": 8030,
               "positives": 11,
-              "expected": 2.4001708030700684,
-              "log_loss": 0.006987891433291262,
-              "brier": 0.0011360475956427632,
-              "roc_auc": 0.8114138013127911,
-              "pr_auc": 0.5780501009554999
+              "expected": 1.0091361999511719,
+              "log_loss": 0.007459409489674136,
+              "brier": 0.0012154427154122856,
+              "roc_auc": 0.8014148216168419,
+              "pr_auc": 0.6933219952360625
             }
           ],
           "calibrated": [
@@ -376,63 +376,63 @@
       },
       "beats_benchmark": true,
       "winner_minus_benchmark": [
-        -0.00718571033328658,
-        -4.771914951582126e-05
+        -0.00547304620517566,
+        -0.00010742446700907168
       ],
       "differences": [
         {
           "a": "logistic_regression",
           "b": "random_forest",
-          "low": -0.0021446479757244634,
-          "high": -1.3225994482317965e-05
+          "low": -0.0014563920340864955,
+          "high": -2.490629173435658e-05
         },
         {
           "a": "logistic_regression",
           "b": "xgboost",
-          "low": -0.0010100041740476698,
-          "high": 0.0011104963765994644
+          "low": -0.0011894067242850237,
+          "high": 0.0027539171399817773
         },
         {
           "a": "random_forest",
           "b": "xgboost",
-          "low": -0.0004662083724674694,
-          "high": 0.0029161329434630044
+          "low": -0.0006548052969088948,
+          "high": 0.0037702764775008465
         },
         {
           "a": "logistic_regression",
           "b": "benchmark",
-          "low": -0.00718571033328658,
-          "high": -4.771914951582126e-05
+          "low": -0.00547304620517566,
+          "high": -0.00010742446700907168
         },
         {
           "a": "random_forest",
           "b": "benchmark",
-          "low": -0.005145483978509715,
-          "high": 0.0001375866571999847
+          "low": -0.0039683837677289575,
+          "high": 1.3017692746236383e-05
         },
         {
           "a": "xgboost",
           "b": "benchmark",
-          "low": -0.00807398767483187,
-          "high": 0.0005452119971124889
+          "low": -0.007623427724101361,
+          "high": 0.00045856322654055226
         },
         {
           "a": "logistic_regression",
           "b": "no_skill",
-          "low": -0.005212484959028012,
-          "high": 8.135007435750478e-05
+          "low": -0.003393716138712472,
+          "high": -5.246949944045855e-05
         },
         {
           "a": "random_forest",
           "b": "no_skill",
-          "low": -0.0034737020369255567,
-          "high": 0.0004902018002639793
+          "low": -0.00218591168236946,
+          "high": 0.00032181898639873654
         },
         {
           "a": "xgboost",
           "b": "no_skill",
-          "low": -0.006393073332332973,
-          "high": 0.0009720760128740666
+          "low": -0.005960179178002334,
+          "high": 0.0008741520115369959
         }
       ],
       "bootstrap": {
@@ -445,45 +445,45 @@
         "folds": [
           {
             "year": 2023,
-            "cutoff": 0.007966023685924913,
+            "cutoff": 0.007029439046890682,
             "tp": 0,
-            "fp": 35,
+            "fp": 7,
             "fn": 0,
-            "tn": 7995,
+            "tn": 8023,
             "precision": 0.0,
             "recall": null,
             "train_flagged_share": 0.010024906600249066
           },
           {
             "year": 2024,
-            "cutoff": 0.005203638680280878,
+            "cutoff": 0.0038709620606639595,
             "tp": 0,
-            "fp": 7,
+            "fp": 37,
             "fn": 0,
-            "tn": 8045,
+            "tn": 8015,
             "precision": 0.0,
             "recall": null,
             "train_flagged_share": 0.01000415110004151
           },
           {
             "year": 2025,
-            "cutoff": 0.004045763725147968,
-            "tp": 8,
-            "fp": 110,
-            "fn": 3,
-            "tn": 7909,
-            "precision": 0.06779661016949153,
-            "recall": 0.7272727272727273,
+            "cutoff": 0.0028304193065536464,
+            "tp": 7,
+            "fp": 121,
+            "fn": 4,
+            "tn": 7898,
+            "precision": 0.0546875,
+            "recall": 0.6363636363636364,
             "train_flagged_share": 0.010018044925642462
           }
         ],
         "pooled": {
-          "tp": 8,
-          "fp": 152,
-          "fn": 3,
-          "tn": 23949,
-          "precision": 0.05,
-          "recall": 0.7272727272727273
+          "tp": 7,
+          "fp": 165,
+          "fn": 4,
+          "tn": 23936,
+          "precision": 0.040697674418604654,
+          "recall": 0.6363636363636364
         }
       },
       "calibration": {
@@ -492,40 +492,40 @@
           {
             "year": 2023,
             "observed": 0,
-            "expected": 2.6698320533064424
+            "expected": 1.94273357943439
           },
           {
             "year": 2024,
             "observed": 0,
-            "expected": 0.7857592104033946
+            "expected": 1.88750882864469
           },
           {
             "year": 2025,
             "observed": 11,
-            "expected": 3.433773231109784
+            "expected": 2.942118306025377
           }
         ],
-        "slope": 1.5833743248569572,
+        "slope": 0.9465797056759091,
         "slope_ci": [
-          0.9029431506904564,
-          3.6084042921506185
+          0.91028914373086,
+          2.9998421050303583
         ],
         "pooled": {
           "observed": 11,
-          "expected": 6.88936449481962
+          "expected": 6.772360714104456
         }
       },
       "timing_auc": {
-        "auc": 0.8530219780219781,
+        "auc": 0.8887362637362637,
         "days": 1096,
         "event_days": 4
       },
       "place_auc": {
-        "mean": 0.5617559523809523,
+        "mean": 0.5349702380952381,
         "per_day": [
           {
             "day": "2025-08-12",
-            "auc": 0.04761904761904767,
+            "auc": 0.23809523809523814,
             "hit": 1,
             "barangays": 22
           },
@@ -537,13 +537,13 @@
           },
           {
             "day": "2025-10-07",
-            "auc": 0.5714285714285714,
+            "auc": 0.23809523809523814,
             "hit": 1,
             "barangays": 22
           },
           {
             "day": "2025-11-04",
-            "auc": 0.7232142857142856,
+            "auc": 0.7589285714285714,
             "hit": 8,
             "barangays": 22
           }
@@ -551,116 +551,116 @@
         "skipped_days": 0
       },
       "lobo_auc": {
-        "auc": 0.35833333333333334,
+        "auc": 0.44166666666666665,
         "per_barangay": [
           {
             "barangay_id": 1,
-            "mean_chance": 3.403822901052876e-05,
+            "mean_chance": 3.1078882007202154e-05,
             "had_event": true
           },
           {
             "barangay_id": 2,
-            "mean_chance": 0.0009141375525070061,
+            "mean_chance": 0.0011080958285221458,
             "had_event": true
           },
           {
             "barangay_id": 4,
-            "mean_chance": 0.00043594102191034536,
+            "mean_chance": 0.0004345793134316801,
             "had_event": false
           },
           {
             "barangay_id": 5,
-            "mean_chance": 0.0003911914323962718,
+            "mean_chance": 0.0002850402628181414,
             "had_event": false
           },
           {
             "barangay_id": 6,
-            "mean_chance": 0.0001666722221648944,
+            "mean_chance": 0.00017961024564320797,
             "had_event": true
           },
           {
             "barangay_id": 7,
-            "mean_chance": 0.00042041116678240634,
+            "mean_chance": 0.0004492444920912536,
             "had_event": false
           },
           {
             "barangay_id": 8,
-            "mean_chance": 0.00027547919632191643,
+            "mean_chance": 0.00029536933657842157,
             "had_event": true
           },
           {
             "barangay_id": 9,
-            "mean_chance": 0.0007906612734930119,
+            "mean_chance": 0.0008307713662918114,
             "had_event": false
           },
           {
             "barangay_id": 10,
-            "mean_chance": 0.0003787962359073463,
+            "mean_chance": 0.0003751315093353368,
             "had_event": true
           },
           {
             "barangay_id": 11,
-            "mean_chance": 0.0003787217692883357,
+            "mean_chance": 0.0003907997557212936,
             "had_event": true
           },
           {
             "barangay_id": 12,
-            "mean_chance": 0.0005136070679075957,
+            "mean_chance": 0.0005103258686576343,
             "had_event": false
           },
           {
             "barangay_id": 13,
-            "mean_chance": 0.0004336619253771849,
+            "mean_chance": 0.00043289067359779734,
             "had_event": false
           },
           {
             "barangay_id": 14,
-            "mean_chance": 0.0002934763997507301,
+            "mean_chance": 0.0003388747717100558,
             "had_event": true
           },
           {
             "barangay_id": 15,
-            "mean_chance": 0.000470433261078983,
+            "mean_chance": 0.0005181741810714753,
             "had_event": true
           },
           {
             "barangay_id": 16,
-            "mean_chance": 0.00048600125500559434,
+            "mean_chance": 0.0004630163295564791,
             "had_event": false
           },
           {
             "barangay_id": 17,
-            "mean_chance": 0.0002340780540619513,
+            "mean_chance": 0.0001914633437335529,
             "had_event": false
           },
           {
             "barangay_id": 18,
-            "mean_chance": 0.00048733747451455884,
+            "mean_chance": 0.0004974134185386529,
             "had_event": true
           },
           {
             "barangay_id": 19,
-            "mean_chance": 0.0003973695117663957,
+            "mean_chance": 0.000295691833863059,
             "had_event": false
           },
           {
             "barangay_id": 20,
-            "mean_chance": 0.0006123167904793356,
+            "mean_chance": 0.000727305634504199,
             "had_event": true
           },
           {
             "barangay_id": 21,
-            "mean_chance": 0.0006926140927265115,
+            "mean_chance": 0.0005762703763354899,
             "had_event": false
           },
           {
             "barangay_id": 22,
-            "mean_chance": 0.00040216128912290086,
+            "mean_chance": 0.00045041064669504446,
             "had_event": false
           },
           {
             "barangay_id": 23,
-            "mean_chance": 0.00046098782779410615,
+            "mean_chance": 0.0004821419190622192,
             "had_event": false
           }
         ]
@@ -668,10 +668,10 @@
       "camp_iv": null,
       "sensitivity": {
         "model": "logistic_regression",
-        "log_loss": 0.0024048961072335815,
-        "brier": 0.0004192076014515751,
-        "roc_auc": 0.9284978744752199,
-        "pr_auc": 0.3823151633772114,
+        "log_loss": 0.002982007851298921,
+        "brier": 0.00045156829864333354,
+        "roc_auc": 0.9437971264866415,
+        "pr_auc": 0.05102071153055136,
         "positives": 11,
         "study_positives": 22
       },
@@ -679,22 +679,22 @@
         {
           "subtype": "RIVER OVERFLOW",
           "positives": 8,
-          "mean_chance": 0.041528153756725736
+          "mean_chance": 0.0053272320697930805
         },
         {
           "subtype": "FLASH FLOOD",
           "positives": 1,
-          "mean_chance": 3.56807310870551e-05
+          "mean_chance": 0.00023304462892442658
         },
         {
           "subtype": "FLASH FLOOD (ROAD)",
           "positives": 1,
-          "mean_chance": 0.00046387875363490414
+          "mean_chance": 0.0008344735386996944
         },
         {
           "subtype": "ROAD FLOODING",
           "positives": 1,
-          "mean_chance": 0.0003186870533736323
+          "mean_chance": 0.0011405081879881035
         }
       ],
       "monthly_levels": [
@@ -720,15 +720,15 @@
           "level": "Low",
           "rows": 792,
           "events": 11,
-          "chance": 0.007,
+          "chance": 0.013,
           "happened": 0.014,
-          "chance_sum": 5.699702552143936,
+          "chance_sum": 10.289829369008201,
           "months_with_event": 11
         }
       ],
       "monthly_brier": {
-        "scenario": 0.013793793765959916,
-        "recorded_rain": 0.012328621384941636,
+        "scenario": 0.013866210018120162,
+        "recorded_rain": 0.0134527731592815,
         "benchmark": 0.015331713356947434,
         "barangay_months": 792,
         "skipped": {
@@ -740,6 +740,7 @@
         {
           "test_year": 2023,
           "scenario_years": [
+            2017,
             2018,
             2019,
             2020,
@@ -750,6 +751,7 @@
         {
           "test_year": 2024,
           "scenario_years": [
+            2017,
             2018,
             2019,
             2020,
@@ -761,6 +763,7 @@
         {
           "test_year": 2025,
           "scenario_years": [
+            2017,
             2018,
             2019,
             2020,
@@ -803,15 +806,15 @@
         "The model learned from reported floods on 1 distinct day in the training years before each test year.",
         "The 2023 and 2024 test years had no reported flood, so ROC-AUC, PR-AUC and recall are undefined for them; their log loss and Brier score still count, and only 2025 can show whether the model ranks events above non-events.",
         "The logistic regression model beat the counting benchmark on test years it was not trained on: its mean log loss is lower and the 95% interval of the difference lies below zero.",
-        "Against always guessing the training years' average chance (no skill), the 95% interval of the difference does not lie wholly below zero, so its gain over that simpler guess is not certain.",
+        "It also beat always guessing the training years' average chance (no skill): the 95% interval of that difference lies below zero too.",
         "The model was chosen from three candidates on these same test years, so its scores may be slightly optimistic.",
-        "Rain comes from 3 Open-Meteo grid cells (about 9 km across) for 22 barangays, so barangays in one cell share the same rain and small storms can be missed.",
+        "Rain comes from 1 NASA POWER grid cell (about 55 km across) for 22 barangays, so barangays in one cell share the same rain and small storms can be missed.",
         "The records come from news reports, so an empty barangay-day means nothing was reported, not that nothing happened: the chances describe reported floods and read lower than the true rate."
       ]
     },
     "Landslide": {
       "hazard": "Landslide",
-      "tested_at": "2026-11-12T11:33:49+08:00",
+      "tested_at": "2026-11-13T00:57:17+08:00",
       "rows": 40172,
       "positives": 8,
       "prevalence": 0.00019914368216668326,
@@ -863,29 +866,29 @@
         }
       ],
       "winner": "logistic_regression",
-      "leader": "logistic_regression",
+      "leader": "xgboost",
       "calibrated_all_folds": false,
       "candidates": {
         "logistic_regression": {
-          "mean_log_loss": 0.0014374166911683996,
+          "mean_log_loss": 0.0015440053093824047,
           "pooled": {
-            "log_loss": 0.001437049561666434,
-            "brier": 0.0002058188974174818,
-            "roc_auc": 0.9805450698967104,
-            "pr_auc": 0.1062100998058622
+            "log_loss": 0.001543671553988769,
+            "brier": 0.0002064709655444857,
+            "roc_auc": 0.9453768614925124,
+            "pr_auc": 0.019598844967424752
           },
           "intervals": {
             "log_loss": [
-              0.00043322698984156656,
-              0.0027399249557257567
+              0.00046535582411839384,
+              0.002922991486981926
             ],
             "brier": [
-              4.0925251767034065e-05,
-              0.0004061450053917449
+              4.1204731374262924e-05,
+              0.0004066405591616058
             ],
             "pr_auc": [
-              0.002364647485982168,
-              0.3758038345443049
+              0.0009574981354516618,
+              0.12326372362367122
             ]
           },
           "per_year": [
@@ -893,31 +896,31 @@
               "year": 2023,
               "rows": 8030,
               "positives": 1,
-              "expected": 1.3339228455599956,
-              "log_loss": 0.0009979893457319965,
-              "brier": 0.0001244788047935257,
-              "roc_auc": 0.9787022045086561,
-              "pr_auc": 0.005813953488372093
+              "expected": 1.3896803646265419,
+              "log_loss": 0.0011609588729009717,
+              "brier": 0.00012493273412022632,
+              "roc_auc": 0.9118196537551376,
+              "pr_auc": 0.0014104372355430183
             },
             {
               "year": 2024,
               "rows": 8052,
               "positives": 1,
-              "expected": 1.056284365562774,
-              "log_loss": 0.0010350427570143437,
-              "brier": 0.00012421313799143783,
-              "roc_auc": 0.9597565519811203,
-              "pr_auc": 0.003076923076923077
+              "expected": 1.103950023311051,
+              "log_loss": 0.001178209397957786,
+              "brier": 0.0001244667553138459,
+              "roc_auc": 0.8941746366910943,
+              "pr_auc": 0.0011723329425556857
             },
             {
               "year": 2025,
               "rows": 8030,
               "positives": 3,
-              "expected": 1.6427735666464178,
-              "log_loss": 0.0022792179707588583,
-              "brier": 0.00036898832689056686,
-              "roc_auc": 0.9905734811677256,
-              "pr_auc": 0.18362573099415203
+              "expected": 2.1419379541552,
+              "log_loss": 0.0022928476572884565,
+              "brier": 0.0003702380762685098,
+              "roc_auc": 0.98567335243553,
+              "pr_auc": 0.10871012968804765
             }
           ],
           "calibrated": [
@@ -932,25 +935,25 @@
           ]
         },
         "random_forest": {
-          "mean_log_loss": 0.001504483322029325,
+          "mean_log_loss": 0.0014815905758454259,
           "pooled": {
-            "log_loss": 0.0015040206336316474,
-            "brier": 0.0002068235003694777,
-            "roc_auc": 0.963699340440536,
-            "pr_auc": 0.016344462761257637
+            "log_loss": 0.001481141144993506,
+            "brier": 0.00020673348340006164,
+            "roc_auc": 0.9717219065001867,
+            "pr_auc": 0.055888961396115246
           },
           "intervals": {
             "log_loss": [
-              0.00044404840048954084,
-              0.002834687671155006
+              0.00045425933056289063,
+              0.0027942935805343938
             ],
             "brier": [
-              4.098120335976605e-05,
-              0.00040725956796946783
+              4.100109829916605e-05,
+              0.0004070339537431924
             ],
             "pr_auc": [
-              0.0009852994227994229,
-              0.1687358601167579
+              0.0016829518283006655,
+              0.264983951487027
             ]
           },
           "per_year": [
@@ -958,31 +961,31 @@
               "year": 2023,
               "rows": 8030,
               "positives": 1,
-              "expected": 2.2503744120089344,
-              "log_loss": 0.001028139357316337,
-              "brier": 0.00012441268837499458,
-              "roc_auc": 0.9854900983933241,
-              "pr_auc": 0.00847457627118644
+              "expected": 1.9833831399968447,
+              "log_loss": 0.0010094501127198567,
+              "brier": 0.00012441734661860988,
+              "roc_auc": 0.9717897621123428,
+              "pr_auc": 0.0043859649122807015
             },
             {
               "year": 2024,
               "rows": 8052,
               "positives": 1,
-              "expected": 0.7895963589662995,
-              "log_loss": 0.0009973768381742164,
-              "brier": 0.0001240998770327371,
-              "roc_auc": 0.9338591479319339,
-              "pr_auc": 0.001366120218579235
+              "expected": 0.8417683654688507,
+              "log_loss": 0.000989014362141395,
+              "brier": 0.00012408897479415792,
+              "roc_auc": 0.9678921873059247,
+              "pr_auc": 0.003816793893129771
             },
             {
               "year": 2025,
               "rows": 8030,
               "positives": 3,
-              "expected": 1.2951057433628588,
-              "log_loss": 0.0024879337705974217,
-              "brier": 0.0003721845757646377,
-              "roc_auc": 0.9819567293717038,
-              "pr_auc": 0.17422927514670633
+              "expected": 1.4352430789963029,
+              "log_loss": 0.0024463072526750254,
+              "brier": 0.00037192055209866624,
+              "roc_auc": 0.9836177899588888,
+              "pr_auc": 0.185332978629068
             }
           ],
           "calibrated": [
@@ -997,25 +1000,25 @@
           ]
         },
         "xgboost": {
-          "mean_log_loss": 0.001639579734206302,
+          "mean_log_loss": 0.0014748526815176498,
           "pooled": {
-            "log_loss": 0.0016392936231646822,
-            "brier": 0.0002107218182440493,
-            "roc_auc": 0.9464014601568009,
-            "pr_auc": 0.01178748131611671
+            "log_loss": 0.0014746341163082255,
+            "brier": 0.00019861518681819958,
+            "roc_auc": 0.9720827975276891,
+            "pr_auc": 0.2049963435795227
           },
           "intervals": {
             "log_loss": [
-              0.0005045313938821492,
-              0.003138613182619732
+              0.0005249606463715263,
+              0.0027565583473784364
             ],
             "brier": [
-              4.555673789013429e-05,
-              0.0004112097256212008
+              4.793913903361207e-05,
+              0.0003972199815700885
             ],
             "pr_auc": [
-              0.0010394948260720363,
-              0.0940761221160156
+              0.002054492007973663,
+              0.7504745863908268
             ]
           },
           "per_year": [
@@ -1023,31 +1026,31 @@
               "year": 2023,
               "rows": 8030,
               "positives": 1,
-              "expected": 1.3866290637385001,
-              "log_loss": 0.001109134901062095,
-              "brier": 0.000131298041276623,
-              "roc_auc": 0.9735957155311994,
-              "pr_auc": 0.004694835680751174
+              "expected": 1.7328290032775409,
+              "log_loss": 0.0010585787384774963,
+              "brier": 0.00013227576242974532,
+              "roc_auc": 0.9799476896251089,
+              "pr_auc": 0.006024096385542169
             },
             {
               "year": 2024,
               "rows": 8052,
               "positives": 1,
-              "expected": 1.4728671913028333,
-              "log_loss": 0.001326002032590566,
-              "brier": 0.00013110465905294056,
-              "roc_auc": 0.9144205688734319,
-              "pr_auc": 0.001445086705202312
+              "expected": 1.2537846132240436,
+              "log_loss": 0.001235305211989195,
+              "brier": 0.0001280407206597061,
+              "roc_auc": 0.9491367531983603,
+              "pr_auc": 0.002421307506053269
             },
             {
               "year": 2025,
               "rows": 8030,
               "positives": 3,
-              "expected": 1.7706692009594236,
-              "log_loss": 0.002483602268966245,
-              "brier": 0.00036998088360584757,
-              "roc_auc": 0.9784685021386155,
-              "pr_auc": 0.34059950466200467
+              "expected": 3.801214007975714,
+              "log_loss": 0.002130674094086258,
+              "brier": 0.0003357224320669514,
+              "roc_auc": 0.9851542710020348,
+              "pr_auc": 0.3424338624338624
             }
           ],
           "calibrated": [
@@ -1174,63 +1177,63 @@
       },
       "beats_benchmark": true,
       "winner_minus_benchmark": [
-        -0.0013020523975057216,
-        -0.00012671953498758114
+        -0.001216843102583776,
+        -4.057391274987375e-05
       ],
       "differences": [
         {
           "a": "logistic_regression",
           "b": "random_forest",
-          "low": -0.0002276505272777992,
-          "high": 4.698087850549953e-05
+          "low": -0.00011034537751868812,
+          "high": 0.00028666831804822584
         },
         {
           "a": "logistic_regression",
           "b": "xgboost",
-          "low": -0.0004370550627456999,
-          "high": -2.4849767791350706e-05
+          "low": -0.00016155368770313211,
+          "high": 0.0004432327069269061
         },
         {
           "a": "random_forest",
           "b": "xgboost",
-          "low": -0.00039423033773199815,
-          "high": 9.676159414809898e-05
+          "low": -0.000285224665194278,
+          "high": 0.0004218538042323531
         },
         {
           "a": "logistic_regression",
           "b": "benchmark",
-          "low": -0.0013020523975057216,
-          "high": -0.00012671953498758114
+          "low": -0.001216843102583776,
+          "high": -4.057391274987375e-05
         },
         {
           "a": "random_forest",
           "b": "benchmark",
-          "low": -0.0012118389687084403,
-          "high": -4.241685602441575e-05
+          "low": -0.0012557634844238045,
+          "high": -4.967873753454558e-05
         },
         {
           "a": "xgboost",
           "b": "benchmark",
-          "low": -0.0009755772349785746,
-          "high": -3.796466433972045e-05
+          "low": -0.0013148005610878187,
+          "high": -5.9932974690375375e-05
         },
         {
           "a": "logistic_regression",
           "b": "no_skill",
-          "low": -0.0011136402386858568,
-          "high": -0.000138393984314421
+          "low": -0.0009593277149828767,
+          "high": -4.1406847976891284e-05
         },
         {
           "a": "random_forest",
           "b": "no_skill",
-          "low": -0.0009753441810235923,
-          "high": -0.00010974983453535946
+          "low": -0.0010070329722937196,
+          "high": -0.00011630385420729409
         },
         {
           "a": "xgboost",
           "b": "no_skill",
-          "low": -0.0008726926221365754,
-          "high": 5.290381476985786e-07
+          "low": -0.001331307591648744,
+          "high": 2.044262023355175e-05
         }
       ],
       "bootstrap": {
@@ -1243,44 +1246,44 @@
         "folds": [
           {
             "year": 2023,
-            "cutoff": 0.0027002091335319384,
+            "cutoff": 0.0034893162517904072,
             "tp": 0,
-            "fp": 40,
+            "fp": 58,
             "fn": 1,
-            "tn": 7989,
+            "tn": 7971,
             "precision": 0.0,
             "recall": 0.0,
             "train_flagged_share": 0.010024906600249066
           },
           {
             "year": 2024,
-            "cutoff": 0.002607591743979422,
+            "cutoff": 0.0032238091882764346,
             "tp": 0,
-            "fp": 41,
+            "fp": 49,
             "fn": 1,
-            "tn": 8010,
+            "tn": 8002,
             "precision": 0.0,
             "recall": 0.0,
             "train_flagged_share": 0.01000415110004151
           },
           {
             "year": 2025,
-            "cutoff": 0.0018763693124251005,
+            "cutoff": 0.003114487981376808,
             "tp": 2,
-            "fp": 105,
+            "fp": 143,
             "fn": 1,
-            "tn": 7922,
-            "precision": 0.018691588785046728,
+            "tn": 7884,
+            "precision": 0.013793103448275862,
             "recall": 0.6666666666666666,
             "train_flagged_share": 0.010018044925642462
           }
         ],
         "pooled": {
           "tp": 2,
-          "fp": 186,
+          "fp": 250,
           "fn": 3,
-          "tn": 23921,
-          "precision": 0.010638297872340425,
+          "tn": 23857,
+          "precision": 0.007936507936507936,
           "recall": 0.4
         }
       },
@@ -1290,31 +1293,31 @@
           {
             "year": 2023,
             "observed": 1,
-            "expected": 1.3339228455599956
+            "expected": 1.3896803646265419
           },
           {
             "year": 2024,
             "observed": 1,
-            "expected": 1.056284365562774
+            "expected": 1.103950023311051
           },
           {
             "year": 2025,
             "observed": 3,
-            "expected": 1.6427735666464178
+            "expected": 2.1419379541552
           }
         ],
-        "slope": 0.995094886594418,
+        "slope": 0.982462065545982,
         "slope_ci": [
-          0.9011975220630185,
-          1.174346662462844
+          0.887900361564037,
+          1.1739940222075844
         ],
         "pooled": {
           "observed": 5,
-          "expected": 4.032980777769188
+          "expected": 4.635568342092793
         }
       },
       "timing_auc": {
-        "auc": 0.8529789184234647,
+        "auc": 0.6725939505041246,
         "days": 1096,
         "event_days": 5
       },
@@ -1359,112 +1362,112 @@
         "per_barangay": [
           {
             "barangay_id": 1,
-            "mean_chance": 1.2474852176564547e-05,
+            "mean_chance": 1.866500210210634e-05,
             "had_event": false
           },
           {
             "barangay_id": 2,
-            "mean_chance": 2.31093464198849e-05,
+            "mean_chance": 3.377127294966662e-05,
             "had_event": false
           },
           {
             "barangay_id": 4,
-            "mean_chance": 0.008382585839505186,
+            "mean_chance": 0.007343118337650006,
             "had_event": true
           },
           {
             "barangay_id": 5,
-            "mean_chance": 3.394295051293295e-06,
+            "mean_chance": 1.6969059443524874e-05,
             "had_event": false
           },
           {
             "barangay_id": 6,
-            "mean_chance": 1.0781451441500665e-05,
+            "mean_chance": 1.6758499441461286e-05,
             "had_event": false
           },
           {
             "barangay_id": 7,
-            "mean_chance": 9.636334204954201e-05,
+            "mean_chance": 0.00011973525373848628,
             "had_event": false
           },
           {
             "barangay_id": 8,
-            "mean_chance": 0.00016137800898464023,
+            "mean_chance": 0.00020925825115573494,
             "had_event": false
           },
           {
             "barangay_id": 9,
-            "mean_chance": 0.00020027923257554296,
+            "mean_chance": 0.00013472483970315032,
             "had_event": false
           },
           {
             "barangay_id": 10,
-            "mean_chance": 9.111432461077445e-06,
+            "mean_chance": 1.4251203159820128e-05,
             "had_event": false
           },
           {
             "barangay_id": 11,
-            "mean_chance": 6.996281957595739e-05,
+            "mean_chance": 9.444380811258099e-05,
             "had_event": false
           },
           {
             "barangay_id": 12,
-            "mean_chance": 5.642313649374193e-06,
+            "mean_chance": 9.063522978892334e-06,
             "had_event": false
           },
           {
             "barangay_id": 13,
-            "mean_chance": 0.0003082077077460647,
+            "mean_chance": 0.0003716381223496154,
             "had_event": false
           },
           {
             "barangay_id": 14,
-            "mean_chance": 0.0001792501678481065,
+            "mean_chance": 0.0002067305141817785,
             "had_event": true
           },
           {
             "barangay_id": 15,
-            "mean_chance": 4.844021244875158e-05,
+            "mean_chance": 6.642228854045156e-05,
             "had_event": false
           },
           {
             "barangay_id": 16,
-            "mean_chance": 3.672058703228854e-05,
+            "mean_chance": 5.1989496963874884e-05,
             "had_event": false
           },
           {
             "barangay_id": 17,
-            "mean_chance": 1.5434309141930945e-05,
+            "mean_chance": 2.335359719840819e-05,
             "had_event": false
           },
           {
             "barangay_id": 18,
-            "mean_chance": 5.079442233566448e-05,
+            "mean_chance": 7.01230132869055e-05,
             "had_event": false
           },
           {
             "barangay_id": 19,
-            "mean_chance": 4.486828057115198e-06,
+            "mean_chance": 6.977618133701024e-06,
             "had_event": false
           },
           {
             "barangay_id": 20,
-            "mean_chance": 1.1704124050774593e-05,
+            "mean_chance": 1.8146487792683757e-05,
             "had_event": false
           },
           {
             "barangay_id": 21,
-            "mean_chance": 2.485600578728801e-05,
+            "mean_chance": 3.53478323317636e-05,
             "had_event": false
           },
           {
             "barangay_id": 22,
-            "mean_chance": 0.00040219957565957654,
+            "mean_chance": 0.0005000547095620124,
             "had_event": false
           },
           {
             "barangay_id": 23,
-            "mean_chance": 0.00022123338376949395,
+            "mean_chance": 0.00028740280309047007,
             "had_event": false
           }
         ]
@@ -1473,8 +1476,8 @@
         {
           "barangay_id": 4,
           "day": "2025-08-25",
-          "chance": 0.0023721798819649783,
-          "percentile": 99.25280199252802
+          "chance": 0.0051228948642803585,
+          "percentile": 99.62640099626401
         }
       ],
       "sensitivity": null,
@@ -1502,15 +1505,15 @@
           "level": "Low",
           "rows": 792,
           "events": 5,
-          "chance": 0.005,
+          "chance": 0.007,
           "happened": 0.006,
-          "chance_sum": 3.937744959210255,
+          "chance_sum": 5.430375438767146,
           "months_with_event": 5
         }
       ],
       "monthly_brier": {
-        "scenario": 0.006062278572786157,
-        "recorded_rain": 0.00600103245950444,
+        "scenario": 0.005851484281743971,
+        "recorded_rain": 0.005860607629483474,
         "benchmark": 0.006616896427541596,
         "barangay_months": 792,
         "skipped": {
@@ -1522,6 +1525,7 @@
         {
           "test_year": 2023,
           "scenario_years": [
+            2017,
             2018,
             2019,
             2020,
@@ -1532,6 +1536,7 @@
         {
           "test_year": 2024,
           "scenario_years": [
+            2017,
             2018,
             2019,
             2020,
@@ -1543,6 +1548,7 @@
         {
           "test_year": 2025,
           "scenario_years": [
+            2017,
             2018,
             2019,
             2020,
@@ -1561,7 +1567,7 @@
         "The logistic regression model beat the counting benchmark on test years it was not trained on: its mean log loss is lower and the 95% interval of the difference lies below zero.",
         "It also beat always guessing the training years' average chance (no skill): the 95% interval of that difference lies below zero too.",
         "The model was chosen from three candidates on these same test years, so its scores may be slightly optimistic.",
-        "Rain comes from 3 Open-Meteo grid cells (about 9 km across) for 22 barangays, so barangays in one cell share the same rain and small storms can be missed.",
+        "Rain comes from 1 NASA POWER grid cell (about 55 km across) for 22 barangays, so barangays in one cell share the same rain and small storms can be missed.",
         "The records come from news reports, so an empty barangay-day means nothing was reported, not that nothing happened: the chances describe reported landslides and read lower than the true rate."
       ]
     }

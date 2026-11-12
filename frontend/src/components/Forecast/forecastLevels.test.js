@@ -117,10 +117,10 @@ test('an unavailable row says so instead of None on record', () => {
 
 test('the exact copy', () => {
   expect(RAIN_ATTRIBUTION.text).toBe(
-    'Rain data by Open-Meteo.com (CC BY 4.0), processed into hazard chances by GeoAlert',
+    'Rain data from NASA POWER (CC BY 4.0), processed into hazard chances by GeoAlert',
   );
   expect(RAIN_ATTRIBUTION.links).toEqual([
-    { label: 'Open-Meteo.com', href: 'https://open-meteo.com/' },
+    { label: 'NASA POWER', href: 'https://power.larc.nasa.gov/' },
     { label: 'CC BY 4.0', href: 'https://creativecommons.org/licenses/by/4.0/' },
   ]);
   expect(FORECAST_DISCLAIMER).toBe(

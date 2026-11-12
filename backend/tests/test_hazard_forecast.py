@@ -78,7 +78,7 @@ class HazardForecastTests(TestCase):
                                   hazard_subcategory='TOY')
                  for b, d in sorted(self.pos)])
         self.report_path = self.tmp / 'hazard_model_report.json'
-        # Open-Meteo is never called from the tests: the live rain is down unless a test says otherwise
+        # NASA POWER is never called from the tests: the live rain is down unless a test says otherwise
         self.live = mock.Mock(return_value=None)
         for patcher in (mock.patch.object(hazard_data, 'DATA_DIR', self.tmp),
                         mock.patch.object(hazard_models, 'REPORT_PATH', self.report_path),
@@ -219,7 +219,7 @@ class HazardForecastTests(TestCase):
         # the plain month view has no year, so nothing recorded
         result, _ = self.forecast(6)
         self.assertFalse(any('recorded_rain_probability' in r for r in self.rows(result, 'Flood')))
-        # January 2026 is after the file: with Open-Meteo down it has no recorded day
+        # January 2026 is after the file: with NASA POWER down it has no recorded day
         today = date(2026, 1, 20)
         result, _ = self.forecast(1, year=2026, today=today)
         self.assertFalse(any('recorded_rain_probability' in r for r in self.rows(result, 'Flood')))

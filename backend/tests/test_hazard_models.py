@@ -758,7 +758,7 @@ class ReportTests(SimpleTestCase):
             self.assertIn(f"{rep['positives']} reported {hazard.lower()}", limits[0])
             self.assertIn(f"{rep['positive_days']} distinct days", limits[0])
             self.assertTrue(any('counting benchmark' in s for s in limits))
-            self.assertTrue(any('2 Open-Meteo grid cells' in s for s in limits))
+            self.assertTrue(any('2 NASA POWER grid cells' in s for s in limits))
             self.assertIn(self.SELECTION, limits)
             # the test years are held out from every fit but not from the choice of model: nothing may say
             # the model "never saw" them
@@ -802,7 +802,7 @@ class ReportTests(SimpleTestCase):
             "It also beat always guessing the training years' average chance (no skill): the 95% interval of "
             "that difference lies below zero too.",
             self.SELECTION,
-            'Rain comes from 3 Open-Meteo grid cells (about 9 km across) for 22 barangays, so barangays in one cell '
+            'Rain comes from 3 NASA POWER grid cells (about 55 km across) for 22 barangays, so barangays in one cell '
             'share the same rain and small storms can be missed.',
             'The records come from news reports, so an empty barangay-day means nothing was reported, not that '
             'nothing happened: the chances describe reported floods and read lower than the true rate.'])
@@ -829,7 +829,7 @@ class ReportTests(SimpleTestCase):
         self.assertEqual(len(most), 8)
         self.assertTrue(most[0].endswith('than to 40,172 rows (5 more barangay-days were left out because a day '
                                          'of the 14-day rain window was missing).'))
-        self.assertIn('Rain comes from 1 Open-Meteo grid cell (about 9 km across) for 1 barangay,', most[6])
+        self.assertIn('Rain comes from 1 NASA POWER grid cell (about 55 km across) for 1 barangay,', most[6])
 
     NS_BEAT = ("It also beat always guessing the training years' average chance (no skill): the 95% interval of "
                "that difference lies below zero too.")
@@ -884,7 +884,7 @@ class ReportTests(SimpleTestCase):
         rep = self._realistic_flood(0.0046, [-0.0003, 0.0021])
         limits = hazard_models.report_limits('Flood', rep, cells=3, barangays=22)
         marks = ['distinct day', 'The model learned from', 'test years had no reported', 'counting benchmark',
-                 'average chance (no skill)', 'was chosen from', 'Open-Meteo grid cell', 'news reports']
+                 'average chance (no skill)', 'was chosen from', 'NASA POWER grid cell', 'news reports']
         at = [next(i for i, s in enumerate(limits) if m in s) for m in marks]
         self.assertEqual(at, sorted(at))
         self.assertEqual(len(set(at)), len(marks))

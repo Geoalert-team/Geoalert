@@ -292,7 +292,7 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
             <p>
               Flood and landslide come from rain and terrain.
               {rainModel ? ` A ${rainModel} model` : ' A trained model'} learns, from past
-              years of daily rain at each barangay and its terrain (height above water, slope, nearness
+              years of daily rain over the city and each barangay&rsquo;s terrain (height above water, slope, nearness
               to streams, roads and the coast), how likely a report is on a day with that much rain.
               For a coming period it replays every past year&rsquo;s rain over the same dates, so each
               chance comes with the range it took across those years. Where this period&rsquo;s rain

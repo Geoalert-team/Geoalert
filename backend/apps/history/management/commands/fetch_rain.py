@@ -8,9 +8,9 @@ from apps.history.hazard_data import DATA_DIR
 
 
 class Command(BaseCommand):
-    help = ('Download daily rain for every barangay from Open-Meteo (2016-12-18 to yesterday) and write '
-            'data/rain_daily.csv. Downloads one series per grid cell, newest year first; the expected time is '
-            'logged at the start. Reads the database only.')
+    help = ('Download daily rain for every barangay from NASA POWER (2016-12-18 to the last day POWER has filled, '
+            'a few days back) and write data/rain_daily.csv. One series for the city\'s grid cell, one request '
+            'per year, newest first; no account or key needed. Reads the database only.')
 
     def handle(self, *args, **options):
         points = rain.representative_points()

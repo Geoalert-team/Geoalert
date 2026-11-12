@@ -84,8 +84,8 @@ python manage.py fetch_rain
 python manage.py build_hazard_features
 python manage.py test_hazard_models
 
-fetch_rain downloads daily rain from Open-Meteo into rain_daily.csv (throttled, takes a
-few minutes). build_hazard_features measures terrain per barangay into
+fetch_rain downloads daily rain from NASA POWER into rain_daily.csv (about a minute; no
+account or key). build_hazard_features measures terrain per barangay into
 barangay_terrain.csv. test_hazard_models runs the held-out test and writes
 hazard_model_report.json; it takes a few minutes. The last two read the database only.
 The forecast refits the chosen model itself and caches the result for 6 hours. If the
@@ -115,14 +115,23 @@ test_hazard_models always tests 2023, 2024 and 2025 (FOLDS in
 apps/history/hazard_models.py); a newly added year is tested only after a fold for it is
 added there.
 
-Before go-live: email info@open-meteo.com and get written confirmation that GeoAlert's
-use is free (non-commercial), and keep their reply with the project's records. If they
-say no, take their paid API plan, or switch the rain source to ERA5 (Copernicus).
-Training and live rain must come from the same source, and ERA5 is coarser (about 25 km
-against 9 km), so switching means downloading the rain again from ERA5, rerunning
-test_hazard_models and checking the accuracy card before use.
-Keep the credit line "Rain data by Open-Meteo.com (CC BY 4.0), processed into hazard
-chances by GeoAlert".
+Rain source: NASA POWER (https://power.larc.nasa.gov), daily corrected rain
+(PRECTOTCORR) from NASA's MERRA-2 and GEOS-IT models, free with no restrictions on use,
+commercial use included (CC BY 4.0). Its grid is about 55 km across, so the whole city
+reads one cell, and it runs a few days behind today; the live "rain so far" uses the same
+service. Training and live rain must come from the same source: changing the source means
+downloading the rain again, rerunning test_hazard_models and checking the accuracy card.
+Keep the credit line "Rain data from NASA POWER (CC BY 4.0), processed into hazard chances
+by GeoAlert". In the thesis or any publication, use POWER's acknowledgment: "The data was
+obtained from the National Aeronautics and Space Administration (NASA) Langley Research
+Center's Prediction Of Worldwide Energy Resources (POWER) project funded through the NASA
+Earth Science Division." Nothing else is required: no account, key or email. (Optional
+courtesy: POWER likes to hear of published work that uses its data, at
+larc-power-project@mail.nasa.gov.)
+
+Open-Meteo is no longer used (its free API is non-commercial only). NASA IMERG satellite
+rain was also tested and gave weaker results; the comparison is kept locally (not in git) in
+.superpowers/sdd/2026-11-12-hazard-prediction-models/imerg-test/.
 
 --------------------------------------------------------------------------------
 Deploying

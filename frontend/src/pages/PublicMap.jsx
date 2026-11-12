@@ -1079,7 +1079,7 @@ export default function PublicMap() {
               {unavailableLegend && <p className="pm-legend-note">{unavailableLegend}</p>}
               {likely && !likely.error && (likely.results || []).some((r) => r.hazard_type !== 'Fire') && (
                 <p className="pm-legend-note">
-                  Rain data by{' '}
+                  Rain data from{' '}
                   <a href={RAIN_ATTRIBUTION.links[0].href} target="_blank" rel="noopener noreferrer">{RAIN_ATTRIBUTION.links[0].label}</a>
                   {' '}(<a href={RAIN_ATTRIBUTION.links[1].href} target="_blank" rel="noopener noreferrer">{RAIN_ATTRIBUTION.links[1].label}</a>),
                   processed into hazard chances by GeoAlert

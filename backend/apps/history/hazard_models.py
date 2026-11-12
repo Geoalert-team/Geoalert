@@ -666,7 +666,7 @@ def report_limits(hazard: str, report: dict, *, cells: int, barangays: int,
     n = len(report['candidates'])
     out.append(f'The model was chosen from {_NUMBER_WORDS.get(n, str(n))} candidates on these same test years, '
                f'so its scores may be slightly optimistic.')
-    out.append(f"Rain comes from {_count(cells, 'Open-Meteo grid cell')} (about 9 km across) for "
+    out.append(f"Rain comes from {_count(cells, 'NASA POWER grid cell')} (about 55 km across) for "
                f"{_count(barangays, 'barangay')}, so barangays in one cell share the same rain and small storms "
                f"can be missed.")
     out.append(f'The records come from news reports, so an empty barangay-day means nothing was reported, not that '

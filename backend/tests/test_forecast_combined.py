@@ -84,7 +84,7 @@ class CombinedForecastTests(TestCase):
                                             occurred_at=at(d))
         self.report_path = self.tmp / 'hazard_model_report.json'
         self.fire_table = None
-        # Open-Meteo is never called from the tests: the live rain is down unless a test says otherwise
+        # NASA POWER is never called from the tests: the live rain is down unless a test says otherwise
         for patcher in (mock.patch.object(hazard_data, 'DATA_DIR', self.tmp),
                         mock.patch.object(hazard_models, 'REPORT_PATH', self.report_path),
                         mock.patch.object(hazard_forecast, 'recent_rain', mock.Mock(return_value=None))):
@@ -518,7 +518,7 @@ class CombinedForecastTests(TestCase):
     def test_forecast_answers_when_live_rain_fails(self):
         on = timezone.localdate() - timedelta(days=10)       # a week after the rain file, already over
         with mock.patch.object(hazard_forecast, 'recent_rain', rain.recent_rain), \
-                mock.patch.object(rain, 'get', side_effect=requests.ConnectionError('Open-Meteo is down')) as live, \
+                mock.patch.object(rain, 'get', side_effect=requests.ConnectionError('NASA POWER is down')) as live, \
                 self.assertLogs('apps.history.rain', level='WARNING'):          # the operator is told
             response = self.get(date=on.isoformat())
         self.assertEqual(response.status_code, 200)

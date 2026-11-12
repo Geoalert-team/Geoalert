@@ -1,4 +1,15 @@
-"""Daily rain per barangay from Open-Meteo: the archive for training, the live feed for the forecast."""
+"""
+Daily rain per barangay from NASA POWER (https://power.larc.nasa.gov): the archive for training and the
+same service for the rain so far, so both always share one source.
+
+POWER's corrected daily rain (PRECTOTCORR) comes from NASA's MERRA-2 and GEOS-IT models on a grid of
+0.5 by 0.625 degrees (about 55 by 69 km), in local solar days, a few days behind today. POWER data have no
+restrictions on use (CC BY 4.0, commercial use included); credit the POWER Project wherever they are
+shown. No account or key is needed.
+
+Talisay is far smaller than one cell and a cell edge (10.25 N) runs through it, so every barangay reads
+the one cell that holds the city's average point (city_cell); terrain, not rain, sets barangays apart.
+"""
 import csv
 import hashlib
 import logging
@@ -15,17 +26,16 @@ from apps.history.hazard_data import DATA_DIR
 
 logger = logging.getLogger(__name__)
 
-ARCHIVE_URL = 'https://archive-api.open-meteo.com/v1/archive'
-LIVE_URL = 'https://api.open-meteo.com/v1/forecast'
+POWER_URL = 'https://power.larc.nasa.gov/api/temporal/daily/point'
+POWER_PARAMS = {'parameters': 'PRECTOTCORR', 'community': 'AG', 'time-standard': 'LST', 'format': 'JSON'}
 USER_AGENT = 'GeoAlert-Talisay/1.0 (hazard model rain)'
-ARCHIVE_FIRST_DAY = date(2016, 12, 18)
+LAT_STEP, LON_STEP = 0.5, 0.625         # POWER's native grid (MERRA-2)
+FILL = -999.0                           # POWER's value for a day it has not filled
+ARCHIVE_FIRST_DAY = date(2016, 12, 18)  # the file starts here; POWER itself reaches back to 1981
 CSV_FIRST_DAY_LIMIT = date(2020, 12, 18)  # the file must reach back at least this far
-CHUNK = 100
 ATTEMPTS = 3
 RETRY_WAITS = (30, 60)
-MIN_WAIT = 13
-MINUTE_LIMIT, HOUR_LIMIT = 500, 4500  # Open-Meteo free tier, in weighted calls
-LIVE_PAST_DAYS_MAX = 92
+PAUSE = 1                               # seconds between archive requests, to be polite
 LIVE_TTL, LIVE_FAIL_TTL = 3 * 3600, 15 * 60
 _FAILED = 'hazard-rain-recent-failed'  # cache.get returns None on a miss, so a failure needs its own marker
 CSV_HEADER = ['barangay_id', 'cell_lat', 'cell_lon', 'date', 'mm']
@@ -46,16 +56,11 @@ def representative_points():
     return out
 
 
-def request_cost(n_points, n_days):
-    """Open-Meteo counts a request over two weeks as several calls, once per location."""
-    return n_points * max(1, n_days / 14)
-
-
-def pace_wait(cost, planned_total):
-    """Seconds to wait after a request so the plan stays inside the minute or the hour limit."""
-    if planned_total <= HOUR_LIMIT:
-        return max(MIN_WAIT, cost * 60 / MINUTE_LIMIT)
-    return max(MIN_WAIT, cost * 3600 / HOUR_LIMIT)
+def city_cell(points):
+    """The POWER grid point nearest the average of `points` ({id: (lat, lon)}), as (lat, lon)."""
+    lat = sum(p[0] for p in points.values()) / len(points)
+    lon = sum(p[1] for p in points.values()) / len(points)
+    return round(round(lat / LAT_STEP) * LAT_STEP, 4), round(round(lon / LON_STEP) * LON_STEP, 4)
 
 
 def _retryable(exc):
@@ -78,23 +83,26 @@ def _fetch(getter, url, params, sleep, stats):
             sleep(RETRY_WAITS[attempt])
 
 
-def _parse(payload, n_points):
-    """Validate an Open-Meteo reply: one (cell, days, values) per point sent, in order. ValueError if malformed."""
-    entries = [payload] if isinstance(payload, dict) else payload
-    if not isinstance(entries, list) or len(entries) != n_points:
-        raise ValueError(f'unexpected reply, wanted {n_points} locations: {str(payload)[:200]}')
-    out = []
-    for entry in entries:
-        try:
-            daily = entry['daily']
-            days, values = daily['time'], daily['precipitation_sum']
-            cell = (float(entry['latitude']), float(entry['longitude']))
-            parsed = [date.fromisoformat(d) for d in days]
-        except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError(f'malformed location in reply ({exc!r}): {str(entry)[:200]}') from exc
-        if len(days) != len(values):
-            raise ValueError('malformed location in reply: time and precipitation_sum differ in length')
-        out.append((cell, parsed, values))
+def _params(cell, a, b):
+    return {**POWER_PARAMS, 'latitude': cell[0], 'longitude': cell[1],
+            'start': a.strftime('%Y%m%d'), 'end': b.strftime('%Y%m%d')}
+
+
+def _parse(payload):
+    """A POWER reply as {date: mm or None}; its fill value (-999) is None. ValueError if malformed."""
+    try:
+        series = payload['properties']['parameter']['PRECTOTCORR']
+        fill = float((payload.get('header') or {}).get('fill_value', FILL))
+        out = {}
+        for key, value in series.items():
+            if len(key) != 8 or not key.isdigit():
+                raise ValueError(f'day {key!r} is not YYYYMMDD')
+            mm = float(value)
+            out[date(int(key[:4]), int(key[4:6]), int(key[6:]))] = None if mm in (fill, FILL) else mm
+    except (KeyError, TypeError, ValueError, AttributeError) as exc:
+        raise ValueError(f'malformed NASA POWER reply ({exc!r}): {str(payload)[:200]}') from exc
+    if not out:
+        raise ValueError(f'NASA POWER reply with no days: {str(payload)[:200]}')
     return out
 
 
@@ -102,89 +110,48 @@ def _span_text(a, b):
     return f'{a.isoformat()}..{b.isoformat()}'
 
 
-def _params(chunk, points, a, b):
-    return {
-        'latitude': ','.join(str(points[i][0]) for i in chunk),
-        'longitude': ','.join(str(points[i][1]) for i in chunk),
-        'start_date': a.isoformat(), 'end_date': b.isoformat(),
-        'daily': 'precipitation_sum', 'models': 'ecmwf_ifs', 'timezone': 'Asia/Manila'}
-
-
 def download_archive(points, start, end, get=None, sleep=time.sleep, log=print, stats=None):
-    """Daily rain for every barangay from `start` to `end`, and the grid cell served for each.
+    """Daily rain for every barangay from `start` to `end`, and the grid cell each one reads.
 
-    `points` maps barangay id to (lat, lon). One series is downloaded per distinct grid cell and copied to
-    every barangay in it. `stats`, if given, receives 'retries' and 'failed'.
+    `points` maps barangay id to (lat, lon). One series is downloaded, for the city's cell (city_cell), a
+    year per request, newest first, and copied to every barangay. A year before CSV_FIRST_DAY_LIMIT that
+    fails is logged and left out; a later one stops the download. `stats`, if given, receives 'retries'
+    and 'failed'.
     """
     getter = get or globals()['get']
     stats = stats if stats is not None else {}
     stats['retries'], stats['failed'] = 0, []
     ids = sorted(points)
+    cell = city_cell(points)
+    log(f'{len(ids)} barangays -> 1 NASA POWER grid cell {cell}')
+    plan = [(max(start, date(year, 1, 1)), min(end, date(year, 12, 31)))
+            for year in range(end.year, start.year - 1, -1)]
+    log(f'NASA POWER plan: {len(plan)} requests, newest year first.')
 
-    # Discovery: one day per point, to learn the grid cell Open-Meteo serves for each barangay.
-    disc = [(ids[i:i + CHUNK], request_cost(len(ids[i:i + CHUNK]), 1)) for i in range(0, len(ids), CHUNK)]
-    cells, disc_pending = {}, []
-    for chunk, cost in disc:
+    series = {}
+    for n, (a, b) in enumerate(plan):
         try:
-            entries = _parse(_fetch(getter, ARCHIVE_URL, _params(chunk, points, end, end), sleep, stats), len(chunk))
-        except (requests.RequestException, ValueError) as exc:
-            raise CommandError(f'Open-Meteo failed to name the grid cells for {end.isoformat()}: {exc}') from exc
-        for bid, (cell, _days, _values) in zip(chunk, entries):
-            cells[bid] = cell
-        disc_pending.append(cost)
-    groups = {}
-    for bid in ids:
-        groups.setdefault(cells[bid], []).append(bid)
-    reps = sorted(g[0] for g in groups.values())
-    log(f'{len(ids)} points -> {len(groups)} grid cells')
-
-    rep_chunks = [reps[i:i + CHUNK] for i in range(0, len(reps), CHUNK)]
-    plan = []
-    # Newest first: if Open-Meteo's daily cap is hit, it lands on the optional pre-2020 spans.
-    for year in range(end.year, start.year - 1, -1):
-        a, b = max(start, date(year, 1, 1)), min(end, date(year, 12, 31))
-        for chunk in rep_chunks:
-            plan.append((a, b, chunk, request_cost(len(chunk), (b - a).days + 1)))
-    total = sum(disc_pending) + sum(p[3] for p in plan)
-    disc_waits = [pace_wait(c, total) for c in disc_pending]  # also after the last one: archive requests follow
-    waits = [pace_wait(p[3], total) for p in plan[:-1]]
-    log(f'Open-Meteo plan: {len(disc) + len(plan)} requests, newest first, {total:.0f} weighted calls, '
-        f'about {(sum(disc_waits) + sum(waits)) / 60:.0f} minutes of waiting.')
-    for w in disc_waits:
-        sleep(w)
-
-    rain = {b: {} for b in ids}
-    for n, (a, b, chunk, _cost) in enumerate(plan):
-        try:
-            entries = _parse(_fetch(getter, ARCHIVE_URL, _params(chunk, points, a, b), sleep, stats), len(chunk))
+            got = _parse(_fetch(getter, POWER_URL, _params(cell, a, b), sleep, stats))
         except (requests.RequestException, ValueError) as exc:
             if b >= CSV_FIRST_DAY_LIMIT:
-                raise CommandError(f'Open-Meteo failed for {_span_text(a, b)}: {exc}') from exc
+                raise CommandError(f'NASA POWER failed for {_span_text(a, b)}: {exc}') from exc
             stats['failed'].append(_span_text(a, b))
-            log(f'Open-Meteo failed for {_span_text(a, b)}, no values for it: {exc}')
-            entries = []
-        for rep, (cell, day_list, values) in zip(chunk, entries):
-            if cell != cells[rep]:
-                log(f'Warning: barangay {rep} got grid cell {cell} for {_span_text(a, b)}, '
-                    f'keeping the first cell {cells[rep]}.')
-            for member in groups[cells[rep]]:
-                for d, mm in zip(day_list, values):
-                    rain[member][d] = mm
-        if n < len(waits):
-            sleep(waits[n])
+            log(f'NASA POWER failed for {_span_text(a, b)}, no values for it: {exc}')
+            got = {}
+        series.update({d: mm for d, mm in got.items() if a <= d <= b})
+        if n < len(plan) - 1:
+            sleep(PAUSE)
 
-    valued = {d for series in rain.values() for d, v in series.items() if v is not None}
+    valued = {d for d, mm in series.items() if mm is not None}
     if not valued:
-        raise CommandError('Open-Meteo returned no rain values at all.')
+        raise CommandError('NASA POWER returned no rain values at all.')
     first, last = min(valued), max(valued)
     years = {d.year for d in valued}
-    kept = sorted({d for series in rain.values() for d in series
-                   if first <= d <= last and d.year in years})
-    rain = {bid: {d: series.get(d) for d in kept} for bid, series in rain.items()}
+    kept = sorted(d for d in series if first <= d <= last and d.year in years)
     log(f'First day with rain values: {first.isoformat()}.')
     if first > CSV_FIRST_DAY_LIMIT:
         raise CommandError(f'The rain archive starts on {first.isoformat()}, after {CSV_FIRST_DAY_LIMIT.isoformat()}.')
-    return rain, cells
+    return {bid: {d: series[d] for d in kept} for bid in ids}, {bid: cell for bid in ids}
 
 
 @dataclass
@@ -234,7 +201,10 @@ def complete_years(rf):
 
 
 def recent_rain(cells, after, today, get=None):
-    """Rain on days strictly between `after` and `today`, or None when Open-Meteo cannot be reached."""
+    """
+    Rain on days strictly between `after` and `today`, from NASA POWER, one request per cell; days POWER
+    has not filled yet are left out. None when POWER cannot be reached.
+    """
     gap = (today - after).days
     if gap <= 1 or not cells:
         return {b: {} for b in cells}
@@ -244,18 +214,15 @@ def recent_rain(cells, after, today, get=None):
     if hit is not None:
         return None if hit == _FAILED else hit
     getter = get or globals()['get']
-    distinct = sorted(set(cells.values()))
-    params = {
-        'latitude': ','.join(str(c[0]) for c in distinct), 'longitude': ','.join(str(c[1]) for c in distinct),
-        'daily': 'precipitation_sum', 'models': 'ecmwf_ifs', 'timezone': 'Asia/Manila',
-        'past_days': min(LIVE_PAST_DAYS_MAX, gap), 'forecast_days': 1}
+    first, last = after + timedelta(days=1), today - timedelta(days=1)
     try:
-        entries = _parse(getter(LIVE_URL, params), len(distinct))
-        series = {cell: {day: mm for day, mm in zip(days, values) if after < day < today and mm is not None}
-                  for cell, (_, days, values) in zip(distinct, entries)}
+        series = {}
+        for cell in sorted(set(cells.values())):
+            got = _parse(getter(POWER_URL, _params(cell, first, last)))
+            series[cell] = {d: mm for d, mm in got.items() if after < d < today and mm is not None}
         out = {b: dict(series[c]) for b, c in cells.items()}
     except Exception:
-        logger.warning('Live rain from Open-Meteo failed; not asked again for %d minutes.', LIVE_FAIL_TTL // 60,
+        logger.warning('Live rain from NASA POWER failed; not asked again for %d minutes.', LIVE_FAIL_TTL // 60,
                        exc_info=True)
         cache.set(key, _FAILED, LIVE_FAIL_TTL)
         return None

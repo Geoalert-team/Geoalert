@@ -42,6 +42,34 @@ loss; settings chosen on 2024–2025, one test on Feb–Oct 2026). The best tied
 vs 0.1394) and fitted only when penalised into a nearly linear model, so Poisson stays. Script
 and results: .superpowers/sdd/2026-11-12-hazard-prediction-models/fire-model-test-2026-11-12/.
 
+**Amendment 2, 2026-11-13: the rain source is NASA POWER, not Open-Meteo (the user's decision:
+"I will not use Open-Meteo, just keep it free").** Open-Meteo's free API is non-commercial only. Every
+mention of Open-Meteo, ECMWF IFS and the 9 km grid below is superseded by this:
+- **Source:** NASA POWER daily corrected rain (PRECTOTCORR, MERRA-2 and GEOS-IT models, local solar
+  days). Free, no account, no restrictions on use (CC BY 4.0, commercial use included).
+- **Grid:** 0.5 by 0.625 degrees, about 55 km. The whole city reads the one cell holding its average
+  point (10.5 N, 123.75 E): the 10.25 N cell edge runs through Talisay, and the city is far smaller
+  than a cell. Rain sets the timing; terrain alone sets barangays apart.
+- **Delay:** a few days behind today. The live "rain so far" uses the same service, so training and
+  live rain share one source.
+- **Credit line:** "Rain data from NASA POWER (CC BY 4.0), processed into hazard chances by GeoAlert".
+- **Evidence:** three sources were tested with the same records, terrain, folds and candidates. A
+  scratch run on the Open-Meteo rain reproduced the shipped report exactly, so differences come from
+  the rain alone.
+
+  | | Flood: Open-Meteo / IMERG / POWER | Landslide: Open-Meteo / IMERG / POWER |
+  |---|---|---|
+  | Beats counting | yes / no (borderline) / yes | yes / yes / yes |
+  | Timing ROC-AUC | 0.85 / 0.72 / 0.89 | 0.85 / 0.61 / 0.67 |
+  | Pooled ROC-AUC | 0.93 / 0.87 / 0.96 | 0.98 / 0.94 / 0.95 |
+  | Place AUC | 0.56 / 0.53 / 0.54 | 0.96 / 0.96 / 0.96 |
+  | Calibration slope | 1.58 / 0.95 / 0.95 | 1.00 / 0.98 / 0.98 |
+
+  NASA GPM IMERG Late (satellite, 0.1 degrees) needs an Earthdata account and missed small rain on
+  several landslide days. POWER smooths storm peaks (Tino: 96 mm against 246 mm over two days), but
+  the models learn on its scale. Scripts and results: .superpowers/sdd/2026-11-12-hazard-prediction-
+  models/imerg-test/ (local, not in git).
+
 No experiment in this document has been run under the design it specifies. Every number
 below describes the data (counts, dates, availability checks), not model performance.
 

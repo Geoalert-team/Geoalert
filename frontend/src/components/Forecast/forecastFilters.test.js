@@ -242,6 +242,14 @@ const allHazards = (n = 2) => ({
   results: Array.from({ length: n }, (_, i) => modelRow(i, 'Flood')),
 });
 
+test('the method says the rain is the city’s and the terrain each barangay’s', async () => {
+  historyApi.forecast.mockResolvedValue(allHazards());
+  const el = await render(<BarangayLikelihood />);
+  const method = el.querySelector('.db-method').textContent;
+  expect(method).toContain('learns, from past years of daily rain over the city and each barangay’s terrain');
+  expect(method).not.toContain('rain at each barangay');
+});
+
 test('all hazard types shows the combined table with each hazard', async () => {
   historyApi.forecast.mockResolvedValue(allHazards());
   const el = await render(<BarangayLikelihood />);
@@ -418,9 +426,9 @@ test('the rain attribution sits under the card with both links', async () => {
   historyApi.forecast.mockResolvedValue(allHazards());
   const el = await render(<BarangayLikelihood />);
   const note = el.querySelector('.fc-attribution');
-  expect(note.textContent).toBe('Rain data by Open-Meteo.com (CC BY 4.0), processed into hazard chances by GeoAlert');
+  expect(note.textContent).toBe('Rain data from NASA POWER (CC BY 4.0), processed into hazard chances by GeoAlert');
   expect([...note.querySelectorAll('a')].map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
-    ['Open-Meteo.com', 'https://open-meteo.com/'], ['CC BY 4.0', 'https://creativecommons.org/licenses/by/4.0/'],
+    ['NASA POWER', 'https://power.larc.nasa.gov/'], ['CC BY 4.0', 'https://creativecommons.org/licenses/by/4.0/'],
   ]);
 });
 

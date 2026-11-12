@@ -286,7 +286,7 @@ export default function ForecastAccuracy() {
       {combinedNote && <p className="fc-note">{combinedNote}</p>}
       {hazards?.some((r) => r.kind === 'rain_terrain' && r.status !== 'unavailable') && (
         <p className="fc-note">
-          Rain data by <a href={RAIN_ATTRIBUTION.links[0].href} target="_blank" rel="noopener noreferrer">{RAIN_ATTRIBUTION.links[0].label}</a>{' '}
+          Rain data from <a href={RAIN_ATTRIBUTION.links[0].href} target="_blank" rel="noopener noreferrer">{RAIN_ATTRIBUTION.links[0].label}</a>{' '}
           (<a href={RAIN_ATTRIBUTION.links[1].href} target="_blank" rel="noopener noreferrer">{RAIN_ATTRIBUTION.links[1].label}</a>), processed into hazard chances by GeoAlert
         </p>
       )}
