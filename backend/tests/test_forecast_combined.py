@@ -8,6 +8,7 @@ apps/history/data/; fire keeps its own model, read and never changed.
 import builtins
 import copy
 import json
+import math
 import shutil
 import sys
 import tempfile
@@ -49,6 +50,7 @@ LIBRARIES_BROKEN = 'The model libraries (scikit-learn and xgboost) could not be 
 LIBRARIES_MISSING = 'The model libraries (scikit-learn and xgboost) are not installed.'
 LIBRARIES_LOG = 'The flood and landslide model libraries could not be loaded.'
 BY_BARANGAY_KEYS = {'barangay_id', 'barangay', 'level', 'top_hazard', 'probability', 'hazards'}
+TOO_FEW = 'Too few fire records to train and test its model.'
 
 
 def at(day):
@@ -106,10 +108,12 @@ class CombinedForecastTests(TestCase):
         def fitted(hazard, events, until, today):
             where = model_forecast.places()
             if hazard != 'Fire':
-                return {'places': where, 'report': {'status': 'too_few_records'}, 'table': None}
+                return {'places': where, 'report': {'status': 'too_few_records'}, 'table': None,
+                        'in_training': False, 'reason': TOO_FEW}
             order = sorted(p['id'] for p in where)
             self.fire_table = {pid: [0.05 + 0.03 * order.index(pid) + 0.01 * m for m in range(12)] for pid in order}
-            return {'places': where, 'report': {'status': 'in_use'}, 'table': self.fire_table}
+            return {'places': where, 'report': {'status': 'in_use'}, 'table': self.fire_table,
+                    'in_training': False, 'reason': None}
         return mock.patch.object(model_forecast, '_fitted', side_effect=fitted)
 
     def expected(self, b, hazards, month=7, year=None):
@@ -155,10 +159,12 @@ class CombinedForecastTests(TestCase):
         dates = {2021: [date(2021, 8, 1)], 2022: [date(2022, 8, 1)]}
         daily = {b: {date(2021, 8, 1): 0.5, date(2022, 8, 1): 0.0}}
         result = {'month': 8, 'day': None, 'year': None, 'profile': None, 'by_barangay': [],
-                  'results': [row('Fire', 0.2, 0.22, 'Low'),                   # fire's counting row: no table
+                  'results': [row('Fire', 0.2, 0.22, 'Low', method='model'),
                               row('Flood', 0.25, 0.25, 'High', method='model'),
                               row('Landslide', 0.25, 0.25, 'High', method='model')]}
-        hazard_forecast.combine(result, scen(daily, dates, dates), None, ALL, 8, None, None, None, places, TODAY)
+        fire_table = {b: [-math.log(0.8)] * 12}                          # a chance of 0.2 every month
+        hazard_forecast.combine(result, scen(daily, dates, dates), fire_table, ALL, 8, None, None, None, places,
+                                TODAY)
         (combined,) = result['combined']
         # 1 - (1 - 0.2)(1 - 0.375): the pair inside each storm, not 1 - 0.8 * 0.75 * 0.75 = 0.55
         self.assertEqual(combined['probability'], 0.5)
@@ -172,6 +178,15 @@ class CombinedForecastTests(TestCase):
         self.assertEqual(result['by_barangay'], [{'barangay_id': b, 'barangay': name, 'level': 'High',
                                                   'top_hazard': 'Flood', 'probability': 0.5,
                                                   'hazards': ['Fire', 'Flood', 'Landslide']}])
+
+        # a fire row with no model behind it (a counting share) never enters the chance: only models count
+        result = {'month': 8, 'day': None, 'year': None, 'profile': None, 'by_barangay': [],
+                  'results': [row('Fire', 0.2, 0.22, 'Low'),
+                              row('Flood', 0.25, 0.25, 'High', method='model'),
+                              row('Landslide', 0.25, 0.25, 'High', method='model')]}
+        hazard_forecast.combine(result, scen(daily, dates, dates), None, ALL, 8, None, None, None, places, TODAY)
+        (combined,) = result['combined']
+        self.assertEqual((combined['probability'], combined['missing']), (0.375, ['Fire']))
 
         # the week view with fire's table: the figure is the week's, the level the month's
         rate = 0.3
@@ -253,7 +268,7 @@ class CombinedForecastTests(TestCase):
                     with self.fire_model():
                         data = self.get(month=7).data
                 else:
-                    data = self.get(month=7).data                 # fire on counting: no row for the third
+                    data = self.get(month=7).data                 # too few fires: fire unavailable, never counting
                 combined = [c for c in data['combined'] if c['probability'] is not None]
                 self.assertEqual(len(data['by_barangay']), len(combined))
                 for summary, c in zip(data['by_barangay'], combined):
@@ -554,7 +569,7 @@ class CombinedForecastTests(TestCase):
             self.assertEqual((entry['kind'], entry['status']), ('rain_terrain', 'unavailable'))
             self.assertIn('test_hazard_models', entry['reason'])
 
-    def test_fire_rows_are_unchanged(self):
+    def test_fire_rows_come_from_fires_own_model_or_are_unavailable(self):
         def fire(found):
             return sorted((r for r in found if r['hazard_type'] == 'Fire'), key=lambda r: r['barangay_id'])
 
@@ -580,12 +595,15 @@ class CombinedForecastTests(TestCase):
                             with self.fire_model():
                                 got = fire(self.get(**params, **hazards).data['results'])
                                 want = alone(names, *period)
+                            self.assertEqual(got, want)
+                            self.assertTrue(all(r['method'] == 'model' for r in got))
                         else:
+                            # five fires are too few to train and test: unavailable, never the counting
                             got = fire(self.get(**params, **hazards).data['results'])
-                            want = alone(names, *period)
+                            self.assertEqual({(r['method'], r['probability'], r['level'], r['reason']) for r in got},
+                                             {('unavailable', None, 'None', TOO_FEW)})
+                            self.assertEqual(len(got), len(self.ids))
                         self.assertTrue(got)
-                        self.assertEqual(got, want)
-                        self.assertEqual(all(r.get('method') == 'model' for r in got), model)
 
     def test_hazard_list_ping_warms_the_models(self):
         with mock.patch.object(hazard_forecast, 'warm_in_background') as warm:

@@ -259,6 +259,8 @@ def _forecast_events():
 
 
 PUBLIC_CACHE = 'public, max-age=600'
+BASIS_METHOD = ("From each hazard's trained model: a Poisson regression on past fires for fire, and rain and "
+                'terrain for flood and landslide. Counting past years is only the benchmark in the accuracy check.')
 COMBINED_NOTE = 'Built from the three tested models; not tested on its own.'
 RAIN_TERRAIN_REPORT_DOWN = 'The flood and landslide test report could not be loaded right now.'
 
@@ -315,9 +317,7 @@ class HistoricalForecastView(APIView):
 
     def get(self, request):
         from apps.history import hazard_forecast, model_forecast
-        from apps.history.forecast import (
-            MAX_YEARS, drop_samples, seasonal_forecast, seasonal_profile,
-        )
+        from apps.history.forecast import MAX_YEARS, drop_samples, empty_profile, seasonal_forecast
 
         now = timezone.localtime()
         day = year = None
@@ -367,27 +367,29 @@ class HistoricalForecastView(APIView):
         picked = [e for e in events if (e['hazard'] or '').lower() in wanted]
         today = now.date()
 
+        # The rows' history (years hit, what happened) comes from the records; every figure from the models.
+        # The 12-month chart starts empty: the models fill it, or it stays unavailable, never counted.
         result = seasonal_forecast(picked, month, now, max_years=years, day=day, year=year)
-        result['profile'] = seasonal_profile(events, now, barangay_id=barangay, hazard=single, max_years=years,
-                                             year=year)
+        result['profile'] = empty_profile()
         result['profile_barangay'] = barangay
         result['hazard_type'] = single
         result['basis'] = {
             'records': len(picked),
             'sample_records': sum(1 for e in picked if e['is_sample']),
-            'method': f'Share of past years with an event in {"the week around this date" if day else "this month"}; '
-                      'a year counts half as much every 3 years back.',
+            'method': BASIS_METHOD,
         }
         result['model_hazards'] = []
         result['unavailable_hazards'] = []
-        result['profile_method'] = 'counting'
+        result['profile_method'] = 'unavailable'
         # Each model step stands alone: a model problem never takes the forecast down (spec 2.8).
         # Fire first: its apply_table ranks every row, which needs flood and landslide's figures not yet None.
+        fire_down = {}
         try:
-            model_forecast.use_models(result, picked, month, day=day, hazard=single, barangay=barangay,
-                                      today=today)
+            fire_down = model_forecast.use_models(result, picked, month, day=day, hazard=single, barangay=barangay,
+                                                  today=today)
         except Exception:
-            logger.exception('The likelihood model failed; serving the counting.')
+            logger.exception('The fire model failed; its rows are unavailable.')
+            fire_down = {'Fire': model_forecast.MODEL_DOWN}
         places, scen = [], {}
         try:
             places = model_forecast.places()
@@ -400,6 +402,12 @@ class HistoricalForecastView(APIView):
                     hazard_forecast.mark_unavailable(result, hazard, places, hazard_forecast.MODELS_DOWN)
             if single in hazard_forecast.HAZARDS:
                 hazard_forecast.mark_profile_unavailable(result)     # never the counting chart
+        # Fire with no model figures is unavailable, never counted (too few records, a period before them, an error)
+        if 'Fire' in included and 'Fire' not in result['model_hazards']:
+            reason = fire_down.get('Fire') or model_forecast.TOO_FEW.format('fire')
+            hazard_forecast.mark_unavailable(result, 'Fire', places, reason)
+            if single == 'Fire':
+                hazard_forecast.mark_profile_unavailable(result)
         try:
             fire_table = hazard_forecast.fire_month_table(result, picked, today)
             hazard_forecast.combine(result, scen, fire_table, included, month, day, year, barangay, places, today)

@@ -18,7 +18,7 @@ from rest_framework.test import APIRequestFactory
 from apps.barangays.models import Barangay
 from apps.history import hazard_models
 from apps.history import model_forecast as mf
-from apps.history.forecast import seasonal_forecast, seasonal_profile
+from apps.history.forecast import empty_profile, seasonal_forecast
 from apps.history.models import HistoricalRecord
 from apps.history.views import ForecastAccuracyView, HistoricalForecastView
 from tests.fire_setup import FireSetupMixin, box
@@ -118,9 +118,9 @@ class EvaluateTests(SimpleTestCase):
         self.assertEqual(out['train'], {'start': '2023-01', 'end': '2025-12', 'events': 126})
         self.assertEqual(out['test'], {'start': '2026-01', 'end': '2026-09', 'events': 33})
 
-    def test_a_model_worse_than_counting_is_not_used(self):
-        # A pattern this regular is exactly what counting gets right
-        self.assertEqual(mf.evaluate(steady(), PLACES, TODAY)['status'], 'not_better')
+    def test_a_model_worse_than_counting_stays_in_use_and_says_so(self):
+        # A pattern this regular is exactly what counting gets right; the model is used anyway, never counting
+        self.assertEqual(mf.evaluate(steady(), PLACES, TODAY)['status'], 'in_use_not_better')
 
     def test_a_model_better_than_counting_is_used(self):
         events, places = scattered()
@@ -199,23 +199,28 @@ class ApplyTests(SimpleTestCase):
         self.assertEqual((self.row(result, 'Quiet')['actual'], self.row(result, 'Never')['actual']), (1, 0))
 
     def test_the_year_chart_follows_the_model(self):
-        result = {'profile': seasonal_profile([ev(2024, 3)], NOW, hazard='Fire')}
+        result = {'profile': empty_profile()}
         mf.apply_profile(result, {1: [0.5] * 12, 2: [0.1] * 12}, barangay_id=1)
         self.assertEqual((result['profile'][2]['probability'], result['profile'][2]['level']), (0.393, 'High'))
         self.assertEqual(result['profile_method'], 'model')
 
     def test_the_city_chart_is_the_average_barangay(self):
-        result = {'profile': seasonal_profile([ev(2024, 3)], NOW, hazard='Fire')}
+        result = {'profile': empty_profile()}
         mf.apply_profile(result, {1: [0.5] * 12, 2: [0.1] * 12}, barangay_id=None)
         # (0.5 + 0.1) / 2 = 0.3 expected, 1 - e^-0.3 = 0.259
         self.assertEqual(result['profile'][2]['probability'], 0.259)
 
-    def test_a_barangay_the_model_does_not_know_keeps_its_chart(self):
-        result = {'profile': seasonal_profile([ev(2024, 3)], NOW, hazard='Fire')}
-        before = [dict(m) for m in result['profile']]
+    def test_a_barangay_the_model_does_not_know_has_no_chart(self):
+        result = {'profile': empty_profile()}
         mf.apply_profile(result, {1: [0.5] * 12}, barangay_id=77)
-        self.assertEqual(result['profile'], before)
-        self.assertEqual(result['profile_method'], 'counting')
+        self.assertEqual(result['profile'], empty_profile())
+        self.assertEqual(result['profile_method'], 'unavailable')
+
+    def test_the_empty_chart_has_twelve_months_and_no_figures(self):
+        months = empty_profile()
+        self.assertEqual([(m['month'], m['month_name']) for m in months][::11], [(1, 'January'), (12, 'December')])
+        self.assertTrue(all(m == {'month': m['month'], 'month_name': m['month_name'], 'probability': None,
+                                  'expected_events': None, 'level': 'None'} for m in months))
 
 
 LOCAL_CACHE = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'model-forecast'}}
@@ -228,9 +233,9 @@ class UseModelsTests(SimpleTestCase):
 
     def use(self, events, places, month=3, year=None, hazard='Fire'):
         result = seasonal_forecast(events, month, NOW, year=year)
-        result['profile'] = seasonal_profile(events, NOW, hazard=hazard)
+        result['profile'] = empty_profile()
         with mock.patch.object(mf, 'places', return_value=places):
-            mf.use_models(result, events, month, hazard=hazard, today=TODAY)
+            self.unavailable = mf.use_models(result, events, month, hazard=hazard, today=TODAY)
         return result
 
     def test_the_all_types_chart_follows_the_model(self):
@@ -261,10 +266,17 @@ class UseModelsTests(SimpleTestCase):
         self.assertEqual(len(result['results']), len(places))
         self.assertEqual(result['model_hazards'], ['Fire'])
 
-    def test_a_hazard_that_failed_keeps_counting(self):
+    def test_a_model_that_did_not_beat_counting_is_still_used(self):
         result = self.use(steady(), PLACES)
+        self.assertTrue(all(r['method'] == 'model' for r in result['results']))
+        self.assertEqual(result['model_hazards'], ['Fire'])
+        self.assertEqual(self.unavailable, {})
+
+    def test_too_few_records_gives_no_figures_and_says_why(self):
+        result = self.use(steady()[:40], PLACES)
         self.assertFalse(any('method' in r for r in result['results']))
         self.assertEqual(result['model_hazards'], [])
+        self.assertEqual(self.unavailable, {'Fire': 'Too few fire records to train and test its model.'})
 
     def test_sample_records_never_train_the_model(self):
         events, places = scattered(sample=True)
@@ -277,6 +289,26 @@ class UseModelsTests(SimpleTestCase):
         with_later = self.use(events, places, year=2026)
         self.assertEqual({r['barangay_id']: r['probability'] for r in with_later['results']},
                          {r['barangay_id']: r['probability'] for r in self.use(future_free, places, year=2026)['results']})
+        # trained on what came before, so not "in training"
+        self.assertFalse(any('in_training' in r for r in with_later['results']))
+
+    def test_a_past_period_with_too_few_earlier_records_uses_the_whole_record(self):
+        events, places = scattered()
+        # June 2023: five months of fires came before it, far fewer than MIN_TRAIN_EVENTS
+        early = self.use(events, places, month=6, year=2023)
+        whole = self.use(events, places, month=6)
+        self.assertEqual(early['model_hazards'], ['Fire'])
+        self.assertTrue(all(r['method'] == 'model' and r['in_training'] is True for r in early['results']))
+        self.assertEqual({r['barangay_id']: r['probability'] for r in early['results']},
+                         {r['barangay_id']: r['probability'] for r in whole['results']})
+        self.assertEqual(early['profile_method'], 'model')
+
+    def test_a_period_before_the_record_began_has_no_figures(self):
+        events, places = scattered()
+        result = self.use(events, places, month=6, year=2022)
+        self.assertEqual(result['model_hazards'], [])
+        self.assertFalse(any('method' in r for r in result['results']))
+        self.assertEqual(self.unavailable, {'Fire': 'Fire records start in January 2023.'})
 
 
 class PlacesTests(FireSetupMixin, TestCase):
@@ -302,13 +334,77 @@ class ForecastViewTests(FireSetupMixin, TestCase):
     def get(self, view=HistoricalForecastView, **params):
         return view.as_view()(APIRequestFactory().get('/', params))
 
-    def test_the_model_breaking_leaves_the_counting(self):
+    def fires(self):
+        """Every month of 2023-01 to 2026-09: three fires in Home, one in Next door. Enough to train and test."""
+        months = [(y, m) for y in range(2023, 2027) for m in range(1, 13) if (y, m) <= (2026, 9)]
+        HistoricalRecord.objects.bulk_create(
+            [HistoricalRecord(barangay=b, hazard_type=self.fire, severity_level='Orange',
+                              occurred_at=datetime(y, m, 10 + i, 12, tzinfo=TZ))
+             for y, m in months for b, n in ((self.home, 3), (self.next, 1)) for i in range(n)])
+
+    def assert_fire_unavailable(self, data, reason):
+        fire = [r for r in data['results'] if r['hazard_type'] == 'Fire']
+        self.assertEqual(len(fire), 2)
+        for row in fire:
+            self.assertEqual((row['method'], row['probability'], row['level'], row['reason']),
+                             ('unavailable', None, 'None', reason))
+        self.assertIn('Fire', data['unavailable_hazards'])
+        self.assertNotIn('Fire', data['model_hazards'])
+        self.assertEqual(data['profile_method'], 'unavailable')
+        self.assertTrue(all(c['missing'] == ['Fire'] and c['probability'] is None for c in data['combined']))
+
+    def test_the_model_breaking_makes_fire_unavailable_never_counting(self):
         self.history(self.near, 2)
         with mock.patch('apps.history.model_forecast.use_models', side_effect=RuntimeError('no model')):
             with self.assertLogs('apps.history.views', level='ERROR'):
                 response = self.get(month=dj_timezone.localtime().month, hazard_type_name='Fire')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['model_hazards'], [])
+        self.assert_fire_unavailable(response.data, 'The fire model could not run right now.')
+
+    def test_too_few_fires_makes_fire_unavailable_never_counting(self):
+        self.history(self.near, 2)
+        response = self.get(month=dj_timezone.localtime().month, hazard_type_name='Fire')
+        self.assertEqual(response.status_code, 200)
+        self.assert_fire_unavailable(response.data, 'Too few fire records to train and test its model.')
+
+    def test_a_past_period_without_enough_earlier_fires_uses_the_whole_record_model(self):
+        self.fires()
+        data = self.get(month=6, year=2023, hazards='Fire').data
+        fire = {r['barangay_id']: r for r in data['results']}
+        self.assertEqual(len(fire), 2)
+        self.assertTrue(all(r['method'] == 'model' and r['in_training'] is True for r in fire.values()))
+        self.assertEqual(data['profile_method'], 'model')
+        # the All hazards figure is fire's model chance, not a counting share
+        for c in data['combined']:
+            self.assertEqual(c['missing'], [])
+            self.assertEqual((c['probability'], c['level']),
+                             (fire[c['barangay_id']]['probability'], fire[c['barangay_id']]['level']))
+        self.assertGreater(fire[self.home.id]['probability'], fire[self.next.id]['probability'])
+
+    def test_the_chart_and_the_basis_carry_no_counting(self):
+        self.fires()
+        for params in ({'hazards': 'Fire'}, {}):
+            with self.subTest(params=params):
+                data = self.get(**params).data
+                self.assertEqual(data['profile_method'], 'model')
+                for entry in data['profile']:
+                    self.assertNotIn('years_hit', entry)
+                    self.assertNotIn('years_considered', entry)
+                    self.assertIsNotNone(entry['probability'])
+                self.assertNotIn('Share of past years', data['basis']['method'])
+                self.assertIn('trained model', data['basis']['method'])
+
+    def test_a_barangay_the_fire_model_does_not_know_has_no_chart(self):
+        self.fires()
+        unknown = Barangay.objects.create(name='No boundary', municipality='Talisay')
+        data = self.get(hazards='Fire', barangay=unknown.id).data
+        self.assertEqual(data['profile_method'], 'unavailable')
+        self.assertTrue(all(m['probability'] is None and 'years_hit' not in m for m in data['profile']))
+
+    def test_a_period_before_the_fire_records_began_is_unavailable(self):
+        self.fires()
+        data = self.get(month=6, year=2022, hazards='Fire').data
+        self.assert_fire_unavailable(data, 'Fire records start in January 2023.')
 
     def test_accuracy_says_when_there_are_too_few_records(self):
         self.history(self.near, 3)

@@ -264,39 +264,15 @@ def summarize_by_barangay(rows):
     return out
 
 
-def seasonal_profile(events, now, barangay_id=None, hazard=None, max_years=MAX_YEARS, year=None):
+def empty_profile():
     """
-    The likelihood for each month of the year, January first, for one
-    barangay (or the whole city when barangay_id is None) and one hazard
-    type (or all of them). For the "when is the risky season here" chart.
-    With a year, each month reads only the years before that year's, as
-    seasonal_forecast does.
+    The 12-month chart before any model fills it, January first: no figures.
+    The models write each month's chance (model_forecast.apply_profile,
+    hazard_forecast); a chart they cannot fill stays empty and is called
+    unavailable, never counted.
     """
-    picked = [
-        e for e in events
-        if e.get('when') is not None
-        and (barangay_id is None or e.get('barangay_id') == barangay_id)
-        and (hazard is None or (e.get('hazard') or '').lower() == hazard.lower())
-    ]
-    first_all = min((e['when'] for e in events if e.get('when')), default=None)
-    today = now.date()
-    months = []
-    for m in range(1, 13):
-        cutoff = today if year is None else min(today, period_window(year, m)[0])
-        years = years_for_period(m, None, cutoff, first_all, max_years)
-        weights = year_weights(years)
-        counts = Counter(e['when'].year for e in picked if e['when'].month == m and e['when'].year in weights)
-        share, expected, hit = likelihood(counts, weights)
-        months.append({
-            'month': m,
-            'month_name': MONTH_NAMES[m - 1],
-            'probability': round(share, 3),
-            'expected_events': round(expected, 2),
-            'years_hit': hit,
-            'years_considered': len(years),
-            'level': level_for(share, expected),
-        })
-    return months
+    return [{'month': m, 'month_name': MONTH_NAMES[m - 1], 'probability': None, 'expected_events': None,
+             'level': 'None'} for m in range(1, 13)]
 
 
 def as_local(dt, tz):

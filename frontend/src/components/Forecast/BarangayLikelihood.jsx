@@ -4,7 +4,7 @@ import { historyApi } from '../../api/historyApi';
 import ForecastPeriodPicker from './ForecastPeriodPicker';
 import {
   FORECAST_DISCLAIMER, IN_TRAINING_NOTE, MODEL_LABELS, RAIN_ATTRIBUTION, SEVERITY_WORD, chanceText, combinedText,
-  combinedUnavailable, defaultPeriod, levelLabel, likelihoodInfo, periodIn, periodLabel, periodMonth, periodParams, periodPastHeader,
+  combinedUnavailable, defaultPeriod, levelLabel, likelihoodInfo, periodLabel, periodMonth, periodParams, periodPastHeader,
   periodYearsText, rangeText, smallChanceText, unavailableNote, withMonth,
 } from './forecastLevels';
 import './forecast.css';
@@ -88,10 +88,10 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
   // A shown hazard the models could not give is named under the All hazards table, never dropped silently
   const allNote = isAll && data ? unavailableNote(data, data.hazards_included || []) : '';
   const unavailable = data?.unavailable_hazards || [];
-  let barNote = 'Bar height is the share of past years with at least one event in that month.';
-  if (data?.profile_method === 'model') {
-    barNote = `Bar height is ${barangay ? 'the model\'s' : 'the average barangay\'s'} chance of at least one event in that month.`;
-  }
+  // The chart comes from the models only; without them it has no bars, never counted ones
+  const barNote = data?.profile_method === 'model'
+    ? `Bar height is ${barangay ? 'the model\'s' : 'the average barangay\'s'} chance of at least one event in that month.`
+    : 'The model gives no chart for this period.';
 
   return (
     <div className="fc">
@@ -101,21 +101,13 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
 
       {error && <p className="db-error" role="alert">{error}</p>}
 
-      {data?.year != null && (
+      {/* What happened in a period that has started; the figures themselves come from the models */}
+      {data?.year != null && outcome && (
         <p className="fc-note">
-          {data.years.length
-            ? `For ${periodLabel(period)}, from ${periodIn(period)} in ${data.years[0]}–${data.years[data.years.length - 1]}.`
-            : `Nothing on record before ${periodLabel(period)} to estimate from.`}
-          {outcome && (outcome.complete
-            ? ` It is over: ${outcome.events} event${outcome.events === 1 ? '' : 's'} happened.`
-            : ` It has started: ${outcome.events} event${outcome.events === 1 ? '' : 's'} so far.`)}
-        </p>
-      )}
-
-      {data && data.limited && !modelled.length && (
-        <p className="fc-note">
-          Only {data.years.length} past year{data.years.length === 1 ? '' : 's'} on record for {periodIn(period)}, so
-          these levels are rough.
+          {period.mode === 'date' ? `The week of ${periodLabel(period)}` : periodLabel(period)}
+          {outcome.complete
+            ? ` is over: ${outcome.events} event${outcome.events === 1 ? '' : 's'} happened.`
+            : ` has started: ${outcome.events} event${outcome.events === 1 ? '' : 's'} so far.`}
         </p>
       )}
 
@@ -255,8 +247,8 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
                 <li
                   key={m.month}
                   className={m.month === periodMonth(period) ? 'is-current' : undefined}
-                  title={m.years_hit != null
-                    ? `${m.month_name}: ${info.label} (${m.years_hit} of ${m.years_considered} years)`
+                  title={m.probability == null
+                    ? `${m.month_name}: no figure`
                     : `${m.month_name}: ${info.label} (${smallChanceText(m.probability)})`}
                 >
                   <button type="button" onClick={() => setPeriod((p) => withMonth(p, m.month))} aria-label={`${m.month_name}, ${info.label}`}>
@@ -292,7 +284,8 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
               in each month, using the barangay, the month, its land area and how many puroks it has
               for that area. That gives the chance of at least one event in the month. For an exact
               date the chance shown is for that week. With a year picked, it is trained only on what
-              came before that period.
+              came before that period. When fewer than 100 fires came before it, the model trained on
+              every record is used, and the table says it learned from that period.
             </p>
           )}
           {(rainModel || modelled.some((h) => RAIN_HAZARDS.includes(h))) && (

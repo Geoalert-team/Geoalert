@@ -16,7 +16,7 @@ export const LIKELIHOOD = {
 
 export const likelihoodInfo = (level) => LIKELIHOOD[level] || LIKELIHOOD.None;
 
-/** "23%" on a model's row; counting has no chance to give, only a share of years */
+/** "23%" on a model's row; a row with no model figure has none to give */
 export const chanceText = (row) => (row.method === 'model' ? `${Math.round(row.probability * 100)}%` : '');
 
 const HAZARD_ORDER = ['Fire', 'Flood', 'Landslide'];
@@ -73,9 +73,8 @@ export const rainYearsText = (years) => {
   return `${noun} (${ys.slice(0, -1).join(', ')} and ${ys[n - 1]})`;
 };
 
-// The hazards in a row's `missing` that the response names in `unavailable_hazards`. A hazard
-// can be missing only because nothing is on record (fire on counting in a past period); that
-// is not "unavailable".
+// The hazards in a row's `missing` that the response names in `unavailable_hazards`. Only those
+// are said to be unavailable; the backend names there every hazard it could not give.
 const unavailableMissing = (row, unavailable) => {
   const named = new Set(unavailable || []);
   return new Set((row.missing || []).filter((h) => named.has(h)));

@@ -25,6 +25,23 @@ forecast that can be filtered by hazard, and outputs on a common 0–1 scale.
 The fire model is unchanged in every section: same algorithm, features, training and
 levels table.
 
+**Amendment, 2026-11-12, after the build (the user's decision).** This resolves the conflict
+between 2.6 ("Fire keeps its existing behaviour") and 3.4 ("no hazard is forecast by
+counting"): fire never falls back to counting either.
+- A fire model that does not beat counting stays in use, with status `in_use_not_better`.
+- With too few records to train and test, or on a model error, fire is `unavailable` with a
+  reason.
+- A past period with fewer than 100 earlier fires uses the model trained on every record,
+  with `in_training` set.
+- A period from before the first fire record is `unavailable` ("Fire records start in
+  January 2023.").
+- The combined chance counts model figures only.
+
+Before deciding, neural networks were tested against fire's Poisson model (MLP with a Poisson
+loss; settings chosen on 2024–2025, one test on Feb–Oct 2026). The best tied it (Brier 0.1391
+vs 0.1394) and fitted only when penalised into a nearly linear model, so Poisson stays. Script
+and results: .superpowers/sdd/2026-11-12-hazard-prediction-models/fire-model-test-2026-11-12/.
+
 No experiment in this document has been run under the design it specifies. Every number
 below describes the data (counts, dates, availability checks), not model performance.
 
@@ -691,6 +708,7 @@ years_hit, years_considered, events, last_occurred, typical_severity, actual
   a `reason`.
 - The hazard is listed in `unavailable_hazards`.
 - The error is logged.
+- (Amended 2026-11-12: fire no longer falls back to counting either; see the amendment at the top.)
 - **Flood and landslide never fall back to counting** (the project rule). Fire keeps its
   existing behaviour.
 

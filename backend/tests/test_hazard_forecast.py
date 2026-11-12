@@ -21,7 +21,7 @@ from django.test import SimpleTestCase, TestCase
 from apps.barangays.models import Barangay
 from apps.hazards.models import HazardType
 from apps.history import hazard_data, hazard_forecast, hazard_models, model_forecast
-from apps.history.forecast import seasonal_forecast, seasonal_profile
+from apps.history.forecast import empty_profile, seasonal_forecast
 from apps.history.hazard_data import MANILA, RAIN_FEATURES, TERRAIN_FEATURES, rain_windows, write_terrain
 from apps.history.hazard_scenarios import period_chance, period_dates, scenario_dates
 from apps.history.models import HistoricalRecord
@@ -103,12 +103,12 @@ class HazardForecastTests(TestCase):
         return out
 
     def counting(self, month, day=None, year=None, barangay=None, today=TODAY):
-        """The result as the view builds it before the models: counting only."""
+        """The result as the view builds it before the models: the rows' history from counting, an empty chart."""
         now = at(today)
         result = seasonal_forecast(self.events(), month, now, day=day, year=year)
-        result['profile'] = seasonal_profile(self.events(), now, barangay_id=barangay, year=year)
+        result['profile'] = empty_profile()
         result['model_hazards'] = []
-        result['profile_method'] = 'counting'
+        result['profile_method'] = 'unavailable'
         return result
 
     def forecast(self, month, day=None, year=None, hazards=MODELLED, barangay=None, today=TODAY):
@@ -482,5 +482,5 @@ class HazardForecastTests(TestCase):
         self.assertEqual(result['profile'][0]['probability'], round(self.chance(dep, b, 1, None, 2024).probability, 3))
         # several hazards: the chart is left for the combined chance
         result, _ = self.forecast(7, barangay=b)
-        self.assertEqual(result['profile_method'], 'counting')
-        self.assertEqual(result['profile'], self.counting(7, barangay=b)['profile'])
+        self.assertEqual(result['profile_method'], 'unavailable')
+        self.assertEqual(result['profile'], empty_profile())

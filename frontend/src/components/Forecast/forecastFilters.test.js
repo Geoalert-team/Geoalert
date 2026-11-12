@@ -96,7 +96,18 @@ test('a past month and year shows what happened beside the likelihood', async ()
   expect(historyApi.forecast).toHaveBeenLastCalledWith(expect.objectContaining({ year: 2024 }));
   expect([...el.querySelectorAll('th')].map((th) => th.textContent)).toContain('What happened');
   expect([...el.querySelectorAll('tbody tr')].map((tr) => tr.children[4].textContent)).toEqual(['3 events', 'None']);
-  expect(el.textContent).toContain('It is over: 3 events happened.');
+  expect(el.textContent).toMatch(/[A-Z][a-z]+ 2024 is over: 3 events happened\./);
+  // the figures come from the models, not from counting these years
+  expect(el.textContent).not.toContain('2021–2023');
+});
+
+test('a period with nothing before it never says there is nothing to estimate from', async () => {
+  historyApi.forecast.mockResolvedValue(modelled({ year: 2023, years: [], in_training: true,
+    results: [{ ...row(1), hazard_type: 'Fire', method: 'model', probability: 0.36, in_training: true }] }));
+  const el = await render(<BarangayLikelihood hazard="Fire" />);
+  expect(el.textContent).not.toContain('Nothing on record before');
+  expect(el.textContent).toContain('36%');
+  expect(el.textContent).toContain('The model learned from this period');
 });
 
 test('the dashboard card sends the rest to Analytics, not History', async () => {
@@ -147,18 +158,39 @@ test('the year chart says what its bars are', async () => {
   historyApi.forecast.mockResolvedValue(modelled());
   const el = await render(<BarangayLikelihood hazard="Fire" />);
   expect(el.querySelector('.fc-profile').textContent).toContain("average barangay's chance");
-  historyApi.forecast.mockResolvedValue(forecast('Flood'));
+  historyApi.forecast.mockResolvedValue({ ...forecast('Flood'), profile_method: 'unavailable' });
   await el.rerender(<BarangayLikelihood hazard="Flood" />);
-  expect(el.querySelector('.fc-profile').textContent).toContain('share of past years');
+  expect(el.querySelector('.fc-profile').textContent).toContain('The model gives no chart for this period.');
+  expect(el.querySelector('.fc-profile').textContent).not.toContain('share of past years');
 });
 
-test('short history is only called rough while counting sets the levels', async () => {
+test('a month on the chart is described by its chance, never a count of years', async () => {
+  historyApi.forecast.mockResolvedValue(modelled({
+    profile: [
+      { month: 6, month_name: 'June', level: 'Moderate', probability: 0.206, years_hit: 4, years_considered: 6 },
+      { month: 7, month_name: 'July', level: 'None', probability: null },
+    ],
+  }));
+  const el = await render(<BarangayLikelihood hazard="Fire" />);
+  expect([...el.querySelectorAll('.fc-months li')].map((li) => li.getAttribute('title')))
+    .toEqual(['June: Moderate (21%)', 'July: no figure']);
+});
+
+test('short history is never called rough: every level comes from a model', async () => {
   historyApi.forecast.mockResolvedValue(modelled({ limited: true }));
   const el = await render(<BarangayLikelihood hazard="Fire" />);
-  expect(el.textContent).not.toContain('these levels are rough');
+  expect(el.textContent).not.toContain('levels are rough');
   historyApi.forecast.mockResolvedValue({ ...forecast('Flood'), limited: true });
   await el.rerender(<BarangayLikelihood hazard="Flood" />);
-  expect(el.textContent).toContain('these levels are rough');
+  expect(el.textContent).not.toContain('levels are rough');
+});
+
+test('the method says what fire uses when too few fires came before the period', async () => {
+  historyApi.forecast.mockResolvedValue(modelled());
+  const el = await render(<BarangayLikelihood hazard="Fire" />);
+  expect(el.querySelector('.db-method').textContent).toContain(
+    'When fewer than 100 fires came before it, the model trained on every record is used, and the table says it learned from that period.',
+  );
 });
 
 test('the full table points at the History archive for the records', async () => {
@@ -370,7 +402,8 @@ test('a model month in the year chart says under 1% for a tiny chance, never 0%'
   });
   const el = await render(<BarangayLikelihood />);
   expect([...el.querySelectorAll('.fc-months li')].map((li) => li.getAttribute('title'))).toEqual([
-    'November: Moderate (23%)', 'December: Low (under 1%)', 'January: Low (0%)', 'February: Low (1 of 4 years)',
+    // a month's counting fields, if any were ever sent, are never shown: the chance is
+    'November: Moderate (23%)', 'December: Low (under 1%)', 'January: Low (0%)', 'February: Low (under 1%)',
   ]);
 });
 

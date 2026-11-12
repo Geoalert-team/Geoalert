@@ -13,15 +13,26 @@ suggest. The chance of at least one event follows from the expected number,
 
 Why this model: it was the best of 37 candidates on rolling forecasts inside
 2023-2025, then beat counting on the fires of January to September 2026, which
-it had never seen. Boosted trees, random forests and rainfall did no better.
+it had never seen. Boosted trees, random forests and rainfall did no better;
+nor did small neural networks with a Poisson loss (2026-11-12: the best tied
+it on February to October 2026, and only when penalised into a nearly linear
+fit), nor neighbouring barangays' or recent fires as inputs.
 Fires per barangay-month fit a Poisson spread almost exactly (dispersion 0.99),
 so a negative binomial adds nothing.
 
-The model has to earn its place: evaluate() holds back the last TEST_MONTHS of
-a hazard type's record, trains on what came before, and scores the model and
-the counting in forecast.py on what it held back. A type with too few records,
-or whose model does not beat counting, stays on counting. Only real records
-count: seeded samples never train or test anything.
+Its test: evaluate() holds back the last TEST_MONTHS of a hazard type's
+record, trains on what came before, and scores the model and the counting in
+forecast.py on what it held back. Counting is only the benchmark: a model that
+does not beat it stays in use and its status says so (in_use_not_better); a
+type with too few records to train and test gets no figures, and the forecast
+shows it unavailable. Only real records count: seeded samples never train or
+test anything.
+
+A period that has started is estimated from the months before it. When they
+hold fewer than MIN_TRAIN_EVENTS, the whole record's model gives the figures
+and the rows say `in_training`, since that model learned from the period
+itself (as flood and landslide do for their study years). A period from before
+the record began gets no figures.
 """
 import hashlib
 from calendar import monthrange
@@ -46,6 +57,11 @@ TOP_BARANGAYS = 5
 TIE_DRAWS = 50
 CACHE_SECONDS = 6 * 60 * 60
 AREA_SRID = 32651  # UTM 51N, metres over Cebu
+
+# Why a hazard type has no figures; the forecast shows these on its unavailable rows
+TOO_FEW = 'Too few {} records to train and test its model.'
+RECORDS_START = '{} records start in {:%B %Y}.'
+MODEL_DOWN = 'The fire model could not run right now.'
 
 
 def chance(rate):
@@ -179,7 +195,8 @@ def evaluate(events, places, today):
     """
     Hold back the last TEST_MONTHS of the record, train on the months before
     them and score the model and counting on them. 'status' says what follows:
-    in_use, not_better (stays on counting) or too_few_records.
+    in_use, in_use_not_better (the model is still used; never counting) or
+    too_few_records (no figures).
     """
     known = _known(events, places)
     if not known:
@@ -223,17 +240,18 @@ def evaluate(events, places, today):
             'chance': round(float(chances[inside].mean()), 3) if inside.any() else None,
             'happened': round(float((y[inside] > 0).mean()), 3) if inside.any() else None,
         })
-    return {**out, 'status': 'in_use' if beats(model, counting) else 'not_better',
+    return {**out, 'status': 'in_use' if beats(model, counting) else 'in_use_not_better',
             'model': model, 'counting': counting, 'levels': levels}
 
 
-def apply_table(result, hazard, table, places, month, day=None):
+def apply_table(result, hazard, table, places, month, day=None, in_training=False):
     """
     Give this hazard type's rows in a seasonal_forecast result the model's
     chance and level. Every barangay gets a row, since the model has a figure
     for each; the row's history (years hit, events, what happened) stays. An
     exact date's chance is for its week, but the level stays the month's: a
     week's chance is small everywhere, which would call every barangay Low.
+    `in_training` marks rows whose model learned from the period itself.
     """
     rows = {r['barangay_id']: r for r in result['results'] if r['hazard_type'] == hazard}
     week = (2 * forecast.DAY_WINDOW + 1) / monthrange(result.get('year') or 2001, month)[1] if day else 1
@@ -251,13 +269,21 @@ def apply_table(result, hazard, table, places, month, day=None):
         rate = table[place['id']][month - 1]
         row.update(probability=round(chance(rate * week), 3), expected_events=round(rate * week, 2),
                    level=level_for(chance(rate)), method='model')
+        if in_training:
+            row['in_training'] = True
+        else:
+            row.pop('in_training', None)
     forecast.rank_rows(result['results'])
     result['by_barangay'] = forecast.summarize_by_barangay(result['results'])
 
 
 def apply_profile(result, table, barangay_id):
-    """The 12-month chart from the model: this barangay's year, or the average barangay's."""
-    result['profile_method'] = 'counting'
+    """
+    The 12-month chart from the model: this barangay's year, or the average
+    barangay's. A barangay the model has no figure for leaves the chart empty
+    and unavailable.
+    """
+    result['profile_method'] = 'unavailable'
     if barangay_id is None:
         monthly = [sum(rates[m] for rates in table.values()) / len(table) for m in range(12)]
     elif barangay_id in table:
@@ -291,16 +317,35 @@ def _real_by_hazard(events):
 
 
 def _fitted(hazard, events, until, today):
-    """The test result and the table for one hazard type, cached until its record changes."""
+    """
+    The test result and the table for one hazard type, cached until its record
+    changes: {'places', 'report', 'table', 'in_training', 'reason'}. The table
+    is trained on the months before `until` (a period that has started), or on
+    the whole record when they hold too few events, with `in_training` set. It
+    is None, with `reason`, when the record is too small to train and test, or
+    when the period comes before the record began.
+    """
     last = max(e['when'] for e in events)
     tag = f'{hazard}|{len(events)}|{last.isoformat()}|{until}|{_label(_index(today))}'
-    key = 'forecast-model:' + hashlib.sha1(tag.encode('utf-8')).hexdigest()
+    # v2: the cached value gained in_training and reason, and a table whenever the record allows one
+    key = 'forecast-model-v2:' + hashlib.sha1(tag.encode('utf-8')).hexdigest()
 
     def build():
         where = places()
-        report = evaluate(events, where, today)
-        table = rates_table(events, where, until=until, today=today) if report['status'] == 'in_use' else None
-        return {'places': where, 'report': report, 'table': table}
+        out = {'places': where, 'report': evaluate(events, where, today), 'table': None, 'in_training': False,
+               'reason': TOO_FEW.format(hazard.lower())}
+        if out['report']['status'] == 'too_few_records':
+            return out
+        table = rates_table(events, where, until=until, today=today)
+        if table is None and until is not None:
+            first = min(e['when'] for e in _known(events, where))
+            if until < date(first.year, first.month, 1):
+                out['reason'] = RECORDS_START.format(hazard, first)
+                return out
+            table, out['in_training'] = rates_table(events, where, until=None, today=today), True
+        if table is not None:
+            out.update(table=table, reason=None)
+        return out
     return cache.get_or_set(key, build, CACHE_SECONDS)
 
 
@@ -313,25 +358,30 @@ def _added(tables):
 def use_models(result, events, month, day=None, hazard=None, barangay=None, today=None):
     """
     Put the model's figures on a seasonal_forecast result for each hazard type
-    whose model passed. A period that has started is estimated only from what
-    came before it, as counting does. The year chart follows the models only
-    when every hazard type it covers has one, so it never leaves a type out.
+    whose model can run (_fitted). A period that has started is estimated from
+    what came before it, or from the whole record, flagged, when that is too
+    little. The year chart follows the models only when every hazard type it
+    covers has one, so it never leaves a type out. Returns {hazard type: why it
+    has no figures} for the types left as they were; the caller marks those
+    unavailable, never counting.
     """
     today = today or date.today()
     window = result.get('window')
     until = window['start'] if window and window['start'] <= today else None
     kinds = {name: rows for name, rows in _real_by_hazard(events).items()
              if not hazard or name.lower() == hazard.lower()}
-    tables = {}
+    tables, unavailable = {}, {}
     for name, rows in kinds.items():
         fitted = _fitted(name, rows, until, today)
         if fitted['table'] is None:
+            unavailable[name] = fitted['reason']
             continue
-        apply_table(result, name, fitted['table'], fitted['places'], month, day)
+        apply_table(result, name, fitted['table'], fitted['places'], month, day, in_training=fitted['in_training'])
         tables[name] = fitted['table']
     if tables and len(tables) == len(kinds):
         apply_profile(result, _added(tables), barangay)
     result['model_hazards'] = list(tables)
+    return unavailable
 
 
 def accuracy_reports(events, today):

@@ -11,10 +11,10 @@ const span = ({ start, end }) => `${monthLabel(start)} to ${monthLabel(end)}`;
 const percent = (share) => (share == null ? '-' : `${Math.round(share * 100)}%`);
 const fixed = (value, places) => (value == null ? '-' : value.toFixed(places));
 
+// No hazard is forecast by counting: a model that lost to it stays in use; too few records is unavailable
 const VERDICT = {
   in_use: 'the model is in use',
-  not_better: 'stays on counting',
-  too_few_records: 'stays on counting',
+  too_few_records: 'unavailable',
   in_use_not_better: 'in use',
   unavailable: 'unavailable',
 };
@@ -186,13 +186,15 @@ function HazardAccuracy({ report }) {
       {status === 'too_few_records' ? (
         <p className="fc-note">
           It has too few records to train and test a model yet
-          {train ? ` (${train.events} to train on, ${test.events} to test on)` : ''}.
+          {train ? ` (${train.events} to train on, ${test.events} to test on)` : ''}, so the likelihood shows it as
+          unavailable.
         </p>
       ) : (
         <>
           <p className="fc-note">
             Trained on {span(train)} ({train.events} events), tested on {span(test)} ({test.events} events it never saw).
-            {status === 'not_better' && ' The model did not beat counting on those months, so counting stays.'}
+            {status === 'in_use_not_better'
+              && ' The model did not beat counting on those months. It stays in use: no hazard is forecast by counting.'}
           </p>
           <div className="fc-table-wrap">
             <table className="fc-table fc-table-whole">
@@ -251,9 +253,9 @@ function HazardAccuracy({ report }) {
 
 /**
  * How each hazard type's trained model did against counting on months it
- * never saw (backend apps/history/model_forecast.py), and whether it is in
- * use. The same test decides which method the likelihood above shows. It
- * always reads real records, so it takes no filters from the page.
+ * never saw (backend apps/history/model_forecast.py and hazard_models.py).
+ * Every hazard's likelihood comes from its model; counting is only the
+ * benchmark. It always reads real records, so it takes no filters from the page.
  */
 export default function ForecastAccuracy() {
   const [hazards, setHazards] = useState(null);
@@ -272,8 +274,8 @@ export default function ForecastAccuracy() {
     <div className="fc">
       <h2>Model accuracy</h2>
       <p className="db-card-sub">
-        Fire uses its model only if it beats counting. Flood and landslide always use their rain and terrain model,
-        and this card says when it does not beat counting.
+        Every hazard always uses its model; counting is only the benchmark it is tested against, and this card says
+        when a model does not beat it.
       </p>
       {error && <p className="db-error" role="alert">{error}</p>}
       {!error && !hazards && <p className="db-empty">Loading the accuracy check…</p>}

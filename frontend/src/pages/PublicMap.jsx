@@ -70,9 +70,9 @@ const TILE_FAIL_LIMIT = 6;
 // (components/Map/purokLevels.js).
 const VIEWS = [
   { key: 'past', label: 'Past hazards', note: null },
-  // Likelihood per barangay for a chosen month, from past records: counted
-  // (backend apps/history/forecast.py) or from a trained model where one has
-  // passed its test (apps/history/model_forecast.py).
+  // Likelihood per barangay for a chosen month, from each hazard's trained
+  // model (backend apps/history/model_forecast.py for fire, hazard_forecast.py
+  // for flood and landslide); a hazard whose model cannot run is unavailable.
   { key: 'likely', label: 'Likely by month', note: FORECAST_DISCLAIMER },
 ];
 
@@ -824,7 +824,7 @@ export default function PublicMap() {
                     return `${r.hazard_type}: ${likelihoodInfo(r.level).label}${chanceText(r) && `, about ${chanceText(r)}`} (${periodYearsText(r, likelyPeriod)}${happened(r)})`;
                   });
                   // No chance because a shown hazard the response calls unavailable is missing is said
-                  // so; nothing on record (fire on counting in a past period) stays "no data"
+                  // so; anything else with no figure stays "no data"
                   const unavailable = likely?.unavailable_hazards || [];
                   const head = c && c.probability != null
                     ? `All shown hazards: ${likelihoodInfo(c.level).label}, ${aboutChanceText(c.probability)} (${combinedText(c, unavailable)})`
@@ -1083,12 +1083,6 @@ export default function PublicMap() {
                   <a href={RAIN_ATTRIBUTION.links[0].href} target="_blank" rel="noopener noreferrer">{RAIN_ATTRIBUTION.links[0].label}</a>
                   {' '}(<a href={RAIN_ATTRIBUTION.links[1].href} target="_blank" rel="noopener noreferrer">{RAIN_ATTRIBUTION.links[1].label}</a>),
                   processed into hazard chances by GeoAlert
-                </p>
-              )}
-              {likely?.limited && likely.years?.length > 0 && (
-                <p className="pm-legend-note">
-                  Only {likely.years.length} past year{likely.years.length === 1 ? '' : 's'} on record, so these
-                  levels are rough.
                 </p>
               )}
               {likely?.basis?.sample_records > 0 && (

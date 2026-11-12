@@ -93,6 +93,15 @@ report or a data file is missing, flood and landslide show "unavailable" with th
 they are never estimated by counting past events, and they are left out of the All
 hazards chance.
 
+Fire's chance comes from its own Poisson regression (apps/history/model_forecast.py),
+refitted from the records by the forecast itself and cached for 6 hours; it needs no
+files. It is never estimated by counting either:
+- With too few fire records to train and test (100 to train, 20 to test), fire shows
+  "unavailable".
+- For a past period with fewer than 100 fires before it (2023-2024 today), the model
+  trained on every record is used, and the rows say it learned from that period.
+- A period from before the first fire record shows "unavailable".
+
 Each year (say every January): run fetch_rain so the newest full year joins the rain
 scenarios, then run test_hazard_models.
 

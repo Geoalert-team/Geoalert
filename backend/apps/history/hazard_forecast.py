@@ -8,9 +8,9 @@ and keeps the result for 6 hours behind a lock, so one request fits while the
 others wait for it. use_hazard_models() turns those daily chances into each
 period's chance by replaying past years' rain (hazard_scenarios.py) and puts
 them on a seasonal_forecast result (spec 2.3-2.6). A model that cannot run
-gives "unavailable" rows with a reason: flood and landslide never fall back to
-counting. Fire's model (model_forecast.py) and the counting (forecast.py) are
-read, never changed.
+gives "unavailable" rows with a reason: no hazard falls back to counting, and
+the combined chance counts model figures only. Fire's model (model_forecast.py)
+and the counting history (forecast.py) are read, never changed.
 
 The model libraries are imported only when the model is needed, so this
 module loads, and can mark rows unavailable, even where they are missing.
@@ -554,22 +554,24 @@ def fire_month_table(result, events, today):
     return model_forecast._fitted('Fire', fires, until, today)['table']
 
 
-def _counts(row):
-    """A row with a figure: not unavailable and with a probability. Fire's counting row counts."""
-    return row is not None and row.get('method') != 'unavailable' and row.get('probability') is not None
+def _counts(row, table=None, b=None):
+    """
+    A row with a model figure. A row with no model behind it (a counting
+    share) never counts: every hazard's chance comes from its model. Fire's
+    also needs its month table to hold the barangay.
+    """
+    if row is None or row.get('method') != 'model' or row.get('probability') is None:
+        return False
+    return row['hazard_type'] != 'Fire' or (table is not None and b in table)
 
 
-def _fire_part(row, table, b, month, week):
+def _fire_part(table, b, month, week):
     """
-    Fire's (period chance, month chance, expected events) for barangay b:
-    from its table as apply_table reads it (the week is rate x 7 / days in
-    the month), or its counting row's own figure for both chances when its
-    model is not in use.
+    Fire's (period chance, month chance, expected events) for barangay b from
+    its table, as apply_table reads it (the week is rate x 7 / days in the month).
     """
-    if table is not None and b in table:
-        rate = table[b][month - 1]
-        return chance(rate * week), chance(rate), rate * week
-    return row['probability'], row['probability'], row.get('expected_events') or 0.0
+    rate = table[b][month - 1]
+    return chance(rate * week), chance(rate), rate * week
 
 
 def _rain_chance(gets, dates_by_s):
@@ -663,11 +665,11 @@ def combine(result, scen, fire_table, included, month, day, year, barangay, plac
     for place in places:
         b = place['id']
         # a flood or landslide figure only ever comes from its model, never from counting
-        missing = [h for h in included if not _counts(rows.get((h, b)))
+        missing = [h for h in included if not _counts(rows.get((h, b)), fire_table, b)
                    or (h in HAZARDS and b not in scen.get(h, {}).get('chances', {}))]
         period, month_parts, single, expected = [], [], {}, 0.0
         if 'Fire' in included and 'Fire' not in missing:
-            p, pm, e = _fire_part(rows[('Fire', b)], fire_table, b, month, week)
+            p, pm, e = _fire_part(fire_table, b, month, week)
             period.append(p)
             month_parts.append(pm)
             single['Fire'] = p

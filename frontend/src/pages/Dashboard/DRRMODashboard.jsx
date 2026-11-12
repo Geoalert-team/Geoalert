@@ -742,13 +742,13 @@ export default function DRRMODashboard() {
 
         <ActiveZonesCard onResolved={load} />
 
-        {/* What past seasons say is coming, so the office can prepare ahead */}
+        {/* What the hazard models say is coming, so the office can prepare ahead */}
         <section className="adm-card">
           <div className="drm-section-head">
             <div>
               <h2>Likely hazards</h2>
               <p>
-                Barangays the period has tended to hit in past years: next month to start, or pick a
+                Barangays the hazard models rate most likely to be hit: next month to start, or pick a
                 month, a month and year, or a date.{' '}
                 <Link to="/app/reports?tab=analytics">See every barangay and month</Link>
               </p>

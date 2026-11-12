@@ -44,21 +44,23 @@ test('a model in use shows what it trained on, what it was tested on and how it 
   expect(cells(levels)[0]).toEqual(['High', '49', '31%', '29%', '19']);
 });
 
-test('a model that lost says it stays on counting, with the figures', async () => {
-  historyApi.forecastAccuracy.mockResolvedValue({ hazards: [{ ...tested, status: 'not_better' }] });
+test('a model that did not beat counting stays in use and says so, with the figures', async () => {
+  historyApi.forecastAccuracy.mockResolvedValue({ hazards: [{ ...tested, status: 'in_use_not_better' }] });
   const el = await render();
-  expect(el.textContent).toContain('Fire: stays on counting');
-  expect(el.textContent).toContain('did not beat counting');
+  expect(el.textContent).toContain('Fire: in use');
+  expect(el.textContent).toContain('The model did not beat counting on those months. It stays in use: no hazard is forecast by counting.');
+  expect(el.textContent).not.toContain('stays on counting');
   expect(el.querySelectorAll('table')).toHaveLength(2);
 });
 
-test('too few records says so and shows no scores', async () => {
+test('too few records says the hazard is unavailable and shows no scores', async () => {
   historyApi.forecastAccuracy.mockResolvedValue({
-    hazards: [{ hazard: 'Flood', status: 'too_few_records', train: { start: '2023-01', end: '2025-12', events: 12 }, test: { start: '2026-01', end: '2026-09', events: 3 } }],
+    hazards: [{ hazard: 'Fire', status: 'too_few_records', train: { start: '2023-01', end: '2025-12', events: 12 }, test: { start: '2026-01', end: '2026-09', events: 3 } }],
   });
   const el = await render();
-  expect(el.textContent).toContain('Flood: stays on counting');
-  expect(el.textContent).toContain('too few records');
+  expect(el.textContent).toContain('Fire: unavailable');
+  expect(el.textContent).toContain('It has too few records to train and test a model yet (12 to train on, 3 to test on), so the likelihood shows it as unavailable.');
+  expect(el.textContent).not.toContain('stays on counting');
   expect(el.querySelector('table')).toBeNull();
 });
 
@@ -214,7 +216,7 @@ test('camp_iv and sensitivity lines', async () => {
 
 test('the card shows the new sub line, the combined note, the attribution and every limit in order', async () => {
   const el = await withRain(rain);
-  expect(el.textContent).toContain('Fire uses its model only if it beats counting. Flood and landslide always use their rain and terrain model, and this card says when it does not beat counting.');
+  expect(el.textContent).toContain('Every hazard always uses its model; counting is only the benchmark it is tested against, and this card says when a model does not beat it.');
   expect(el.textContent).toContain('Built from the three tested models; not tested on its own.');
   expect(el.textContent).toContain('Rain data by Open-Meteo.com (CC BY 4.0), processed into hazard chances by GeoAlert');
   expect([...el.querySelectorAll('a')].map((a) => a.getAttribute('href'))).toEqual(['https://open-meteo.com/', 'https://creativecommons.org/licenses/by/4.0/']);

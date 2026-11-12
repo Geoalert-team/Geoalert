@@ -4,7 +4,7 @@ from datetime import date, datetime, timezone
 from django.test import SimpleTestCase
 
 from apps.history.forecast import (
-    drop_samples, level_for, likelihood, period_window, seasonal_forecast, seasonal_profile, year_weights,
+    drop_samples, level_for, likelihood, period_window, seasonal_forecast, year_weights,
     years_for_month, years_for_period,
 )
 
@@ -93,12 +93,6 @@ class ForecastTests(SimpleTestCase):
         out = seasonal_forecast([ev(2025, 3), ev(2025, 11)], 11, NOW)
         self.assertTrue(out['limited'])
 
-    def test_profile_peaks_in_the_flood_month(self):
-        months = seasonal_profile(self.events(), NOW, barangay_id=1, hazard='Flood')
-        self.assertEqual(len(months), 12)
-        self.assertEqual(max(months, key=lambda m: m['probability'])['month'], 11)
-        self.assertEqual(months[5]['level'], 'None')
-
 
 class DropSamplesTests(SimpleTestCase):
     events = [{'barangay': 'A', 'is_sample': True}, {'barangay': 'B', 'is_sample': False}]
@@ -166,12 +160,6 @@ class PeriodForecastTests(SimpleTestCase):
         b1 = next(r for r in out['results'] if r['barangay'] == 'B1')
         self.assertEqual((b1['years_hit'], b1['years_considered']), (1, 5))
         self.assertEqual(out['window'], {'start': date(2027, 11, 12), 'end': date(2027, 11, 18)})
-
-    def test_the_profile_for_a_year_reads_only_the_years_before_it(self):
-        before = seasonal_profile(self.events(), NOW, barangay_id=2, hazard='Flood', year=2024)
-        after = seasonal_profile(self.events(), NOW, barangay_id=2, hazard='Flood')
-        self.assertEqual(before[10]['level'], 'None')   # B2 had never flooded before 2024
-        self.assertNotEqual(after[10]['level'], 'None')
 
 
 class ForecastViewParamTests(SimpleTestCase):
