@@ -51,6 +51,7 @@ SUBCATEGORIES = {
                   'REPEATED ROCKSLIDES', 'LANDSLIDE / MUDFLOW', 'GROUND CRACK (SLOPE INSTABILITY)'],
 }
 CAUSE_MAX = 200
+SOURCE_MAX = 300
 # Close form key -> HistoricalRecord field, for the counts J-M
 CLOSE_COUNTS = ('injured', 'fatalities', 'families_affected', 'persons_affected')
 
@@ -89,8 +90,8 @@ def read_workbook(path):
         for sheet in EVENT_SHEETS:
             for number, row in _rows(wb[sheet], EVENT_COLUMNS, 4):
                 event = {'sheet': sheet, 'row': number, 'date': row['date'], 'time': row['time']}
-                # Column P, the sources, is left out: the record says what happened, not where it was read
-                for key in ('city', 'location', 'hazard', 'subcategory', 'cause', 'impact', 'remarks'):
+                # Column P, where the event was read, has a field of its own (source), not the description
+                for key in ('city', 'location', 'hazard', 'subcategory', 'cause', 'impact', 'remarks', 'source'):
                     event[key] = _text(row[key])
                 event['hazard'] = event['hazard'].upper()
                 event.update({key: _count(row[key]) for key in COUNTS})
@@ -258,6 +259,8 @@ def plan_import(events, splits, existing_refs, barangays, puroks_by_barangay, va
                 'total_casualties': casualties if i == 0 else None,
                 'total_displaced': None,  # the log counts persons affected, not displaced
                 'location_text': location,
+                # Every barangay's record of the event says where it was read
+                'source': ' '.join(event['source'].split())[:SOURCE_MAX],
                 'source_ref': ref,
                 'is_sample': False,
             })

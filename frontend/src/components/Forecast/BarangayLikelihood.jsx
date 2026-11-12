@@ -3,10 +3,29 @@ import { Link } from 'react-router-dom';
 import { historyApi } from '../../api/historyApi';
 import ForecastPeriodPicker from './ForecastPeriodPicker';
 import {
-  FORECAST_DISCLAIMER, SEVERITY_WORD, chanceText, defaultPeriod, likelihoodInfo, periodIn, periodLabel, periodMonth,
-  periodParams, periodPastHeader, periodYearsText, withMonth,
+  FORECAST_DISCLAIMER, IN_TRAINING_NOTE, MODEL_LABELS, RAIN_ATTRIBUTION, SEVERITY_WORD, chanceText, combinedText,
+  combinedUnavailable, defaultPeriod, levelLabel, likelihoodInfo, periodIn, periodLabel, periodMonth, periodParams, periodPastHeader,
+  periodYearsText, rangeText, smallChanceText, unavailableNote, withMonth,
 } from './forecastLevels';
 import './forecast.css';
+
+const RAIN_HAZARDS = ['Flood', 'Landslide'];
+
+// The attribution line, with its two links
+function RainAttribution() {
+  let rest = RAIN_ATTRIBUTION.text;
+  const parts = [];
+  RAIN_ATTRIBUTION.links.forEach((l) => {
+    const [before, after] = rest.split(l.label);
+    parts.push(
+      <React.Fragment key={`t-${l.label}`}>{before}</React.Fragment>,
+      <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer">{l.label}</a>,
+    );
+    rest = after;
+  });
+  parts.push(<React.Fragment key="t-end">{rest}</React.Fragment>);
+  return <p className="fc-note fc-attribution">{parts}</p>;
+}
 
 /**
  * Which barangays a month, a month in a given year, or the week around a
@@ -14,9 +33,10 @@ import './forecast.css';
  * row to see its whole year. A period that has started also shows what
  * actually happened in it.
  *
- * Counted from the archive (backend apps/history/forecast.py), or from a
- * trained model for the hazard types whose model beat that counting
- * (apps/history/model_forecast.py). Not a weather forecast.
+ * Fire comes from a model trained on past fires (backend
+ * apps/history/model_forecast.py); flood and landslide from models of rain and
+ * terrain (apps/history/hazard_forecast.py). With no hazard picked, the table is
+ * the chance of any of them (the response's `combined`). Not a weather forecast.
  *
  * Props:
  *   compact         dashboard card: top rows only, no month profile
@@ -47,12 +67,27 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
     return () => { cancelled = true; };
   }, [period, hazard, barangay, excludeSamples]);
 
-  const rows = data?.results || [];
+  const isAll = hazard === '';
+  const results = data?.results || [];
+  // All hazards: one row per barangay from `combined`; one hazard: its own rows
+  const rows = isAll ? (data?.combined || []) : results;
   const shown = compact ? rows.slice(0, limit) : rows;
   // What actually happened, once a period with a year has started
   const outcome = data?.outcome;
   const modelled = data?.model_hazards || [];
-  const showChance = !compact && rows.some((r) => r.method === 'model');
+  const showChance = !compact && !isAll && rows.some((r) => r.method === 'model' || r.method === 'unavailable');
+  const inTraining = !isAll && shown.some((r) => r.in_training);
+  const showsRain = isAll
+    ? shown.some((r) => (r.hazards || []).some((h) => RAIN_HAZARDS.includes(h.hazard_type)))
+    : shown.some((r) => r.method === 'model' && RAIN_HAZARDS.includes(r.hazard_type));
+  const rainRow = results.find((r) => r.method === 'model' && RAIN_HAZARDS.includes(r.hazard_type) && r.model);
+  const rainModel = rainRow ? (MODEL_LABELS[rainRow.model] || rainRow.model) : null;
+  // What happened per barangay, from the per-hazard rows, for the combined table
+  const happened = (id) => results.filter((r) => r.barangay_id === id).reduce((n, r) => n + (r.actual || 0), 0);
+  const eventsText = (n) => (n ? `${n} event${n === 1 ? '' : 's'}` : 'None');
+  // A shown hazard the models could not give is named under the All hazards table, never dropped silently
+  const allNote = isAll && data ? unavailableNote(data, data.hazards_included || []) : '';
+  const unavailable = data?.unavailable_hazards || [];
   let barNote = 'Bar height is the share of past years with at least one event in that month.';
   if (data?.profile_method === 'model') {
     barNote = `Bar height is ${barangay ? 'the model\'s' : 'the average barangay\'s'} chance of at least one event in that month.`;
@@ -86,56 +121,104 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
 
       {data && !rows.length && (
         <p className="db-empty">
-          No hazard has been recorded in {periodIn(period)} in the years on record.
+          {isAll
+            ? 'No barangay has a forecast for this period.'
+            : `No ${hazard.toLowerCase()} forecast is available for this period.`}
         </p>
       )}
+
+      {inTraining && <p className="fc-note">{IN_TRAINING_NOTE}</p>}
 
       {shown.length > 0 && (
         // On a narrow phone the table scrolls inside the card, never the page
         <div className="fc-table-wrap">
         <table className="fc-table">
           <thead>
-            <tr>
-              <th scope="col">Barangay</th>
-              <th scope="col">Hazard</th>
-              <th scope="col">Likelihood</th>
-              <th scope="col">{periodPastHeader(period)}</th>
-              {showChance && <th scope="col">Chance</th>}
-              {outcome && <th scope="col">{outcome.complete ? 'What happened' : 'So far'}</th>}
-              {!compact && <th scope="col">Usual severity</th>}
-            </tr>
+            {isAll ? (
+              <tr>
+                <th scope="col">Barangay</th>
+                <th scope="col">All hazards</th>
+                <th scope="col">Chance</th>
+                <th scope="col">Biggest share</th>
+                <th scope="col">Each hazard</th>
+                {outcome && <th scope="col">{outcome.complete ? 'What happened' : 'So far'}</th>}
+              </tr>
+            ) : (
+              <tr>
+                <th scope="col">Barangay</th>
+                <th scope="col">Hazard</th>
+                <th scope="col">Likelihood</th>
+                <th scope="col">{periodPastHeader(period)}</th>
+                {showChance && <th scope="col">Chance</th>}
+                {outcome && <th scope="col">{outcome.complete ? 'What happened' : 'So far'}</th>}
+                {!compact && <th scope="col">Usual severity</th>}
+              </tr>
+            )}
           </thead>
           <tbody>
             {shown.map((r) => {
-              const info = likelihoodInfo(r.level);
+              const info = likelihoodInfo(r.method === 'unavailable' ? 'None' : r.level);
               const picked = barangay && barangay.id === r.barangay_id;
+              const nameCell = (
+                <td>
+                  {compact ? r.barangay : (
+                    <button
+                      type="button"
+                      className="fc-link"
+                      onClick={() => setBarangay(picked ? null : { id: r.barangay_id, name: r.barangay })}
+                      aria-pressed={picked}
+                    >
+                      {r.barangay}
+                    </button>
+                  )}
+                </td>
+              );
+              // No All hazards chance because a hazard the response calls unavailable is missing: not
+              // "None on record". A hazard missing with nothing on record stays "None on record".
+              const allUnavailable = isAll && combinedUnavailable(r, unavailable);
+              const badge = (
+                <span className="fc-badge" style={{ background: info.tint, color: info.text }}>
+                  <span className="fc-dot" style={{ background: info.color }} />
+                  {allUnavailable ? 'Unavailable right now' : levelLabel(r)}
+                </span>
+              );
+              if (isAll) {
+                return (
+                  <tr key={r.barangay_id} className={picked ? 'is-picked' : undefined}>
+                    {nameCell}
+                    <td>{badge}</td>
+                    <td>{r.probability == null ? '-' : smallChanceText(r.probability)}</td>
+                    <td>{r.top_hazard || '-'}</td>
+                    <td>{combinedText(r, unavailable) || '-'}</td>
+                    {outcome && <td>{eventsText(happened(r.barangay_id))}</td>}
+                  </tr>
+                );
+              }
               return (
                 <tr
                   key={`${r.barangay_id}-${r.hazard_type}`}
                   className={picked ? 'is-picked' : undefined}
                 >
-                  <td>
-                    {compact ? r.barangay : (
-                      <button
-                        type="button"
-                        className="fc-link"
-                        onClick={() => setBarangay(picked ? null : { id: r.barangay_id, name: r.barangay })}
-                        aria-pressed={picked}
-                      >
-                        {r.barangay}
-                      </button>
-                    )}
-                  </td>
+                  {nameCell}
                   <td>{r.hazard_type}</td>
-                  <td>
-                    <span className="fc-badge" style={{ background: info.tint, color: info.text }}>
-                      <span className="fc-dot" style={{ background: info.color }} />
-                      {info.label}
-                    </span>
-                  </td>
+                  <td>{badge}</td>
                   <td>{periodYearsText(r, period)}</td>
-                  {showChance && <td>{chanceText(r) || '-'}</td>}
-                  {outcome && <td>{r.actual ? `${r.actual} event${r.actual === 1 ? '' : 's'}` : 'None'}</td>}
+                  {showChance && (
+                    <td>
+                      {r.method === 'unavailable' ? (
+                        <div className="fc-sub">{r.reason || 'Unavailable right now'}</div>
+                      ) : (
+                        <>
+                          {(r.method === 'model' && r.hazard_type !== 'Fire' ? smallChanceText(r.probability) : chanceText(r)) || '-'}
+                          {r.method === 'model' && r.range && <div className="fc-sub">{rangeText(r)}</div>}
+                          {r.recorded_rain_probability != null && (
+                            <div className="fc-sub">With rain so far: {smallChanceText(r.recorded_rain_probability)}</div>
+                          )}
+                        </>
+                      )}
+                    </td>
+                  )}
+                  {outcome && <td>{eventsText(r.actual)}</td>}
                   {!compact && <td>{SEVERITY_WORD[r.typical_severity] || '-'}</td>}
                 </tr>
               );
@@ -144,6 +227,8 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
         </table>
         </div>
       )}
+
+      {allNote && <p className="fc-note">{allNote}</p>}
 
       {compact && rows.length > shown.length && (
         <p className="fc-more">
@@ -170,7 +255,9 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
                 <li
                   key={m.month}
                   className={m.month === periodMonth(period) ? 'is-current' : undefined}
-                  title={`${m.month_name}: ${info.label} (${m.years_hit} of ${m.years_considered} years)`}
+                  title={m.years_hit != null
+                    ? `${m.month_name}: ${info.label} (${m.years_hit} of ${m.years_considered} years)`
+                    : `${m.month_name}: ${info.label} (${smallChanceText(m.probability)})`}
                 >
                   <button type="button" onClick={() => setPeriod((p) => withMonth(p, m.month))} aria-label={`${m.month_name}, ${info.label}`}>
                     <span className="fc-bar-wrap">
@@ -187,6 +274,7 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
       )}
 
       <p className="fc-note">{FORECAST_DISCLAIMER}</p>
+      {showsRain && <RainAttribution />}
       {data?.basis?.sample_records > 0 && (
         <p className="fc-note">
           {data.basis.sample_records} of the {data.basis.records} records behind this are sample data
@@ -197,28 +285,39 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
       {!compact && (
         <details className="db-method">
           <summary>How this is calculated</summary>
-          {modelled.length > 0 && (
+          {modelled.includes('Fire') && (
             <p>
-              The likelihood for {modelled.join(' and ')} comes from a trained model, a Poisson
+              The likelihood for Fire comes from a trained model, a Poisson
               regression. From every real record it learns how many events to expect in each barangay
               in each month, using the barangay, the month, its land area and how many puroks it has
-              for that area. That gives the chance of at least one event in the month: 25% or more is
-              High, 15% or more is Moderate, and anything less is Low. For an exact date the chance
-              shown is for that week and the level stays the month&rsquo;s. With a year picked, it is
-              trained only on what came before that period. The accuracy check on this page shows how
-              it did on months it never saw.
+              for that area. That gives the chance of at least one event in the month. For an exact
+              date the chance shown is for that week. With a year picked, it is trained only on what
+              came before that period.
+            </p>
+          )}
+          {(rainModel || modelled.some((h) => RAIN_HAZARDS.includes(h))) && (
+            <p>
+              Flood and landslide come from rain and terrain.
+              {rainModel ? ` A ${rainModel} model` : ' A trained model'} learns, from past
+              years of daily rain at each barangay and its terrain (height above water, slope, nearness
+              to streams, roads and the coast), how likely a report is on a day with that much rain.
+              For a coming period it replays every past year&rsquo;s rain over the same dates, so each
+              chance comes with the range it took across those years. Where this period&rsquo;s rain
+              so far is known, it is shown as &ldquo;With rain so far&rdquo;. A hazard whose model
+              cannot run is shown as unavailable, never guessed.
             </p>
           )}
           <p>
-            {modelled.length > 0 && 'Any other hazard type is counted. '}
-            For each barangay and hazard type, the system looks at the same month in each past year
-            on the record (up to ten years), or for an exact date the week around it (three days
-            either side), and counts the years that had at least one event. With a year picked, only
-            the years before it count, so a past period can be checked against what happened. A year
-            counts half as much for every three years back, so recent seasons matter more. At least
-            60% of years, or two or more events expected in the month, is High; at least 30% is
-            Moderate; anything less that still happened is Low. It is plain counting, and every
-            figure can be checked against the archived records on the History page.
+            All hazards is the chance that at least one of the hazards shown is reported in the
+            period. Flood and landslide are combined within each past year&rsquo;s rain, and fire is
+            treated as independent of them. Biggest share is the hazard contributing most of it.
+          </p>
+          <p>
+            Levels follow the chance in the month: 25% or more is High, 15% or more is Moderate, and
+            anything less is Low. For an exact date the chance shown is for that week and the level
+            stays the month&rsquo;s. The accuracy check on this page shows how the models did on years
+            they never saw, and the past events on record can be checked against the archived records
+            on the History page.
           </p>
         </details>
       )}

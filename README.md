@@ -75,6 +75,47 @@ Running it on more than one machine is safe: nothing is sent twice. On your own 
 while developing you don't need it.
 
 --------------------------------------------------------------------------------
+Flood and landslide chances (rain and terrain models)
+
+The flood and landslide forecast needs three files in backend/apps/history/data/. Make
+them in this order, from the backend folder:
+
+python manage.py fetch_rain
+python manage.py build_hazard_features
+python manage.py test_hazard_models
+
+fetch_rain downloads daily rain from Open-Meteo into rain_daily.csv (throttled, takes a
+few minutes). build_hazard_features measures terrain per barangay into
+barangay_terrain.csv. test_hazard_models runs the held-out test and writes
+hazard_model_report.json; it takes a few minutes. The last two read the database only.
+The forecast refits the chosen model itself and caches the result for 6 hours. If the
+report or a data file is missing, flood and landslide show "unavailable" with the reason;
+they are never estimated by counting past events, and they are left out of the All
+hazards chance.
+
+Each year (say every January): run fetch_rain so the newest full year joins the rain
+scenarios, then run test_hazard_models.
+
+After adding flood or landslide records for a finished year: set STUDY_END in
+apps/history/hazard_data.py to the end of that year, then rerun test_hazard_models.
+Until it is rerun, the accuracy card shows "stale" whenever study-period records have
+changed. Records left out of the main run, with the reason for each, are listed in
+data/hazard_model_exclusions.csv.
+
+test_hazard_models always tests 2023, 2024 and 2025 (FOLDS in
+apps/history/hazard_models.py); a newly added year is tested only after a fold for it is
+added there.
+
+Before go-live: email info@open-meteo.com and get written confirmation that GeoAlert's
+use is free (non-commercial), and keep their reply with the project's records. If they
+say no, take their paid API plan, or switch the rain source to ERA5 (Copernicus).
+Training and live rain must come from the same source, and ERA5 is coarser (about 25 km
+against 9 km), so switching means downloading the rain again from ERA5, rerunning
+test_hazard_models and checking the accuracy card before use.
+Keep the credit line "Rain data by Open-Meteo.com (CC BY 4.0), processed into hazard
+chances by GeoAlert".
+
+--------------------------------------------------------------------------------
 Deploying
 
 See deploy/README.md.

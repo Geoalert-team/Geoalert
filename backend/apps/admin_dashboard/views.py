@@ -12,7 +12,7 @@ from apps.hazards.models import HazardZone, HazardAlert
 from apps.notifications.models import Notification
 from apps.guidance.models import GuidanceContent
 from apps.admin_dashboard.models import AuditLog
-from apps.accounts.models import User, Role
+from apps.accounts.models import User, Role, next_employee_id
 from apps.admin_dashboard.serializers import (
     UserListSerializer,
     UserCreateSerializer,
@@ -127,6 +127,24 @@ class UserListCreateView(APIView):
             'user': UserListSerializer(user).data,
             'temporary_password': user._temp_password,
         }, status=status.HTTP_201_CREATED)
+
+
+class NextEmployeeIdsView(APIView):
+    """
+    GET /api/admin-dashboard/users/next-employee-ids/
+        {"System_Admin": "ADMIN-0005", "DRRMO_Officer": "DRRMO-0012", ...}
+
+    The ID each role's next new account will get, so the Add a user form can
+    show the real ID instead of a placeholder. The ID itself is still given
+    on save (accounts/models.py); if two admins add the same role at the
+    same moment, the second one gets the number after this.
+    System Admin only.
+    """
+    permission_classes = [IsAuthenticated, IsSystemAdmin]
+
+    def get(self, request):
+        names = Role.objects.values_list('name', flat=True)
+        return Response({name: next_employee_id(name) for name in names})
 
 
 class UserDetailView(APIView):

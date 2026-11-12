@@ -226,9 +226,22 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
 .adm input::placeholder { color: #9aa5b6; }
 .adm input:focus, .adm select:focus { outline: none; border-color: var(--db-navy-hover); box-shadow: var(--adm-focus); }
 .adm input:disabled, .adm select:disabled { background: var(--db-mist); color: var(--db-soft); }
-/* A value the system fills in (employee ID): readable, but plainly not a box to type in */
-.adm input.adm-input-auto { background: var(--db-mist); color: var(--db-heading); font-weight: 700; letter-spacing: .02em; cursor: default; }
-.adm input.adm-input-auto:focus { border-color: var(--adm-line-strong); box-shadow: none; }
+/* The employee ID: given by the system, so not a box to type in, but a click copies it */
+.adm-id-copy {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+  height: 40px; padding: 0 12px; border: 1px solid var(--adm-line-strong); border-radius: 10px;
+  background: var(--adm-surface); color: var(--db-heading); font-family: var(--db-font-body); font-size: .92rem;
+  text-align: left; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease;
+}
+.adm-id-copy:hover:not(:disabled) { border-color: var(--db-navy-hover); }
+.adm-id-copy:focus-visible { outline: none; border-color: var(--db-navy-hover); box-shadow: var(--adm-focus); }
+.adm-id-copy:disabled { background: var(--db-mist); cursor: default; }
+.adm-id-copy-value { font-weight: 700; letter-spacing: .02em; }
+.adm-id-copy-empty { color: #9aa5b6; }
+.adm-id-copy-action { display: inline-flex; align-items: center; gap: 5px; color: var(--db-soft); font-size: .8rem; font-weight: 700; }
+.adm-id-copy:hover .adm-id-copy-action { color: var(--db-navy-hover); }
+.adm-id-copy.is-copied { border-color: var(--good); }
+.adm-id-copy.is-copied .adm-id-copy-action { color: var(--good); }
 .adm-select { width: auto !important; min-width: 150px; cursor: pointer; }
 
 .adm-date { display: inline-flex; align-items: center; gap: 8px; font-size: .84rem; font-weight: 700; color: var(--db-soft); }

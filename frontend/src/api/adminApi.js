@@ -22,6 +22,11 @@ export const adminApi = {
     create: (data) =>
       client.post('/api/admin-dashboard/users/', data).then((r) => r.data),
 
+    // { System_Admin: 'ADMIN-0005', DRRMO_Officer: 'DRRMO-0012', ... }:
+    // the ID each role's next new account will get, shown in the form.
+    nextEmployeeIds: () =>
+      client.get('/api/admin-dashboard/users/next-employee-ids/').then((r) => r.data),
+
     update: (id, data) =>
       client.put(`/api/admin-dashboard/users/${id}/`, data).then((r) => r.data),
 

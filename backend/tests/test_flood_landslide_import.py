@@ -90,6 +90,16 @@ class PlanImportTests(SimpleTestCase):
         self.assertEqual((rec['injured'], rec['fatalities'], rec['families_affected'], rec['persons_affected']),
                          (1, 0, 48, 119))
 
+    def test_every_record_of_an_event_keeps_where_it_was_read(self):
+        records, _ = plan([event(source='SunStar Cebu, 9 Nov 2025')], [split('SAN ISIDRO'), split('DUMLOG')])
+        self.assertEqual([r['source'] for r in records], ['SunStar Cebu, 9 Nov 2025'] * 2)
+
+    def test_sources_on_several_lines_become_one_line_within_the_limit(self):
+        [rec], _ = plan([event()], [split('DUMLOG')])
+        self.assertEqual(rec['source'], 'https://a.example/1 https://a.example/2')
+        [rec], _ = plan([event(source='x' * 400)], [split('DUMLOG')])
+        self.assertEqual(len(rec['source']), 300)
+
     def test_the_description_is_what_happened_only(self):
         # No sources and no figures: those have fields of their own
         records, _ = plan([event(injured=6, fatalities=7)], [split('SAN ISIDRO', families=357), split('DUMLOG')])
@@ -223,5 +233,6 @@ class ReadWorkbookTests(SimpleTestCase):
         [e] = events
         self.assertEqual((e['sheet'], e['row'], e['hazard'], e['subcategory']), ('Flood', 4, 'FLOOD', 'COASTAL WAVES'))
         self.assertEqual((e['injured'], e['families'], e['persons']), (None, 48, 119))
+        self.assertEqual(e['source'], 'https://x.example')
         self.assertEqual(splits, [{'row': 2, 'date': datetime(2024, 10, 23), 'hazard': 'FLOOD',
                                    'barangay': 'DUMLOG', 'place': 'SITIO LITMON', 'families': 48}])

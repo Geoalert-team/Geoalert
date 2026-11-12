@@ -8,7 +8,7 @@ from unittest import mock
 from django.test import SimpleTestCase
 from rest_framework.test import APIRequestFactory
 
-from apps.history.serializers import HistoricalRecordDetailSerializer, HistoricalRecordSerializer
+from apps.history.serializers import STAFF_ONLY_FIELDS, HistoricalRecordDetailSerializer, HistoricalRecordSerializer
 from apps.history.views import HistoricalRecordDetailView
 
 BFP = [
@@ -24,6 +24,11 @@ class HistoryDetailTests(SimpleTestCase):
         fields = HistoricalRecordDetailSerializer.Meta.fields
         for name in [*BFP, 'location_text', 'puroks', 'hazard_zone']:
             self.assertIn(name, fields)
+
+    def test_the_detail_says_where_a_flood_or_landslide_was_read_for_staff_only(self):
+        self.assertIn('source', HistoricalRecordDetailSerializer.Meta.fields)
+        self.assertIn('source', STAFF_ONLY_FIELDS)
+        self.assertNotIn('source', HistoricalRecordSerializer.Meta.fields)
 
     def test_the_list_stays_light(self):
         for name in BFP:

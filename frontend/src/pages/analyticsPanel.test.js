@@ -32,5 +32,5 @@ test('the outlook and likelihood load on their own when the figures fail', async
   });
   expect(el.textContent).toContain('Analytics could not be loaded right now.');
   const headings = [...el.querySelectorAll('h2')].map((h) => h.textContent);
-  expect(headings).toEqual(expect.arrayContaining(['Seasonal outlook', 'Likelihood by barangay', 'Model accuracy']));
+  expect(headings).toEqual(expect.arrayContaining(['Seasons on record', 'Likelihood by barangay', 'Model accuracy']));
 });

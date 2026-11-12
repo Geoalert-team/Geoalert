@@ -40,9 +40,9 @@ export default function SeasonalOutlook({ hazardTypeId = '', hazardName = null, 
 
   return (
     <>
-      <h2>Seasonal outlook</h2>
+      <h2>Seasons on record</h2>
       <p className="db-card-sub">
-        From the whole archive for {hazardName || 'all hazard types'}. The period above does not apply.
+        What past years brought, counted from the archive. Not a prediction: the likelihood below comes from the models.
       </p>
 
       {error && <p className="db-error" role="alert">{error}</p>}

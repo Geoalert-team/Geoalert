@@ -23,7 +23,7 @@ Biasong,Pueblo San Ricardo,subdivision,,10.248027,123.831788,OpenStreetMap outli
 Biasong,Puerto del Sol Subdivision,subdivision,,10.240120,123.826748,Wikimapia outline,high,Wikimapia,
 Bulacao,Sitio Alegre,sitio,,10.269250,123.845610,Google Maps pin,medium,fire log; fire log research 2026-11-06,
 Bulacao,Sitio Paglaum,sitio,,10.267129,123.847965,Wikimapia place,high,fire log; Visayan Electric,also spelled Paglaom
-Bulacao,Upper Kabanayan,sitio,Sitio Kabanayan,,,,,fire log; SunStar 2014 hazard list; news 2025-2026,news also spells it Cabanayan
+Bulacao,Upper Kabanayan,sitio,Sitio Kabanayan,10.273860,123.843550,"Google Maps place ""Upper Kabanayan Chapel""",medium,fire log; SunStar 2014 hazard list; news 2025-2026,"news also spells it Cabanayan; research 2026-11-12 Q: chapel named for the sitio, 25 m from the Sitio Kabanayan point; Lower Kabanayan is 170 m south"
 Bulacao,Sitio Kabanayan,sitio,,10.273698,123.843391,"Overture place ""Cabanayan, Bulacao"", with 5 more listings",medium,Overture Maps; Visayan Electric; SunStar 2023,also spelled Cabanayan
 Bulacao,Lower Kabanayan,sitio,Sitio Kabanayan,10.272346,123.843987,"Overture addresses (4) ""Lower Kabanayan""",medium,Overture Maps; Visayan Electric; SunStar 2023,"SunStar 2023: Lower Kabanayan, Sta. Lucia Road"
 Bulacao,Crosan,sitio,,10.274421,123.846299,Wikimapia place,high,fire log; Visayan Electric; news 2025-2026,notices spell it Cruzan
@@ -226,7 +226,7 @@ Maghaway,Sta. Maria Heights,subdivision,,10.283010,123.817236,Wikimapia outline,
 Maghaway,Purok Kulo 3,purok,,10.268760,123.823810,"Overture address ""Purok Kulo 3 Maghaway Rd.""",low,Overture Maps,
 Maghaway,San Jose Maria,subdivision,,10.274087,123.820671,"Overture place ""San Josemaria Village"", Maghaway Rd",medium,fire log; Overture Maps,
 Manipis,Purok Bamboo,purok,,,,,,GMA News,
-Manipis,Purok Kaimito,purok,,,,,,GMA News,
+Manipis,Purok Kaimito,purok,Camp 6,10.321664,123.786624,"Google Maps place ""Purok Kaymito"" (plus code 8QCP+MJ9)",medium,GMA News,research 2026-11-11 O: pin inside Camp 6 on the Talisay-Toledo Wharf Road; sitio by location only; GMA 2025 flood names it
 Manipis,Camp 6,sitio,,10.320982,123.786523,"OpenStreetMap: Manipis Elementary School, formerly Camp 6 Elementary School",high,landslide log; OpenStreetMap,OSM addr:neighbourhood=Camp 6; the barangay hall is beside it
 Manipis,Sitio Langoyon,sitio,,,,,,landslide log; ABS-CBN 2022; CDN 2021,CDN spells it Languyon; a landslide spot on the Manipis road
 Manipis,Camp 8,sitio,,10.315027,123.789380,OpenStreetMap place,high,OpenStreetMap,
@@ -282,7 +282,7 @@ Pooc,Sitio Borromeo,sitio,,10.238170,123.824280,"Overture addresses (2) ""Sitio 
 Pooc,Bayswater,subdivision,,10.244347,123.827883,OpenStreetMap outline,high,OpenStreetMap; Wikimapia,"OSM: ""Bayswater Talisay""; Wikimapia: ""Bayswater Talisay- Pooc""; part of it lies past the Pooc line"
 San Isidro,Sitio Crossing,sitio,,10.259127,123.846985,"Overture place ""Nonoc Crossing, San Isidro""",low,fire log; Overture Maps,
 San Isidro,Greenville,subdivision,,10.258235,123.838348,name on the pin: Greenville Subdivision (Overture),low,fire log; Visayan Electric; OpenStreetMap,OSM: Green Village
-San Isidro,Purok Day Care,purok,Greenville,,,,,fire log,
+San Isidro,Purok Day Care,purok,Greenville,10.259693,123.837356,"Google Maps place ""Purok daycare"" (housing society)",medium,fire log,research 2026-11-11 P: pin 14 m outside Greenville's estimated outline; parent Greenville from the fire log
 San Isidro,Sitio Salvador,sitio,,10.256773,123.839824,"outage notices (4) along Cebu South Coastal Road, Rafael Rabaya Street, San Isidro Road",low,fire log,
 San Isidro,Purok Labayan,purok,Sitio Salvador,10.256773,123.839824,"estimated inside Sitio Salvador (fire log: Purok Labayan, Sitio Salvador); exact spot in the sitio unknown",low,fire log; research 2026-11-08,position inside its parent estimated
 San Isidro,Zone 2 Proper,zone,,,,,,fire log,
@@ -665,3 +665,5 @@ Dumlog,Purok Magtalisay,purok,Sitio Romahan,10.239170,123.836470,"Google Maps pl
 Maghaway,Purok Kamansilis,purok,Sitio EEA,10.284110,123.820260,"Google Maps place ""Purok Kamansilis""",medium,Google Maps,research 2026-11-11 B: parent by location only
 Tabunok,Purok Hannos,purok,Zone 2,10.260980,123.840710,"Google Maps place ""Purok Hannos""",medium,Google Maps,research 2026-11-11 B: parent by location only
 Tabunok,Purok Masinabtanon,purok,Tali Plains Subdivision,10.261660,123.849520,"Google Maps place ""Purok Masinabtanon"" (Dawis Rd)",medium,Google Maps,research 2026-11-11 B: parent by location only
+Manipis,Purok Mangga,purok,Camp 6,10.320860,123.781040,"Google Maps address ""Camp 6 manipis, PUROK MANGGA"" (Sari2x Store)",low,Google Maps,research 2026-11-11 N A: parent named in the address; point is a store on that address
+Dumlog,Purok Chicos,purok,South Covina,10.239710,123.842910,"Google Maps place ""Purok chicos letting dumlog""",medium,Google Maps,research 2026-11-11 N B: parent by location only

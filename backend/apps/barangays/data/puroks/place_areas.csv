@@ -16,10 +16,10 @@ Biasong,Paseo Feliz,street,Pueblo San Ricardo,1.0
 Biasong,Paseo Ponciana,street,Pueblo San Ricardo,1.0
 Biasong,Sandy Shores Lane,street,Puerto del Sol Subdivision,1.0
 Biasong,Sunset Street,street,Puerto del Sol Subdivision,0.854
-Bulacao,Barangay Hall,landmark,Rustyville Subdivision,1.0
-Bulacao,Bulacao Barangay Hall,landmark,Rustyville Subdivision,1.0
-Bulacao,Bulacao Elementary School,landmark,Gotianuy Subdivision,1.0
-Bulacao,Bulacao National High School,landmark,Gotianuy Subdivision,1.0
+Bulacao,Barangay Hall,landmark,Gotianuy Subdivision,1.0
+Bulacao,Bulacao Barangay Hall,landmark,Gotianuy Subdivision,1.0
+Bulacao,Bulacao Elementary School,landmark,Hillside Subdivision,1.0
+Bulacao,Bulacao National High School,landmark,Rustyville Subdivision,1.0
 Bulacao,Bulacao Sports & Activity Center,landmark,Rustyville Subdivision,1.0
 Bulacao,East Visayan Academy,landmark,AAC Compound,1.0
 Bulacao,Santa Catalina Chapel,landmark,Villa Estelita Subdivision,1.0
@@ -29,22 +29,22 @@ Bulacao,3rd Street,street,Sitio Holy Child,0.422
 Bulacao,6th Street,street,Plainville,1.0
 Bulacao,7th Street,street,Plainville,1.0
 Bulacao,8th Street Extension,street,Plainville,1.0
-Bulacao,9th Street,street,Purok Mangihatagon,0.858
-Bulacao,Abores Street,street,Hillside Subdivision,0.518
-Bulacao,Andrin Street,street,Purok Mapailubon,0.575
+Bulacao,9th Street,street,Purok Mangihatagon,0.715
+Bulacao,Abores Street,street,Hillside Subdivision,0.511
+Bulacao,Andrin Street,street,Purok Mapailubon,0.567
 Bulacao,Bulacao River,street,AAC Compound,0.24
 Bulacao,Mansueto Drive,street,Saint Barachiel Subdivision,0.408
-Bulacao,Mansueto Road,street,Mansueto Subdivision,0.502
+Bulacao,Mansueto Road,street,Mansueto Subdivision,0.486
 Bulacao,Mighty Villa Street,street,Mighty Villa Subdivision,1.0
-Bulacao,Natalio Bacalso Avenue,street,Sitio Alegre,0.323
-Bulacao,Rio de Janeiro Street,street,Gotianuy Subdivision,0.338
+Bulacao,Natalio Bacalso Avenue,street,Sitio Alegre,0.307
+Bulacao,Rio de Janeiro Street,street,Gotianuy Subdivision,0.425
 Bulacao,Rose Street,street,Saint Barachiel Subdivision,1.0
-Bulacao,Sacramento Street,street,Gotianuy Subdivision,0.695
+Bulacao,Sacramento Street,street,Sitio Los Feliz,0.834
 Bulacao,Saint John Street,street,Mingcourt Village,1.0
 Bulacao,Saint Joseph Street,street,Mingcourt Village,1.0
 Bulacao,Saint Louis Street,street,Mingcourt Village,1.0
 Bulacao,Saint Luke Street,street,Mingcourt Village,1.0
-Bulacao,Seville Road,street,Gotianuy Subdivision,1.0
+Bulacao,Seville Road,street,Upper Kabanayan,0.805
 Cadulawan,Barangay Hall,landmark,Purok Boongon,1.0
 Cadulawan,Candulawan Barangay Hall,landmark,Purok Boongon,1.0
 Cadulawan,Candulawan Barangay Health Station,landmark,Purok Boongon,1.0
@@ -127,75 +127,75 @@ Dumlog,Dumlog Barangay Hall,landmark,Sitio Litmon,1.0
 Dumlog,First Chinese Royal Academy,landmark,Florida County,1.0
 Dumlog,Gorden Park,landmark,San Pio Subdivision,1.0
 Dumlog,Hervas Gym,landmark,Sitio Litmon,1.0
-Dumlog,Letmon Basketball Court,landmark,Purok Saging,1.0
-Dumlog,Life Giver Christian Ministries Inc.,landmark,Sitio Santo Nino,1.0
-Dumlog,Sitio Letmon Chapel,landmark,Purok Saging,1.0
+Dumlog,Letmon Basketball Court,landmark,Purok Chicos,1.0
+Dumlog,Life Giver Christian Ministries Inc.,landmark,Purok Chicos,1.0
+Dumlog,Sitio Letmon Chapel,landmark,Purok Chicos,1.0
 Dumlog,Talisay City National High School,landmark,Purok Botig,1.0
 Dumlog,Unico Department Store,landmark,Belleza Compound,1.0
 Dumlog,Amazon Street,street,Purok Magtalisay,0.403
-Dumlog,Armourhead Street,street,San Pio Subdivision,0.619
-Dumlog,Aruana Street,street,Deca Homes,0.654
+Dumlog,Armourhead Street,street,San Pio Subdivision,0.634
+Dumlog,Aruana Street,street,Deca Homes,0.588
 Dumlog,Bahia Solano Street,street,Deca Homes Phase 2,1.0
 Dumlog,Balos Beach Street,street,Deca Homes Phase 2,1.0
 Dumlog,Boracay Street,street,Deca Homes Phase 2,1.0
 Dumlog,Burgos Street,street,Purok Lemonsito,0.212
-Dumlog,Cahabon Street,street,Zone 5,1.0
+Dumlog,Cahabon Street,street,Purok Saging,1.0
 Dumlog,Canizares Street,street,Purok Opal,0.623
 Dumlog,Catfish Street,street,Deca Homes,1.0
 Dumlog,Cebu South Coastal Road,street,Purok Kamatis,0.473
-Dumlog,Central Biasong,street,Purok Botig,0.576
+Dumlog,Central Biasong,street,Purok Botig,0.578
 Dumlog,Champagne Beach Street,street,Deca Homes Phase 2,1.0
 Dumlog,Champaka Compound,street,Champaka Compound,1.0
 Dumlog,Colorado Street,street,Sitio Tugas,1.0
 Dumlog,Congo Street,street,Purok Magtalisay,1.0
-Dumlog,Danube Street,street,San Pio Subdivision,0.561
+Dumlog,Danube Street,street,Sitio Tugas,0.532
 Dumlog,El Nido Street,street,Deca Homes Phase 2,1.0
-Dumlog,Emperor Street,street,Purok Talisay,0.401
+Dumlog,Emperor Street,street,Purok Talisay,0.436
 Dumlog,Ernesto Bascon Street,street,Smyrna Homes,0.203
-Dumlog,Euphrates Street,street,Purok Magtalisay,0.435
+Dumlog,Euphrates Street,street,Purok Magtalisay,0.375
 Dumlog,Fidel Bas Street,street,Zone 4,0.531
 Dumlog,Flagfin Street,street,Deca Homes,1.0
 Dumlog,Gardner Bay Street,street,Deca Homes Phase 2,1.0
 Dumlog,Grand Anse Street,street,Deca Homes Phase 2,1.0
-Dumlog,Hamlet Street,street,Purok Madecacao,0.886
-Dumlog,Hammerhead Street,street,Purok Talisay,0.841
+Dumlog,Hamlet Street,street,Purok Madecacao,0.95
+Dumlog,Hammerhead Street,street,Purok Talisay,0.819
 Dumlog,Hammerjaw Street,street,Deca Homes,0.706
-Dumlog,J. P. Rizal Street,street,Zone 3,0.489
+Dumlog,J. P. Rizal Street,street,Zone 3,0.49
 Dumlog,Koi Street,street,Purok Madecacao,1.0
 Dumlog,Longfin Street,street,Sitio Baybay,0.624
 Dumlog,Mananga River,street,Sitio Paglaom,0.526
-Dumlog,Mananga Street,street,Zone 5,1.0
-Dumlog,Mekong Street,street,San Pio Subdivision,0.544
-Dumlog,Memuru Street,street,Sitio Tugas,0.506
+Dumlog,Mananga Street,street,Purok Saging,1.0
+Dumlog,Mekong Street,street,San Pio Subdivision,0.752
+Dumlog,Memuru Street,street,Purok Magtalisay,0.726
 Dumlog,Mississippi Street,street,Zone 6,0.884
-Dumlog,Mosman Street,street,Zone 5,1.0
+Dumlog,Mosman Street,street,Purok Saging,1.0
 Dumlog,Nihiwatu Beach Street,street,Deca Homes Phase 2,1.0
 Dumlog,Nile Street,street,Purok Magtalisay,0.601
-Dumlog,Opaleye Street,street,Purok Talisay,0.933
+Dumlog,Opaleye Street,street,Purok Talisay,0.928
 Dumlog,Ottawa Street,street,Zone 6,1.0
 Dumlog,Palui Island Street,street,Deca Homes Phase 2,1.0
 Dumlog,Panama Beach Street,street,Deca Homes Phase 2,1.0
-Dumlog,Piranha Street,street,San Pio Subdivision,0.521
+Dumlog,Piranha Street,street,San Pio Subdivision,0.523
 Dumlog,Playa Paraiso Street,street,Deca Homes Phase 2,1.0
 Dumlog,Porto da Barra Street,street,Deca Homes Phase 2,1.0
-Dumlog,Ramona Village Street,street,Belleza Compound,0.348
+Dumlog,Ramona Village Street,street,Belleza Compound,0.346
 Dumlog,Rhine Street,street,Sitio Tugas,1.0
 Dumlog,Rio Grande Street,street,Sitio Tugas,0.798
 Dumlog,San Isidro Road,street,Belleza Compound,0.617
 Dumlog,Santa Monica Street,street,Deca Homes Phase 2,1.0
-Dumlog,Stingray Street,street,Sitio Baybay,0.75
-Dumlog,Thames Street,street,Zone 5,1.0
-Dumlog,Tigris Street,street,Purok Magtalisay,0.397
+Dumlog,Stingray Street,street,Sitio Baybay,0.753
+Dumlog,Thames Street,street,Purok Saging,1.0
+Dumlog,Tigris Street,street,San Pio Subdivision,0.413
 Dumlog,Tres Alinos Street,street,Deca Homes Phase 2,1.0
-Dumlog,Tres Aliños Street,street,Sitio Santo Nino,0.287
+Dumlog,Tres Aliños Street,street,Sitio Baybay,0.267
 Dumlog,Tulum Street,street,Deca Homes Phase 2,1.0
 Dumlog,Volga Street,street,Sitio Tugas,1.0
-Dumlog,Whale Street,street,Purok Talisay,0.736
-Dumlog,Wheaton Street,street,Deca Homes,0.903
+Dumlog,Whale Street,street,Purok Talisay,0.709
+Dumlog,Wheaton Street,street,Deca Homes,1.0
 Dumlog,Whitehaven Beach Street,street,Deca Homes Phase 2,1.0
 Dumlog,Wineglass Bay Street,street,Deca Homes Phase 2,1.0
-Dumlog,Yangze Street,street,San Pio Subdivision,0.84
-Dumlog,Yarra Street,street,Zone 5,1.0
+Dumlog,Yangze Street,street,San Pio Subdivision,0.844
+Dumlog,Yarra Street,street,Purok Saging,1.0
 Dumlog,Zion Drive,street,Smyrna Homes,1.0
 Jaclupan,Barangay Hall,landmark,Purok Kolo,1.0
 Jaclupan,Jaclupan Barangay Hall,landmark,Purok Kolo,1.0
@@ -352,13 +352,13 @@ Maghaway,Via Strozzi,street,Azienda Genova,0.733
 Maghaway,Via Vasari,street,Azienda Firenze,1.0
 Maghaway,Via Vespucci,street,Azienda Firenze,1.0
 Maghaway,Via Vittorio,street,Azienda Firenze,1.0
-Manipis,Barangay Hall,landmark,Camp 6,1.0
+Manipis,Barangay Hall,landmark,Purok Kaimito,1.0
 Manipis,Camp 8 Elementary School,landmark,Camp 8,1.0
-Manipis,Manipis Barangay Hall,landmark,Camp 6,1.0
+Manipis,Manipis Barangay Hall,landmark,Purok Kaimito,1.0
 Manipis,Manipis Elementary School,landmark,Camp 6,1.0
-Manipis,Manipis National High School,landmark,Near Manipis National High School,1.0
-Manipis,Camp 8 Road,street,Purok Mahogany,0.428
-Manipis,Toledo - Tabunok Road,street,Along Toledo - Tabunok Road,0.233
+Manipis,Manipis National High School,landmark,Purok Mangga,1.0
+Manipis,Camp 8 Road,street,Purok Mahogany,0.667
+Manipis,Toledo - Tabunok Road,street,Along Toledo - Tabunok Road,0.292
 Mohon,Barangay Hall,landmark,Saint Michael,1.0
 Mohon,Colonnade Supermarket,landmark,Upper Mohon,1.0
 Mohon,Mohon Barangay Hall,landmark,Saint Michael,1.0
@@ -477,10 +477,10 @@ San Isidro,Artvill Road,street,Art Ville,0.328
 San Isidro,C Street,street,Maple Residences,1.0
 San Isidro,Canton Village Street,street,Cantoneville,0.844
 San Isidro,Cebu South Coastal Road,street,Zone 4,0.402
-San Isidro,Dawis Road,street,Corazon Village,0.654
+San Isidro,Dawis Road,street,Corazon Village,1.0
 San Isidro,Gold Street,street,Art Ville,0.885
 San Isidro,Largo Private Road,street,Largo Compound,0.68
-San Isidro,Mananga River,street,Isla Verde,0.649
+San Isidro,Mananga River,street,Isla Verde,0.585
 San Isidro,Miami Homes Street,street,Miami Homes,0.73
 San Isidro,Miami Homes Street # 1,street,Miami Homes,1.0
 San Isidro,Miami Homes Street # 2,street,Sitio Tiago,0.544

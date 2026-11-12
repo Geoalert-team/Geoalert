@@ -12,9 +12,17 @@ export const historyApi = {
   detail: (id) =>
     client.get(`/api/history/${id}/`).then((r) => r.data),
 
-  // Likelihood per barangay for a month: counted (backend apps/history/forecast.py), or from a
-  // trained model for the hazard types in model_hazards (apps/history/model_forecast.py).
-  // params: month (1-12), hazard_type_name, barangay (adds that barangay's 12-month profile)
+  // Likelihood per barangay: fire from a model of past fires (apps/history/model_forecast.py),
+  // flood and landslide from models of rain and terrain (apps/history/hazard_forecast.py), and a
+  // combined chance of any hazard asked for. Chance is 0 to 1; level (Low, Moderate, High) is on the
+  // month's chance.
+  // params: month (1-12), or month and year, or date; hazards (comma list, e.g. 'Fire,Flood', see
+  // hazardsParam) or hazard_type_name (one hazard; not both); barangay (adds that barangay's
+  // 12-month profile)
+  // response: results (one row per barangay and hazard: method 'model' with model, probability,
+  // level, range, rain_years, recorded_rain_probability, in_training; or method 'unavailable' with
+  // reason), combined (one row per barangay: probability, level, top_hazard, hazards, missing),
+  // hazards_included, model_hazards, unavailable_hazards, by_barangay, profile
   forecast: (params) =>
     client.get('/api/history/forecast/', { params }).then((r) => r.data),
 

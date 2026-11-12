@@ -16,7 +16,9 @@ import { hazardsApi } from '../api/hazardsApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { historyApi } from '../api/historyApi';
 import {
-  LIKELIHOOD, FORECAST_DISCLAIMER, chanceText, defaultPeriod, likelihoodInfo, periodIn, periodLabel, periodParams, periodYearsText,
+  LIKELIHOOD, FORECAST_DISCLAIMER, RAIN_ATTRIBUTION, aboutChanceText, chanceText, combinedByBarangay, combinedText,
+  combinedUnavailable, defaultPeriod, hazardsParam,
+  levelLabel, likelihoodInfo, likelyKey, periodIn, periodLabel, periodParams, periodYearsText, rainYearsText, unavailableNote,
   yearSpan,
 } from '../components/Forecast/forecastLevels';
 import ForecastPeriodPicker from '../components/Forecast/ForecastPeriodPicker';
@@ -628,12 +630,17 @@ export default function PublicMap() {
   // Seasonal likelihood, fetched only while that view is open
   useEffect(() => {
     if (view !== 'likely') return undefined;
+    // No layer ticked, nothing to ask for
+    if (activeTypes.size === 0) { setLikely(null); return undefined; }
     let cancelled = false;
-    historyApi.forecast(periodParams(likelyPeriod))
+    historyApi.forecast({ ...periodParams(likelyPeriod), hazards: hazardsParam(activeTypes) })
       .then((d) => { if (!cancelled) setLikely(d); })
-      .catch(() => { if (!cancelled) setLikely({ error: true, results: [] }); });
+      .catch(() => { if (!cancelled) setLikely({ error: true, results: [], combined: [] }); });
     return () => { cancelled = true; };
-  }, [view, likelyPeriod]);
+  }, [view, likelyPeriod, activeTypes]);
+
+  // Per barangay: the combined chance of the hazard layers ticked
+  const combinedRows = useMemo(() => combinedByBarangay(likely), [likely]);
 
   // Per barangay: its rows for the hazard types shown, worst first. The
   // layer checkboxes apply here too, so "Fire only" shows fire likelihood.
@@ -654,8 +661,9 @@ export default function PublicMap() {
   // Thin dark boundaries, like sub-catchment lines on a GIS map. Transparent fill keeps them clickable.
   function barangayStyle(feature) {
     if (view === 'likely') {
-      const rows = likelyByBarangay.get(String(featureId(feature))) || [];
-      const level = rows[0]?.level || 'None';
+      // No combined chance (no data, or every ticked hazard unavailable) is no data, not Low
+      const c = combinedRows.get(String(featureId(feature)));
+      const level = c && c.probability != null ? c.level : 'None';
       const info = likelihoodInfo(level);
       return {
         className: 'pm-brgy', color: '#2b2b2b', weight: 1, opacity: 0.8,
@@ -682,6 +690,11 @@ export default function PublicMap() {
       : '';
     return line ? `${purokTooltip(f)}<br>${line}` : purokTooltip(f);
   }, [view, levels, thresholds, visibleTypeList]);
+  const rainNote = rainYearsText([...new Set((likely?.results || [])
+    .filter((r) => r.method === 'model' && Array.isArray(r.rain_years))
+    .flatMap((r) => r.rain_years))].sort((a, b) => a - b));
+  // A ticked hazard the models could not give, named in the legend instead of dropped silently
+  const unavailableLegend = unavailableNote(likely, [...activeTypes]);
   const layerName =
     activeTypes.size === HAZARD_TYPES.length ? 'all hazards'
       : activeTypes.size === 0 ? 'no layers shown'
@@ -786,7 +799,7 @@ export default function PublicMap() {
           {/* Barangay boundaries: hover for the name, click for barangay-specific hazards */}
           {barangayGeo && (
             <GeoJSON
-              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}-${view}-${periodLabel(likelyPeriod)}-${likely?.results?.length ?? 0}-${[...activeTypes].join('')}-${!!selectedPuroks}`}
+              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}-${view}-${periodLabel(likelyPeriod)}-${likelyKey(likely)}-${[...activeTypes].join('')}-${!!selectedPuroks}`}
               data={barangayGeo}
               style={barangayStyle}
               bubblingMouseEvents={false}
@@ -799,10 +812,29 @@ export default function PublicMap() {
                   const rows = likelyByBarangay.get(String(featureId(feature))) || [];
                   // A past period also says what happened in it
                   const happened = (r) => (r.actual == null ? '' : `; ${r.actual || 'none'} happened`);
-                  tip = rows.length
-                    ? `<strong>${name}</strong><br>${rows.slice(0, 3)
-                      .map((r) => `${r.hazard_type}: ${likelihoodInfo(r.level).label}${chanceText(r) && `, about ${chanceText(r)}`} (${periodYearsText(r, likelyPeriod)}${happened(r)})`)
-                      .join('<br>')}`
+                  const c = combinedRows.get(String(featureId(feature)));
+                  const lines = rows.map((r) => {
+                    if (r.method === 'unavailable') return `${r.hazard_type}: ${levelLabel(r)}${r.reason ? ` (${r.reason})` : ''}`;
+                    if (r.method === 'model') {
+                      if (r.hazard_type === 'Fire') return `${r.hazard_type}: ${likelihoodInfo(r.level).label}, about ${chanceText(r)}${happened(r)}`;
+                      const years = rainYearsText(r.rain_years);
+                      const rain = years ? `, from ${years}` : '';
+                      return `${r.hazard_type}: ${likelihoodInfo(r.level).label}, ${aboutChanceText(r.probability)}${rain}${happened(r)}`;
+                    }
+                    return `${r.hazard_type}: ${likelihoodInfo(r.level).label}${chanceText(r) && `, about ${chanceText(r)}`} (${periodYearsText(r, likelyPeriod)}${happened(r)})`;
+                  });
+                  // No chance because a shown hazard the response calls unavailable is missing is said
+                  // so; nothing on record (fire on counting in a past period) stays "no data"
+                  const unavailable = likely?.unavailable_hazards || [];
+                  const head = c && c.probability != null
+                    ? `All shown hazards: ${likelihoodInfo(c.level).label}, ${aboutChanceText(c.probability)} (${combinedText(c, unavailable)})`
+                    : c && combinedUnavailable(c, unavailable)
+                      ? `All shown hazards: Unavailable right now (${combinedText(c, unavailable)})`
+                      : 'All shown hazards: no data';
+                  tip = activeTypes.size === 0
+                    ? `<strong>${name}</strong><br>Tick a hazard layer to see its chance.`
+                    : c || rows.length
+                    ? `<strong>${name}</strong><br>${[head, ...lines].join('<br>')}`
                     : `<strong>${name}</strong><br>Nothing on record in ${periodIn(likelyPeriod)} in past years`;
                 }
                 layer.bindTooltip(tip, {
@@ -1011,7 +1043,9 @@ export default function PublicMap() {
           {view === 'likely' && (
             <>
               <p className="pm-legend-title">
-                Likely in {periodLabel(likelyPeriod)}: {layerName.toLowerCase()}
+                {activeTypes.size === 0
+                  ? `Likely in ${periodLabel(likelyPeriod)}: no hazard layer is ticked`
+                  : `Likely in ${periodLabel(likelyPeriod)}: chance of any of ${layerName.toLowerCase()}`}
               </p>
               <ul>
                 {['High', 'Moderate', 'Low', 'None'].map((k) => (
@@ -1035,6 +1069,20 @@ export default function PublicMap() {
                   {likely.outcome && (likely.outcome.complete
                     ? ` It is over: ${likely.outcome.events} event${likely.outcome.events === 1 ? '' : 's'} happened.`
                     : ` It has started: ${likely.outcome.events} event${likely.outcome.events === 1 ? '' : 's'} so far.`)}
+                </p>
+              )}
+              {likely && !likely.error && rainNote && (
+                <p className="pm-legend-note">
+                  Flood and landslide chances come from rain and terrain in {rainNote}.
+                </p>
+              )}
+              {unavailableLegend && <p className="pm-legend-note">{unavailableLegend}</p>}
+              {likely && !likely.error && (likely.results || []).some((r) => r.hazard_type !== 'Fire') && (
+                <p className="pm-legend-note">
+                  Rain data by{' '}
+                  <a href={RAIN_ATTRIBUTION.links[0].href} target="_blank" rel="noopener noreferrer">{RAIN_ATTRIBUTION.links[0].label}</a>
+                  {' '}(<a href={RAIN_ATTRIBUTION.links[1].href} target="_blank" rel="noopener noreferrer">{RAIN_ATTRIBUTION.links[1].label}</a>),
+                  processed into hazard chances by GeoAlert
                 </p>
               )}
               {likely?.limited && likely.years?.length > 0 && (

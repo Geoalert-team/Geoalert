@@ -1,4 +1,5 @@
 import uuid
+from django.contrib.gis.db.models import PointField
 from django.db import models
 from apps.barangays.models import Barangay, Purok
 from apps.hazards.models import HazardType, HazardZone
@@ -56,6 +57,21 @@ class HistoricalRecord(models.Model):
     # import_bfp_fires' key, so a re-import adds only new rows; null for
     # records made in the app.
     source_ref           = models.CharField(max_length=40, null=True, blank=True, unique=True, db_column='hstr_source_ref')
+    # Where it happened, only when the source names the spot: the map pin
+    # of the purok or sitio it names, or a landmark it names. Null when the
+    # source names only a barangay, whose outline is then all that is known.
+    # Written by place_history_records. Staff only, like location_text.
+    LOCATION_PRECISIONS = [
+        ('place',    'Named purok or sitio'),
+        ('landmark', 'Named landmark'),
+    ]
+    location             = PointField(srid=4326, null=True, blank=True, db_column='hstr_location')
+    location_precision   = models.CharField(max_length=20, blank=True, default='', choices=LOCATION_PRECISIONS,
+                                            db_column='hstr_location_precision')
+    location_basis       = models.CharField(max_length=300, blank=True, default='', db_column='hstr_location_basis')
+    # Where the event was read: the flood and landslide log's column P (a
+    # news story or report, with its date). Blank for fires and app records.
+    source               = models.CharField(max_length=300, blank=True, default='', db_column='hstr_source')
 
     class Meta:
         db_table = 'historical_record'

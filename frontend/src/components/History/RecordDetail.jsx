@@ -131,6 +131,15 @@ export default function RecordDetail({ recordId, onClose }) {
               <dl className="db-dl">
                 <dt>Happened</dt><dd>{when(record.occurred_at)}</dd>
                 <dt>Location</dt><dd>{where}</dd>
+                {/* Staff only, and only where the source names the spot */}
+                {record.location_lat != null && record.location_lng != null && (
+                  <><dt>Map point</dt><dd>
+                    {`${record.location_lat.toFixed(6)}, ${record.location_lng.toFixed(6)}`}
+                    {record.location_basis && ` — ${record.location_basis}`}
+                  </dd></>
+                )}
+                {/* Staff only: the news story or report the event was read from */}
+                {record.source && <><dt>Source</dt><dd>{record.source}</dd></>}
                 {(b.municipality || b.province) && (
                   <><dt>City / Province</dt><dd>{[b.municipality, b.province].filter(Boolean).join(', ')}</dd></>
                 )}

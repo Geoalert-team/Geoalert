@@ -1,0 +1,9 @@
+sheet_row,source_ref,lat,lng,precision,basis
+4,flood-landslide:b44bd23c2278812f,10.252728,123.835667,place,"Map pin of Sitio Bahala, Dumlog (low confidence: the Dumlog bank opposite Isla Verde). SunStar, 13 Jun 2021: rescuers waded neck-deep in Sitio Bahala."
+13,flood-landslide:40dd0b684daa0412,10.326157,123.807955,landmark,"Viewdeck on Manipis Road (OpenStreetMap), inside Sitio Camp 5, Manipis. Inquirer, 2 Oct 2024: slide near the viewing deck of Sitio Santol. The sheet's 10.317, 123.78868 was 2.3 km off."
+14,flood-landslide:9d1c925e16f05f40,10.321664,123.786624,place,"Map pin of Purok Kaimito, Manipis (Google Maps place ""Purok Kaymito""; medium confidence), inside Camp 6 on the Talisay-Toledo Wharf Road. GMA Regional TV, 13 Aug 2025: Puroks Bamboo and Kaimito worst hit."
+17,flood-landslide:9a16811196d3ab1f,10.253329,123.835784,place,"Map pin of Isla Verde, San Isidro (low confidence). GMA Regional TV, 18 Nov 2025: Sitio Isla Verde along the Mananga River."
+18,flood-landslide:bd019229b2c8d455,10.245646,123.834572,place,"Map pin of Sitio Paglaom, Dumlog (low confidence), 33 m from the Dumlog-Biasong Bridge (OpenStreetMap). GMA News, 6 Nov 2025: houses under Dumlog Bridge."
+20,flood-landslide:bb90389b2220f6c1,10.261083,123.835106,landmark,"Mananga Bridge, N. Bacalso Ave, Tabunok (OpenStreetMap). SunStar, 4 Nov 2025: shanties under and beside the Mananga Bridge in Tabunok destroyed."
+,flood-landslide:e732cc0b164746e5,10.326157,123.807955,landmark,"Viewdeck on Manipis Road (OpenStreetMap), inside Sitio Camp 5, Manipis. GMA Regional TV, 8 Oct 2025: runoff with rocks and mud spilled on the road near a viewing deck in Camp 5, Barangay Manipis."
+27,flood-landslide:b8739a7b829ff7a9,10.320982,123.786523,place,"Map pin of Camp 6, Manipis (high confidence): Manipis Elementary School, formerly Camp 6 Elementary School (OpenStreetMap). Free Press Journal, 12 Dec 2025."

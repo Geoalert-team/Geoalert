@@ -16,7 +16,7 @@ from django.utils import timezone
 from rest_framework.test import APIRequestFactory, force_authenticate
 
 from apps.accounts.models import Role, User, next_employee_id
-from apps.admin_dashboard.views import UserDetailView, UserListCreateView
+from apps.admin_dashboard.views import NextEmployeeIdsView, UserDetailView, UserListCreateView
 from apps.barangays.models import Barangay
 from tests.fire_setup import box
 
@@ -71,6 +71,30 @@ class EmployeeIdTests(TestCase):
     def test_position_is_free_text(self):
         user = self.create('h@test.ph', 'BFP_Personnel', position='Fire Truck Driver (Volunteer)')
         self.assertEqual(user['position'], 'Fire Truck Driver (Volunteer)')
+
+    # ---------- Shown in the form before saving ----------
+
+    def test_the_form_can_read_the_next_id_for_each_role(self):
+        self.create('n@test.ph', 'DRRMO_Officer')
+        response = self.call(NextEmployeeIdsView, 'get')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data, {
+            'System_Admin': 'ADMIN-0002',
+            'DRRMO_Officer': 'DRRMO-0002',
+            'Barangay_Personnel': 'BRGY-0001',
+            'BFP_Personnel': 'BFP-0001',
+        })
+
+    def test_the_shown_id_is_the_one_given_on_save(self):
+        shown = self.call(NextEmployeeIdsView, 'get').data['BFP_Personnel']
+        self.assertEqual(self.create('o@test.ph', 'BFP_Personnel')['employee_id'], shown)
+
+    def test_only_admins_can_read_the_next_ids(self):
+        officer = User.objects.create_user(email='p@test.ph', password='x', full_name='Officer',
+                                           role=self.roles['DRRMO_Officer'])
+        request = APIRequestFactory().get('/')
+        force_authenticate(request, user=officer)
+        self.assertEqual(NextEmployeeIdsView.as_view()(request).status_code, 403)
 
     # ---------- Kept after create ----------
 

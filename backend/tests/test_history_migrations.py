@@ -16,3 +16,14 @@ class BfpColumnDefaultsTests(SimpleTestCase):
         for column in ('hstr_alarm_level', 'hstr_property_category', 'hstr_property_subcategory',
                        'hstr_location_text'):
             self.assertIn(f"ALTER COLUMN {column} SET DEFAULT ''", sql)
+
+    def test_the_location_text_columns_have_a_database_default(self):
+        migration = import_module('apps.history.migrations.0006_location').Migration
+        sql = ' '.join(op.sql for op in migration.operations if hasattr(op, 'sql'))
+        for column in ('hstr_location_precision', 'hstr_location_basis'):
+            self.assertIn(f"ALTER COLUMN {column} SET DEFAULT ''", sql)
+
+    def test_the_source_column_has_a_database_default(self):
+        migration = import_module('apps.history.migrations.0007_source').Migration
+        sql = ' '.join(op.sql for op in migration.operations if hasattr(op, 'sql'))
+        self.assertIn("ALTER COLUMN hstr_source SET DEFAULT ''", sql)

@@ -70,6 +70,32 @@ test('a flood record has no BFP section and no barangay report without a zone', 
   expect(reportsApi.forZone).not.toHaveBeenCalled();
 });
 
+test('a record whose source names the spot shows its map point and where the point comes from', async () => {
+  const flood = {
+    ...FIRE, hazard_type_detail: { name: 'Flood' }, hazard_zone: null, puroks: ['Sitio Paglaom'],
+    location_lat: 10.245646, location_lng: 123.834572, location_precision: 'place',
+    location_basis: 'map pin of Sitio Paglaom (low confidence)',
+  };
+  const el = await render(() => Promise.resolve(flood));
+  expect(dl(section(el, 'When and where'))['Map point'])
+    .toBe('10.245646, 123.834572 — map pin of Sitio Paglaom (low confidence)');
+});
+
+test('a record that names where it was read shows its source; one without shows no source row', async () => {
+  const el = await render(() => Promise.resolve({ ...FIRE, source: 'Inquirer, 2 Oct 2024' }));
+  expect(dl(section(el, 'When and where')).Source).toBe('Inquirer, 2 Oct 2024');
+  const plain = await render(() => Promise.resolve({ ...FIRE, source: '' }));
+  expect(dl(section(plain, 'When and where'))).not.toHaveProperty('Source');
+});
+
+test('a record with no point, or a public copy without one, shows no map point row', async () => {
+  for (const record of [{ ...FIRE, location_lat: null, location_lng: null }, { ...FIRE }]) {
+    // eslint-disable-next-line no-await-in-loop
+    const el = await render(() => Promise.resolve(record));
+    expect(dl(section(el, 'When and where'))).not.toHaveProperty('Map point');
+  }
+});
+
 test('a public copy drops the rows the server left out, not as "not counted"', async () => {
   const publicCopy = { ...FIRE };
   ['location_text', 'damage_cost', 'hazard_zone', 'injured_ff_male', 'injured_ff_female', 'injured_civ_male',

@@ -37,19 +37,6 @@ export const ROLE_META = {
   },
 };
 
-/**
- * Employee ID prefixes, the same as EMPLOYEE_ID_PREFIXES in
- * backend/apps/accounts/models.py. The server assigns the ID (DRRMO-0001,
- * BRGY-0014, ...); the form uses these only to say which series a new
- * account will join.
- */
-export const EMPLOYEE_ID_PREFIXES = {
-  System_Admin: 'ADMIN',
-  DRRMO_Officer: 'DRRMO',
-  Barangay_Personnel: 'BRGY',
-  BFP_Personnel: 'BFP',
-};
-
 export const BARANGAY_ROLE = 'Barangay_Personnel';
 
 export function roleName(role) {

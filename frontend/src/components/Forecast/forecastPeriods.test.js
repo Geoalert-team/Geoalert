@@ -34,7 +34,7 @@ test('each mode asks the server for its own period', () => {
 test('labels for each mode', () => {
   expect([MONTH, MONTH_YEAR, DATE].map(periodLabel)).toEqual(['November', 'November 2027', 'November 15, 2027']);
   expect(periodIn(DATE)).toBe('the week of Nov 15');
-  expect([MONTH, DATE].map(periodPastHeader)).toEqual(['Past Novembers', 'Past years, week of Nov 15']);
+  expect([MONTH, DATE].map(periodPastHeader)).toEqual(['On record in past Novembers', 'On record in past years, week of Nov 15']);
   const row = { years_hit: 3, years_considered: 4 };
   expect([MONTH_YEAR, DATE].map((p) => periodYearsText(row, p))).toEqual(['3 of 4 past Novembers', '3 of 4 past years']);
 });

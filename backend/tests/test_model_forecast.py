@@ -6,6 +6,7 @@ land on the forecast.
 import math
 import random
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 from unittest import mock
 
 from django.contrib.gis.geos import MultiPolygon
@@ -15,6 +16,7 @@ from django.utils import timezone as dj_timezone
 from rest_framework.test import APIRequestFactory
 
 from apps.barangays.models import Barangay
+from apps.history import hazard_models
 from apps.history import model_forecast as mf
 from apps.history.forecast import seasonal_forecast, seasonal_profile
 from apps.history.models import HistoricalRecord
@@ -291,6 +293,11 @@ class ForecastViewTests(FireSetupMixin, TestCase):
     def setUp(self):
         super().setUp()
         cache.clear()
+        # flood and landslide have no test report here: never the real one in apps/history/data/
+        patcher = mock.patch.object(hazard_models, 'REPORT_PATH',
+                                    Path(__file__).with_name('no_hazard_model_report.json'))
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def get(self, view=HistoricalForecastView, **params):
         return view.as_view()(APIRequestFactory().get('/', params))
@@ -305,10 +312,19 @@ class ForecastViewTests(FireSetupMixin, TestCase):
 
     def test_accuracy_says_when_there_are_too_few_records(self):
         self.history(self.near, 3)
-        hazards = self.get(ForecastAccuracyView).data['hazards']
+        entries = self.get(ForecastAccuracyView).data['hazards']
+        # fire's own test first, then flood's and landslide's rain-and-terrain entries (no report here)
+        self.assertEqual([(h['hazard'], h.get('kind'), h['status']) for h in entries],
+                         [('Fire', None, 'too_few_records'), ('Flood', 'rain_terrain', 'unavailable'),
+                          ('Landslide', 'rain_terrain', 'unavailable')])
+        hazards = [h for h in entries if h.get('kind') != 'rain_terrain']
         self.assertEqual([(h['hazard'], h['status']) for h in hazards], [('Fire', 'too_few_records')])
 
     def test_accuracy_never_counts_sample_records(self):
         HistoricalRecord.objects.create(barangay=self.home, hazard_type=self.flood, severity_level='Green',
                                         occurred_at=dj_timezone.now() - timedelta(days=30), is_sample=True)
-        self.assertEqual(self.get(ForecastAccuracyView).data['hazards'], [])
+        entries = self.get(ForecastAccuracyView).data['hazards']
+        # no counting test for anything: only flood's and landslide's rain-and-terrain entries (no report here)
+        self.assertEqual([(h['hazard'], h['kind'], h['status']) for h in entries],
+                         [('Flood', 'rain_terrain', 'unavailable'), ('Landslide', 'rain_terrain', 'unavailable')])
+        self.assertEqual([h for h in entries if h.get('kind') != 'rain_terrain'], [])

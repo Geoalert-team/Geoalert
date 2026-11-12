@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { adminApi } from '../../../api/adminApi';
 import { barangaysApi } from '../../../api/barangaysApi';
 import {
-  BARANGAY_ROLE, EMPLOYEE_ID_PREFIXES, Icon, Modal, ROLE_META, SUFFIXES,
+  BARANGAY_ROLE, Icon, Modal, ROLE_META, SUFFIXES,
   fieldErrors, phoneDigits, roleMeta, roleName,
 } from './adminShared';
 
@@ -83,13 +84,46 @@ export default function UserFormModal({ user, roles, onClose, onSave }) {
 
   // The server gives the employee ID (DRRMO-0001, BRGY-0014, ...) when the
   // account is first saved, and it never changes after that, not even when
-  // the role does. The form only shows it.
-  const idPrefix = selectedRole ? EMPLOYEE_ID_PREFIXES[roleName(selectedRole)] || 'USER' : null;
-  const employeeIdHint = editing
-    ? (user.employee_id ? 'Given by the system. It can’t be changed.' : 'Given when this account is saved with a role.')
-    : idPrefix
-      ? `Given when you save, as the next ${idPrefix}- number.`
-      : 'Given when you save. Choose a role first.';
+  // the role does. The form shows it and copies it on click; it can't be typed.
+  // An account without one yet shows the next free ID for the chosen role.
+  const hasId = editing && Boolean(user.employee_id);
+  const [nextIds, setNextIds] = useState(null); // null while loading
+  const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef(null);
+
+  useEffect(() => {
+    if (hasId) return undefined;
+    let live = true;
+    adminApi.users
+      .nextEmployeeIds()
+      .then((ids) => { if (live) setNextIds(ids || {}); })
+      .catch(() => { if (live) setNextIds({}); });
+    return () => { live = false; };
+  }, [hasId]);
+
+  useEffect(() => () => clearTimeout(copiedTimer.current), []);
+  useEffect(() => { setCopied(false); }, [form.role_id]);
+
+  const employeeId = hasId ? user.employee_id : (selectedRole && nextIds?.[roleName(selectedRole)]) || '';
+  const employeeIdEmpty = !selectedRole
+    ? 'Choose a role first'
+    : nextIds === null ? 'Loading…' : 'Given when you save';
+  const employeeIdHint = hasId
+    ? 'Given by the system. It can’t be changed. Click to copy.'
+    : employeeId
+      ? 'The next free ID for this role. Click to copy.'
+      : selectedRole && nextIds !== null
+        ? 'Couldn’t load the next ID. It is still given when you save.'
+        : 'Each role has its own series: ADMIN-, DRRMO-, BRGY-, BFP-.';
+
+  function copyEmployeeId() {
+    if (!employeeId || !navigator.clipboard) return;
+    navigator.clipboard.writeText(employeeId).then(() => {
+      setCopied(true);
+      clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopied(false), 2000);
+    }).catch(() => setCopied(false));
+  }
 
   // Barangay names come from the map's GeoJSON endpoint
   useEffect(() => {
@@ -311,14 +345,23 @@ export default function UserFormModal({ user, roles, onClose, onSave }) {
               />
             </Field>
             <Field label="Employee ID" hint={employeeIdHint}>
-              <input
-                value={editing ? user.employee_id || '' : ''}
-                placeholder={idPrefix ? `${idPrefix}-####` : 'Automatic'}
-                readOnly
-                tabIndex={-1}
-                aria-readonly="true"
-                className="adm-input-auto"
-              />
+              <button
+                type="button"
+                className={`adm-id-copy ${copied ? 'is-copied' : ''}`}
+                onClick={copyEmployeeId}
+                disabled={!employeeId}
+                title={employeeId ? 'Click to copy' : undefined}
+              >
+                <span className={employeeId ? 'adm-id-copy-value' : 'adm-id-copy-empty'}>
+                  {employeeId || employeeIdEmpty}
+                </span>
+                {employeeId && (
+                  <span className="adm-id-copy-action" aria-live="polite">
+                    <Icon name={copied ? 'check' : 'copy'} size={15} strokeWidth={copied ? 3 : 2} />
+                    {copied ? 'Copied' : 'Copy'}
+                  </span>
+                )}
+              </button>
             </Field>
             {needsBarangay && (
               <Field

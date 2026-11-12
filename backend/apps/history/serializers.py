@@ -26,6 +26,7 @@ STAFF_ONLY_FIELDS = (
     'location_text', 'damage_cost', 'hazard_zone',
     'injured_ff_male', 'injured_ff_female', 'injured_civ_male', 'injured_civ_female',
     'fatal_ff_male', 'fatal_ff_female', 'fatal_civ_male', 'fatal_civ_female',
+    'location_lat', 'location_lng', 'location_precision', 'location_basis', 'source',
 )
 
 
@@ -36,10 +37,20 @@ class HistoricalRecordDetailSerializer(HistoricalRecordSerializer):
     the fire log's columns G-W. Kept out of the list, which stays light.
     """
     puroks = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
+    # The map point, only where the source names the spot (place_history_records)
+    location_lat = serializers.SerializerMethodField()
+    location_lng = serializers.SerializerMethodField()
+
+    def get_location_lat(self, record):
+        return record.location.y if record.location else None
+
+    def get_location_lng(self, record):
+        return record.location.x if record.location else None
 
     class Meta(HistoricalRecordSerializer.Meta):
         fields = HistoricalRecordSerializer.Meta.fields + [
             'location_text', 'puroks',
+            'location_lat', 'location_lng', 'location_precision', 'location_basis', 'source',
             # BFP fire log G-W: property type, injured and fatalities by
             # firefighter / civilian and male / female, damage, structures, alarm
             'property_category', 'property_subcategory',
