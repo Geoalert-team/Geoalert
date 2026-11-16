@@ -113,7 +113,7 @@ export default function PublicHome() {
               </h1>
               <p className="ph-hero-lead">
                 GeoAlert Talisay is a community hazard map for Talisay City. Check the current risk level
-                for floods, landslides, storm surges and fires in your barangay, then follow clear
+                for floods, landslides and fires in your barangay, then follow clear
                 safety steps.
               </p>
               <div className="ph-hero-actions">
