@@ -8,7 +8,7 @@ from apps.history.hazard_data import DATA_DIR
 
 
 class Command(BaseCommand):
-    help = ('Download daily rain for every barangay from NASA POWER (2016-12-18 to the last day POWER has filled, '
+    help = ('Download daily rain for every barangay from NASA POWER (2006-12-18 to the last day POWER has filled, '
             'a few days back) and write data/rain_daily.csv. One series for the city\'s grid cell, one request '
             'per year, newest first; no account or key needed. Reads the database only.')
 
@@ -26,5 +26,4 @@ class Command(BaseCommand):
         self.stdout.write(f'Last day: {rf.last_day}')
         self.stdout.write(f'Distinct grid cells: {len(set(cells.values()))}')
         self.stdout.write(f'Retries: {stats["retries"]}')
-        self.stdout.write(f'Failed spans: {", ".join(stats["failed"]) or "none"}')
         self.stdout.write(self.style.SUCCESS(f'{len(series)} barangays written to {out}'))

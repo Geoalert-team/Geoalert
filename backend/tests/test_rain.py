@@ -9,6 +9,8 @@ from django.core.management.base import CommandError
 from django.test import SimpleTestCase, TestCase
 
 from apps.barangays.models import Barangay
+from apps.history import rain as rain_mod
+from apps.history.management.commands import fetch_rain
 from apps.history.rain import (
     POWER_URL, RainFile, city_cell, complete_years, download_archive, read_rain_csv, recent_rain,
     representative_points, write_rain_csv)
@@ -69,56 +71,61 @@ class DownloadTests(SimpleTestCase):
 
     def test_one_request_per_year_newest_first_for_the_city_cell(self):
         get = FakeGet()
-        (rain, cells), sleeps, logs = self.run_dl(TALISAY, date(2016, 12, 18), date(2018, 1, 3), get)
+        (rain, cells), sleeps, logs = self.run_dl(TALISAY, date(2006, 12, 18), date(2018, 1, 3), get)
         spans = [(c[1]['start'], c[1]['end']) for c in get.calls]
-        self.assertEqual(spans, [('20180101', '20180103'), ('20170101', '20171231'), ('20161218', '20161231')])
+        expected = [('20180101', '20180103')] + [(f'{y}0101', f'{y}1231') for y in range(2017, 2006, -1)] \
+            + [('20061218', '20061231')]
+        self.assertEqual(spans, expected)
         self.assertEqual({c[0] for c in get.calls}, {POWER_URL})
         self.assertEqual({(c[1]['latitude'], c[1]['longitude']) for c in get.calls}, {(10.5, 123.75)})
-        self.assertEqual(sleeps, [1, 1])                      # a short pause between requests, none after the last
+        self.assertEqual(sleeps, [1] * 12)                    # a short pause between requests, none after the last
         self.assertTrue(any('3 barangays -> 1 NASA POWER grid cell (10.5, 123.75)' in str(m) for m in logs))
 
     def test_requests_ask_for_corrected_rain_in_local_solar_days(self):
         get = FakeGet()
-        self.run_dl(TALISAY, date(2020, 12, 18), date(2020, 12, 19), get)
+        self.run_dl(TALISAY, date(2006, 12, 18), date(2006, 12, 19), get)
         params = get.calls[0][1]
         self.assertEqual({k: params[k] for k in ('parameters', 'community', 'time-standard', 'format')},
                          {'parameters': 'PRECTOTCORR', 'community': 'AG', 'time-standard': 'LST', 'format': 'JSON'})
 
     def test_every_barangay_gets_the_city_cells_series(self):
         get = FakeGet(value=lambda lat, lon, d: lat * 10 + d.day)
-        (rain, cells), _, _ = self.run_dl(TALISAY, date(2020, 12, 18), date(2020, 12, 20), get)
+        (rain, cells), _, _ = self.run_dl(TALISAY, date(2006, 12, 18), date(2006, 12, 20), get)
         self.assertEqual(cells, {1: (10.5, 123.75), 2: (10.5, 123.75), 3: (10.5, 123.75)})
-        self.assertEqual(rain[1], {date(2020, 12, 18): 123.0, date(2020, 12, 19): 124.0, date(2020, 12, 20): 125.0})
+        self.assertEqual(rain[1], {date(2006, 12, 18): 123.0, date(2006, 12, 19): 124.0, date(2006, 12, 20): 125.0})
         self.assertEqual(rain[1], rain[2])
         self.assertEqual(rain[2], rain[3])
         self.assertIsNot(rain[1], rain[2])                    # each barangay its own copy
 
     def test_download_drops_years_with_no_values_and_logs_the_first_day(self):
-        get = FakeGet(value=lambda lat, lon, d: 2.0 if d >= date(2020, 12, 18) else None)
-        (rain, _), _, logs = self.run_dl(TALISAY, date(2016, 12, 18), date(2021, 1, 2), get)
-        self.assertEqual(min(rain[1]), date(2020, 12, 18))
-        self.assertEqual(max(rain[1]), date(2021, 1, 2))
-        self.assertTrue(any('2020-12-18' in str(m) for m in logs))
+        get = FakeGet(value=lambda lat, lon, d: None if d.year == 2010 else 2.0)
+        (rain, _), _, logs = self.run_dl(TALISAY, date(2006, 12, 18), date(2011, 1, 2), get)
+        self.assertEqual(min(rain[1]), date(2006, 12, 18))
+        self.assertEqual(max(rain[1]), date(2011, 1, 2))
+        self.assertFalse(any(d.year == 2010 for d in rain[1]))  # a middle year with no values is dropped
+        self.assertIn(date(2009, 12, 31), rain[1])
+        self.assertIn(date(2011, 1, 1), rain[1])
+        self.assertTrue(any('2006-12-18' in str(m) for m in logs))
 
     def test_missing_days_stay_as_none_inside_and_the_edges_are_trimmed(self):
         # POWER's last few days are -999 until they are processed: the file ends at the last day with rain
         def value(lat, lon, d):
-            if d < date(2020, 12, 18) or d > date(2020, 12, 29):
+            if d < date(2006, 12, 18) or d > date(2006, 12, 29):
                 return None
-            return None if d == date(2020, 12, 25) else 3.0
-        (rain, _), _, _ = self.run_dl(TALISAY, date(2020, 12, 16), date(2020, 12, 31), FakeGet(value=value))
-        self.assertEqual(min(rain[1]), date(2020, 12, 18))
-        self.assertEqual(max(rain[1]), date(2020, 12, 29))
-        self.assertIsNone(rain[1][date(2020, 12, 25)])
+            return None if d == date(2006, 12, 25) else 3.0
+        (rain, _), _, _ = self.run_dl(TALISAY, date(2006, 12, 16), date(2006, 12, 31), FakeGet(value=value))
+        self.assertEqual(min(rain[1]), date(2006, 12, 18))
+        self.assertEqual(max(rain[1]), date(2006, 12, 29))
+        self.assertIsNone(rain[1][date(2006, 12, 25)])
 
-    def test_download_fails_when_the_archive_starts_after_2020_12_18(self):
+    def test_download_fails_when_the_archive_starts_after_2006_12_18(self):
         get = FakeGet(value=lambda lat, lon, d: 1.0 if d >= date(2021, 3, 1) else None)
         with self.assertRaises(CommandError):
-            self.run_dl(TALISAY, date(2020, 12, 18), date(2021, 6, 1), get)
+            self.run_dl(TALISAY, date(2006, 12, 18), date(2021, 6, 1), get)
 
     def test_download_fails_when_there_is_no_data_at_all(self):
         with self.assertRaises(CommandError):
-            self.run_dl(TALISAY, date(2020, 12, 18), date(2021, 1, 5), FakeGet(value=lambda *a: None))
+            self.run_dl(TALISAY, date(2006, 12, 18), date(2021, 1, 5), FakeGet(value=lambda *a: None))
 
     def test_retries_then_succeeds(self):
         def fail(url, params, n):
@@ -126,7 +133,7 @@ class DownloadTests(SimpleTestCase):
                 raise requests.Timeout('slow')
         get = FakeGet(fail=fail)
         stats = {}
-        (rain, _), sleeps, _ = self.run_dl(TALISAY, date(2020, 12, 18), date(2020, 12, 19), get, stats=stats)
+        (rain, _), sleeps, _ = self.run_dl(TALISAY, date(2006, 12, 18), date(2006, 12, 19), get, stats=stats)
         self.assertEqual(sleeps, [30, 60])
         self.assertEqual(len(get.calls), 3)
         self.assertEqual(stats['retries'], 2)
@@ -138,28 +145,27 @@ class DownloadTests(SimpleTestCase):
                 raise http_error(code)
             get = FakeGet(fail=fail)
             with self.assertRaises(CommandError):
-                self.run_dl(TALISAY, date(2020, 12, 18), date(2020, 12, 19), get)
+                self.run_dl(TALISAY, date(2006, 12, 18), date(2006, 12, 19), get)
             self.assertEqual(len(get.calls), expected_calls, code)
 
-    def test_a_failed_old_year_is_logged_and_skipped(self):
+    def test_a_failed_year_inside_the_archive_stops_the_download(self):
+        # every year from 2006-12-18 is inside the archive now, so no failed year is skipped any more
         def fail(url, params, n):
             if params['start'].startswith('2017'):
                 raise requests.ConnectionError('down')
-        get = FakeGet(fail=fail, value=lambda lat, lon, d: 1.0 if d >= date(2020, 12, 18) else None)
+        get = FakeGet(fail=fail)
         stats = {}
-        (rain, _), sleeps, logs = self.run_dl(TALISAY, date(2016, 12, 18), date(2021, 1, 2), get, stats=stats)
-        self.assertEqual(min(rain[1]), date(2020, 12, 18))
+        with self.assertRaises(CommandError) as cm:
+            self.run_dl(TALISAY, date(2006, 12, 18), date(2021, 1, 2), get, stats=stats)
+        self.assertIn('2017-01-01..2017-12-31', str(cm.exception))
         self.assertEqual(stats['retries'], 2)
-        self.assertEqual(stats['failed'], ['2017-01-01..2017-12-31'])
-        self.assertTrue(any('2017-01-01' in str(m) for m in logs))
-        self.assertEqual([s for s in sleeps if s in (30, 60)], [30, 60])
 
-    def test_a_failed_span_from_2020_12_18_on_raises(self):
+    def test_a_failed_span_from_2006_12_18_on_raises(self):
         def fail(url, params, n):
             if params['start'] == '20210101':
                 raise requests.Timeout('slow')
         with self.assertRaises(CommandError) as cm:
-            self.run_dl(TALISAY, date(2020, 12, 18), date(2021, 1, 2), FakeGet(fail=fail))
+            self.run_dl(TALISAY, date(2006, 12, 18), date(2021, 1, 2), FakeGet(fail=fail))
         self.assertIn('2021-01-01', str(cm.exception))
         self.assertIn('slow', str(cm.exception))
 
@@ -172,28 +178,27 @@ class MalformedReplyTests(SimpleTestCase):
         'a value that is not a number': lambda params: {'properties': {'parameter': {'PRECTOTCORR': {'20210101': 'x'}}}},
     }
 
-    def test_old_span_with_a_malformed_reply_is_logged_skipped_and_not_retried(self):
+    def test_a_malformed_reply_inside_the_archive_stops_the_download_and_is_not_retried(self):
         for name, bad in self.BAD.items():
-            stats, calls, logs = {}, [], []
-            fake = FakeGet(value=lambda lat, lon, d: 1.0 if d >= date(2020, 12, 18) else None)
+            stats, calls = {}, []
+            fake = FakeGet()
 
             def get(url, params, bad=bad):
                 calls.append(params['start'])
                 return bad(params) if params['start'].startswith('2017') else fake(url, params)
-            rain, _ = download_archive(TALISAY, date(2016, 12, 18), date(2020, 12, 19), get=get,
-                                       sleep=lambda s: None, log=logs.append, stats=stats)
+            with self.assertRaises(CommandError, msg=name) as cm:
+                download_archive(TALISAY, date(2006, 12, 18), date(2020, 12, 19), get=get,
+                                 sleep=lambda s: None, log=lambda m: None, stats=stats)
             self.assertEqual(calls.count('20170101'), 1, name)
             self.assertEqual(stats['retries'], 0, name)
-            self.assertEqual(len(stats['failed']), 1, name)
-            self.assertEqual(min(rain[1]), date(2020, 12, 18), name)
-            self.assertTrue(any('2017-01-01' in str(m) for m in logs), name)
+            self.assertIn('2017-01-01..2017-12-31', str(cm.exception), name)
 
     def test_recent_span_with_a_malformed_reply_raises_with_the_detail(self):
         for name, bad in self.BAD.items():
             with self.assertRaises(CommandError, msg=name) as cm:
-                download_archive(TALISAY, date(2020, 12, 18), date(2020, 12, 20), get=lambda url, params: bad(params),
+                download_archive(TALISAY, date(2006, 12, 18), date(2006, 12, 20), get=lambda url, params: bad(params),
                                  sleep=lambda s: None, log=lambda m: None)
-            self.assertIn('2020-12-18', str(cm.exception), name)
+            self.assertIn('2006-12-18', str(cm.exception), name)
 
     def test_recent_rain_malformed_reply_returns_none_and_is_cached_as_failure(self):
         cache.clear()
@@ -214,10 +219,10 @@ class SourceParamsTests(SimpleTestCase):
     def test_archive_and_live_requests_ask_the_same_source_the_same_way(self):
         cache.clear()
         get = FakeGet()
-        download_archive(TALISAY, date(2020, 12, 18), date(2021, 1, 3), get=get, sleep=lambda s: None,
+        download_archive(TALISAY, date(2006, 12, 18), date(2021, 1, 3), get=get, sleep=lambda s: None,
                          log=lambda m: None)
         recent_rain({1: (10.5, 123.75)}, date(2026, 11, 7), date(2026, 11, 12), get=get)
-        self.assertEqual(len(get.calls), 3)                   # 2020 and 2021, then the live call
+        self.assertEqual(len(get.calls), 17)                  # 2006 to 2021 (16 years), then the live call
         for url, params in get.calls:
             self.assertEqual(url, POWER_URL)
             self.assertEqual({k: params[k] for k in ('parameters', 'community', 'time-standard', 'format')},
@@ -310,6 +315,31 @@ class RecentRainTests(SimpleTestCase):
         self.assertEqual([(r.levelname, r.getMessage()) for r in logs.records],
                          [('WARNING', 'Live rain from NASA POWER failed; not asked again for 15 minutes.')] * 2)
         self.assertTrue(all(isinstance(r.exc_info[1], requests.Timeout) for r in logs.records))
+
+
+class ArchiveStartTests(SimpleTestCase):
+    def test_archive_reaches_back_to_2006(self):
+        self.assertEqual(rain_mod.ARCHIVE_FIRST_DAY, date(2006, 12, 18))
+        self.assertEqual(rain_mod.CSV_FIRST_DAY_LIMIT, date(2006, 12, 18))
+        get = FakeGet()
+        download_archive(TALISAY, rain_mod.ARCHIVE_FIRST_DAY, date(2008, 1, 3), get=get, sleep=lambda s: None,
+                         log=lambda m: None)
+        spans = [(c[1]['start'], c[1]['end']) for c in get.calls]
+        self.assertEqual(spans[0], ('20080101', '20080103'))  # newest first, the last day of the range
+        self.assertEqual(spans[-1][0], '20061218')            # oldest request starts on the archive's first day
+        self.assertEqual(len(spans), 3)
+
+    def test_a_file_starting_after_2006_12_18_is_refused(self):
+        get = FakeGet(value=lambda lat, lon, d: 1.0 if d >= date(2010, 3, 1) else None)
+        with self.assertRaises(CommandError) as cm:
+            download_archive(TALISAY, date(2006, 12, 18), date(2011, 6, 1), get=get, sleep=lambda s: None,
+                             log=lambda m: None)
+        self.assertIn('2010-03-01', str(cm.exception))
+
+    def test_fetch_rain_help_text_names_the_new_first_day(self):
+        help_text = fetch_rain.Command.help
+        self.assertIn('2006-12-18', help_text)
+        self.assertNotIn('2016-12-18', help_text)
 
 
 class RepresentativePointsTests(TestCase):

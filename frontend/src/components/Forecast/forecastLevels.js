@@ -137,7 +137,12 @@ export const rangeText = (row) => {
 /** The level's word; a model that could not run is not "None on record" */
 export const levelLabel = (row) => (row.method === 'unavailable' ? 'Unavailable right now' : likelihoodInfo(row.level).label);
 
-export const MODEL_LABELS = { logistic_regression: 'logistic regression', random_forest: 'random forest', xgboost: 'XGBoost' };
+export const MODEL_LABELS = {
+  logistic_regression: 'pooled logistic regression',
+  two_part: 'two-part model (rain-day chance × barangay share)',
+  pooled_exposure: 'pooled Poisson with building exposure',
+  current: 'Poisson regression',
+};
 
 /** 1-12 for next month, the default view: what to prepare for. */
 export function nextMonth(now = new Date()) {

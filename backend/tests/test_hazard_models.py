@@ -3,32 +3,41 @@ import json
 import shutil
 import tempfile
 import warnings
-from calendar import monthrange
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+from functools import lru_cache
 from io import StringIO
 from pathlib import Path
 from unittest import mock
 
 import numpy as np
+import requests
+from django.contrib.gis.geos import MultiPolygon, Polygon
+from django.core.cache import cache
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.db import connection
 from django.test import SimpleTestCase, TestCase
-from sklearn.metrics import roc_auc_score
 
 from apps.barangays.models import Barangay
 from apps.hazards.models import HazardType
-from apps.history import hazard_data, hazard_models
+from apps.history import hazard_data, hazard_models, hazard_tests, landslide_catalogue
+from apps.history.exposure import read_exposure, write_exposure
+from apps.history.firth import FitFailed
 from apps.history.hazard_data import (
-    MANILA, STUDY_END, STUDY_START, Dataset, RAIN_FEATURES, Record, TERRAIN_FEATURES, build_dataset, load_records,
-    records_signature, write_terrain)
+    HAZARDS, MANILA, RAIN_FEATURES, STUDY_END, STUDY_START, TERRAIN_FEATURES, Dataset, build_dataset,
+    load_exclusions, load_records, read_terrain, records_signature, write_terrain)
 from apps.history.hazard_models import (
-    ALARM_RATE, CANDIDATES, FOLDS, Fitted, benchmark_probs, bootstrap, calibration, day_blocks, fit_candidate,
-    make_pipeline, no_skill, predict, scores, select_winner, threshold_metrics)
-from apps.history.models import HistoricalRecord
-from apps.history.rain import RainFile, complete_years, write_rain_csv
-from tests.hazard_fixtures import toy_inputs
-
-FAST = {'random_forest': {'n_estimators': 10, 'min_samples_leaf': 5}, 'xgboost': {'n_estimators': 10}}
+    FOLDS, REPORT_OLD, REPORT_UNREADABLE, CannotEvaluate, benchmark_probs, credits_for, make_logistic, no_skill,
+    report_limits)
+from apps.history.hazard_scoring import score_logistic, score_two_part
+from apps.history.hazard_tests import LogisticContender, TwoPartContender, build_hazard_data
+from apps.history.management.commands import test_hazard_models as command
+from apps.history.models import HazardPredictionLog, HistoricalRecord
+from apps.history.rain import ARCHIVE_FIRST_DAY, read_rain_csv, write_rain_csv
+from apps.history.storms import StormDays, read_storm_days, write_storm_days
+from apps.history.two_part import FEATURES, TwoPartFit
+from tests.hazard_fixtures import (
+    toy_event_records, toy_inputs, toy_report_v1, toy_report_v2, toy_source_ref, write_toy_files)
 
 
 def hand_dataset(rows):
@@ -41,51 +50,51 @@ def hand_dataset(rows):
 
 class HazardModelTests(SimpleTestCase):
     def test_fixed_settings_are_used_exactly(self):
-        lr = make_pipeline('logistic_regression', 'Flood')[-1]
+        lr = make_logistic()[-1]
         self.assertEqual((lr.C, lr.l1_ratio, lr.solver, lr.max_iter), (1.0, 0.0, 'lbfgs', 2000))
-        rf = make_pipeline('random_forest', 'Flood')[-1]
-        self.assertEqual((rf.n_estimators, rf.max_depth, rf.min_samples_leaf, rf.max_features, rf.random_state),
-                         (500, 3, 200, 'sqrt', 0))
-        self.assertEqual(list(rf.monotonic_cst), [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1])
-        xgb = make_pipeline('xgboost', 'Landslide')[-1].get_params()
-        for k, v in dict(n_estimators=200, max_depth=2, learning_rate=0.05, subsample=0.8, reg_lambda=1,
-                         min_child_weight=0.1, scale_pos_weight=1, random_state=0).items():
-            self.assertEqual(xgb[k], v)
-        self.assertEqual(tuple(xgb['monotone_constraints']), (1,) * 10)
 
-    def test_speed_overrides_are_merged(self):
-        with mock.patch.dict(hazard_models.SPEED_OVERRIDES, {'random_forest': {'n_estimators': 5}}):
-            self.assertEqual(make_pipeline('random_forest', 'Flood')[-1].n_estimators, 5)
-        self.assertEqual(make_pipeline('random_forest', 'Flood')[-1].n_estimators, 500)
+    def test_read_report_is_none_when_missing_or_unreadable(self):
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        path = tmp / 'report.json'
+        self.assertIsNone(hazard_models.read_report(path))
+        path.write_bytes(b'not json')
+        self.assertIsNone(hazard_models.read_report(path))
+        path.write_bytes(b'\xff\xfe\x00broken')
+        self.assertIsNone(hazard_models.read_report(path))
+        path.write_bytes(b'[1, 2]')
+        self.assertIsNone(hazard_models.read_report(path))
+        path.write_text(json.dumps({'hazards': {}}), encoding='utf-8')
+        self.assertEqual(hazard_models.read_report(path), {'hazards': {}})
+        with mock.patch.object(hazard_models, 'REPORT_PATH', path):       # the default is read at call time
+            self.assertEqual(hazard_models.read_report(), {'hazards': {}})
+        self.assertEqual(hazard_models.REPORT_PATH.name, 'hazard_model_report.json')
+        self.assertEqual(hazard_models.REPORT_PATH.parent, hazard_data.DATA_DIR)
 
     def test_folds_never_train_on_their_test_year_or_later(self):
         for train, test in FOLDS:
             self.assertTrue(max(train) < test)
 
-    def test_every_candidate_fits_and_predicts_without_warnings(self):
+    def test_the_logistic_regression_fits_and_predicts_without_warnings(self):
         terrain, rain, pos = toy_inputs()
         for hazard in ('Flood', 'Landslide'):
             ds, _ = build_dataset(hazard, terrain, rain, pos, date(2021, 1, 1), date(2025, 12, 31))
             self.assertEqual(ds.features, RAIN_FEATURES + TERRAIN_FEATURES[hazard])
             X = ds.X.copy()
             X[:5, -1] = np.nan
-            for name in CANDIDATES:
-                with mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST):
-                    with warnings.catch_warnings():
-                        warnings.simplefilter('error')
-                        p = make_pipeline(name, hazard).fit(X, ds.y).predict_proba(X)[:, 1]
-                self.assertEqual(p.shape, (len(ds.y),))
-                self.assertTrue(((p >= 0) & (p <= 1)).all())
+            with warnings.catch_warnings():
+                warnings.simplefilter('error')
+                p = make_logistic().fit(X, ds.y).predict_proba(X)[:, 1]
+            self.assertEqual(p.shape, (len(ds.y),))
+            self.assertTrue(((p >= 0) & (p <= 1)).all())
 
     def test_all_nan_training_column_keeps_columns_aligned(self):
         terrain, rain, pos = toy_inputs()
         ds, _ = build_dataset('Flood', terrain, rain, pos, date(2021, 1, 1), date(2025, 12, 31))
         X = ds.X.copy()
         X[:, 3] = np.nan
-        for name in CANDIDATES:
-            with mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST):
-                pipe = make_pipeline(name, 'Flood').fit(X, ds.y)
-            self.assertEqual(pipe[-1].n_features_in_, X.shape[1])
+        pipe = make_logistic().fit(X, ds.y)
+        self.assertEqual(pipe[-1].n_features_in_, X.shape[1])
 
     def test_benchmark_reads_training_years_only(self):
         # two training years, so January has 2 x 31 = 62 distinct days
@@ -108,411 +117,7 @@ class HazardModelTests(SimpleTestCase):
                                 (3, date(2023, 1, 10), 1), (1, date(2023, 2, 10), 1)])
         np.testing.assert_array_equal(benchmark_probs(train, flipped), p)
 
-    def test_scores_are_undefined_without_events(self):
-        s = scores(np.zeros(50, bool), np.full(50, 0.01))
-        self.assertIsNone(s['roc_auc'])
-        self.assertIsNone(s['pr_auc'])
-        self.assertTrue(np.isfinite(s['log_loss']))
-        self.assertEqual((s['n'], s['positives'], s['prevalence']), (50, 0, 0.0))
-
-    def test_scores_with_both_classes_are_plain_numbers(self):
-        y = np.array([0, 0, 0, 1, 1, 0, 1, 0])
-        p = np.array([0.1, 0.2, 0.1, 0.9, 0.6, 0.3, 0.7, 0.0])
-        s = scores(y, p)
-        self.assertEqual(set(s), {'log_loss', 'brier', 'roc_auc', 'pr_auc', 'n', 'positives', 'prevalence'})
-        self.assertEqual(s['roc_auc'], 1.0)
-        for k in ('log_loss', 'brier', 'roc_auc', 'pr_auc', 'prevalence'):
-            self.assertIs(type(s[k]), float)
-        self.assertIs(type(s['n']), int)
-        self.assertIs(type(s['positives']), int)
-        self.assertTrue(np.isfinite(s['log_loss']))
-
-    def test_threshold_is_set_on_training_predictions(self):
-        p_train = np.linspace(0, 1, 101)          # 99th percentile = 0.99
-        y_test = np.array([1, 0, 1, 0, 0])
-        p_test = np.array([0.995, 0.99, 0.5, 0.2, 1.0])
-        m = threshold_metrics(p_train, y_test, p_test)
-        self.assertAlmostEqual(m['cutoff'], 0.99)
-        self.assertEqual((m['tp'], m['fp'], m['fn'], m['tn']), (1, 2, 1, 1))
-        self.assertAlmostEqual(m['precision'], 1 / 3)
-        self.assertAlmostEqual(m['recall'], 0.5)
-        self.assertEqual(ALARM_RATE, 0.01)
-        for k in ('tp', 'fp', 'fn', 'tn'):
-            self.assertIs(type(m[k]), int)
-
-    def test_threshold_undefined_cases(self):
-        m = threshold_metrics(np.linspace(0, 1, 101), np.zeros(3), np.array([0.1, 0.2, 0.3]))
-        self.assertIsNone(m['precision'])
-        self.assertIsNone(m['recall'])
-
-    # ---- Task 6: calibration, bootstrap, selection ----
-
-    def _toy_train(self, hazard='Flood'):
-        terrain, rain, pos = toy_inputs()
-        ds, _ = build_dataset(hazard, terrain, rain, pos, date(2021, 1, 1), date(2025, 12, 31))
-        return ds
-
-    def _with_y(self, ds, y):
-        return Dataset(ds.X, y, ds.barangay_id, ds.day, ds.features)
-
-    def test_platt_is_skipped_when_the_calibration_year_has_no_events(self):
-        ds = self._toy_train()
-        y = np.where(ds.years == 2025, 0, ds.y)
-        with mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST):
-            f = fit_candidate('random_forest', 'Flood', self._with_y(ds, y))
-        self.assertIsNone(f.platt)
-        self.assertEqual(f.pipeline.predict_proba(ds.X).shape[1], 2)
-
-    def test_platt_is_skipped_when_earlier_years_have_no_events(self):
-        ds = self._toy_train()
-        y = np.where(ds.years == 2025, ds.y, 0)
-        with mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST):
-            f = fit_candidate('xgboost', 'Flood', self._with_y(ds, y))
-        self.assertIsNone(f.platt)
-
-    def test_platt_is_fitted_for_trees_only(self):
-        ds = self._toy_train()
-        with mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST):
-            for name in ('random_forest', 'xgboost'):
-                with warnings.catch_warnings():
-                    warnings.simplefilter('error')
-                    f = fit_candidate(name, 'Flood', ds)
-                self.assertEqual(len(f.platt), 2)
-                self.assertTrue(all(type(v) is float for v in f.platt))
-                p = predict(f, ds.X)
-                self.assertEqual(p.shape, (len(ds.y),))
-                self.assertTrue(((p >= 0) & (p <= 1)).all())
-            lr = fit_candidate('logistic_regression', 'Flood', ds)
-        self.assertIsNone(lr.platt)
-
-    def test_predict_applies_the_platt_mapping(self):
-        ds = self._toy_train()
-        with mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST):
-            f = fit_candidate('random_forest', 'Flood', ds)
-        raw = f.pipeline.predict_proba(ds.X)[:, 1]
-        c = np.clip(raw, 1e-6, 1 - 1e-6)
-        a, b = f.platt
-        np.testing.assert_allclose(predict(f, ds.X), 1 / (1 + np.exp(-(a * np.log(c / (1 - c)) + b))))
-        np.testing.assert_array_equal(predict(Fitted(f.name, f.pipeline, None), ds.X), raw)
-
-    def test_tie_rule_prefers_the_simpler_model(self):
-        means = {'logistic_regression': 0.0105, 'random_forest': 0.0100, 'xgboost': 0.0110}
-        self.assertEqual(select_winner(means, {('logistic_regression', 'random_forest'): (-0.0002, 0.0012)}),
-                         'logistic_regression')
-        self.assertEqual(select_winner(means, {('logistic_regression', 'random_forest'): (0.0001, 0.0009)}),
-                         'random_forest')
-
-    def test_tie_rule_reverse_pair_and_missing_names(self):
-        means = {'logistic_regression': 0.0105, 'random_forest': 0.0100, 'xgboost': 0.0110}
-        # only (leader, c) given: rf - lr = (-0.0012, 0.0002) includes 0, so lr wins
-        self.assertEqual(select_winner(means, {('random_forest', 'logistic_regression'): (-0.0012, 0.0002)}),
-                         'logistic_regression')
-        # rf - lr = (-0.0012, -0.0001) excludes 0, so rf stays
-        self.assertEqual(select_winner(means, {('random_forest', 'logistic_regression'): (-0.0012, -0.0001)}),
-                         'random_forest')
-        # no pair at all: the leader wins
-        self.assertEqual(select_winner(means, {}), 'random_forest')
-        # a name that was not scored is ignored
-        self.assertEqual(select_winner({'xgboost': 0.01, 'random_forest': 0.02},
-                                       {('random_forest', 'xgboost'): (0.0, 0.01)}), 'random_forest')
-        # the simplest ties with the leader even though the middle one does not
-        means2 = {'logistic_regression': 0.02, 'random_forest': 0.03, 'xgboost': 0.01}
-        diff = {('logistic_regression', 'xgboost'): (-0.001, 0.02), ('random_forest', 'xgboost'): (0.01, 0.03)}
-        self.assertEqual(select_winner(means2, diff), 'logistic_regression')
-
-    def test_blocks_are_7_days_and_never_cross_a_year(self):
-        d = np.arange(np.datetime64('2022-12-20'), np.datetime64('2023-01-12'))   # 2022 tail, 2023 head
-        days = np.concatenate([d, d])                                              # two barangays
-        blocks = day_blocks(days)
-        years = days.astype('datetime64[Y]').astype(int) + 1970
-        starts = set()
-        for blk in blocks:
-            ds = days[blk]
-            self.assertEqual(len(set(years[blk])), 1)
-            self.assertEqual(len(blk), 14)                    # 7 days x 2 barangays, kept together
-            self.assertEqual((ds.max() - ds.min()).astype(int), 6)
-            starts.add(ds.min())
-        # 2022: Dec 20..31 gives starts Dec 20..25; 2023: Jan 1..11 gives starts Jan 1..5
-        self.assertEqual(len(blocks), 6 + 5)
-        self.assertIn(np.datetime64('2022-12-25'), starts)
-        self.assertNotIn(np.datetime64('2022-12-26'), starts)
-
-    def test_short_year_is_one_block_of_all_its_rows(self):
-        days = np.array(['2023-03-01', '2023-03-02', '2023-03-02'], dtype='datetime64[D]')
-        blocks = day_blocks(days)
-        self.assertEqual(len(blocks), 1)
-        self.assertEqual(sorted(blocks[0]), [0, 1, 2])
-
-    def _bootstrap_inputs(self):
-        rng = np.random.default_rng(1)
-        days = np.concatenate([np.arange(np.datetime64(f'{y}-01-01'), np.datetime64(f'{y}-12-31') + 1)
-                               for y in (2023, 2024)])
-        n = len(days)
-        p_true = np.where(rng.random(n) < 0.1, 0.4, 0.02)
-        y = (rng.random(n) < p_true).astype(int)
-        return days, y, {'good': np.clip(p_true, 0.01, 0.99), 'weak': np.full(n, y.mean())}
-
-    def test_bootstrap_intervals_and_differences(self):
-        days, y, preds = self._bootstrap_inputs()
-        out = bootstrap(days, y, preds, reps=60, seed=3)
-        self.assertEqual(set(out['intervals']), {'good', 'weak'})
-        for name in preds:
-            point = scores(y, preds[name])
-            for metric in ('log_loss', 'brier', 'pr_auc'):
-                lo, hi = out['intervals'][name][metric]
-                self.assertIs(type(lo), float)
-                self.assertIs(type(hi), float)
-                self.assertLessEqual(lo, hi)
-                self.assertLess(lo, point[metric] + 0.05)
-                self.assertGreater(hi, point[metric] - 0.05)
-        self.assertEqual(set(out['diff']), {('good', 'weak'), ('weak', 'good')})
-        lo, hi = out['diff'][('good', 'weak')]
-        nlo, nhi = out['diff'][('weak', 'good')]
-        self.assertAlmostEqual(lo, -nhi)
-        self.assertAlmostEqual(hi, -nlo)
-        self.assertLess(hi, 0)          # the informed predictor has the lower log loss in every replicate
-
-    def test_bootstrap_is_reproducible_and_seeded(self):
-        days, y, preds = self._bootstrap_inputs()
-        a = bootstrap(days, y, preds, reps=30, seed=5)
-        self.assertEqual(a, bootstrap(days, y, preds, reps=30, seed=5))
-        self.assertNotEqual(a['diff'], bootstrap(days, y, preds, reps=30, seed=6)['diff'])
-
-    def test_bootstrap_pr_auc_is_none_without_events(self):
-        days, _, preds = self._bootstrap_inputs()
-        out = bootstrap(days, np.zeros(len(days), int), preds, reps=10)
-        self.assertIsNone(out['intervals']['good']['pr_auc'])
-        self.assertIsNotNone(out['intervals']['good']['log_loss'])
-
-    def test_calibration_compares_observed_and_expected_per_year(self):
-        rng = np.random.default_rng(2)
-        years = np.repeat([2024, 2023, 2025], 40)
-        p = rng.uniform(0.05, 0.5, len(years))
-        y = (rng.random(len(years)) < p).astype(int)
-        cal = calibration(y, p, years)
-        self.assertEqual([r['year'] for r in cal['per_year']], [2023, 2024, 2025])
-        for r in cal['per_year']:
-            m = years == r['year']
-            self.assertEqual(r['observed'], int(y[m].sum()))
-            self.assertIs(type(r['observed']), int)
-            self.assertAlmostEqual(r['expected'], float(p[m].sum()))
-            self.assertIs(type(r['expected']), float)
-        self.assertIs(type(cal['slope']), float)
-        self.assertIsNone(cal['slope_ci'])
-
-    def test_calibration_slope_and_interval(self):
-        rng = np.random.default_rng(4)
-        days = np.repeat(np.arange(np.datetime64('2024-01-01'), np.datetime64('2025-12-31') + 1), 3)
-        p = rng.uniform(0.02, 0.6, len(days))
-        y = (rng.random(len(days)) < p).astype(int)
-        years = days.astype('datetime64[Y]').astype(int) + 1970
-        cal = calibration(y, p, years, days=days, reps=40, seed=1)
-        lo, hi = cal['slope_ci']
-        self.assertLessEqual(lo, hi)
-        self.assertTrue(0.5 < cal['slope'] < 1.6)
-        flat = calibration(np.zeros(len(y), int), p, years, days=days, reps=5)   # one class: nothing to fit
-        self.assertIsNone(flat['slope'])
-        self.assertIsNone(flat['slope_ci'])
-        self.assertEqual(flat['per_year'][0]['observed'], 0)
-
-    def test_platt_with_a_non_positive_slope_is_discarded(self):
-        ds = self._toy_train()
-        last = ds.years == 2025
-        with mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST):
-            base = make_pipeline('random_forest', 'Flood').fit(ds.X[~last], ds.y[~last])
-            p_last = base.predict_proba(ds.X[last])[:, 1]
-            y = np.where(ds.years == 2025, 0, ds.y)
-            rows = np.flatnonzero(last)
-            y[rows[np.argmin(p_last)]] = 1        # the only event of the year is the one the base ranks last
-            train = self._with_y(ds, y)
-            self.assertLess(hazard_models._platt_fit(p_last, y[last])[0], 0)
-            with warnings.catch_warnings():
-                warnings.simplefilter('error')
-                f = fit_candidate('random_forest', 'Flood', train)
-            self.assertIsNone(f.platt)
-            fresh = make_pipeline('random_forest', 'Flood').fit(train.X, train.y)
-        np.testing.assert_array_equal(f.pipeline.predict_proba(ds.X), fresh.predict_proba(ds.X))
-
-    def test_platt_comes_from_the_inner_base_and_the_pipeline_is_the_full_refit(self):
-        ds = self._toy_train()
-        last = ds.years == 2025
-        with mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST):
-            for name in ('random_forest', 'xgboost'):
-                f = fit_candidate(name, 'Flood', ds)
-                inner = make_pipeline(name, 'Flood').fit(ds.X[~last], ds.y[~last])
-                a, b = hazard_models._platt_fit(inner.predict_proba(ds.X[last])[:, 1], ds.y[last])
-                self.assertAlmostEqual(f.platt[0], a, delta=1e-9)
-                self.assertAlmostEqual(f.platt[1], b, delta=1e-9)
-                full = make_pipeline(name, 'Flood').fit(ds.X, ds.y)
-                np.testing.assert_array_equal(f.pipeline.predict_proba(ds.X), full.predict_proba(ds.X))
-                self.assertFalse(np.array_equal(f.pipeline.predict_proba(ds.X), inner.predict_proba(ds.X)))
-
-    def test_calibration_slope_is_none_for_constant_predictions(self):
-        rng = np.random.default_rng(7)
-        days = np.repeat(np.arange(np.datetime64('2024-01-01'), np.datetime64('2025-12-31') + 1), 2)
-        y = (rng.random(len(days)) < 0.2).astype(int)
-        years = days.astype('datetime64[Y]').astype(int) + 1970
-        cal = calibration(y, np.full(len(y), 0.2), years, days=days, reps=5)
-        self.assertIsNone(cal['slope'])
-        self.assertIsNone(cal['slope_ci'])
-        self.assertAlmostEqual(cal['per_year'][0]['expected'], 0.2 * (years == 2024).sum())
-
-
-# ---- Task 8: the test report ----
-
-REPS = 20
-SPEC_KEYS = ('rows', 'positives', 'prevalence', 'positive_days', 'winner', 'calibrated_all_folds', 'candidates',
-             'benchmark', 'no_skill', 'beats_benchmark', 'threshold', 'calibration', 'timing_auc', 'place_auc',
-             'lobo_auc', 'camp_iv', 'sensitivity', 'by_type', 'monthly_levels', 'monthly_brier',
-             'scenario_years_by_fold', 'data_signature', 'limits', 'excluded')
-SCORED_KEYS = {'mean_log_loss', 'pooled', 'intervals', 'per_year'}
-YEAR_KEYS = {'year', 'positives', 'expected', 'log_loss', 'brier', 'roc_auc', 'pr_auc'}
-EXCLUDED_REF = 'excl-1'
-EXCLUDED_REF_2 = 'excl-2'
-EXCLUDED_ROW = (2, date(2022, 7, 8))   # a flood row only the sensitivity run sees
-
-
-def report_inputs():
-    """Toy rain through 2026, so complete rain years exist after every test year; positives in the study only.
-
-    Flood: barangay 3 never floods and 2024 has no flood (a test year without events, as in the real data).
-    Landslide: barangay 3's first landslide is in 2025, the time-ordered test of an unseen barangay.
-    """
-    terrain, rain, pos = toy_inputs(end=date(2026, 12, 31))
-    pos = {(b, d) for b, d in pos if d <= STUDY_END}
-    flood = {(b, d) for b, d in pos if b != 3 and d.year != 2024}
-    slide = {(b, d) for b, d in pos if b != 3 or d.year == 2025}
-    every = [d for series in rain.values() for d in series]
-    rf = RainFile(rain, {1: (10.25, 123.85), 2: (10.25, 123.85), 3: (10.33, 123.93)}, min(every), max(every))
-    return terrain, rf, {'Flood': flood, 'Landslide': slide}
-
-
-def toy_records(hazard, pos):
-    subtypes = ('RIVER OVERFLOW', 'FLASH FLOOD')
-    return [Record(f'{hazard}-{b}-{d}', hazard, b, d, subtypes[(b + d.day) % 2], False) for b, d in sorted(pos)]
-
-
-def _datasets(terrain, rf, pos):
-    return {h: build_dataset(h, terrain, rf.rain, pos[h], STUDY_START, STUDY_END)[0] for h in pos}
-
-
-class ReportTests(SimpleTestCase):
-    """One evaluation per hazard on toy data, shared by the tests; spies record what each fit saw."""
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        terrain, rf, pos = report_inputs()
-        cls.terrain, cls.rain = terrain, rf
-        cls.ds = _datasets(terrain, rf, pos)
-        flood_records = toy_records('Flood', pos['Flood'])
-        b0, d0 = max(p for p in pos['Flood'] if p[1].year == 2025)
-        flood_records += [
-            Record('extra-road', 'Flood', b0, d0, 'ROAD FLOODING', False),     # a second type on one row
-            Record('sample-1', 'Flood', b0, d0, 'SAMPLE TYPE', True),          # samples never count
-            Record(EXCLUDED_REF, 'Flood', b0, d0, 'EXCLUDED TYPE', False),     # excluded records never count
-            # unplaced: two count (no barangay; a barangay with no terrain or rain), three do not
-            Record('no-barangay', 'Flood', None, date(2023, 6, 1), 'RIVER OVERFLOW', False),
-            Record('no-data', 'Flood', 99, date(2025, 1, 5), 'RIVER OVERFLOW', False),
-            Record('no-barangay-sample', 'Flood', None, date(2023, 6, 2), 'RIVER OVERFLOW', True),
-            Record(EXCLUDED_REF_2, 'Flood', None, date(2023, 6, 3), 'RIVER OVERFLOW', False),
-            Record('no-barangay-late', 'Flood', None, date(2026, 1, 1), 'RIVER OVERFLOW', False),
-        ]
-        cls.records = {'Flood': flood_records, 'Landslide': toy_records('Landslide', pos['Landslide'])}
-        cls.excluded = {EXCLUDED_REF: 'Date uncertain', EXCLUDED_REF_2: 'No barangay named'}
-        cls.sens_ds = build_dataset('Flood', terrain, rf.rain, pos['Flood'] | {EXCLUDED_ROW},
-                                    STUDY_START, STUDY_END)[0]
-
-        cls.fit_calls, cls.scenario_calls = [], []
-        real_fit, real_scenarios = hazard_models.fit_candidate, hazard_models.scenario_dates
-
-        def fit_spy(name, hazard, train):
-            cls.fit_calls.append({'name': name, 'hazard': hazard, 'years': frozenset(np.unique(train.years).tolist()),
-                                  'barangays': frozenset(np.unique(train.barangay_id).tolist()),
-                                  'positives': int(train.y.sum())})
-            return real_fit(name, hazard, train)
-
-        def scenario_spy(month, day, year, complete):
-            out = real_scenarios(month, day, year, complete)
-            cls.scenario_calls.append((year, list(out), [d for dates in out.values() for d in dates]))
-            return out
-
-        cls.reports = {}
-        with warnings.catch_warnings(record=True) as caught, \
-                mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST), \
-                mock.patch.object(hazard_models, 'fit_candidate', fit_spy), \
-                mock.patch.object(hazard_models, 'scenario_dates', scenario_spy):
-            warnings.simplefilter('always')
-            for hazard in ('Flood', 'Landslide'):
-                cls.reports[hazard] = hazard_models.evaluate_hazard(
-                    hazard, cls.ds[hazard], rf, terrain, cls.records[hazard],
-                    cls.sens_ds if hazard == 'Flood' else None, excluded=cls.excluded, dropped=0, reps=REPS)
-        cls.warnings = [f'{w.category.__name__}: {w.message}' for w in caught]
-        cls.flood, cls.landslide = cls.reports['Flood'], cls.reports['Landslide']
-
-    def _fold(self, hazard, i, ds=None):
-        ds = self.ds[hazard] if ds is None else ds
-        train_years, test_year = FOLDS[i]
-        return ds.subset(np.isin(ds.years, train_years)), ds.subset(ds.years == test_year)
-
-    def _pooled_test(self, hazard):
-        ds = self.ds[hazard]
-        return ds.subset(np.isin(ds.years, [t for _, t in FOLDS]))
-
-    def test_report_has_every_field_the_card_reads(self):
-        for hazard, rep in self.reports.items():
-            self.assertLessEqual(set(SPEC_KEYS), set(rep), hazard)
-            self.assertIn(rep['winner'], CANDIDATES)
-            for name in CANDIDATES:
-                c = rep['candidates'][name]
-                self.assertLessEqual(SCORED_KEYS | {'calibrated', 'calibration_reason'}, set(c))
-                self.assertEqual(set(c['pooled']), {'log_loss', 'brier', 'roc_auc', 'pr_auc'})
-                self.assertEqual(set(c['intervals']), {'log_loss', 'brier', 'pr_auc'})
-                self.assertEqual(len(c['calibrated']), len(FOLDS))
-                self.assertTrue(all(type(v) is bool for v in c['calibrated']))
-                self.assertEqual(c['calibrated'], [r == 'platt' for r in c['calibration_reason']])
-                self.assertTrue(set(c['calibration_reason']) <= set(hazard_models.CALIBRATION_REASONS))
-                self.assertEqual([r['year'] for r in c['per_year']], [t for _, t in FOLDS])
-                for r in c['per_year']:
-                    self.assertLessEqual(YEAR_KEYS, set(r))
-            for name in ('benchmark', 'no_skill'):
-                self.assertLessEqual(SCORED_KEYS, set(rep[name]))
-                self.assertNotIn('calibrated', rep[name])
-            self.assertEqual(rep['calibrated_all_folds'], all(rep['candidates'][rep['winner']]['calibrated']))
-            self.assertEqual(rep['rows'], len(self.ds[hazard].y))
-            self.assertEqual(rep['positives'], int(self.ds[hazard].y.sum()))
-            self.assertEqual(rep['positive_days'], len(np.unique(self.ds[hazard].day[self.ds[hazard].y == 1])))
-            self.assertAlmostEqual(rep['prevalence'], float(self.ds[hazard].y.mean()))
-            self.assertEqual(rep['data_signature'], records_signature(self.records[hazard], STUDY_START, STUDY_END))
-        self.assertIsNone(self.flood['camp_iv'])
-        self.assertIsInstance(self.landslide['camp_iv'], list)
-        self.assertIsInstance(self.flood['sensitivity'], dict)
-        self.assertIsNone(self.landslide['sensitivity'])
-        self.assertIsInstance(self.flood['by_type'], list)
-        self.assertIsNone(self.landslide['by_type'])
-        by_ref = {r.source_ref: r for r in self.records['Flood']}
-        self.assertEqual(self.flood['excluded'],
-                         [{'source_ref': ref, 'reason': self.excluded[ref], 'barangay_id': by_ref[ref].barangay_id,
-                           'day': by_ref[ref].day.isoformat()} for ref in (EXCLUDED_REF, EXCLUDED_REF_2)])
-        self.assertEqual(self.landslide['excluded'], [])
-        self.assertEqual(self.landslide['bootstrap'], {'reps': REPS, 'block_days': hazard_models.BLOCK_DAYS,
-                                                       'seed': 0})
-
-    def test_unplaced_counts_kept_study_records_no_row_can_carry(self):
-        # 'no-barangay' and 'no-data' (barangay 99 has no terrain or rain); the sample, the excluded and the
-        # 2026 record without a barangay are not counted
-        self.assertEqual(self.flood['unplaced'], 2)
-        self.assertEqual(self.landslide['unplaced'], 0)
-
-    def test_report_is_strict_json(self):
-        for rep in self.reports.values():
-            text = json.dumps(rep, allow_nan=False)
-            self.assertEqual(json.loads(text), rep)
-        # flood's 2024 test year has no events: its undefined scores are null, never a number
-        lr_2024 = self.flood['candidates']['logistic_regression']['per_year'][1]
-        self.assertEqual((lr_2024['year'], lr_2024['positives']), (2024, 0))
-        self.assertIsNone(lr_2024['roc_auc'])
-        self.assertIsNone(lr_2024['pr_auc'])
+    def test_to_json_safe_gives_strict_json_values(self):
         safe = hazard_models.to_json_safe({'a': (np.float64('nan'), np.inf, np.int64(3), np.bool_(True),
                                                  np.array([1.5, 2.0]), date(2025, 1, 2),
                                                  np.datetime64('2025-03-04'), None, 'x'),
@@ -522,530 +127,566 @@ class ReportTests(SimpleTestCase):
         self.assertIs(type(safe['a'][2]), int)
         self.assertIs(type(safe['a'][3]), bool)
 
-    def test_evaluation_raises_no_warnings(self):
-        self.assertEqual(self.warnings, [])
 
-    def test_each_fold_is_scored_on_its_test_year_only(self):
-        full = frozenset({1, 2, 3})
-        fold_years = [frozenset(train) for train, _ in FOLDS]
-        flood_fits = [c for c in self.fit_calls if c['hazard'] == 'Flood']
-        # the fold fits come first: each candidate of each fold gets exactly that fold's training years
-        n = len(FOLDS) * len(CANDIDATES)
-        self.assertEqual([(c['name'], c['years'], c['barangays']) for c in flood_fits[:n]],
-                         [(name, years, full) for years in fold_years for name in CANDIDATES])
-        on_all = [c for c in flood_fits if c['barangays'] == full]
-        for c in on_all:
-            self.assertIn(c['years'], fold_years)       # never a test year, never a later one
-        for (train, test), years in zip(FOLDS, fold_years):
-            self.assertTrue(max(years) < test)
-            for name in CANDIDATES:
-                self.assertTrue(any(c['name'] == name and c['years'] == years for c in on_all), (name, test))
-        # leave-one-barangay-out: only the winner, over the whole study, each time without one barangay
-        lobo = [c for c in flood_fits if c['barangays'] != full]
-        self.assertEqual(sorted(tuple(full - c['barangays']) for c in lobo), [(1,), (2,), (3,)])
-        for c in lobo:
-            self.assertEqual((c['name'], c['years']), (self.flood['winner'], frozenset(range(2021, 2026))))
-        # each per-year score is the fold's own test year, recomputed here from scratch
-        for i, entry in enumerate(self.flood['candidates']['logistic_regression']['per_year']):
-            train, test = self._fold('Flood', i)
-            p = predict(fit_candidate('logistic_regression', 'Flood', train), test.X)
-            self.assertEqual(entry['year'], FOLDS[i][1])
-            self.assertEqual((entry['rows'], entry['positives']), (len(test.y), int(test.y.sum())))
-            self.assertAlmostEqual(entry['log_loss'], scores(test.y, p)['log_loss'], places=12)
-            self.assertAlmostEqual(entry['expected'], float(p.sum()), places=8)
-        bench = self.flood['benchmark']['per_year'][2]
-        train, test = self._fold('Flood', 2)
-        self.assertAlmostEqual(bench['log_loss'], scores(test.y, benchmark_probs(train, test))['log_loss'], places=12)
-        lr = self.flood['candidates']['logistic_regression']
-        self.assertAlmostEqual(lr['mean_log_loss'], float(np.mean([r['log_loss'] for r in lr['per_year']])))
+# ---- Task 10: limits, credits and the toy version 2 report ----
 
-    def test_beats_benchmark_needs_the_whole_interval_below_zero(self):
-        beats = hazard_models.beats_benchmark
-        self.assertTrue(beats(0.010, 0.012, (-0.003, -0.0001)))
-        self.assertFalse(beats(0.010, 0.012, (-0.003, 0.0001)))     # the interval reaches above 0
-        self.assertFalse(beats(0.010, 0.012, (-0.003, 0.0)))        # touching 0 is not below it
-        self.assertFalse(beats(0.013, 0.012, (-0.003, -0.0001)))    # the mean log loss is not lower
-        self.assertFalse(beats(0.010, 0.012, None))
-        for rep in self.reports.values():
-            w = rep['winner']
-            interval = rep['winner_minus_benchmark']
-            self.assertEqual(len(interval), 2)
-            self.assertEqual(rep['beats_benchmark'], beats(rep['candidates'][w]['mean_log_loss'],
-                                                           rep['benchmark']['mean_log_loss'], interval))
-            pair = [d for d in rep['differences'] if (d['a'], d['b']) == (w, 'benchmark')]
-            self.assertEqual([[pair[0]['low'], pair[0]['high']]], [interval])
-
-    def test_monthly_levels_use_scenario_years_before_the_test_year(self):
-        self.assertEqual(complete_years(self.rain), [2021, 2022, 2023, 2024, 2025, 2026])
-        expected_years = [{'test_year': 2023, 'scenario_years': [2021, 2022]},
-                          {'test_year': 2024, 'scenario_years': [2021, 2022, 2023]},
-                          {'test_year': 2025, 'scenario_years': [2021, 2022, 2023, 2024]}]
-        self.assertTrue(self.scenario_calls)
-        for year, keys, dates in self.scenario_calls:
-            self.assertIn(year, (2023, 2024, 2025))
-            self.assertTrue(keys and all(s < year for s in keys))
-            self.assertTrue(all(d.year < year for d in dates))
-        for hazard, rep in self.reports.items():
-            self.assertEqual(rep['scenario_years_by_fold'], expected_years)
-            levels, brier = rep['monthly_levels'], rep['monthly_brier']
-            self.assertEqual([lv['level'] for lv in levels], ['High', 'Moderate', 'Low'])
-            for lv in levels:
-                self.assertEqual(set(lv), {'level', 'rows', 'events', 'chance', 'happened', 'chance_sum',
-                                           'months_with_event'})
-            self.assertEqual(sum(lv['rows'] for lv in levels), brier['barangay_months'])
-            self.assertEqual(brier['barangay_months'] + sum(brier['skipped'].values()), len(FOLDS) * 3 * 12)
-            pooled = self._pooled_test(hazard)
-            self.assertEqual(sum(lv['events'] for lv in levels), int(pooled.y.sum()))         # barangay-days
-            hit_months = {(d.year, int(b), d.month) for b, d in zip(pooled.barangay_id[pooled.y == 1],
-                                                                    pooled.day[pooled.y == 1].astype(object))}
-            self.assertEqual(sum(lv['months_with_event'] for lv in levels), len(hit_months))  # barangay-months
-            self.assertLess(len(hit_months), int(pooled.y.sum()))     # the toy has months with several events
-            for key in ('scenario', 'recorded_rain', 'benchmark'):
-                self.assertTrue(0 <= brier[key] <= 1)
-            # Recomputed without scenario_dates or period_chance: the fold's winner over each earlier complete
-            # year's own month (29 February only when both years have it), 1 - prod(1 - p), averaged over
-            # those years. The test year's own rain never enters.
-            total = 0.0
-            for i, (_, test_year) in enumerate(FOLDS):
-                train, _ = self._fold(hazard, i)
-                with mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST):
-                    fit = fit_candidate(rep['winner'], hazard, train)
-                per_s = {}
-                for s in [s for s in complete_years(self.rain) if s < test_year]:
-                    sd = build_dataset(hazard, self.terrain, self.rain.rain, set(), date(s, 1, 1), date(s, 12, 31))[0]
-                    days = sd.day.astype(object)
-                    per_s[s] = (sd.barangay_id, np.array([d.month for d in days]), np.array([d.day for d in days]),
-                                predict(fit, sd.X))
-                for b in (1, 2, 3):
-                    for m in range(1, 13):
-                        chances = []
-                        for s, (ids, months, mdays, p) in per_s.items():
-                            last = min(monthrange(test_year, m)[1], monthrange(s, m)[1])
-                            chances.append(1 - np.prod(1 - p[(ids == b) & (months == m) & (mdays <= last)]))
-                        total += float(np.mean(chances))
-            self.assertAlmostEqual(sum(lv['chance_sum'] for lv in levels), total, places=8)
-
-    def test_monthly_levels_group_by_the_fire_cutoffs(self):
-        for rep in self.reports.values():
-            for lv in rep['monthly_levels']:
-                if lv['rows'] == 0:
-                    self.assertEqual((lv['chance'], lv['happened'], lv['events'], lv['months_with_event']),
-                                     (None, None, 0, 0))
-                    continue
-                mean = lv['chance_sum'] / lv['rows']
-                self.assertEqual(lv['chance'], round(mean, 3))
-                self.assertEqual(hazard_models.level_for(mean), lv['level'])
-                self.assertEqual(lv['happened'], round(lv['months_with_event'] / lv['rows'], 3))
-                self.assertIs(type(lv['months_with_event']), int)
-
-    def test_threshold_reports_the_realised_training_flag_share(self):
-        rep = self.flood
-        t = rep['threshold']
-        self.assertEqual(t['rate'], ALARM_RATE)
-        self.assertEqual([f['year'] for f in t['folds']], [y for _, y in FOLDS])
-        for i, f in enumerate(t['folds']):
-            train, test = self._fold('Flood', i)
-            with mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST):
-                fit = fit_candidate(rep['winner'], 'Flood', train)
-            p_train = predict(fit, train.X)
-            m = threshold_metrics(p_train, test.y, predict(fit, test.X))
-            self.assertAlmostEqual(f['cutoff'], m['cutoff'], places=12)
-            self.assertEqual((f['tp'], f['fp'], f['fn'], f['tn']), (m['tp'], m['fp'], m['fn'], m['tn']))
-            self.assertAlmostEqual(f['train_flagged_share'], float(np.mean(p_train >= m['cutoff'])))
-        self.assertIsNone(t['folds'][1]['recall'])             # 2024: no flood to find
-        for k in ('tp', 'fp', 'fn', 'tn'):
-            self.assertEqual(t['pooled'][k], sum(f[k] for f in t['folds']))
-
-    def test_calibration_has_pooled_observed_and_expected(self):
-        for hazard, rep in self.reports.items():
-            cal = rep['calibration']
-            per_year = rep['candidates'][rep['winner']]['per_year']
-            self.assertEqual([r['year'] for r in cal['per_year']], [y for _, y in FOLDS])
-            self.assertEqual(cal['pooled']['observed'], int(self._pooled_test(hazard).y.sum()))
-            self.assertAlmostEqual(cal['pooled']['expected'], sum(r['expected'] for r in per_year), places=8)
-            self.assertEqual(cal['pooled']['observed'], sum(r['observed'] for r in cal['per_year']))
-            self.assertIn('slope', cal)
-            self.assertIn('slope_ci', cal)
-
-    def test_ranking_checks_on_hand_data(self):
-        days = np.repeat(np.array(['2025-01-01', '2025-01-02', '2025-01-03', '2025-01-04'], dtype='datetime64[D]'), 2)
-        y = np.array([0, 0, 1, 0, 0, 1, 1, 1])
-        p = np.array([0.1, 0.2, 0.5, 0.3, 0.6, 0.05, 0.2, 0.1])
-        t = hazard_models.timing_auc(days, y, p)
-        # city tops 0.2, 0.5, 0.6, 0.2 against events no, yes, yes, yes: 2.5 of 3 pairs ranked right
-        self.assertEqual((t['days'], t['event_days']), (4, 3))
-        self.assertAlmostEqual(t['auc'], 2.5 / 3)
-        pl = hazard_models.place_auc(days, y, p)
-        self.assertEqual([(r['day'], r['auc'], r['hit']) for r in pl['per_day']],
-                         [('2025-01-02', 1.0, 1), ('2025-01-03', 0.0, 1)])     # every barangay hit on the 4th
-        self.assertEqual(pl['skipped_days'], 1)
-        self.assertAlmostEqual(pl['mean'], 0.5)
-        self.assertIsNone(hazard_models.timing_auc(days, np.ones(8, int), p)['auc'])
-        none = hazard_models.place_auc(days, np.zeros(8, int), p)
-        self.assertEqual((none['mean'], none['per_day']), (None, []))
-
-    def test_ranking_checks_in_the_report(self):
-        pooled = self._pooled_test('Flood')
-        t = self.flood['timing_auc']
-        self.assertEqual(t['days'], len(np.unique(pooled.day)))
-        self.assertEqual(t['event_days'], len(np.unique(pooled.day[pooled.y == 1])))
-        self.assertTrue(0 <= t['auc'] <= 1)
-        for r in self.flood['place_auc']['per_day']:
-            self.assertTrue(r['hit'] >= 1)
-
-    def test_lobo_ranks_barangays_never_trained_on(self):
-        lobo = self.flood['lobo_auc']
-        per = lobo['per_barangay']
-        self.assertEqual([(r['barangay_id'], r['had_event']) for r in per], [(1, True), (2, True), (3, False)])
-        self.assertAlmostEqual(lobo['auc'], roc_auc_score([1, 1, 0], [r['mean_chance'] for r in per]))
-        self.assertIsNone(self.landslide['lobo_auc']['auc'])     # every barangay had a landslide: one class
-
-    def test_camp_iv_lists_test_positives_in_barangays_unseen_with_an_event(self):
-        rows = self.landslide['camp_iv']
-        ds = self.ds['Landslide']
-        expect = sorted(d.astype(object).isoformat() for d in ds.day[(ds.barangay_id == 3) & (ds.y == 1)])
-        self.assertTrue(expect)
-        self.assertEqual(sorted(r['day'] for r in rows), expect)
-        self.assertTrue(all(r['barangay_id'] == 3 for r in rows))
-        train, test = self._fold('Landslide', 2)
-        with mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST):
-            p = predict(fit_candidate(self.landslide['winner'], 'Landslide', train), test.X)
-        for r in rows:
-            i = np.flatnonzero((test.barangay_id == 3) & (test.day == np.datetime64(r['day'])))[0]
-            self.assertAlmostEqual(r['chance'], float(p[i]), places=12)
-            self.assertAlmostEqual(r['percentile'], 100 * float(np.mean(p < p[i])))
-
-    def test_by_type_counts_each_subtype_behind_test_positives(self):
-        pooled = self._pooled_test('Flood')
-        behind = {}
-        for r in self.records['Flood']:
-            if not r.is_sample and r.source_ref != EXCLUDED_REF:
-                behind.setdefault((r.barangay_id, r.day), set()).add(r.subtype)
-        counts = {}
-        for b, d in zip(pooled.barangay_id[pooled.y == 1], pooled.day[pooled.y == 1].astype(object)):
-            for s in behind[(int(b), d)]:
-                counts[s] = counts.get(s, 0) + 1
-        got = {r['subtype']: r['positives'] for r in self.flood['by_type']}
-        self.assertEqual(got, counts)
-        self.assertEqual(got['ROAD FLOODING'], 1)
-        self.assertNotIn('SAMPLE TYPE', got)
-        self.assertNotIn('EXCLUDED TYPE', got)
-        self.assertTrue(all(0 < r['mean_chance'] < 1 for r in self.flood['by_type']))
-
-    def test_sensitivity_refits_the_winner_without_exclusions(self):
-        sens = self.flood['sensitivity']
-        ys, ps = [], []
-        for i in range(len(FOLDS)):
-            train, test = self._fold('Flood', i, self.sens_ds)
-            with mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST):
-                ps.append(predict(fit_candidate(self.flood['winner'], 'Flood', train), test.X))
-            ys.append(test.y)
-        s = scores(np.concatenate(ys), np.concatenate(ps))
-        for k in ('log_loss', 'brier', 'roc_auc', 'pr_auc', 'positives'):
-            self.assertAlmostEqual(sens[k], s[k], places=12)
-        self.assertEqual(sens['study_positives'], self.flood['positives'] + 1)
-        self.assertTrue(any(c['positives'] == int(self._fold('Flood', 0, self.sens_ds)[0].y.sum())
-                            and c['hazard'] == 'Flood' for c in self.fit_calls))
-
-    SELECTION = ('The model was chosen from three candidates on these same test years, so its scores may be '
-                 'slightly optimistic.')
-
-    def test_limits_are_plain_sentences_from_the_data(self):
-        for hazard, rep in self.reports.items():
-            limits = rep['limits']
-            self.assertTrue(7 <= len(limits) <= 8, limits)
-            self.assertTrue(all(isinstance(s, str) and s.endswith('.') for s in limits))
-            self.assertIn(f"{rep['positives']} reported {hazard.lower()}", limits[0])
-            self.assertIn(f"{rep['positive_days']} distinct days", limits[0])
-            self.assertTrue(any('counting benchmark' in s for s in limits))
-            self.assertTrue(any('2 NASA POWER grid cells' in s for s in limits))
-            self.assertIn(self.SELECTION, limits)
-            # the test years are held out from every fit but not from the choice of model: nothing may say
-            # the model "never saw" them
-            self.assertFalse(any('never saw' in s for s in limits))
-        self.assertIn('The 2024 test year had no reported flood, so ROC-AUC, PR-AUC and recall are undefined for it; '
-                      'its log loss and Brier score still count, and only 2023 and 2025 can show whether the model '
-                      'ranks events above non-events.', self.flood['limits'])
-        self.assertFalse(any('undefined' in s for s in self.landslide['limits']))
-
-    def _realistic_flood(self, winner_mean, interval):
-        """The real flood shape: quiet 2023 and 2024, 11 rows = 1 in 2025, 18 on 5 days, 22 barangays."""
-        rep = json.loads(json.dumps(self.flood))
-        rep.update(rows=40172, positives=18, positive_days=5, dropped=0, winner='logistic_regression',
-                   winner_minus_benchmark=interval)
-        for r, n in zip(rep['candidates']['logistic_regression']['per_year'], (0, 0, 11)):
-            r['positives'] = n
-        for f in rep['folds']:
-            f['train_positive_days'] = 1
-        rep['no_skill']['mean_log_loss'] = 0.0050
-        rep['differences'] = [d for d in rep['differences'] if not (d['a'] == 'logistic_regression'
-                                                                    and d['b'] == 'no_skill')]
-        rep['differences'].append({'a': 'logistic_regression', 'b': 'no_skill', 'low': -0.0010, 'high': -0.0001})
-        rep['candidates']['logistic_regression']['mean_log_loss'] = winner_mean
-        rep['benchmark']['mean_log_loss'] = 0.0040
-        rep['beats_benchmark'] = hazard_models.beats_benchmark(winner_mean, 0.0040, interval)
-        return rep
-
-    def test_limits_for_a_flood_that_did_not_beat_counting_with_two_quiet_years(self):
-        rep = self._realistic_flood(0.0046, [-0.0003, 0.0021])
-        self.assertFalse(rep['beats_benchmark'])
-        self.assertEqual(hazard_models.report_limits('Flood', rep, cells=3, barangays=22), [
-            '18 reported flood barangay-days from 2021 to 2025 fall on 5 distinct days, so the evidence is closer '
-            'to 5 days than to 40,172 rows.',
-            'The model learned from reported floods on 1 distinct day in the training years before each test '
-            'year.',
-            'The 2023 and 2024 test years had no reported flood, so ROC-AUC, PR-AUC and recall are undefined for '
-            'them; their log loss and Brier score still count, and only 2025 can show whether the model ranks '
-            'events above non-events.',
-            'The logistic regression model did not beat the counting benchmark on test years it was not trained on '
-            '(its mean log loss is not lower); it still supplies the forecast.',
-            "It also beat always guessing the training years' average chance (no skill): the 95% interval of "
-            "that difference lies below zero too.",
-            self.SELECTION,
-            'Rain comes from 3 NASA POWER grid cells (about 55 km across) for 22 barangays, so barangays in one cell '
-            'share the same rain and small storms can be missed.',
-            'The records come from news reports, so an empty barangay-day means nothing was reported, not that '
-            'nothing happened: the chances describe reported floods and read lower than the true rate.'])
-
-    def test_limits_other_branches(self):
-        lower = hazard_models.report_limits('Flood', self._realistic_flood(0.0035, [-0.0012, 0.0004]),
-                                            cells=3, barangays=22)
-        self.assertIn('The logistic regression model did not beat the counting benchmark on test years it was not '
-                      'trained on (its mean log loss is lower, but the 95% interval of the difference does not lie '
-                      'wholly below zero); it still supplies the forecast.', lower)
-        beat = hazard_models.report_limits('Flood', self._realistic_flood(0.0030, [-0.0015, -0.0002]),
-                                           cells=3, barangays=22)
-        self.assertIn('The logistic regression model beat the counting benchmark on test years it was not trained '
-                      'on: its mean log loss is lower and the 95% interval of the difference lies below zero.', beat)
-        quiet = self._realistic_flood(0.0046, [-0.0003, 0.0021])
-        quiet['candidates']['logistic_regression']['per_year'][2]['positives'] = 0
-        self.assertIn('The 2023, 2024 and 2025 test years had no reported flood, so ROC-AUC, PR-AUC and recall are '
-                      'undefined for them; their log loss and Brier score still count, but no test year can show '
-                      'whether the model ranks events above non-events.',
-                      hazard_models.report_limits('Flood', quiet, cells=3, barangays=22))
-        # rows dropped for missing rain join the first sentence, so even the longest list stays at six
-        most = hazard_models.report_limits('Flood', {**self._realistic_flood(0.0046, [-0.0003, 0.0021]),
-                                                     'dropped': 5}, cells=1, barangays=1)
-        self.assertEqual(len(most), 8)
-        self.assertTrue(most[0].endswith('than to 40,172 rows (5 more barangay-days were left out because a day '
-                                         'of the 14-day rain window was missing).'))
-        self.assertIn('Rain comes from 1 NASA POWER grid cell (about 55 km across) for 1 barangay,', most[6])
-
-    NS_BEAT = ("It also beat always guessing the training years' average chance (no skill): the 95% interval of "
-               "that difference lies below zero too.")
-    NS_NOT_LOWER = "Its mean log loss is not lower than always guessing the training years' average chance (no skill)."
-    NS_UNSURE = ("Against always guessing the training years' average chance (no skill), the 95% interval of the "
-                 "difference does not lie wholly below zero, so its gain over that simpler guess is not certain.")
-
-    def _limits_with(self, winner_mean, no_skill_mean, interval, counts=(1, 1, 1), hazard='Flood'):
-        rep = self._realistic_flood(0.0046, [-0.0003, 0.0021])
-        rep['candidates']['logistic_regression']['mean_log_loss'] = winner_mean
-        rep['no_skill']['mean_log_loss'] = no_skill_mean
-        rep['differences'] = [d for d in rep['differences'] if not (d['a'] == 'logistic_regression'
-                                                                    and d['b'] == 'no_skill')]
-        if interval is not None:
-            rep['differences'].append({'a': 'logistic_regression', 'b': 'no_skill',
-                                       'low': interval[0], 'high': interval[1]})
-        for f, n in zip(rep['folds'], counts):
-            f['train_positive_days'] = n
-        return hazard_models.report_limits(hazard, rep, cells=3, barangays=22)
-
-    def test_limits_say_what_the_model_learned_from_equal_counts(self):
-        limits = self._limits_with(0.0046, 0.0050, (-0.001, -0.0001))
-        self.assertEqual(limits[1], 'The model learned from reported floods on 1 distinct day in the training '
-                                    'years before each test year.')
-        again = self._limits_with(0.0046, 0.0050, (-0.001, -0.0001), counts=(3, 3, 3))
-        self.assertEqual(again[1], 'The model learned from reported floods on 3 distinct days in the training '
-                                   'years before each test year.')
-
-    def test_limits_say_what_the_model_learned_from_unequal_counts(self):
-        limits = self._limits_with(0.0046, 0.0050, (-0.001, -0.0001), counts=(3, 4, 5), hazard='Landslide')
-        self.assertEqual(limits[1], 'The model learned from reported landslides on 3, 4 and 5 distinct days in '
-                                    'the training years before 2023, 2024 and 2025 respectively.')
-
-    def test_limits_compare_the_winner_with_no_skill(self):
-        beat = self._limits_with(0.0046, 0.0050, (-0.001, -0.0001))
-        self.assertIn(self.NS_BEAT, beat)
-        self.assertNotIn(self.NS_NOT_LOWER, beat)
-        self.assertNotIn(self.NS_UNSURE, beat)
-        worse = self._limits_with(0.0055, 0.0050, (0.0001, 0.001))
-        self.assertIn(self.NS_NOT_LOWER, worse)
-        self.assertNotIn(self.NS_BEAT, worse)
-        self.assertNotIn(self.NS_UNSURE, worse)
-        equal = self._limits_with(0.0050, 0.0050, (-0.001, -0.0001))
-        self.assertIn(self.NS_NOT_LOWER, equal)
-        for interval in ((-0.001, 0.0002), (-0.001, 0.0), None):
-            unsure = self._limits_with(0.0046, 0.0050, interval)
-            self.assertIn(self.NS_UNSURE, unsure)
-            self.assertNotIn(self.NS_BEAT, unsure)
-            self.assertNotIn(self.NS_NOT_LOWER, unsure)
-
-    def test_limits_keep_their_order(self):
-        rep = self._realistic_flood(0.0046, [-0.0003, 0.0021])
-        limits = hazard_models.report_limits('Flood', rep, cells=3, barangays=22)
-        marks = ['distinct day', 'The model learned from', 'test years had no reported', 'counting benchmark',
-                 'average chance (no skill)', 'was chosen from', 'NASA POWER grid cell', 'news reports']
-        at = [next(i for i, s in enumerate(limits) if m in s) for m in marks]
-        self.assertEqual(at, sorted(at))
-        self.assertEqual(len(set(at)), len(marks))
-        self.assertEqual(len(limits), 8)
-
-    def test_folds_carry_the_training_evidence(self):
-        for hazard, rep in self.reports.items():
-            ds = self.ds[hazard]
-            self.assertEqual([(f['train_years'], f['test_year']) for f in rep['folds']],
-                             [(list(t), y) for t, y in FOLDS])
-            for f, (train_years, _) in zip(rep['folds'], FOLDS):
-                train = ds.subset(np.isin(ds.years, train_years))
-                self.assertIs(type(f['train_positives']), int)
-                self.assertIs(type(f['train_positive_days']), int)
-                self.assertEqual(f['train_positives'], int(train.y.sum()))
-                self.assertEqual(f['train_positive_days'], len(np.unique(train.day[train.y == 1])))
-
-    def test_calibration_reason_says_why_each_fold_is_or_is_not_calibrated(self):
-        flood = self.flood['candidates']
-        self.assertEqual(flood['logistic_regression']['calibration_reason'], ['not_applicable'] * 3)
-        for name in ('random_forest', 'xgboost'):
-            # toy flood: 2024, fold 3's calibration year, has no flood; 2022 and 2023 do
-            self.assertEqual(flood[name]['calibration_reason'][2], 'no_event_in_calibration_year')
-            self.assertIn(flood[name]['calibration_reason'][0], ('platt', 'sign_guard'))
-        reasons = {r for rep in self.reports.values() for c in rep['candidates'].values()
-                   for r in c['calibration_reason']}
-        self.assertIn('platt', reasons)
-        # the other two, from fit_candidate itself on toy rows built to need them
-        ds = self._toy_train()
-        with mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST):
-            early = self._with_y(ds, np.where(ds.years == 2025, ds.y, 0))          # events only in 2025
-            f = fit_candidate('xgboost', 'Flood', early)
-            self.assertEqual(hazard_models.calibration_reason('xgboost', early, f), 'no_event_in_earlier_years')
-            last = ds.years == 2025
-            base = make_pipeline('random_forest', 'Flood').fit(ds.X[~last], ds.y[~last])
-            y = np.where(last, 0, ds.y)
-            y[np.flatnonzero(last)[np.argmin(base.predict_proba(ds.X[last])[:, 1])]] = 1   # Platt slope < 0
-            flipped = self._with_y(ds, y)
-            f = fit_candidate('random_forest', 'Flood', flipped)
-            self.assertEqual(hazard_models.calibration_reason('random_forest', flipped, f), 'sign_guard')
-            f = fit_candidate('random_forest', 'Flood', ds)
-            self.assertEqual(hazard_models.calibration_reason('random_forest', ds, f), 'platt')
-        lr = Fitted('logistic_regression', None, None)
-        self.assertEqual(hazard_models.calibration_reason('logistic_regression', ds, lr), 'not_applicable')
-        # a mapping the rule does not allow is never reported as anything
-        with self.assertRaises(RuntimeError):
-            hazard_models.calibration_reason('xgboost', early, Fitted('xgboost', None, (1.0, 0.0)))
-
-    def _toy_train(self):
-        terrain, rain, pos = toy_inputs()
-        return build_dataset('Flood', terrain, rain, pos, date(2021, 1, 1), date(2025, 12, 31))[0]
-
-    def _with_y(self, ds, y):
-        return Dataset(ds.X, y, ds.barangay_id, ds.day, ds.features)
-
-    def test_read_report_is_none_when_missing_or_unreadable(self):
-        tmp = Path(tempfile.mkdtemp())
-        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
-        path = tmp / 'report.json'
-        self.assertIsNone(hazard_models.read_report(path))
-        path.write_bytes(b'not json')
-        self.assertIsNone(hazard_models.read_report(path))
-        path.write_bytes(b'\xff\xfe\x00broken')
-        self.assertIsNone(hazard_models.read_report(path))
-        path.write_bytes(b'[1, 2]')
-        self.assertIsNone(hazard_models.read_report(path))
-        path.write_text(json.dumps({'hazards': {}}), encoding='utf-8')
-        self.assertEqual(hazard_models.read_report(path), {'hazards': {}})
-        with mock.patch.object(hazard_models, 'REPORT_PATH', path):       # the default is read at call time
-            self.assertEqual(hazard_models.read_report(), {'hazards': {}})
-        self.assertEqual(hazard_models.REPORT_PATH.name, 'hazard_model_report.json')
-        self.assertEqual(hazard_models.REPORT_PATH.parent, hazard_data.DATA_DIR)
+FLOOD_ENTRY = {'positives': 18, 'positive_days': 5, 'rows': 40172}
+FLOOD_LIMITS = [
+    'From 2021 to 2025, 18 reported flood barangay-days fall on 5 distinct days, so the evidence is closer to 5 '
+    'days than to 40,172 rows.',
+    'With 5 such days, no model can be shown statistically better day by day: one that does better on all 5 days '
+    'reaches at best p = 0.0625 on a two-sided sign test.',
+    "Rain comes from one NASA POWER grid cell (about 55 by 69 km) for the city's 22 barangays, and the cell's "
+    'edge at 10.25° N runs through Talisay, so part of the city lies outside the cell it reads and local '
+    'downpours can be missed.',
+    'An empty barangay-day means no flood was reported, not that none happened: every chance is of a reported '
+    'flood and reads lower than how often floods really happen.',
+    "The two-part model's flood shares use UP NOAH flood hazard maps, which are labelled beta, rest on about 30 "
+    'years of rain and come from a community mirror; the Mananga River works planned for 2026 would change '
+    'river-flood hazard, and the maps do not show them.',
+    'The 15% and 25% cut-offs and several earlier choices were made after seeing 2023–2025, so the 2026 season is '
+    'the clean test.',
+]
+CATALOGUE_LIMIT = ("The two-part model also learns landslide timing from NASA's Global Landslide Catalog, which "
+                   'states no licence, often places an event only to within 5–25 km, and covers 2007–2017, not the '
+                   'years the forecast is for.')
 
 
-def _sha1(path):
-    return hashlib.sha1(path.read_bytes()).hexdigest()
+class LimitsTests(SimpleTestCase):
+    def test_limits_are_plain_sentences_from_the_numbers(self):
+        self.assertEqual(report_limits('Flood', FLOOD_ENTRY, barangays=22), FLOOD_LIMITS)
+        slide = report_limits('Landslide', {'positives': 1, 'positive_days': 1, 'rows': 1, 'dropped': 0},
+                              barangays=1)
+        self.assertEqual(slide, [
+            'From 2021 to 2025, 1 reported landslide barangay-day falls on 1 distinct day, so the evidence is closer '
+            'to 1 day than to 1 row.',
+            'With 1 such day, no model can be shown statistically better day by day: one that does better on that '
+            'day reaches at best p = 1 on a two-sided sign test.',
+            "Rain comes from one NASA POWER grid cell (about 55 by 69 km) for the city's 1 barangay, and the cell's "
+            'edge at 10.25° N runs through Talisay, so part of the city lies outside the cell it reads and local '
+            'downpours can be missed.',
+            'An empty barangay-day means no landslide was reported, not that none happened: every chance is of a '
+            'reported landslide and reads lower than how often landslides really happen.',
+            CATALOGUE_LIMIT,
+            FLOOD_LIMITS[-1],
+        ])
+        self.assertTrue(all(isinstance(s, str) and s.endswith('.') for s in FLOOD_LIMITS + slide))
+        self.assertFalse(any('NOAH' in s for s in slide))
+        self.assertFalse(any('Catalog' in s for s in FLOOD_LIMITS))
+
+    def test_the_sign_test_follows_the_number_of_days(self):
+        self.assertEqual([hazard_models.sign_test_p(n) for n in (0, 1, 5, 6)], [1.0, 1.0, 0.0625, 0.03125])
+        six = report_limits('Flood', {'positives': 9, 'positive_days': 6, 'rows': 100}, barangays=3)[1]
+        self.assertEqual(six, 'With 6 such days, a model that does better on all 6 days reaches p = 0.03125 on a '
+                              'two-sided sign test; doing better on fewer of them is weaker evidence.')
+        twenty = report_limits('Flood', {'positives': 45, 'positive_days': 20, 'rows': 100}, barangays=3)[1]
+        self.assertEqual(twenty, 'With 20 such days, a model that does better on all 20 days reaches p < 0.001 on a '
+                                 'two-sided sign test; doing better on fewer of them is weaker evidence.')
+        none = report_limits('Flood', {'positives': 0, 'positive_days': 0, 'rows': 100}, barangays=3)
+        self.assertEqual(none[0], 'From 2021 to 2025, 0 reported flood barangay-days fall on 0 distinct days, so the '
+                                  'evidence is closer to 0 days than to 100 rows.')
+        self.assertEqual(none[1], 'No reported flood named a barangay, so the models cannot be compared event day '
+                                  'by event day.')
+
+    def test_rows_left_out_join_the_first_sentence(self):
+        first = report_limits('Flood', {**FLOOD_ENTRY, 'dropped': 5}, barangays=22)[0]
+        self.assertTrue(first.endswith('than to 40,172 rows (5 more barangay-days were left out because a day of '
+                                       'the 14-day rain window was missing).'), first)
+        one = report_limits('Flood', {**FLOOD_ENTRY, 'dropped': 1}, barangays=22)[0]
+        self.assertIn('(1 more barangay-day was left out because', one)
+
+    def test_credits_are_the_exact_lines(self):
+        self.assertEqual(credits_for('Flood'), [
+            'Rain: NASA POWER (CC BY 4.0).',
+            'Storm tracks: IBTrACS v04r01 (NOAA NCEI).',
+            'Flood exposure: UP NOAH flood hazard maps (ODbL), via the bettergovph mirror.',
+            'Buildings: Microsoft Global ML Building Footprints (ODbL).',
+        ])
+        self.assertEqual(credits_for('Landslide'), [
+            'Rain: NASA POWER (CC BY 4.0).',
+            'Landslide timing also learned from NASA Global Landslide Catalog days near Talisay, 2007–2017.',
+        ])
+        self.assertEqual(REPORT_OLD, 'The model report is from an older version; run manage.py test_hazard_models.')
+
+
+HAZARD_KEYS = {'hazard', 'in_use', 'verdict', 'fits', 'rows', 'positives', 'positive_days', 'event_days', 'tests',
+               'limits', 'credits', 'data_signature', 'excluded', 'logged'}
+REPORT_KEYS = {'version', 'generated', 'study', 'files', 'hazards'}
+FILE_KEYS = {'rain_sha1', 'terrain_sha1', 'exclusions_sha1', 'exposure_sha1', 'storms_sha1', 'catalogue_sha1',
+             'catalogue_exclusions_sha1'}
 
 
 def _no_nan(constant):
     raise ValueError(f'not strict JSON: {constant}')
 
 
-class ReportCommandTests(TestCase):
+class ToyReportTests(SimpleTestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
-        terrain, rf, pos = report_inputs()
-        write_terrain(self.tmp / 'barangay_terrain.csv', terrain, {b: f'Toy {b}' for b in terrain})
-        write_rain_csv(self.tmp / 'rain_daily.csv', rf.rain, rf.cells)
-        with open(self.tmp / 'hazard_model_exclusions.csv', 'w', newline='', encoding='utf-8') as f:
-            f.write(f'source_ref,reason\r\n{EXCLUDED_REF},Date uncertain\r\n')
-        for b in sorted(terrain):
-            Barangay.objects.create(id=b, name=f'Toy {b}')
-        for hazard, rows in pos.items():
-            kind = HazardType.objects.create(name=hazard, logo_class='x')
-            extra = []
-            if hazard == 'Flood':
-                extra = [(EXCLUDED_ROW, EXCLUDED_REF, False), ((1, date(2026, 3, 1)), 'after-study', False),
-                         ((1, date(2023, 5, 5)), 'sample-row', True)]
-            HistoricalRecord.objects.bulk_create(
-                [HistoricalRecord(barangay_id=b, hazard_type=kind, severity_level='Green', source_ref=ref,
-                                  occurred_at=datetime(d.year, d.month, d.day, 12, tzinfo=MANILA),
-                                  hazard_subcategory='RIVER OVERFLOW', is_sample=sample)
-                 for (b, d), ref, sample in [(p, f'{hazard}-{p[0]}-{p[1]}', False) for p in sorted(rows)] + extra])
+
+    def test_toy_report_v2_is_a_valid_report_its_fits_score(self):
+        path = self.tmp / 'hazard_model_report.json'
+        terrain, rain, pos = write_toy_files(self.tmp, [11, 12, 13])
+        report = toy_report_v2(path)
+        self.assertEqual(json.loads(path.read_text(encoding='utf-8'), parse_constant=_no_nan), report)
+        self.assertEqual((set(report), report['version']), (REPORT_KEYS, 2))
+        self.assertEqual(set(report['files']), FILE_KEYS)
+        self.assertEqual(report['files']['rain_sha1'], hashlib.sha1((self.tmp / 'rain_daily.csv').read_bytes()).hexdigest())
+        self.assertIsNone(report['files']['storms_sha1'])
+        for hazard, entry in report['hazards'].items():
+            self.assertEqual(set(entry), HAZARD_KEYS)
+            self.assertEqual(entry['in_use'], 'two_part')
+            self.assertEqual((entry['verdict']['adopted'], entry['verdict']['rule']), (True, 'b'))
+            self.assertEqual(entry['data_signature'],
+                             records_signature(toy_event_records(hazard, pos), STUDY_START, STUDY_END))
+            self.assertEqual(entry['limits'], report_limits(hazard, entry, barangays=3))
+            self.assertEqual(entry['credits'], credits_for(hazard))
+            self.assertEqual(set(entry['tests']), {'loso', 'yearly', 'events', 'outside'})
+            self.assertEqual(len(entry['tests']['events']), entry['positive_days'])
+            fit = TwoPartFit.from_json(entry['fits']['two_part'])
+            self.assertEqual((fit.hazard, fit.when.features, set(fit.shares)), (hazard, FEATURES[hazard], {11, 12, 13}))
+            p = score_two_part(entry['fits']['two_part'], np.array([[4.0, 1.0], [1.0, 0.0]]), np.array([0, 1, 0]),
+                               np.array([11, 12, 13]))
+            self.assertTrue(((p > 0) & (p < 1)).all())
+            ds, _ = build_dataset(hazard, terrain, rain, pos, date(2025, 1, 1), date(2025, 1, 31))
+            q = score_logistic(entry['fits']['logistic_regression'], ds.X)
+            self.assertEqual(entry['fits']['logistic_regression']['features'], list(ds.features))
+            self.assertTrue(((q > 0) & (q < 1)).all())
+        self.assertIsNone(report['hazards']['Flood']['tests']['outside'])
+        self.assertIn('current', report['hazards']['Landslide']['tests']['outside'])
+        self.assertEqual(report['hazards']['Landslide']['fits']['two_part']['when']['intercepts'].keys(),
+                         {'geoalert', 'catalogue'})
+
+    def test_toy_report_v2_options(self):
+        path = self.tmp / 'hazard_model_report.json'
+        report = toy_report_v2(path, hazards=('Flood',), in_use='logistic_regression', shares={1: 0.5, 2: 0.25})
+        entry = report['hazards']['Flood']
+        self.assertEqual(list(report['hazards']), ['Flood'])
+        self.assertEqual((entry['in_use'], entry['verdict']['adopted'], entry['verdict']['rule']),
+                         ('logistic_regression', False, None))
+        self.assertTrue(any(r.startswith('It gave a lower chance to the hit barangays on ')
+                            for r in entry['verdict']['reasons']))
+        self.assertEqual(entry['fits']['two_part']['shares'], {'1': 0.5, '2': 0.25})     # barangay 3 has none
+        self.assertEqual(set(report['files'].values()), {None})                            # no files beside it
+        with self.assertRaises(ValueError):
+            toy_report_v2(path, in_use='random_forest')
+
+
+class AccuracyEntryTests(TestCase):
+    def setUp(self):
+        cache.clear()                       # the live `logged` blocks are kept in the cache
+        self.addCleanup(cache.clear)
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        self.ids = [Barangay.objects.create(name=f'Toy {i}').id for i in range(3)]
+        _, _, self.pos = write_toy_files(self.tmp, self.ids)
         self.report_path = self.tmp / 'hazard_model_report.json'
-        for patcher in (mock.patch.object(hazard_data, 'DATA_DIR', self.tmp),
-                        mock.patch.object(hazard_models, 'REPORT_PATH', self.report_path),
-                        mock.patch.object(hazard_models, 'BOOTSTRAP_REPS', REPS),
-                        mock.patch.dict(hazard_models.SPEED_OVERRIDES, FAST)):
+        patcher = mock.patch.object(hazard_models, 'REPORT_PATH', self.report_path)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def write(self, report):
+        self.report_path.write_text(json.dumps(report), encoding='utf-8')
+
+    def unavailable(self):
+        entries = hazard_models.accuracy_entries(date(2026, 11, 13))
+        self.assertEqual([(e['hazard'], e['kind'], e['status']) for e in entries],
+                         [('Flood', 'rain_terrain', 'unavailable'), ('Landslide', 'rain_terrain', 'unavailable')])
+        for e in entries:
+            self.assertEqual(set(e), {'hazard', 'kind', 'status', 'reason'})
+        return [e['reason'] for e in entries]
+
+    def test_accuracy_entries_flag_an_old_report(self):
+        v2 = toy_report_v2(self.report_path)
+        old = {k: v for k, v in v2.items() if k != 'version'}
+        self.write({'generated': old['generated'], 'hazards': old['hazards']})     # no version at all
+        self.assertEqual(self.unavailable(), [REPORT_OLD, REPORT_OLD])
+        self.write({**old, 'version': 1})
+        self.assertEqual(self.unavailable(), [REPORT_OLD, REPORT_OLD])
+        # the report test_hazard_models wrote before version 2 (a `winner`, no version) is old too, never read as v1
+        toy_report_v1(self.report_path)
+        self.assertEqual(self.unavailable(), [REPORT_OLD, REPORT_OLD])
+        # a version 2 report without one hazard, then no report at all
+        self.write({**v2, 'hazards': {'Flood': v2['hazards']['Flood']}})
+        entries = hazard_models.accuracy_entries(date(2026, 11, 13))
+        self.assertEqual(entries[0]['status'], 'in_use')
+        self.assertEqual(entries[1], {'hazard': 'Landslide', 'kind': 'rain_terrain', 'status': 'unavailable',
+                                      'reason': 'The model report has no landslide result; run manage.py '
+                                                'test_hazard_models.'})
+        self.write({**v2, 'hazards': {**v2['hazards'], 'Landslide': {'in_use': 'random_forest'}}})
+        self.assertEqual(hazard_models.accuracy_entries(date(2026, 11, 13))[1]['status'], 'unavailable')
+        self.report_path.unlink()
+        self.assertEqual(self.unavailable(), [REPORT_UNREADABLE, REPORT_UNREADABLE])
+
+    def test_accuracy_entries_drop_the_fits_and_keep_stale(self):
+        for in_use in ('two_part', 'logistic_regression'):
+            report = toy_report_v2(self.report_path, in_use=in_use)
+            entries = hazard_models.accuracy_entries(date(2026, 11, 13))
+            for entry, hazard in zip(entries, HAZARDS):
+                saved = report['hazards'][hazard]
+                self.assertNotIn('fits', entry)
+                self.assertEqual(entry, {**{k: v for k, v in saved.items() if k != 'fits'}, 'kind': 'rain_terrain',
+                                         'status': 'in_use', 'stale': True, 'study': report['study'],
+                                         'tested_at': report['generated']})
+        # the records the report was built from: no longer stale
+        kind = {h: HazardType.objects.create(name=h, logo_class='x') for h in HAZARDS}
+        for hazard in HAZARDS:
+            HistoricalRecord.objects.bulk_create([
+                HistoricalRecord(barangay_id=b, hazard_type=kind[hazard], severity_level='Green',
+                                 source_ref=toy_source_ref(hazard, b, d), hazard_subcategory='TOY',
+                                 occurred_at=datetime(d.year, d.month, d.day, 12, tzinfo=MANILA))
+                for b, d in sorted(self.pos)])
+        self.assertEqual([e['stale'] for e in hazard_models.accuracy_entries(date(2026, 11, 13))], [False, False])
+        HistoricalRecord.objects.create(barangay_id=self.ids[0], hazard_type=kind['Landslide'], severity_level='Red',
+                                        source_ref='late-entry', occurred_at=datetime(2024, 3, 1, 12, tzinfo=MANILA))
+        self.assertEqual([e['stale'] for e in hazard_models.accuracy_entries(date(2026, 11, 13))], [False, True])
+
+    def test_logged_block_is_scored_live_or_read_from_the_report_when_the_log_cannot_be_read(self):
+        report = toy_report_v2(self.report_path, in_use='logistic_regression')
+        saved = {'first': '2026-06-01', 'last': '2026-06-02', 'rows': 6, 'events': 0, 'expected': 0.01,
+                 'events_interval': [0.0, 3.6889], 'new_events': []}
+        report['hazards']['Flood']['logged'] = saved
+        self.write(report)
+        today = date(2026, 11, 13)
+
+        def logged():
+            return [e['logged'] for e in hazard_models.accuracy_entries(today)]
+
+        # the log can be read but holds nothing yet: nothing logged, whatever the report saved
+        self.assertEqual(logged(), [None, None])
+        cache.clear()
+        # rows present: the block is scored from the log now, as fire's is, with the events reported since
+        july = date(2026, 7, 1)
+        for b, p in zip(self.ids, (0.2, 0.05, 0.01)):
+            HazardPredictionLog.objects.create(hazard='Flood', barangay_id=b, kind='day', period_start=july,
+                                               issued_on=july + timedelta(days=1),
+                                               model_version='logistic_regression@x', probability=p, inputs={})
+        flood = HazardType.objects.create(name='Flood', logo_class='x')
+        HistoricalRecord.objects.create(barangay_id=self.ids[0], hazard_type=flood, severity_level='Orange',
+                                        source_ref='flood-2026', occurred_at=datetime(2026, 7, 1, 12, tzinfo=MANILA))
+        live = logged()[0]
+        self.assertEqual((live['first'], live['last'], live['rows'], live['events']),
+                         ('2026-07-01', '2026-07-01', 3, 1))
+        self.assertEqual(live['expected'], 0.26)
+        self.assertEqual(live['new_events'], [{'day': '2026-07-01', 'barangay_id': self.ids[0], 'barangay': 'Toy 0',
+                                               'chance': 0.2, 'chance_before': None,
+                                               'model_version': 'logistic_regression@x'}])
+        self.assertIsNone(logged()[1])                                  # no landslide row logged
+        # kept for LOGGED_SECONDS: a row added since is not read until then
+        HazardPredictionLog.objects.create(hazard='Flood', barangay_id=self.ids[0], kind='day',
+                                           period_start=july + timedelta(days=1), issued_on=july + timedelta(days=2),
+                                           model_version='logistic_regression@x', probability=0.3, inputs={})
+        self.assertEqual(logged()[0], live)
+        self.assertEqual(hazard_models.LOGGED_SECONDS, 600)
+        # the log cannot be read (the table is not there): the block test_hazard_models saved in the report
+        cache.clear()
+        with connection.cursor() as cursor:
+            cursor.execute(f'ALTER TABLE {HazardPredictionLog._meta.db_table} RENAME TO prediction_log_away')
+        with self.assertLogs('apps.history.prediction_log', level='WARNING'):
+            self.assertEqual(logged(), [saved, None])
+
+
+# ---- Task 10: the command ----
+
+REPS = 20
+NAMES = {1: 'Manipis', 2: 'Lagtang', 3: 'Tapul'}
+CENTRE = (10.25, 123.847)
+EXCLUDED_REF = 'excl-1'
+EXCLUDED_ROW = (2, date(2022, 7, 8))
+CATALOGUE_HEADER = ('event_id,event_date,event_title,location_description,location_accuracy,admin_division_name,'
+                    'gazeteer_closest_point,latitude,longitude')
+CATALOGUE_LATEST = date(2017, 9, 28)      # as in the real catalogue, the latest record is far from Talisay
+
+
+@lru_cache(maxsize=None)
+def command_inputs():
+    """Toy terrain and rain from 2006-12-18 (13 days before 2006-12-31) to the study's end, with every toy
+    event (the catalogue's days come from them) and the study's own."""
+    terrain, rain, every = toy_inputs(start=date(2006, 12, 31), end=STUDY_END)
+    return terrain, rain, every, frozenset((b, d) for b, d in every if STUDY_START <= d <= STUDY_END)
+
+
+def catalogue_csv(every):
+    heavy = sorted({d for _, d in every if 2008 <= d.year <= 2016})
+
+    def line(eid, d, title, lat=CENTRE[0]):
+        return f'{eid},{d:%m/%d/%Y} 12:00:00 AM,{title},{title},5km,Cebu,Talisay,{lat},{CENTRE[1]}'
+
+    lines = [CATALOGUE_HEADER]
+    for i, d in enumerate(heavy[::3]):
+        lines.append(line(f'c{i}', d, 'Landslide in Manipis Talisay City' if i % 2 == 0 else 'Landslide near Cebu City'))
+    lines += [line('c-last', date(2017, 3, 9), 'Slide'),
+              line('c-listed', heavy[1], 'Listed slide'),                 # in the exclusion file
+              line('c-negros', heavy[2], 'Slide in Negros'),              # Negros is never Talisay
+              line('c-far', heavy[4], 'Far slide', lat=CENTRE[0] + 1.0),  # about 111 km away
+              # the whole catalogue's latest record, far away: it still ends the catalogue era (spec 1.4)
+              line('c-far-latest', CATALOGUE_LATEST, 'Far slide', lat=CENTRE[0] + 1.0)]
+    return '\n'.join(lines) + '\n'
+
+
+def write_inputs(data_dir: Path, cache: Path):
+    """Every file the command reads: the six data files and the cached catalogue."""
+    terrain, rain, every, pos = command_inputs()
+    write_rain_csv(data_dir / 'rain_daily.csv', rain, {b: (10.5, 123.75) for b in rain})
+    write_terrain(data_dir / 'barangay_terrain.csv', terrain, NAMES)
+    (data_dir / 'hazard_model_exclusions.csv').write_text(f'source_ref,reason\n{EXCLUDED_REF},Date uncertain\n',
+                                                          encoding='utf-8')
+    write_exposure(data_dir / 'barangay_exposure.csv',
+                   {b: {'buildings': 1000.0, 'noah25_mh': 300.0 / b, 'noah100_mh': 300.0 / b,
+                        'hand_lt2_buildings': 300.0 / b, 'exposure': 300.0 / b} for b in terrain}, NAMES)
+    first = min(rain[1])
+    stormy = {d for _, d in every} | {first + timedelta(days=i) for i in range(0, (STUDY_END - first).days, 40)}
+    write_storm_days(StormDays({d: ('S1', 'TOY', 100.0) for d in stormy if first <= d <= STUDY_END}, first, STUDY_END),
+                     'toy', datetime(2026, 11, 13, tzinfo=MANILA), CENTRE, data_dir / 'storm_days.csv',
+                     data_dir / 'storm_days.meta.json')
+    (data_dir / 'landslide_catalogue_exclusions.csv').write_text('event_id,reason\nc-listed,Duplicate\n',
+                                                                  encoding='utf-8')
+    cache.mkdir(parents=True, exist_ok=True)
+    (cache / landslide_catalogue.CACHE_NAME).write_text(catalogue_csv(every), encoding='utf-8')
+
+
+def expected_files(data_dir: Path, cache: Path) -> dict:
+    def sha1(*names, root=data_dir):
+        return hashlib.sha1(b''.join((root / n).read_bytes() for n in names)).hexdigest()
+    return {'rain_sha1': sha1('rain_daily.csv'), 'terrain_sha1': sha1('barangay_terrain.csv'),
+            'exclusions_sha1': sha1('hazard_model_exclusions.csv'), 'exposure_sha1': sha1('barangay_exposure.csv'),
+            'storms_sha1': sha1('storm_days.csv', 'storm_days.meta.json'),
+            'catalogue_sha1': sha1(landslide_catalogue.CACHE_NAME, root=cache),
+            'catalogue_exclusions_sha1': sha1('landslide_catalogue_exclusions.csv')}
+
+
+def create_records():
+    """Barangays 1-3 near Talisay (boundaries for talisay_centre) and every toy event of the study period as a
+    flood and a landslide record, plus an excluded, a later and a sample flood record that never count."""
+    for b, name in NAMES.items():
+        west = 123.84 + 0.005 * (b - 1)
+        Barangay.objects.create(id=b, name=name, municipality='Talisay',
+                                boundary=MultiPolygon(Polygon.from_bbox((west, 10.245, west + 0.004, 10.255)),
+                                                      srid=4326))
+    _, _, _, pos = command_inputs()
+    for hazard in HAZARDS:
+        kind = HazardType.objects.create(name=hazard, logo_class='x')
+        rows = [(b, d, toy_source_ref(hazard, b, d), False) for b, d in sorted(pos)]
+        if hazard == 'Flood':
+            rows += [(*EXCLUDED_ROW, EXCLUDED_REF, False), (1, date(2026, 3, 1), 'after-study', False),
+                     (1, date(2023, 5, 5), 'sample-row', True)]
+        HistoricalRecord.objects.bulk_create(
+            [HistoricalRecord(barangay_id=b, hazard_type=kind, severity_level='Green', source_ref=ref,
+                              occurred_at=datetime(d.year, d.month, d.day, 12, tzinfo=MANILA),
+                              hazard_subcategory='RIVER OVERFLOW', is_sample=sample)
+             for b, d, ref, sample in rows])
+
+
+def command_patches(data_dir: Path, cache: Path, report_path: Path):
+    """Paths read at call time, few bootstrap resamples, and a catalogue download that must never happen."""
+    return [mock.patch.object(hazard_data, 'DATA_DIR', data_dir),
+            mock.patch.object(hazard_models, 'REPORT_PATH', report_path),
+            mock.patch.object(hazard_tests, 'BOOTSTRAP_REPS', REPS),
+            mock.patch.object(command, 'cache_dir', lambda: cache),
+            mock.patch.object(landslide_catalogue, 'get', mock.Mock(side_effect=AssertionError('no download')))]
+
+
+class CommandInputTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        create_records()
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        self.data, self.cache = self.tmp / 'data', self.tmp / 'cache'
+        self.data.mkdir()
+        write_inputs(self.data, self.cache)
+        self.report_path = self.data / 'hazard_model_report.json'
+        for patcher in command_patches(self.data, self.cache, self.report_path):
             patcher.start()
             self.addCleanup(patcher.stop)
-        self.study = {'start': '2021-01-01', 'end': '2025-12-31'}
 
-    def _files(self):
-        return {'rain_sha1': _sha1(self.tmp / 'rain_daily.csv'),
-                'terrain_sha1': _sha1(self.tmp / 'barangay_terrain.csv'),
-                'exclusions_sha1': _sha1(self.tmp / 'hazard_model_exclusions.csv')}
+    def refused(self, *words, **options):
+        """The command stops with a message holding every word, and the report stays as it was."""
+        before = self.report_path.read_bytes() if self.report_path.exists() else None
+        with self.assertRaises(CommandError) as caught:
+            call_command('test_hazard_models', stdout=StringIO(), **options)
+        for word in words:
+            self.assertIn(word, str(caught.exception))
+        self.assertEqual(self.report_path.read_bytes() if self.report_path.exists() else None, before)
+        self.assertFalse(self.report_path.with_name(self.report_path.name + '.partial').exists())
+        return str(caught.exception)
 
-    def test_command_writes_the_report_with_signatures(self):
+    def test_command_refuses_a_rain_file_that_starts_after_2006(self):
+        self.report_path.write_bytes(b'{"generated": "the old report"}\n')
+        terrain, rain, _ = toy_inputs(start=date(2016, 12, 31), end=STUDY_END)
+        write_rain_csv(self.data / 'rain_daily.csv', rain, {b: (10.5, 123.75) for b in rain})
+        self.assertEqual(read_rain_csv(self.data / 'rain_daily.csv').first_day, date(2016, 12, 18))
+        self.refused('fetch_rain', '2016-12-18', ARCHIVE_FIRST_DAY.isoformat())
+        (self.data / 'rain_daily.csv').unlink()
+        self.refused('fetch_rain')
+
+    def test_command_refuses_missing_exposure_storms_or_catalogue(self):
+        for name, fix in (('barangay_exposure.csv', 'build_hazard_features'), ('storm_days.csv', 'fetch_storms'),
+                          ('storm_days.meta.json', 'fetch_storms'), ('barangay_terrain.csv', 'build_hazard_features'),
+                          ('landslide_catalogue_exclusions.csv', 'landslide_catalogue_exclusions.csv')):
+            with self.subTest(missing=name):
+                path = self.data / name
+                kept = path.read_bytes()
+                path.unlink()
+                self.refused(fix, name)
+                path.write_bytes(kept)
+        self.assertFalse(self.report_path.exists())
+        # the catalogue: not cached, and the download fails or is not the catalogue
+        (self.cache / landslide_catalogue.CACHE_NAME).unlink()
+        for get, why in ((mock.Mock(side_effect=requests.ConnectionError('network is down')), 'network is down'),
+                         (mock.Mock(return_value=b'<html>moved</html>'), 'not the landslide catalogue')):
+            with self.subTest(why=why), mock.patch.object(landslide_catalogue, 'get', get):
+                self.refused('NASA Global Landslide Catalog', why)
+                get.assert_called_once_with(landslide_catalogue.CATALOGUE_URL)
+        self.assertFalse(self.report_path.exists())
+
+    def test_command_stops_on_leakage_or_a_model_that_cannot_be_fitted(self):
+        self.report_path.write_bytes(b'{"generated": "the old report"}\n')
+        # spec 2.5(c): a training day inside a held-out block's 14-day buffer stops the run
+        with mock.patch.object(hazard_tests, 'train_mask', lambda days, block: np.ones(len(days), bool)):
+            self.refused('Flood', 'within 14 days')
+        for error in (CannotEvaluate('the training days hold no reported event'), FitFailed('no convergence')):
+            with self.subTest(error=type(error).__name__), \
+                    mock.patch.object(TwoPartContender, 'fit', side_effect=error):
+                self.refused('Flood', str(error))
+
+    def test_single_hazard_run_merges_only_into_a_matching_v2_report(self):
+        self.refused('--hazard Landslide', hazard='Landslide')          # nothing to merge into
+        study = {'start': '2021-01-01', 'end': '2025-12-31'}
+        files = expected_files(self.data, self.cache)
+        kept = {'hazard': 'Flood', 'in_use': 'logistic_regression', 'marker': 'kept'}
+        old = {'generated': 'x', 'study': study, 'files': files, 'hazards': {'Flood': kept}}
+        self.report_path.write_text(json.dumps(old), encoding='utf-8')
+        self.refused('older version', hazard='Landslide')                # a version 1 report is never merged into
+        self.report_path.write_text(json.dumps({**old, 'version': 2}), encoding='utf-8')
         out = StringIO()
-        call_command('test_hazard_models', stdout=out)
-        report = json.loads(self.report_path.read_text(encoding='utf-8'), parse_constant=_no_nan)
-        self.assertLessEqual({'generated', 'study', 'files', 'hazards'}, set(report))
-        self.assertEqual(report['study'], self.study)
-        self.assertEqual(report['files'], self._files())
+        call_command('test_hazard_models', hazard='Landslide', stdout=out)
+        report = hazard_models.read_report()
+        self.assertEqual((report['version'], report['files'], report['study']), (2, files, study))
+        self.assertEqual(report['hazards']['Flood'], kept)
+        self.assertEqual(set(report['hazards']['Landslide']), HAZARD_KEYS)
+        self.assertNotIn('Flood: in use', out.getvalue())
+        # a changed input file: Flood would stay described against the old one, so it is refused
+        for name in ('hazard_model_exclusions.csv', 'storm_days.csv', 'barangay_exposure.csv',
+                     'landslide_catalogue_exclusions.csv'):
+            with self.subTest(changed=name):
+                path = self.data / name
+                original = path.read_bytes()
+                path.write_bytes(original + b'extra,row\n')
+                self.refused('--hazard Flood', hazard='Flood')
+                path.write_bytes(original)
+
+
+class CommandRunTests(TestCase):
+    """One full run on the toy inputs, shared by the tests."""
+
+    @classmethod
+    def setUpTestData(cls):
+        create_records()
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        tmp = Path(tempfile.mkdtemp())
+        cls.addClassCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        cls.data, cls.cache = tmp / 'data', tmp / 'cache'
+        cls.data.mkdir()
+        write_inputs(cls.data, cls.cache)
+        cls.report_path = cls.data / 'hazard_model_report.json'
+        for patcher in command_patches(cls.data, cls.cache, cls.report_path):
+            patcher.start()
+            cls.addClassCleanup(patcher.stop)
+        out = StringIO()
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            call_command('test_hazard_models', stdout=out)
+        cls.warnings = [f'{w.category.__name__}: {w.message}' for w in caught]
+        cls.output = out.getvalue()
+        cls.text = cls.report_path.read_text(encoding='utf-8')
+        cls.report = json.loads(cls.text, parse_constant=_no_nan)
+
+    def rebuilt(self, hazard):
+        """The command's HazardData, rebuilt here from the same files."""
+        excluded = load_exclusions(self.data / 'hazard_model_exclusions.csv')
+        rain = read_rain_csv(self.data / 'rain_daily.csv')
+        terrain = read_terrain(self.data / 'barangay_terrain.csv')
+        if hazard == 'Flood':
+            return build_hazard_data('Flood', terrain, rain, read_storm_days(self.data / 'storm_days.csv',
+                                                                             self.data / 'storm_days.meta.json'),
+                                     read_exposure(self.data / 'barangay_exposure.csv'), load_records('Flood'),
+                                     excluded)
+        records = landslide_catalogue.read_catalogue(self.cache / landslide_catalogue.CACHE_NAME)
+        near = landslide_catalogue.near(records, CENTRE, landslide_catalogue.load_exclusions(
+            self.data / 'landslide_catalogue_exclusions.csv'))
+        return build_hazard_data('Landslide', terrain, rain, None, None, load_records('Landslide'), excluded,
+                                 catalogue=near, names=NAMES, catalogue_end=landslide_catalogue.era_end(records))
+
+    def test_command_writes_version_2_with_fits_and_verdict(self):
+        report = self.report
+        self.assertEqual(set(report), REPORT_KEYS)
+        self.assertEqual(report['version'], 2)
+        self.assertEqual(report['study'], {'start': '2021-01-01', 'end': '2025-12-31'})
+        self.assertEqual(report['files'], expected_files(self.data, self.cache))
         self.assertEqual(datetime.fromisoformat(report['generated']).utcoffset().total_seconds(), 8 * 3600)
         self.assertEqual(list(report['hazards']), ['Flood', 'Landslide'])
-        _, _, pos = report_inputs()
-        for hazard, rep in report['hazards'].items():
-            self.assertLessEqual(set(SPEC_KEYS), set(rep))
-            self.assertEqual(rep['data_signature'], records_signature(load_records(hazard), STUDY_START, STUDY_END))
-            self.assertEqual(rep['positives'], len(pos[hazard]))      # the excluded and sample rows are not events
-            self.assertIn(f"{hazard}: winner {rep['winner']}, beats_benchmark {rep['beats_benchmark']}", out.getvalue())
-        flood = report['hazards']['Flood']
-        self.assertEqual([e['source_ref'] for e in flood['excluded']], [EXCLUDED_REF])
-        self.assertEqual(flood['unplaced'], 0)        # the 2026 record is outside the study; samples never count
-        self.assertEqual(flood['sensitivity']['study_positives'], flood['positives'] + 1)
-        self.assertEqual(hazard_models.read_report(), report)
+        _, _, _, pos = command_inputs()
+        for hazard, entry in report['hazards'].items():
+            data = self.rebuilt(hazard)
+            self.assertEqual(set(entry), HAZARD_KEYS, hazard)
+            self.assertEqual(entry['hazard'], hazard)
+            verdict = entry['verdict']
+            self.assertEqual(set(verdict), {'adopted', 'rule', 'reasons', 'leakage_checked'})
+            self.assertTrue(verdict['leakage_checked'])
+            self.assertEqual(entry['in_use'], 'two_part' if verdict['adopted'] else 'logistic_regression')
+            self.assertEqual(set(entry['fits']), {'two_part', 'logistic_regression'})
+            self.assertEqual(set(entry['tests']), {'loso', 'yearly', 'events', 'outside'})
+            # the excluded, later and sample flood records are not events
+            self.assertEqual(entry['positives'], len(pos))
+            self.assertEqual(entry['positive_days'], len({d for _, d in pos}))
+            self.assertEqual(entry['event_days'], len({d for _, d in pos}))
+            self.assertEqual(entry['rows'], len(data.rows.y))
+            self.assertEqual(entry['rows'], 3 * len(data.city_day))
+            self.assertEqual(entry['tests']['loso']['event_days'], entry['event_days'])
+            self.assertEqual(entry['limits'], report_limits(hazard, entry, barangays=3))
+            self.assertEqual(entry['credits'], credits_for(hazard))
+            self.assertEqual(entry['data_signature'], records_signature(load_records(hazard), STUDY_START, STUDY_END))
+            self.assertIsNone(entry['logged'])
+            self.assertIn(f"{hazard}: in use {entry['in_use']}", self.output)
+            for reason in verdict['reasons']:
+                self.assertIn(reason, self.output)
+        flood, slide = report['hazards']['Flood'], report['hazards']['Landslide']
+        self.assertEqual(flood['excluded'], [{'source_ref': EXCLUDED_REF, 'reason': 'Date uncertain',
+                                              'barangay_id': 2, 'day': '2022-07-08'}])
+        self.assertEqual(slide['excluded'], [])
+        self.assertIsNone(flood['tests']['outside'])
+        self.assertIn('current', slide['tests']['outside'])
+        self.assertEqual(flood['fits']['two_part']['when']['features'], ['log1p_r3', 'storm72'])
+        self.assertEqual(set(flood['fits']['two_part']['when']['intercepts']), {'geoalert'})
+        # landslide's two-part fit learned from the catalogue era too, which ends with the whole catalogue's latest
+        # record (far from Talisay), not with the last record near it (2017-03-09)
+        self.assertEqual(set(slide['fits']['two_part']['when']['intercepts']), {'geoalert', 'catalogue'})
+        self.assertIsNotNone(slide['fits']['two_part']['beta'])
+        self.assertIn('(catalogue era 2007-01-01 to 2017-09-30)', self.output)
+        self.assertEqual(self.rebuilt('Landslide').extra_day[-1], np.datetime64('2017-09-30'))
+        self.assertIn('Report written to', self.output)
+        self.assertEqual(self.warnings, [])
 
-    def test_single_hazard_run_merges_only_into_a_matching_report(self):
-        with self.assertRaises(CommandError):                       # nothing to merge into
-            call_command('test_hazard_models', hazard='Landslide', stdout=StringIO())
-        self.assertFalse(self.report_path.exists())
-        kept = {'winner': 'logistic_regression', 'marker': 'kept'}
-        self.report_path.write_text(json.dumps({'generated': 'x', 'study': self.study, 'files': self._files(),
-                                                'hazards': {'Flood': kept}}), encoding='utf-8')
-        call_command('test_hazard_models', hazard='Landslide', stdout=StringIO())
-        report = hazard_models.read_report()
-        self.assertEqual(report['hazards']['Flood'], kept)
-        self.assertLessEqual(set(SPEC_KEYS), set(report['hazards']['Landslide']))
-        self.assertEqual(report['files'], self._files())
-        # a changed input file: a single-hazard run would leave Flood described against the old one, so it is
-        # refused and the report stays as it was
-        before = self.report_path.read_bytes()
-        for name, row in (('hazard_model_exclusions.csv', 'Flood-1-2021-01-01,Another reason\r\n'),
-                          ('rain_daily.csv', '1,10.25,123.85,2027-01-01,0.0\r\n')):
-            path = self.tmp / name
-            original = path.read_bytes()
-            with open(path, 'a', newline='') as f:
-                f.write(row)
-            with self.assertRaises(CommandError, msg=name):
-                call_command('test_hazard_models', hazard='Flood', stdout=StringIO())
-            self.assertEqual(self.report_path.read_bytes(), before)
-            path.write_bytes(original)
+    def test_report_is_strict_json_and_reloads_into_fits(self):
+        self.assertEqual(json.loads(json.dumps(self.report, allow_nan=False)), self.report)
+        self.assertEqual(hazard_models.read_report(), self.report)
+        for hazard, entry in self.report['hazards'].items():
+            data = self.rebuilt(hazard)
+            everything = np.ones(len(data.city_day), bool)
+            # both fits are on every study row (landslide's two-part one with the catalogue era as well)
+            saved = TwoPartFit.from_json(entry['fits']['two_part'])
+            self.assertEqual(saved.to_json(), entry['fits']['two_part'])
+            self.assertEqual(entry['fits']['two_part'], TwoPartContender(hazard).fit(data, everything).to_json())
+            self.assertEqual(set(saved.shares), {1, 2, 3})
+            current = entry['fits']['logistic_regression']
+            self.assertEqual(current, json.loads(json.dumps(LogisticContender(hazard).fit(data, everything))))
+            self.assertEqual(current['features'], list(RAIN_FEATURES + TERRAIN_FEATURES[hazard]))
+            p = score_logistic(current, data.rows.X)
+            self.assertTrue(((p > 0) & (p < 1)).all())

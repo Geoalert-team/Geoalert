@@ -79,3 +79,56 @@ class HistoricalRecord(models.Model):
 
     def __str__(self):
         return f'{self.hazard_type} — {self.barangay} — {self.occurred_at}'
+
+
+# What a prediction log row may hold (checked by the database)
+LOG_HAZARDS = ['Fire', 'Flood', 'Landslide']
+LOG_KINDS = ['day', 'month']
+LOG_LEVELS = ['Low', 'Moderate', 'High']
+
+
+class HazardPredictionLog(models.Model):
+    """
+    A chance the app showed, kept so it can be scored against what happened
+    (spec 3.4; written by apps/history/prediction_log.py). Rows are only ever
+    added: a trigger (migration 0008) refuses any UPDATE or DELETE.
+
+    `day`: flood's or landslide's chance for one rain day. `month`: a hazard's
+    chance for the month as the forecast page shows it, with its level.
+    """
+    id              = models.BigAutoField(primary_key=True, db_column='hzpl_id')
+    hazard          = models.TextField(db_column='hzpl_hazard')
+    barangay        = models.ForeignKey(Barangay, on_delete=models.PROTECT, db_column='hzpl_brgy_id')
+    kind            = models.TextField(db_column='hzpl_kind')
+    # the day, or the month's first day
+    period_start    = models.DateField(db_column='hzpl_period_start')
+    # the Asia/Manila date the row was written
+    issued_on       = models.DateField(db_column='hzpl_issued_on')
+    # flood and landslide: '<model in use>@<report sha1, 12 characters>'; fire: '<model>@<records tag sha1, 12>'
+    model_version   = models.TextField(db_column='hzpl_model_version')
+    probability     = models.FloatField(db_column='hzpl_probability')
+    # fire only
+    expected_events = models.FloatField(null=True, db_column='hzpl_expected_events')
+    # on month rows; null on day rows (levels are monthly)
+    level           = models.TextField(null=True, db_column='hzpl_level')
+    # day rows: the rain sums used, the rain source, the storm flag and name, outside_training;
+    # month rows: method, in_training, the scenario years
+    inputs          = models.JSONField(db_column='hzpl_inputs')
+    created_at      = models.DateTimeField(auto_now_add=True, db_column='hzpl_created_at')
+
+    class Meta:
+        db_table = 'hazard_prediction_log'
+        constraints = [
+            models.UniqueConstraint(fields=['hazard', 'barangay', 'kind', 'period_start', 'issued_on', 'model_version'],
+                                    name='hazard_prediction_log_unique'),
+            models.CheckConstraint(check=models.Q(hazard__in=LOG_HAZARDS), name='hazard_prediction_log_hazard'),
+            models.CheckConstraint(check=models.Q(kind__in=LOG_KINDS), name='hazard_prediction_log_kind'),
+            models.CheckConstraint(check=models.Q(level__isnull=True) | models.Q(level__in=LOG_LEVELS),
+                                   name='hazard_prediction_log_level'),
+            models.CheckConstraint(check=models.Q(probability__gte=0) & models.Q(probability__lte=1),
+                                   name='hazard_prediction_log_probability'),
+        ]
+        indexes = [models.Index(fields=['hazard', 'period_start'])]
+
+    def __str__(self):
+        return f'{self.hazard} {self.kind} {self.period_start} — {self.barangay_id} — {self.probability}'

@@ -31,8 +31,8 @@ POWER_PARAMS = {'parameters': 'PRECTOTCORR', 'community': 'AG', 'time-standard':
 USER_AGENT = 'GeoAlert-Talisay/1.0 (hazard model rain)'
 LAT_STEP, LON_STEP = 0.5, 0.625         # POWER's native grid (MERRA-2)
 FILL = -999.0                           # POWER's value for a day it has not filled
-ARCHIVE_FIRST_DAY = date(2016, 12, 18)  # the file starts here; POWER itself reaches back to 1981
-CSV_FIRST_DAY_LIMIT = date(2020, 12, 18)  # the file must reach back at least this far
+ARCHIVE_FIRST_DAY = date(2006, 12, 18)  # the file starts here; POWER itself reaches back to 1981
+CSV_FIRST_DAY_LIMIT = date(2006, 12, 18)  # the file must reach back at least this far
 ATTEMPTS = 3
 RETRY_WAITS = (30, 60)
 PAUSE = 1                               # seconds between archive requests, to be polite
@@ -114,13 +114,12 @@ def download_archive(points, start, end, get=None, sleep=time.sleep, log=print, 
     """Daily rain for every barangay from `start` to `end`, and the grid cell each one reads.
 
     `points` maps barangay id to (lat, lon). One series is downloaded, for the city's cell (city_cell), a
-    year per request, newest first, and copied to every barangay. A year before CSV_FIRST_DAY_LIMIT that
-    fails is logged and left out; a later one stops the download. `stats`, if given, receives 'retries'
-    and 'failed'.
+    year per request, newest first, and copied to every barangay. A request that still fails after its
+    retries stops the download. `stats`, if given, receives 'retries'.
     """
     getter = get or globals()['get']
     stats = stats if stats is not None else {}
-    stats['retries'], stats['failed'] = 0, []
+    stats['retries'] = 0
     ids = sorted(points)
     cell = city_cell(points)
     log(f'{len(ids)} barangays -> 1 NASA POWER grid cell {cell}')
@@ -133,11 +132,7 @@ def download_archive(points, start, end, get=None, sleep=time.sleep, log=print, 
         try:
             got = _parse(_fetch(getter, POWER_URL, _params(cell, a, b), sleep, stats))
         except (requests.RequestException, ValueError) as exc:
-            if b >= CSV_FIRST_DAY_LIMIT:
-                raise CommandError(f'NASA POWER failed for {_span_text(a, b)}: {exc}') from exc
-            stats['failed'].append(_span_text(a, b))
-            log(f'NASA POWER failed for {_span_text(a, b)}, no values for it: {exc}')
-            got = {}
+            raise CommandError(f'NASA POWER failed for {_span_text(a, b)}: {exc}') from exc
         series.update({d: mm for d, mm in got.items() if a <= d <= b})
         if n < len(plan) - 1:
             sleep(PAUSE)

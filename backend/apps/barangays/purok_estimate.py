@@ -32,6 +32,11 @@ from django.contrib.gis.geos import GEOSGeometry, LineString, MultiLineString, M
 from django.contrib.gis.geos.libgeos import GEOM_PTR
 from django.contrib.gis.geos.prototypes.geom import GeomOutput
 
+# Microsoft Global ML Building Footprints (ODbL): one file per zoom-9 tile;
+# 132330002 covers all of Talisay
+BUILDINGS_INDEX = 'https://minedbuildings.z5.web.core.windows.net/global-buildings/dataset-links.csv'
+BUILDINGS_TILE = '132330002'
+
 # Starting values, to be tuned against the first official barangay that
 # arrives (load_puroks prints how far the estimates were from it).
 EMPTY_FACTOR = 2.0           # crossing ground with no house nearby costs this much more

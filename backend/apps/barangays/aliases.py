@@ -32,6 +32,14 @@ def canonical(name):
     return _GROUP.get(key, key)
 
 
+def spellings(name):
+    """Every lower-case spelling of the barangay called `name`, the name itself included."""
+    key = canonical(name)
+    found = {' '.join(name.split()).lower(), key}
+    found.update(alias for alias, group in _GROUP.items() if group == key)
+    return found
+
+
 def match_barangay(name, barangays):
     """
     The barangay called `name` under any spelling. When two rows match (the

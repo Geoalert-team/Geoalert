@@ -3,8 +3,16 @@ The trained model behind the likelihood: what it learns from, what it must
 never read, the test that decides whether it is used, and how its figures
 land on the forecast.
 """
+import functools
+import hashlib
+import itertools
+import json
 import math
 import random
+import shutil
+import tempfile
+import threading
+import time
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
@@ -16,11 +24,12 @@ from django.utils import timezone as dj_timezone
 from rest_framework.test import APIRequestFactory
 
 from apps.barangays.models import Barangay
-from apps.history import hazard_models
+from apps.history import fire_candidate, hazard_data, hazard_forecast, hazard_models, prediction_log, storms
 from apps.history import model_forecast as mf
+from apps.history.exposure import write_exposure
 from apps.history.forecast import empty_profile, seasonal_forecast
 from apps.history.models import HistoricalRecord
-from apps.history.views import ForecastAccuracyView, HistoricalForecastView
+from apps.history.views import ForecastAccuracyView, HistoricalForecastView, _forecast_events
 from tests.fire_setup import FireSetupMixin, box
 
 TZ = timezone.utc
@@ -48,6 +57,21 @@ def steady():
         if m == 3:
             events.append(ev(y, m, barangay=2))
     return events
+
+
+def write_buildings(path, counts):
+    """An exposure file holding only building counts, the one column fire reads."""
+    zero = dict(noah25_mh=0.0, noah100_mh=0.0, hand_lt2_buildings=0.0, exposure=0.0)
+    write_exposure(path, {b: dict(buildings=float(n), **zero) for b, n in counts.items()}, {})
+
+
+def private_data_dir(test):
+    """Point the data folder at an empty temp one: fire never reads the real building counts in a test."""
+    test.tmp = Path(tempfile.mkdtemp())
+    test.addCleanup(shutil.rmtree, test.tmp, ignore_errors=True)
+    patcher = mock.patch.object(hazard_data, 'DATA_DIR', test.tmp)
+    patcher.start()
+    test.addCleanup(patcher.stop)
 
 
 def scattered(sample=False):
@@ -230,13 +254,128 @@ LOCAL_CACHE = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemC
 class UseModelsTests(SimpleTestCase):
     def setUp(self):
         cache.clear()
+        private_data_dir(self)
 
     def use(self, events, places, month=3, year=None, hazard='Fire'):
         result = seasonal_forecast(events, month, NOW, year=year)
         result['profile'] = empty_profile()
-        with mock.patch.object(mf, 'places', return_value=places):
+        with mock.patch.object(mf, 'places', return_value=places), mock.patch.object(mf, 'neighbours', return_value={}):
             self.unavailable = mf.use_models(result, events, month, hazard=hazard, today=TODAY)
         return result
+
+    def test_cache_key_changes_with_the_exposure_file(self):
+        events = steady()[:40]
+        path = self.tmp / 'barangay_exposure.csv'
+        with mock.patch.object(mf, 'places', return_value=PLACES) as where, \
+                mock.patch.object(mf, 'neighbours', return_value={}):
+            def builds():
+                mf._fitted('Fire', events, None, TODAY)
+                return where.call_count
+
+            self.assertEqual(builds(), 1)
+            self.assertEqual(builds(), 1)               # from the cache
+            write_buildings(path, {1: 10, 2: 20, 3: 30})
+            self.assertEqual(builds(), 2)               # the building counts arrived
+            self.assertEqual(builds(), 2)
+            write_buildings(path, {1: 10, 2: 20, 3: 31})
+            self.assertEqual(builds(), 3)               # and changed
+            path.unlink()
+            self.assertEqual(builds(), 3)               # gone again: the first fit, still cached, is the right one
+
+    def test_version_changes_with_the_exposure_file_alone(self):
+        # the prediction log keys rows on the version, so new building counts with the same records must not
+        # reuse the old one
+        events = steady()[:40]
+        path = self.tmp / 'barangay_exposure.csv'
+        with mock.patch.object(mf, 'places', return_value=PLACES), mock.patch.object(mf, 'neighbours', return_value={}):
+            def version():
+                return mf._fitted('Fire', events, None, TODAY)['version']
+
+            no_file = version()
+            write_buildings(path, {1: 10, 2: 20, 3: 30})
+            first = version()
+            write_buildings(path, {1: 10, 2: 20, 3: 31})
+            second = version()
+            self.assertEqual(len({no_file, first, second}), 3)
+            self.assertTrue(all(v.startswith('current@') and len(v) == len('current@') + 12
+                                for v in (no_file, first, second)))
+            self.assertEqual(version(), second)         # the same records and counts: the same version
+            path.unlink()
+            self.assertEqual(version(), no_file)
+
+    def test_every_period_shares_one_comparison(self):
+        # a past month and a period not yet started: one comparison and one test, two tables
+        events, places = scattered()
+        with mock.patch.object(mf, 'places', return_value=places), \
+                mock.patch.object(mf, 'neighbours', return_value={}), \
+                mock.patch.object(fire_candidate, 'compare', wraps=fire_candidate.compare) as compared, \
+                mock.patch.object(mf, 'evaluate', wraps=mf.evaluate) as tested:
+            default = mf._fitted('Fire', events, None, TODAY)
+            past = mf._fitted('Fire', events, date(2026, 3, 1), TODAY)
+        self.assertEqual((compared.call_count, tested.call_count), (1, 1))
+        self.assertEqual((past['version'], past['candidate'], past['report']),
+                         (default['version'], default['candidate'], default['report']))
+        self.assertNotEqual(past['table'], default['table'])
+
+    def test_concurrent_cold_requests_compare_once(self):
+        events, places = scattered()
+        waiting = threading.Event()
+        real_compare = fire_candidate.compare
+
+        def slow_compare(*args):
+            waiting.wait(10)                # until the other request is waiting for this one
+            return real_compare(*args)
+
+        def poll(seconds):
+            waiting.set()
+            time.sleep(0.01)
+
+        versions, errors = [], []
+
+        def request():
+            try:
+                versions.append(mf._fitted('Fire', events, None, TODAY)['version'])
+            except Exception as exc:        # reported below, not lost in the thread
+                errors.append(exc)
+
+        with mock.patch.object(mf, 'places', return_value=places), \
+                mock.patch.object(mf, 'neighbours', return_value={}), \
+                mock.patch.object(fire_candidate, 'compare', side_effect=slow_compare) as compared, \
+                mock.patch.object(mf, '_sleep', side_effect=poll):
+            threads = [threading.Thread(target=request) for _ in range(2)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join(60)
+        self.assertEqual(errors, [])
+        self.assertEqual(compared.call_count, 1)
+        self.assertEqual(len(versions), 2)
+        self.assertEqual(len(set(versions)), 1)
+
+    def test_a_request_that_waits_too_long_is_told_the_model_is_being_prepared(self):
+        events, places = scattered()
+        tag = mf._record_tag('Fire', events, TODAY)
+        cache.set(mf.CHOICE_LOCK + hashlib.sha1(tag.encode('utf-8')).hexdigest(), 1, 60)     # another is building
+        clock = itertools.count(0, mf.WAIT_SECONDS)
+        with mock.patch.object(mf, '_monotonic', side_effect=lambda: next(clock)), mock.patch.object(mf, '_sleep'):
+            result = self.use(events, places)
+        self.assertEqual(self.unavailable, {'Fire': 'The fire model is being prepared; try again in a minute.'})
+        self.assertEqual(result['model_hazards'], [])
+
+    def test_a_building_file_that_cannot_be_read_leaves_todays_model_in_use(self):
+        path = self.tmp / 'barangay_exposure.csv'
+        header = 'barangay_id,barangay,buildings,noah25_mh,noah100_mh,hand_lt2_buildings,exposure\n'
+        for name, body in (('a short row', '1,Busy,10\n'), ('an endless count', '1,Busy,inf,0,0,0,0\n')):
+            with self.subTest(name):
+                path.write_text(header + body, encoding='utf-8')
+                with mock.patch.object(mf, 'places', return_value=PLACES), \
+                        mock.patch.object(mf, 'neighbours', return_value={}), \
+                        self.assertLogs('apps.history.model_forecast', level='WARNING'):
+                    fitted = mf._fitted('Fire', steady(), None, TODAY)
+                self.assertIsNotNone(fitted['table'])
+                self.assertEqual(fitted['candidate']['in_use'], 'current')
+                self.assertEqual(fitted['candidate']['verdict']['reasons'], [fire_candidate.NO_BUILDINGS])
+                self.assertTrue(fitted['version'].startswith('current@'))
 
     def test_the_all_types_chart_follows_the_model(self):
         events, places = scattered()
@@ -319,6 +458,17 @@ class PlacesTests(FireSetupMixin, TestCase):
         self.assertAlmostEqual(rows['Home']['area_km2'], 1.0, delta=0.02)
         self.assertEqual(rows['Home']['puroks'], 1)
 
+    def test_barangays_that_share_a_border_are_neighbours(self):
+        # Home and Next door share the edge at 500 m; across the road is 0.5 m from Next door, across the river
+        # 2.5 m from the road; a barangay with no boundary is not a place
+        road = Barangay.objects.create(name='Across the road', municipality='Talisay',
+                                       boundary=MultiPolygon(box(1500.5, -500, 2500, 500), srid=4326))
+        river = Barangay.objects.create(name='Across the river', municipality='Talisay',
+                                        boundary=MultiPolygon(box(2502.5, -500, 3500, 500), srid=4326))
+        Barangay.objects.create(name='Empty duplicate', municipality='Talisay')
+        self.assertEqual(mf.neighbours(), {self.home.id: {self.next.id}, self.next.id: {self.home.id, road.id},
+                                           road.id: {self.next.id}, river.id: set()})
+
 
 @override_settings(CACHES=LOCAL_CACHE)
 class ForecastViewTests(FireSetupMixin, TestCase):
@@ -330,6 +480,7 @@ class ForecastViewTests(FireSetupMixin, TestCase):
                                     Path(__file__).with_name('no_hazard_model_report.json'))
         patcher.start()
         self.addCleanup(patcher.stop)
+        private_data_dir(self)
 
     def get(self, view=HistoricalForecastView, **params):
         return view.as_view()(APIRequestFactory().get('/', params))
@@ -415,6 +566,98 @@ class ForecastViewTests(FireSetupMixin, TestCase):
                           ('Landslide', 'rain_terrain', 'unavailable')])
         hazards = [h for h in entries if h.get('kind') != 'rain_terrain']
         self.assertEqual([(h['hazard'], h['status']) for h in hazards], [('Fire', 'too_few_records')])
+
+    def test_fitted_uses_the_winner_and_reports_the_candidate(self):
+        self.fires()
+        buildings = {self.home.id: 400, self.next.id: 100}
+        write_buildings(self.tmp / 'barangay_exposure.csv', buildings)
+        fires = mf._real_by_hazard(_forecast_events())['Fire']
+        where = mf.places()
+        last = max(e['when'] for e in fires)
+        # the version hashes what the models learn from, whatever the period: the records, the month they are
+        # read in, then the building counts' sha1
+        counts = hashlib.sha1((self.tmp / 'barangay_exposure.csv').read_bytes()).hexdigest()
+        tag = f'Fire|{len(fires)}|{last.isoformat()}|2026-11|{counts}'
+        records = hashlib.sha1(tag.encode('utf-8')).hexdigest()[:12]
+        table_fns = {'pooled_exposure': functools.partial(fire_candidate.exposure_rates_table, buildings=buildings),
+                     'current': mf.rates_table}
+        scores = {'log_score', 'deviance', 'brier', 'auc', 'top_share', 'coverage80', 'pit'}
+        for adopted, name in ((True, 'pooled_exposure'), (False, 'current')):
+            with self.subTest(in_use=name):
+                cache.clear()
+                rule = {'adopted': adopted, 'reasons': ['By the rule.']}
+                with mock.patch.object(fire_candidate, 'verdict', return_value=rule) as judged:
+                    fitted = mf._fitted('Fire', fires, None, TODAY)
+                candidate = fitted['candidate']
+                self.assertEqual((candidate['in_use'], candidate['verdict']), (name, rule))
+                self.assertEqual(fitted['version'], f'{name}@{records}')
+                # the rule judged the paired log-score differences on the main window
+                self.assertAlmostEqual(judged.call_args.args[0]['mean'], candidate['difference']['mean'], places=4)
+                # the table and the test against counting come from the model in use
+                self.assertEqual(fitted['table'], table_fns[name](fires, where, today=TODAY))
+                self.assertEqual(fitted['report'], mf.evaluate(fires, where, TODAY, table_fn=table_fns[name]))
+                # both models one month ahead on the last nine months, the difference, and the two checks
+                self.assertEqual(set(candidate), {'in_use', 'verdict', 'window', 'models', 'difference', 'secondary',
+                                                  'dispersion', 'dispersion_flag', 'morans_i'})
+                self.assertEqual(candidate['window'], {'start': '2026-01', 'end': '2026-09'})
+                for model in ('current', 'pooled_exposure'):
+                    self.assertEqual(set(candidate['models'][model]), scores)
+                    self.assertEqual(sum(candidate['models'][model]['pit']), 2 * 9)
+                difference = candidate['difference']
+                self.assertLessEqual(difference['low'], difference['mean'])
+                self.assertLessEqual(difference['mean'], difference['high'])
+                self.assertEqual(set(difference['dm']), {'statistic', 'p'})
+                # from the first month with 100 fires before it (25 months of 4) to the last full month
+                self.assertEqual(candidate['secondary']['window'], {'start': '2025-02', 'end': '2026-09'})
+                self.assertIsInstance(candidate['dispersion'], float)
+                self.assertEqual(candidate['dispersion_flag'], candidate['dispersion'] > fire_candidate.DISPERSION_FLAG)
+                # two neighbours: one's leftover error is the other's opposite
+                self.assertAlmostEqual(candidate['morans_i']['i'], -1.0, places=9)
+                # the accuracy card carries the block, read from the same cached fit, as strict JSON
+                json.dumps(candidate, allow_nan=False)
+                entry = mf.accuracy_reports(_forecast_events(), TODAY)[0]
+                self.assertEqual((entry['hazard'], entry['status'], entry['candidate']),
+                                 ('Fire', fitted['report']['status'], candidate))
+
+    def test_warm_fills_the_fire_cache_too(self):
+        self.fires()
+        order = []
+        real_warm_fire = mf.warm_fire
+
+        def warm_fire(today):
+            order.append('Fire')
+            real_warm_fire(today)
+
+        # no network: the flood and landslide builds, the storm refresh and the prediction log are stand-ins
+        with mock.patch.object(hazard_forecast, 'deployed', side_effect=order.append), \
+                mock.patch.object(storms, 'refresh_recent', return_value=True), \
+                mock.patch.object(mf, 'warm_fire', side_effect=warm_fire), \
+                mock.patch.object(prediction_log, 'log_once_today'), \
+                mock.patch.object(hazard_forecast.connections, 'close_all'):
+            hazard_forecast._warm()
+        self.assertEqual(order, ['Flood', 'Landslide', 'Fire'])
+        # the forecast's own request for fire is now a cache hit: nothing is fitted again
+        fires = mf._real_by_hazard(_forecast_events())['Fire']
+        with mock.patch.object(mf, 'places', side_effect=AssertionError('fitted again')):
+            fitted = mf._fitted('Fire', fires, None, dj_timezone.localdate())
+        self.assertEqual(fitted['candidate']['in_use'], 'current')          # no building counts here
+        self.assertEqual(fitted['candidate']['verdict']['reasons'], [fire_candidate.NO_BUILDINGS])
+        # a period that has started reuses the warmed comparison: only its own table is fitted
+        with mock.patch.object(mf, 'places', side_effect=AssertionError('compared again')), \
+                mock.patch.object(fire_candidate, 'compare', side_effect=AssertionError('compared again')):
+            past = mf._fitted('Fire', fires, date(2026, 3, 1), dj_timezone.localdate())
+        self.assertEqual((past['version'], past['candidate']), (fitted['version'], fitted['candidate']))
+        self.assertIsNotNone(past['table'])
+        # a fire warm-up that fails is logged and stops nothing
+        with mock.patch.object(hazard_forecast, 'deployed') as built, \
+                mock.patch.object(storms, 'refresh_recent', return_value=True), \
+                mock.patch.object(mf, 'warm_fire', side_effect=RuntimeError('no fit')), \
+                mock.patch.object(prediction_log, 'log_once_today'), \
+                mock.patch.object(hazard_forecast.connections, 'close_all') as closed, \
+                self.assertLogs('apps.history.hazard_forecast', level='ERROR'):
+            hazard_forecast._warm()
+        self.assertEqual([c.args[0] for c in built.call_args_list], ['Flood', 'Landslide'])
+        closed.assert_called_once_with()
 
     def test_accuracy_never_counts_sample_records(self):
         HistoricalRecord.objects.create(barangay=self.home, hazard_type=self.flood, severity_level='Green',

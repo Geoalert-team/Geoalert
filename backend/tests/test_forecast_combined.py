@@ -5,7 +5,6 @@ caching header, the accuracy endpoint's flood and landslide entries, and the
 warm-up the hazard list ping starts. Toy files in a temp folder stand in for
 apps/history/data/; fire keeps its own model, read and never changed.
 """
-import builtins
 import copy
 import json
 import math
@@ -15,7 +14,6 @@ import tempfile
 from calendar import monthrange
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from types import SimpleNamespace
 from unittest import mock
 
 import requests
@@ -28,14 +26,14 @@ from rest_framework.test import APIRequestFactory
 from apps.barangays.models import Barangay
 from apps.hazards import views as hazard_views
 from apps.hazards.models import HazardType
-from apps.history import hazard_data, hazard_forecast, hazard_models, model_forecast, rain
+from apps.history import hazard_data, hazard_forecast, hazard_models, model_forecast, rain, storms
 from apps.history.forecast import seasonal_forecast
 from apps.history.hazard_data import MANILA
 from apps.history.hazard_scenarios import any_chance, pair_chance, period_chance, scenario_dates
 from apps.history.models import HistoricalRecord
 from apps.history.views import ForecastAccuracyView, HistoricalForecastView, _forecast_events
 from tests.fire_setup import box
-from tests.hazard_fixtures import toy_source_ref, write_toy_files
+from tests.hazard_fixtures import toy_report_v1, toy_report_v2, toy_source_ref, write_toy_files
 
 TODAY = date(2026, 11, 12)
 YEARS = [2021, 2022, 2023, 2024, 2025]        # the toy rain file's complete years
@@ -46,9 +44,6 @@ BOTH = 'Use hazards or hazard_type_name, not both.'
 MODELS_DOWN = 'The flood and landslide models are unavailable right now.'
 NOTE = 'Built from the three tested models; not tested on its own.'
 REPORT_DOWN = 'The flood and landslide test report could not be loaded right now.'
-LIBRARIES_BROKEN = 'The model libraries (scikit-learn and xgboost) could not be loaded.'
-LIBRARIES_MISSING = 'The model libraries (scikit-learn and xgboost) are not installed.'
-LIBRARIES_LOG = 'The flood and landslide model libraries could not be loaded.'
 BY_BARANGAY_KEYS = {'barangay_id', 'barangay', 'level', 'top_hazard', 'probability', 'hazards'}
 TOO_FEW = 'Too few fire records to train and test its model.'
 
@@ -84,10 +79,13 @@ class CombinedForecastTests(TestCase):
                                             occurred_at=at(d))
         self.report_path = self.tmp / 'hazard_model_report.json'
         self.fire_table = None
-        # NASA POWER is never called from the tests: the live rain is down unless a test says otherwise
+        # NASA POWER is never called from the tests: the live rain is down unless a test says otherwise. Nor is
+        # IBTrACS: the live storm days add nothing to the file's, and the daily refresh does nothing.
         for patcher in (mock.patch.object(hazard_data, 'DATA_DIR', self.tmp),
                         mock.patch.object(hazard_models, 'REPORT_PATH', self.report_path),
-                        mock.patch.object(hazard_forecast, 'recent_rain', mock.Mock(return_value=None))):
+                        mock.patch.object(hazard_forecast, 'recent_rain', mock.Mock(return_value=None)),
+                        mock.patch.object(storms, 'live_storm_days', lambda base, today, get=None: base),
+                        mock.patch.object(storms, 'refresh_recent', mock.Mock(return_value=True))):
             patcher.start()
             self.addCleanup(patcher.stop)
 
@@ -150,7 +148,9 @@ class CombinedForecastTests(TestCase):
                     'expected_events': expected, 'level': level, **extra}
 
         def scen(daily, dates, month_dates):
-            return {h: {'deployed': hazard_forecast.Deployed(h, None, daily, {}, [2021, 2022], None, {}),
+            return {h: {'deployed': hazard_forecast.Deployed(
+                            hazard=h, name='two_part', version='two_part@toy', fit={}, daily=daily, reasons={},
+                            complete_years=[2021, 2022], rain=None, terrain={}, storms=None),
                         'chances': {b: period_chance(daily[b].get, dates)},
                         'dates_by_s': dates, 'month_dates_by_s': month_dates}
                     for h in MODELLED}
@@ -230,6 +230,37 @@ class CombinedForecastTests(TestCase):
         # the basis counts only the hazards asked for
         floods = len(self.pos)
         self.assertEqual(data['basis']['records'], floods + 5)
+        # the method names only what the models in use read: the flood two-part model's storm tracks and exposure
+        self.assertEqual(data['basis']['method'], (
+            "From each hazard's trained model: a Poisson regression on past fires for fire, and a model of rain, "
+            "storm tracks and flood-hazard exposure for flood. Every chance is of a reported event. Counting past "
+            "years is only a benchmark in the accuracy check."))
+
+    def test_basis_method_follows_the_models_in_use(self):
+        toy_report_v2(self.report_path, in_use='logistic_regression')
+        with self.fire_model():
+            data = self.get(month=7).data
+        # the logistic regression reads neither storm tracks nor flood-hazard exposure, so neither is named
+        self.assertEqual(data['basis']['method'], (
+            "From each hazard's trained model: a Poisson regression on past fires for fire, and a model of rain and "
+            "terrain for flood and landslide. Every chance is of a reported event. Counting past years is only a "
+            "benchmark in the accuracy check."))
+        toy_report_v2(self.report_path)                                  # both two-part models
+        cache.clear()
+        with self.fire_model():
+            data = self.get(month=7).data
+        self.assertEqual(data['basis']['method'], (
+            "From each hazard's trained model: a Poisson regression on past fires for fire, a model of rain, storm "
+            "tracks and flood-hazard exposure for flood, and a model of rain and terrain for landslide. Every chance "
+            "is of a reported event. Counting past years is only a benchmark in the accuracy check."))
+        # a flood or landslide model that cannot run is not named
+        self.report_path.unlink()
+        cache.clear()
+        with self.fire_model(), self.assertLogs('apps.history.hazard_forecast', level='WARNING'):
+            data = self.get(month=7).data
+        self.assertEqual(data['basis']['method'], (
+            "From each hazard's trained model: a Poisson regression on past fires for fire. Every chance is of a "
+            "reported event. Counting past years is only a benchmark in the accuracy check."))
 
     def test_hazards_param_ignores_case_spaces_and_duplicates(self):
         parse = hazard_forecast.parse_hazards
@@ -373,8 +404,9 @@ class CombinedForecastTests(TestCase):
         days = [first + timedelta(days=i) for i in range((last - first).days + 1)]
         daily = {b: {d: 4e-6 if d.year == 2021 else 8e-6 for d in days} for b in self.ids}
         rf = rain.RainFile({b: {} for b in self.ids}, {}, first, last)
-        model = SimpleNamespace(name='logistic_regression')
-        deps = {h: hazard_forecast.Deployed(h, model, daily, {}, YEARS, rf, {}) for h in MODELLED}
+        deps = {h: hazard_forecast.Deployed(hazard=h, name='two_part', version='two_part@toy', fit={}, daily=daily,
+                                            reasons={}, complete_years=YEARS, rain=rf, terrain={}, storms=None)
+                for h in MODELLED}
 
         def sig2(x):
             return float(f'{x:.2g}')
@@ -484,37 +516,6 @@ class CombinedForecastTests(TestCase):
                 self.assertEqual(response['Cache-Control'], PUBLIC)
                 self.assertEqual(response.data, {'hazards': [want, *down], 'combined_note': NOTE})
 
-    def test_a_model_library_that_fails_to_load_makes_the_models_unavailable(self):
-        real_import = builtins.__import__
-
-        def failing(error):
-            def fake(name, globals=None, locals=None, fromlist=(), level=0):
-                if name == 'apps.history' and 'hazard_models' in (fromlist or ()):
-                    raise error
-                return real_import(name, globals, locals, fromlist, level)
-            return fake
-
-        # a broken xgboost load raises XGBoostError (a ValueError) or OSError, not ImportError; it is
-        # logged with its traceback, since its callers log only the one-line reason
-        for error, message in ((ValueError('xgboost could not load its library'), LIBRARIES_BROKEN),
-                               (OSError('libxgboost.dll not found'), LIBRARIES_BROKEN)):
-            with self.subTest(error=type(error).__name__):
-                with mock.patch('builtins.__import__', failing(error)), \
-                        self.assertLogs('apps.history.hazard_forecast', 'ERROR') as logs, \
-                        self.assertRaisesMessage(hazard_forecast.Unavailable, message) as caught:
-                    hazard_forecast._models()
-                self.assertIs(caught.exception.__cause__, error)
-                (record,) = logs.records
-                self.assertEqual(record.getMessage(), LIBRARIES_LOG)
-                self.assertIs(record.exc_info[1], error)
-        # a library that is not installed keeps its own message, with nothing logged here
-        error = ImportError('No module named xgboost')
-        with mock.patch('builtins.__import__', failing(error)), \
-                self.assertNoLogs('apps.history.hazard_forecast', 'ERROR'), \
-                self.assertRaisesMessage(hazard_forecast.Unavailable, LIBRARIES_MISSING) as caught:
-            hazard_forecast._models()
-        self.assertIs(caught.exception.__cause__, error)
-
     def test_forecast_answers_when_live_rain_fails(self):
         on = timezone.localdate() - timedelta(days=10)       # a week after the rain file, already over
         with mock.patch.object(hazard_forecast, 'recent_rain', rain.recent_rain), \
@@ -530,13 +531,14 @@ class CombinedForecastTests(TestCase):
         self.assertFalse(any('recorded_rain_probability' in r for r in data['results']))
         self.assertEqual(len(data['combined']), len(self.ids))
 
-    def test_accuracy_status_in_use_not_better_unavailable_and_stale(self):
+    def test_accuracy_entries_in_use_unavailable_old_and_stale(self):
         def entries():
             body = self.get(ForecastAccuracyView).data
             self.assertEqual(body['combined_note'], NOTE)
             return body['hazards']
 
-        self.edit_report(Flood={'beats_benchmark': True}, Landslide={'beats_benchmark': False})
+        # the accuracy card reads the version 2 report
+        report = toy_report_v2(self.report_path, in_use='logistic_regression')
         hazards = entries()
         # fire's test as it is; flood's and landslide's counting tests replaced by their rain-and-terrain reports
         self.assertEqual([(h['hazard'], h.get('kind')) for h in hazards],
@@ -544,10 +546,13 @@ class CombinedForecastTests(TestCase):
         self.assertEqual(hazards[0]['status'], 'too_few_records')
         flood, slide = hazards[1], hazards[2]
         self.assertEqual((flood['status'], flood['stale']), ('in_use', False))
-        self.assertEqual((slide['status'], slide['stale']), ('in_use_not_better', False))
-        self.assertEqual(flood['winner'], 'logistic_regression')
+        self.assertEqual((slide['status'], slide['stale']), ('in_use', False))
+        self.assertEqual(flood['in_use'], 'logistic_regression')
+        self.assertNotIn('fits', flood)
+        for key in ('verdict', 'tests', 'limits', 'credits', 'logged'):
+            self.assertEqual(flood[key], report['hazards']['Flood'][key], key)
         self.assertEqual(flood['study'], {'start': '2021-01-01', 'end': '2025-12-31'})
-        self.assertEqual(flood['tested_at'], '2026-11-12T00:00:00+08:00')
+        self.assertEqual(flood['tested_at'], '2026-11-13T00:00:00+08:00')
         # an approved report dated after the study period changes nothing
         HistoricalRecord.objects.create(barangay=self.barangays[2], hazard_type=self.kinds['Flood'],
                                         severity_level='Orange', source_ref='approved-report-2026',
@@ -558,12 +563,15 @@ class CombinedForecastTests(TestCase):
                                         severity_level='Orange', source_ref='late-entry-2024',
                                         occurred_at=at(date(2024, 3, 1)), hazard_subcategory='TOY')
         self.assertEqual([h.get('stale') for h in entries()[1:]], [True, False])
-        # no entry for a hazard, then no report at all
+        # no entry for a hazard, then a report from before version 2, then no report at all
         self.edit_report(Landslide=None)
         slide = entries()[2]
         self.assertEqual(set(slide), {'hazard', 'kind', 'status', 'reason'})
         self.assertEqual((slide['hazard'], slide['kind'], slide['status']),
                          ('Landslide', 'rain_terrain', 'unavailable'))
+        toy_report_v1(self.report_path)
+        self.assertEqual([(e['status'], e['reason']) for e in entries()[1:]],
+                         [('unavailable', hazard_models.REPORT_OLD)] * 2)
         self.report_path.unlink()
         for entry in entries()[1:]:
             self.assertEqual((entry['kind'], entry['status']), ('rain_terrain', 'unavailable'))

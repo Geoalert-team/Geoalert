@@ -12,6 +12,7 @@ from scipy import ndimage
 
 from apps.barangays import purok_estimate as pe
 from apps.barangays.aliases import canonical
+from apps.barangays.purok_estimate import BUILDINGS_INDEX, BUILDINGS_TILE
 from apps.barangays.models import Barangay
 from apps.hazards import susceptibility as sus
 
@@ -28,11 +29,6 @@ COUNTS_FILE = DATA_DIR / 'barangay_counts.csv'
 # Written beside the outlines: the area each landmark stands in and each street mostly runs through,
 # for linking fire addresses (apps/history/bfp_link.load_link_index)
 PLACES_NAME = 'place_areas.csv'
-
-# Microsoft Global ML Building Footprints (ODbL): one file per zoom-9 tile;
-# 132330002 covers all of Talisay
-BUILDINGS_INDEX = 'https://minedbuildings.z5.web.core.windows.net/global-buildings/dataset-links.csv'
-BUILDINGS_TILE = '132330002'
 
 
 def read_research(points_file=POINTS_FILE, outlines_file=OUTLINES_FILE, counts_file=COUNTS_FILE):

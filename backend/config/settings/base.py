@@ -266,6 +266,13 @@ CORS_EXPOSE_HEADERS = ['x-geoalert-session-expired', 'etag']
 # whatever the client sends. See utils/login_throttle.py.
 BEHIND_PROXY = env.bool('BEHIND_PROXY', default=False)
 
+# The prediction log (apps/history/prediction_log.py) keeps the chances the
+# public site showed, and its rows can never be changed or removed. Exactly
+# one machine writes it: the deployed server, with HAZARD_LOG_WRITER=true in
+# its .env. Off by default, so a teammate's runserver against the shared
+# database never adds rows from its own report and data files.
+HAZARD_LOG_WRITER = env.bool('HAZARD_LOG_WRITER', default=False)
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = env.int('EMAIL_PORT', default=587)

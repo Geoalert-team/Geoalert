@@ -1,19 +1,23 @@
 """
-Flood and landslide on the forecast: the rain-and-terrain model in use, and
-the rows, levels and chart it gives.
+Flood and landslide on the forecast: the model in use, and the rows, levels
+and chart it gives.
 
-deployed() refits the winner that `manage.py test_hazard_models` chose on the
-whole study period (spec 2.1), predicts every barangay-day of the rain file,
-and keeps the result for 6 hours behind a lock, so one request fits while the
-others wait for it. use_hazard_models() turns those daily chances into each
-period's chance by replaying past years' rain (hazard_scenarios.py) and puts
-them on a seasonal_forecast result (spec 2.3-2.6). A model that cannot run
-gives "unavailable" rows with a reason: no hazard falls back to counting, and
-the combined chance counts model figures only. Fire's model (model_forecast.py)
+deployed() scores the saved fit that `manage.py test_hazard_models` wrote into
+its report (version 2, spec 3.1-3.2) for every barangay-day of the rain file:
+the model in use, `two_part` or `logistic_regression`, is never refitted here,
+only scored with NumPy (hazard_scoring.py). The result is kept for 6 hours
+behind a lock, so one request builds it while the others wait.
+use_hazard_models() turns those daily chances into each period's chance by
+replaying past years' rain (hazard_scenarios.py) and puts them on a
+seasonal_forecast result (spec 2.3-2.6). A model that cannot run gives
+"unavailable" rows with a reason: no hazard falls back to counting, and the
+combined chance counts model figures only. Fire's model (model_forecast.py)
 and the counting history (forecast.py) are read, never changed.
 
-The model libraries are imported only when the model is needed, so this
-module loads, and can mark rows unavailable, even where they are missing.
+Flood's two-part model reads the storm flag (storms.py): a day the storm days
+do not reach gets no flood chance, like a day with missing rain. Landslide
+and the logistic regression never read the storm days, so while flood's model
+in use is the logistic regression it needs neither the storm file nor IBTrACS.
 """
 import hashlib
 import json
@@ -22,21 +26,24 @@ import threading
 import time
 from calendar import monthrange
 from collections import ChainMap
+from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from math import prod
 
 import numpy as np
 from django.core.cache import cache
 from django.db import connections
 
-from apps.history import forecast, hazard_data, model_forecast
+from apps.history import forecast, hazard_data, model_forecast, storms
 from apps.history.hazard_data import (
-    HAZARDS, RAIN_FEATURES, STUDY_END, STUDY_START, TERRAIN_FEATURES, build_dataset, load_exclusions, load_records,
-    positives, rain_windows, read_terrain, records_signature)
+    HAZARDS, MANILA, RAIN_FEATURES, STUDY_END, STUDY_START, TERRAIN_FEATURES, build_dataset, read_terrain)
 from apps.history.hazard_scenarios import (
     any_chance, pair_chance, period_chance, period_dates, scenario_dates, shift_dates)
+from apps.history.hazard_scoring import score_logistic, score_two_part
 from apps.history.model_forecast import chance, level_for
 from apps.history.rain import RainFile, complete_years, read_rain_csv, recent_rain
+from apps.history.two_part import FEATURES, NO_EXPOSURE, when_row
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +58,7 @@ REPORT_MISSING = 'The model report is missing; run manage.py test_hazard_models.
 FILE_MISSING = {
     'rain': 'The rain data (rain_daily.csv) is missing; run manage.py fetch_rain.',
     'terrain': 'The terrain figures (barangay_terrain.csv) are missing; run manage.py build_hazard_features.',
-    'exclusions': 'The list of records left out of the model (hazard_model_exclusions.csv) is missing.',
+    'storms': 'The storm days (storm_days.csv) are missing; run manage.py fetch_storms.',
 }
 NO_TERRAIN = 'No terrain figures for this barangay yet.'
 NO_RAIN = 'No rain series for this barangay yet.'
@@ -59,12 +66,15 @@ NO_DAYS = 'No day with a complete 14-day rain record for this barangay yet.'
 NO_RAIN_YEARS = 'no rain years before this period'
 NO_SCENARIO = 'No complete rain year for this barangay before this period.'
 MODELS_DOWN = 'The flood and landslide models are unavailable right now.'
+# Why a barangay the two-part fit has no share for gets no chance: its "where" part reads the exposure
+# figures (flood) or the terrain figures (landslide).
+NO_SHARE = {'Flood': NO_EXPOSURE, 'Landslide': NO_TERRAIN}
 
 # Every hazard on the forecast, in the order the API lists them
 FORECAST_HAZARDS = ('Fire', *HAZARDS)
 BOTH_PARAMETERS = 'Use hazards or hazard_type_name, not both.'
 
-# Swapped by the tests, so the wait for another request's fit runs on a fake clock.
+# Swapped by the tests, so the wait for another request's build runs on a fake clock.
 _sleep = time.sleep
 _monotonic = time.monotonic
 # cache.add is not atomic in the file cache, so threads of one process take turns at the lock key.
@@ -79,12 +89,23 @@ class Unavailable(Exception):
 class Deployed:
     """The model in use for one hazard and its chance for every barangay-day of the rain file."""
     hazard: str
-    model: object           # hazard_models.Fitted: the winner, refitted on the whole study period
-    daily: dict             # {barangay_id: {date: chance}}, the days whose 14-day rain window is complete
-    reasons: dict           # {barangay_id: why it has no chances}, for barangays in only one of the two files
+    name: str               # the model in use, as the report names it: 'two_part' or 'logistic_regression'
+    version: str            # f'{name}@{the report's sha1, 12 characters}'
+    fit: dict               # its saved fit, from the report
+    daily: dict             # {barangay_id: {date: chance}}, the days whose inputs are complete
+    reasons: dict           # {barangay_id: why it has no chances}: in only one of the two files, or no share
     complete_years: list    # the rain file's complete years: the scenario years
     rain: RainFile
     terrain: dict           # {barangay_id: terrain figures}
+    storms: object          # flood's two-part model: the StormDays its storm flag was read from; otherwise None
+
+    def city(self):
+        """
+        The barangay whose rain the two-part model reads as the city's: the
+        lowest one with terrain figures and a rain series (every barangay reads
+        the one NASA POWER cell, as test_hazard_models does).
+        """
+        return min(set(self.terrain) & set(self.rain.rain))
 
     def reason(self, barangay_id):
         """None when the barangay has chances, else why not."""
@@ -98,64 +119,108 @@ class Deployed:
             return NO_RAIN
         return NO_DAYS
 
+    def score(self, rain, storm_days, first, last):
+        """
+        [(barangay id, day, chance)] from the saved fit, for the barangays in
+        `daily` on the days first..last whose inputs are complete. `rain` is
+        {barangay id: {date: mm}} for every barangay with terrain figures and
+        a rain series. The two-part model reads the city's rain (city()) and,
+        for flood, the storm flag in `storm_days`; the logistic regression
+        reads each barangay's rain sums and terrain figures.
+        """
+        ids = sorted(self.daily)
+        if not ids:
+            return []
+        if self.name == 'logistic_regression':
+            ds, _ = build_dataset(self.hazard, {b: self.terrain[b] for b in ids}, rain, set(), first, last)
+            return list(zip(ds.barangay_id.tolist(), ds.day.tolist(), score_logistic(self.fit, ds.X).tolist()))
+        city = rain[self.city()]
+        days, X = [], []
+        for i in range((last - first).days + 1):
+            d = first + timedelta(days=i)
+            row = when_row(self.hazard, city, storm_days, d)
+            if row is not None:
+                days.append(d)
+                X.append(row)
+        if not days:
+            return []
+        index = np.repeat(np.arange(len(days)), len(ids))
+        barangays = np.tile(np.array(ids), len(days))
+        chances = score_two_part(self.fit, np.array(X, dtype=float), index, barangays)
+        return [(b, days[i], p) for b, i, p in zip(barangays.tolist(), index.tolist(), chances.tolist())]
 
-def _models():
-    try:
-        from apps.history import hazard_models
-    except ImportError as exc:
-        raise Unavailable('The model libraries (scikit-learn and xgboost) are not installed.') from exc
-    except Exception as exc:
-        # a broken xgboost load raises XGBoostError (a ValueError) or OSError, not ImportError;
-        # logged here with its traceback, since the callers log only the one-line reason
-        logger.exception('The flood and landslide model libraries could not be loaded.')
-        raise Unavailable('The model libraries (scikit-learn and xgboost) could not be loaded.') from exc
-    return hazard_models
 
-
-# ---- The deployed model: cache key, lock and fit ----
+# ---- The deployed model: cache key, lock and build ----
 
 @dataclass
 class _Inputs:
     key: str
     lock: str
+    report_sha1: str
     entry: dict             # the report's entry for the hazard
-    records: list
     paths: dict
 
 
-def _sha1(path, missing):
+def _sha1(missing, *paths):
+    """sha1 of the files' bytes, one after another, as test_hazard_models hashes them; Unavailable(missing) when
+    one cannot be read."""
+    digest = hashlib.sha1()
     try:
-        return hashlib.sha1(path.read_bytes()).hexdigest()
+        for path in paths:
+            digest.update(path.read_bytes())
     except OSError as exc:
         raise Unavailable(missing) from exc
+    return digest.hexdigest()
+
+
+def _reads_storms(hazard, name):
+    """Whether model `name`, in use for the hazard, reads the storm flag: only flood's two-part model does."""
+    return name == 'two_part' and 'storm72' in FEATURES[hazard]
+
+
+def _features(hazard, name):
+    """The inputs, in order, that this code builds for a saved fit of model `name`."""
+    return list(FEATURES[hazard]) if name == 'two_part' else [*RAIN_FEATURES, *TERRAIN_FEATURES[hazard]]
 
 
 def _inputs(hazard) -> _Inputs:
     """
-    What the fit depends on and the cache key over it: the report's bytes, the
-    rain, terrain and exclusions files as they are now (a refreshed rain file
-    changes the daily chances), the hazard, and its study-period records.
-    Paths are read here, never bound at import, so they follow DATA_DIR and
-    REPORT_PATH.
+    What the build depends on and the cache key over it: the hazard, the
+    report's bytes, the rain and terrain files as they are now (a refreshed
+    rain file changes the daily chances) and, when the model in use reads the
+    storm flag (flood's two-part model), the storm days (storm_days.csv, then
+    its meta file). The records and the exclusions play no part: only
+    test_hazard_models reads them. Paths are read here, never bound at import,
+    so they follow DATA_DIR and REPORT_PATH.
     """
     if hazard not in HAZARDS:
         raise ValueError(f'No rain-and-terrain model for {hazard}.')
-    models = _models()
+    from apps.history import hazard_models      # it loads scikit-learn, which only test_hazard_models fits with
     data = hazard_data.DATA_DIR
-    paths = {'report': models.REPORT_PATH, 'rain': data / 'rain_daily.csv',
-             'terrain': data / 'barangay_terrain.csv', 'exclusions': data / 'hazard_model_exclusions.csv'}
-    report_sha1 = _sha1(paths['report'], REPORT_MISSING)
-    report = models.read_report(paths['report'])
+    paths = {'report': hazard_models.REPORT_PATH, 'rain': data / 'rain_daily.csv',
+             'terrain': data / 'barangay_terrain.csv'}
+    report_sha1 = _sha1(REPORT_MISSING, paths['report'])
+    report = hazard_models.read_report(paths['report'])
     if report is None:
         raise Unavailable(REPORT_MISSING)
-    entry = report.get('hazards', {}).get(hazard) if isinstance(report.get('hazards'), dict) else None
-    if not isinstance(entry, dict) or entry.get('winner') not in models.CANDIDATES:
+    if report.get('version') != hazard_models.REPORT_VERSION:
+        raise Unavailable(hazard_models.REPORT_OLD)
+    entries = report.get('hazards')
+    entry = entries.get(hazard) if isinstance(entries, dict) else None
+    name = entry.get('in_use') if isinstance(entry, dict) else None
+    fits = entry.get('fits') if isinstance(entry, dict) else None
+    fit = fits.get(name) if isinstance(fits, dict) and name in hazard_models.REPORT_MODELS else None
+    if not isinstance(fit, dict):
         raise Unavailable(f'The model report has no {hazard.lower()} result; run manage.py test_hazard_models.')
-    files = [_sha1(paths[name], FILE_MISSING[name]) for name in ('rain', 'terrain', 'exclusions')]
-    records = load_records(hazard)
-    signature = records_signature(records, STUDY_START, STUDY_END)
-    digest = hashlib.sha1(json.dumps([hazard, report_sha1, *files, signature]).encode('utf-8')).hexdigest()
-    return _Inputs(f'hazard-model:{digest}', f'hazard-model-lock:{digest}', entry, records, paths)
+    saved = fit['when'].get('features') if name == 'two_part' else fit.get('features')
+    if saved != _features(hazard, name):
+        raise Unavailable(hazard_models.REPORT_OLD)     # fitted on inputs this code no longer builds
+    files = [_sha1(FILE_MISSING[part], paths[part]) for part in ('rain', 'terrain')]
+    if _reads_storms(hazard, name):
+        paths.update(storms=data / storms.STORM_FILE.name, storms_meta=data / storms.META_FILE.name)
+        files.append(_sha1(FILE_MISSING['storms'], paths['storms'], paths['storms_meta']))
+    digest = hashlib.sha1(json.dumps([hazard, report_sha1, *files]).encode('utf-8')).hexdigest()
+    return _Inputs(f'hazard-model:{digest}', f'hazard-model-lock:{digest}', report_sha1, entry, paths)
 
 
 def cache_key(hazard: str) -> str:
@@ -163,41 +228,55 @@ def cache_key(hazard: str) -> str:
     return _inputs(hazard).key
 
 
+def _live_storms(base, today):
+    """
+    The storm days with the recent and active IBTrACS files merged in
+    (storms.live_storm_days), or the file's alone when that fails: a storm
+    data problem only leaves the latest days without a flood chance.
+    """
+    try:
+        return storms.live_storm_days(base, today)
+    except Exception:
+        logger.exception('The live storm days could not be read; the storm file, to %s, is used alone.',
+                         base.last_day)
+        return base
+
+
 def _build(hazard, inputs: _Inputs) -> Deployed:
-    models = _models()
+    """Score the saved fit for every barangay-day of the rain file. Nothing is fitted here."""
     rf = read_rain_csv(inputs.paths['rain'])
     terrain = read_terrain(inputs.paths['terrain'])
-    excluded = set(load_exclusions(inputs.paths['exclusions']))
     ids = set(terrain) & set(rf.rain)
     if not ids:
         raise Unavailable('No barangay has both terrain figures and a rain series yet.')
-    pos = positives(inputs.records, ids, STUDY_START, STUDY_END, excluded)
-    train, _ = build_dataset(hazard, terrain, rf.rain, pos, STUDY_START, STUDY_END)
-    if not train.y.any():
-        raise Unavailable(f'No reported {hazard.lower()} in the study period to learn from.')
-    winner = inputs.entry['winner']
-    if inputs.entry.get('calibrated_all_folds'):
-        model = models.fit_candidate(winner, hazard, train)     # Platt, with its sign guard
-    else:
-        # spec 2.1: Platt only when every test fold was calibrated, which fit_candidate does not know
-        model = models.Fitted(winner, models.make_pipeline(winner, hazard).fit(train.X, train.y), None)
-
-    every, _ = build_dataset(hazard, terrain, rf.rain, set(), rf.first_day, rf.last_day)
-    daily = {b: {} for b in sorted(ids)}
-    if len(every.y):
-        chances = models.predict(model, every.X)
-        for b, d, p in zip(every.barangay_id.tolist(), every.day.tolist(), chances.tolist()):
-            daily[b][d] = p
+    name = inputs.entry['in_use']
+    storm_days = None
+    if _reads_storms(hazard, name):
+        try:
+            base = storms.read_storm_days(inputs.paths['storms'], inputs.paths['storms_meta'])
+        except OSError as exc:              # removed since the cache key was made
+            raise Unavailable(FILE_MISSING['storms']) from exc
+        storm_days = _live_storms(base, datetime.now(MANILA).date())
+    fit = inputs.entry['fits'][name]
     reasons = {b: NO_TERRAIN for b in set(rf.rain) - set(terrain)}
     reasons.update({b: NO_RAIN for b in set(terrain) - set(rf.rain)})
-    return Deployed(hazard, model, daily, reasons, complete_years(rf), rf, terrain)
+    if name == 'two_part':
+        # a barangay the fit has no share for gets no chance at all, never a chance of 0
+        shares = {int(b) for b in fit['shares']}
+        reasons.update({b: NO_SHARE[hazard] for b in ids - shares})
+        ids &= shares
+    dep = Deployed(hazard, name, f'{name}@{inputs.report_sha1[:12]}', fit, {b: {} for b in sorted(ids)}, reasons,
+                   complete_years(rf), rf, terrain, storm_days)
+    for b, d, p in dep.score(rf.rain, storm_days, rf.first_day, rf.last_day):
+        dep.daily[b][d] = p
+    return dep
 
 
 def deployed(hazard: str) -> Deployed:
     """
-    The hazard's model in use, from the cache or fitted now. One request fits
+    The hazard's model in use, from the cache or built now. One request builds
     while the others poll the cache; one that waits WAIT_SECONDS gives up with
-    Unavailable. A fit that fails releases the lock, so the next request tries.
+    Unavailable. A build that fails releases the lock, so the next request tries.
     """
     inputs = _inputs(hazard)
     deadline = _monotonic() + WAIT_SECONDS
@@ -225,25 +304,36 @@ def deployed(hazard: str) -> Deployed:
 
 def warm_in_background() -> bool:
     """
-    Start fitting both models in a daemon thread when either is missing from
-    the cache and no fit is running. True only when a thread was started.
+    Start building both models in a daemon thread when either is missing from
+    the cache and no build is running. True only when a thread was started. A
+    hazard that cannot run (flood without its storm days, say) is logged and
+    left out of the check, so the other is still warmed.
     """
-    try:
-        inputs = [_inputs(h) for h in HAZARDS]
-    except Unavailable as exc:
-        logger.warning('The flood and landslide models cannot be warmed: %s', exc)
-        return False
-    except Exception:
-        logger.exception('Could not tell whether the flood and landslide models are ready.')
-        return False
-    if all(cache.has_key(i.key) for i in inputs) or any(cache.has_key(i.lock) for i in inputs):
+    ready = []
+    for hazard in HAZARDS:
+        try:
+            ready.append(_inputs(hazard))
+        except Unavailable as exc:
+            logger.warning('The %s model cannot be warmed: %s', hazard.lower(), exc)
+        except Exception:
+            logger.exception('Could not tell whether the %s model is ready.', hazard.lower())
+    if not ready or all(cache.has_key(i.key) for i in ready) or any(cache.has_key(i.lock) for i in ready):
         return False
     threading.Thread(target=_warm, name=WARM_THREAD_NAME, daemon=True).start()
     return True
 
 
 def _warm():
+    today = datetime.now(MANILA).date()
     try:
+        # the last-3-years storm tracks first, at most once a Manila day; without them the models are still
+        # built, and only the latest days may go without a flood chance
+        try:
+            if not storms.refresh_recent():
+                logger.warning('The recent storm tracks could not be refreshed; the latest days may have no '
+                               'flood chance.')
+        except Exception:
+            logger.exception('Refreshing the recent storm tracks failed; the models are warmed without them.')
         for hazard in HAZARDS:
             try:
                 deployed(hazard)
@@ -251,6 +341,18 @@ def _warm():
                 logger.warning('The %s model could not be warmed: %s', hazard.lower(), exc)
             except Exception:
                 logger.exception('Warming the %s model failed.', hazard.lower())
+        # then fire's, refitted with its comparison (spec 4.6); a failure stops nothing
+        try:
+            model_forecast.warm_fire(today)
+        except Exception:
+            logger.exception('Warming the fire model failed.')
+        # last, today's chances into the prediction log, from the models just warmed (at most once a Manila day,
+        # and only on the machine with HAZARD_LOG_WRITER on)
+        try:
+            from apps.history import prediction_log     # it reads the history models, so not at import
+            prediction_log.log_once_today(today)
+        except Exception:
+            logger.exception('Writing the prediction log failed.')
     finally:
         connections.close_all()          # this thread's own connections; it would leak one per warm-up
 
@@ -352,39 +454,52 @@ def mark_profile_unavailable(result):
     result['profile_method'] = 'unavailable'
 
 
-def _recorded_chances(dep, hazard, period, today):
+@dataclass
+class Recorded:
+    """A period's days with recorded rain: their chances and the inputs they were scored from."""
+    chances: dict           # {barangay id: {day: chance}}
+    rain: Mapping           # {barangay id: {day: mm}}: the rain file's days, then the live feed's after them
+    file_storms: object     # flood's two-part model: the storm days the rain file's days were scored with; else None
+    late_storms: object     # flood's two-part model: those the days after the rain file were scored with; else None
+    last_file_day: object   # the rain file's last day
+
+    def storms_on(self, day):
+        """The storm days `day`'s chance read its storm flag from (None when the model reads no storm flag)."""
+        late = self.last_file_day is not None and day > self.last_file_day
+        return self.late_storms if late else self.file_storms
+
+
+def recorded(dep, period, today) -> Recorded:
     """
-    {barangay id: {day: chance}} for the period's days with recorded rain: the
-    rain file's days, then the days after it that the live feed has, predicted
-    from windows of file and live rain together. When the live feed is down
-    those days are not recorded.
+    The period's days with recorded rain: the rain file's days, then the days
+    after it that the live feed has, scored as the file's days are, from
+    windows of file and live rain together and, for flood's two-part model,
+    the live storm days. When the live feed is down those days are not
+    recorded; a day the storm days do not reach has no two-part flood chance.
     """
     out = {b: {d: series[d] for d in period if d in series} for b, series in dep.daily.items()}
     rf = dep.rain
+    rec = Recorded(out, rf.rain, dep.storms, dep.storms, rf.last_day)
     late = [d for d in period if rf.last_day is not None and rf.last_day < d < today]
     if not late:
-        return out
+        return rec
     try:
         recent = recent_rain(rf.cells, after=rf.last_day, today=today)
     except Exception:
         logger.exception('The recent rain could not be read; the days after the rain file count as not recorded.')
         recent = None
     if not recent:
-        return out
-    names = TERRAIN_FEATURES[hazard]
-    rows, where = [], []
-    for b in dep.daily:
-        series = ChainMap(recent.get(b) or {}, rf.rain[b])
-        for d in late:
-            w = rain_windows(series, d)
-            if w is not None:
-                rows.append([w[k] for k in RAIN_FEATURES] + [dep.terrain[b][k] for k in names])
-                where.append((b, d))
-    if rows:
-        chances = _models().predict(dep.model, np.array(rows, dtype=np.float64))
-        for (b, d), p in zip(where, chances.tolist()):
-            out[b][d] = p
-    return out
+        return rec
+    rec.rain = {b: ChainMap(recent.get(b) or {}, rf.rain[b]) for b in set(dep.terrain) & set(rf.rain)}
+    rec.late_storms = None if dep.storms is None else _live_storms(dep.storms, today)
+    for b, d, p in dep.score(rec.rain, rec.late_storms, late[0], late[-1]):
+        out[b][d] = p
+    return rec
+
+
+def _recorded_chances(dep, period, today):
+    """{barangay id: {day: chance}} for the period's days with recorded rain (recorded())."""
+    return recorded(dep, period, today).chances
 
 
 def _moved(days, period, scenario, s, day, year):
@@ -430,7 +545,7 @@ def _apply(result, hazard, dep, *, month, day, year, places, today):
         mark_unavailable(result, hazard, places, NO_RAIN_YEARS)
         return out
     period = period_dates(month, day, year) if year is not None else None
-    recorded = _recorded_chances(dep, hazard, period, today) if period else {}
+    recorded = _recorded_chances(dep, period, today) if period else {}
     in_training = period is not None and STUDY_START <= period[0] <= STUDY_END
     for b, row in _hazard_rows(result, hazard, places).items():
         reason = dep.reason(b)
@@ -443,7 +558,7 @@ def _apply(result, hazard, dep, *, month, day, year, places, today):
             _set_unavailable(row, reason)
             _listed(result, 'unavailable_hazards', hazard)
             continue
-        _set_model(row, dep.model.name, pc, month_pc)
+        _set_model(row, dep.name, pc, month_pc)
         if period:
             value = _recorded_rain_probability(recorded.get(b), dep.daily[b], period, dates_by_s, day, year)
             if value is not None:
@@ -536,13 +651,11 @@ def parse_hazards(params, valid):
     return [v for v in valid if not wanted or v in wanted]
 
 
-def fire_month_table(result, events, today):
+def fire_fit(result, events, today):
     """
-    Fire's table of events expected per month, {barangay id: [January, ...,
-    December]}, when fire's model put its figures on this result, else None.
-    It is read from fire's own cached fit (model_forecast._fitted) with the
-    events, `until` and day that use_models used, so it is the table fire's
-    rows came from. Read only.
+    Fire's cached fit (model_forecast._fitted) that fire's rows on this result
+    came from, read with the events, `until` and day that use_models used, or
+    None when fire's model put no figures on it. Read only.
     """
     if 'Fire' not in result.get('model_hazards', []):
         return None
@@ -551,7 +664,17 @@ def fire_month_table(result, events, today):
         return None
     window = result.get('window')
     until = window['start'] if window and window['start'] <= today else None
-    return model_forecast._fitted('Fire', fires, until, today)['table']
+    return model_forecast._fitted('Fire', fires, until, today)
+
+
+def fire_month_table(result, events, today):
+    """
+    Fire's table of events expected per month, {barangay id: [January, ...,
+    December]}, from the fit its rows on this result came from (fire_fit),
+    else None.
+    """
+    fit = fire_fit(result, events, today)
+    return None if fit is None else fit['table']
 
 
 def _counts(row, table=None, b=None):

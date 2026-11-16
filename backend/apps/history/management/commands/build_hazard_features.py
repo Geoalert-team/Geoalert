@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from apps.barangays.models import Barangay
 from apps.hazards import susceptibility
+from apps.history import exposure
 from apps.history.hazard_data import DATA_DIR, TERRAIN_COLUMNS, terrain_shares, write_terrain
 
 
@@ -49,3 +50,21 @@ class Command(BaseCommand):
             r = rows[bid]
             log(f"{names[bid]}: cells={r['cells']} " + ' '.join(f'{k}={r[k]:.3f}' for k in TERRAIN_COLUMNS))
         self.stdout.write(self.style.SUCCESS(f'{len(rows)} barangays written to {out}'))
+
+        cache = Path(settings.BASE_DIR) / '.hazard_cache'
+        try:
+            counts = susceptibility.count_points(
+                grid, exposure.city_buildings(cache, bbox, options['refresh'], log))
+            noah = {}
+            for period in exposure.NOAH_URLS:
+                zip_path = exposure.download_noah(cache, period, options['refresh'], log)
+                shapes = exposure.noah_polygons(
+                    f'/vsizip/{zip_path.as_posix()}/{exposure.NOAH_LAYERS[period]}', bbox)
+                noah[period] = exposure.noah_class_grid(grid, shapes)
+        except Exception as exc:
+            raise CommandError(f'Exposure build failed: {exc}') from exc
+        erows = exposure.exposure_rows(labels, counts, noah[25], noah[100], factors['hand'], sorted(names))
+        exposure.write_exposure(exposure.EXPOSURE_FILE, erows, names)
+        for bid in sorted(erows, key=lambda i: names[i]):
+            log(f"{names[bid]}: " + ' '.join(f'{k}={erows[bid][k]:.1f}' for k in exposure.EXPOSURE_COLUMNS))
+        self.stdout.write(self.style.SUCCESS(f'{len(erows)} barangays written to {exposure.EXPOSURE_FILE}'))

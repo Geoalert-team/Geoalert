@@ -6,7 +6,13 @@ fail: Django adds a column with its default and then drops the default, so
 """
 from importlib import import_module
 
+from django.apps import apps
+from django.db.migrations.autodetector import MigrationAutodetector
+from django.db.migrations.loader import MigrationLoader
+from django.db.migrations.state import ProjectState
 from django.test import SimpleTestCase
+
+from apps.history.models import HazardPredictionLog, HistoricalRecord
 
 
 class BfpColumnDefaultsTests(SimpleTestCase):
@@ -27,3 +33,20 @@ class BfpColumnDefaultsTests(SimpleTestCase):
         migration = import_module('apps.history.migrations.0007_source').Migration
         sql = ' '.join(op.sql for op in migration.operations if hasattr(op, 'sql'))
         self.assertIn("ALTER COLUMN hstr_source SET DEFAULT ''", sql)
+
+
+class PredictionLogColumnTests(SimpleTestCase):
+    def test_every_prediction_log_column_carries_the_table_prefix(self):
+        columns = [f.column for f in HazardPredictionLog._meta.concrete_fields]
+        self.assertEqual(len(columns), 12)
+        self.assertEqual([c for c in columns if not c.startswith('hzpl_')], [])
+        # the barangay key is named like the history app's other keys to a barangay
+        self.assertEqual(HistoricalRecord._meta.get_field('barangay').column, 'hstr_brgy_id')
+        self.assertEqual(HazardPredictionLog._meta.get_field('barangay').column, 'hzpl_brgy_id')
+
+    def test_migration_0008_matches_the_model(self):
+        # what makemigrations --check sees, read from the migration files alone (no database)
+        loader = MigrationLoader(None, ignore_no_migrations=True)
+        changes = MigrationAutodetector(loader.project_state(), ProjectState.from_apps(apps)).changes(
+            graph=loader.graph, trim_to_apps={'history'})
+        self.assertNotIn('history', changes)

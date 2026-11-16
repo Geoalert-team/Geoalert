@@ -33,8 +33,18 @@ hold fewer than MIN_TRAIN_EVENTS, the whole record's model gives the figures
 and the rows say `in_training`, since that model learned from the period
 itself (as flood and landslide do for their study years). A period from before
 the record began gets no figures.
+
+Fire has a contender (fire_candidate.py, spec Section 4): a pooled Poisson
+model with each barangay's building count as its exposure. Each fit of fire
+compares the two one month ahead, and the contender is used only when the
+rule says it forecast better (_fitted); the test against counting then runs
+on whichever is in use.
 """
+import functools
 import hashlib
+import logging
+import threading
+import time
 from calendar import monthrange
 from collections import Counter, defaultdict
 from datetime import date
@@ -44,6 +54,8 @@ import numpy as np
 from django.core.cache import cache
 
 from apps.history import forecast
+
+logger = logging.getLogger(__name__)
 
 ALPHA = 0.01
 TEST_MONTHS = 9
@@ -57,11 +69,30 @@ TOP_BARANGAYS = 5
 TIE_DRAWS = 50
 CACHE_SECONDS = 6 * 60 * 60
 AREA_SRID = 32651  # UTM 51N, metres over Cebu
+NEIGHBOUR_METRES = 1  # boundaries that touch or lie this close make neighbours (spec 4.5)
 
 # Why a hazard type has no figures; the forecast shows these on its unavailable rows
 TOO_FEW = 'Too few {} records to train and test its model.'
 RECORDS_START = '{} records start in {:%B %Y}.'
 MODEL_DOWN = 'The fire model could not run right now.'
+NOT_COMPARED = "The comparison with the pooled exposure model could not run; today's model stays."
+PREPARING = 'The {} model is being prepared; try again in a minute.'
+
+# What no period changes (_chosen) is built by one request while the others wait, as in hazard_forecast
+CHOICE_KEY = 'forecast-model-choice-v1:'
+CHOICE_LOCK = 'forecast-model-choice-lock-v1:'
+LOCK_SECONDS = 300
+WAIT_SECONDS = 60
+POLL_SECONDS = 0.5
+# Swapped by the tests, so the wait runs on a fake clock
+_sleep = time.sleep
+_monotonic = time.monotonic
+# cache.add is not atomic in the file cache, so threads of one process take turns at the lock key
+_LOCK = threading.Lock()
+
+
+class Preparing(Exception):
+    """Another request is building the model and it was not ready in time (the page says PREPARING)."""
 
 
 def chance(rate):
@@ -75,6 +106,15 @@ def level_for(share):
     if share >= MODERATE_CHANCE:
         return 'Moderate'
     return 'Low'
+
+
+def plain_number(x) -> str:
+    """
+    x to 3 significant figures as a plain decimal, never in e-notation, for
+    the sentences the accuracy card shows (the flood, landslide and fire
+    verdicts): 8.81e-05 gives 0.0000881, -2.89e-05 gives -0.0000289.
+    """
+    return np.format_float_positional(x, precision=3, unique=False, fractional=False, trim='-')
 
 
 def _index(day):
@@ -191,12 +231,13 @@ def beats(model, counting):
     return model['deviance'] < counting['deviance'] and model['brier'] < counting['brier']
 
 
-def evaluate(events, places, today):
+def evaluate(events, places, today, table_fn=rates_table):
     """
     Hold back the last TEST_MONTHS of the record, train on the months before
     them and score the model and counting on them. 'status' says what follows:
     in_use, in_use_not_better (the model is still used; never counting) or
-    too_few_records (no figures).
+    too_few_records (no figures). `table_fn` is the model, with rates_table's
+    arguments and result: fire's contender when it is the one in use.
     """
     known = _known(events, places)
     if not known:
@@ -212,7 +253,7 @@ def evaluate(events, places, today):
     if len(train) < MIN_TRAIN_EVENTS or len(test) < MIN_TEST_EVENTS:
         return {**out, 'status': 'too_few_records'}
 
-    table = rates_table(train, places, until=date(split // 12, split % 12 + 1, 1), today=today)
+    table = table_fn(train, places, until=date(split // 12, split % 12 + 1, 1), today=today)
     counts = Counter((e['barangay_id'], _index(e['when'])) for e in known)
     first_event = min(e['when'] for e in known)
     months, y, rates, shares, expected = [], [], [], [], []
@@ -308,6 +349,148 @@ def places():
             for pid, name, area in rows]
 
 
+def neighbours():
+    """
+    {barangay id: the barangays that share a border with it}, for every
+    barangay with a boundary: boundaries that touch or lie within
+    NEIGHBOUR_METRES of each other in UTM 51N (PostGIS).
+    """
+    from django.db import connection
+    from apps.barangays.models import Barangay
+
+    q = connection.ops.quote_name
+    table, pk, geom = (q(Barangay._meta.db_table), q(Barangay._meta.pk.column),
+                       q(Barangay._meta.get_field('boundary').column))
+    out = {pid: set() for pid in Barangay.objects.exclude(boundary__isnull=True).values_list('id', flat=True)}
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f'WITH b AS (SELECT {pk} AS id, ST_Transform({geom}, %s) AS g FROM {table} WHERE {geom} IS NOT NULL) '
+            'SELECT x.id, y.id FROM b x JOIN b y ON x.id < y.id AND ST_DWithin(x.g, y.g, %s)',
+            [AREA_SRID, NEIGHBOUR_METRES])
+        for a, b in cursor.fetchall():
+            out[a].add(b)
+            out[b].add(a)
+    return out
+
+
+def _exposure_path():
+    """The building counts fire's contender reads, where the other hazard inputs are (hazard_data.DATA_DIR)."""
+    from apps.history import hazard_data
+    from apps.history.exposure import EXPOSURE_FILE
+    return hazard_data.DATA_DIR / EXPOSURE_FILE.name
+
+
+def _file_sha1(path):
+    try:
+        return hashlib.sha1(path.read_bytes()).hexdigest()
+    except OSError:
+        return 'missing'
+
+
+def _buildings(path):
+    """
+    Each barangay's building count, or None when the exposure file is missing
+    (it is built by a command) or cannot be read: only the contender reads it,
+    so a bad file leaves the contender untested and never stops today's model.
+    """
+    from apps.history.fire_candidate import read_buildings
+    try:
+        return read_buildings(path)
+    except OSError:
+        return None
+    except Exception:
+        logger.warning('The building counts in %s could not be read; the pooled exposure model is not tested.', path,
+                       exc_info=True)
+        return None
+
+
+def _fire_choice(events, where, today):
+    """
+    (the comparison's result, the building counts) for fire (spec 4.4, 4.6).
+    A comparison that fails leaves today's model in use, with the reason: it
+    never takes fire's forecast down.
+    """
+    from apps.history import fire_candidate
+
+    buildings = _buildings(_exposure_path())
+    try:
+        return fire_candidate.compare(events, where, buildings, neighbours(), today), buildings
+    except Exception:
+        logger.exception("Fire's two models could not be compared; today's model stays.")
+        return fire_candidate.untested(NOT_COMPARED), None
+
+
+def _table_fn(in_use, buildings):
+    """The model named `in_use` as a function with rates_table's arguments and result."""
+    from apps.history import fire_candidate
+    if in_use == fire_candidate.F1_NAME:
+        return functools.partial(fire_candidate.exposure_rates_table, buildings=buildings)
+    return rates_table
+
+
+def _once(key, lock, build):
+    """
+    The value cached at `key`, or built now by one caller while the others poll
+    the cache, as hazard_forecast.deployed does; one that waits WAIT_SECONDS
+    gives up with Preparing. A build that fails releases the lock, so the next
+    caller tries.
+    """
+    deadline = _monotonic() + WAIT_SECONDS
+    while True:
+        hit = cache.get(key)
+        if hit is not None:
+            return hit
+        with _LOCK:
+            mine = cache.add(lock, 1, LOCK_SECONDS)
+        if mine:
+            try:
+                hit = cache.get(key)        # set while this caller was taking the lock
+                if hit is not None:
+                    return hit
+                built = build()
+                cache.set(key, built, CACHE_SECONDS)
+                return built
+            finally:
+                with _LOCK:
+                    cache.delete(lock)
+        if _monotonic() >= deadline:
+            raise Preparing()
+        _sleep(POLL_SECONDS)
+
+
+def _record_tag(hazard, events, today):
+    """
+    What a hazard type's models learn from, whatever the period asked for: its
+    records, the month they are read in (the month still running is left out)
+    and the building counts fire's contender reads.
+    """
+    last = max(e['when'] for e in events)
+    return f'{hazard}|{len(events)}|{last.isoformat()}|{_label(_index(today))}|{_file_sha1(_exposure_path())}'
+
+
+def _chosen(hazard, events, today, tag):
+    """
+    What no period changes, built once for `tag` and shared by every `until`:
+    {'places', 'in_use', 'buildings', 'candidate', 'report', 'version'}. For
+    fire that is the comparison (about 200 small fits), the model it puts in
+    use and that model's test against counting; for the other types, today's
+    model and its test. `version` is '<model>@<sha1 of the tag, 12
+    characters>' (spec 3.4).
+    """
+    from apps.history import fire_candidate
+
+    digest = hashlib.sha1(tag.encode('utf-8')).hexdigest()
+
+    def build():
+        where = places()
+        candidate, buildings = _fire_choice(events, where, today) if hazard == 'Fire' else (None, None)
+        in_use = candidate['in_use'] if candidate else fire_candidate.F0_NAME
+        return {'places': where, 'in_use': in_use, 'buildings': buildings, 'candidate': candidate,
+                'report': evaluate(events, where, today, table_fn=_table_fn(in_use, buildings)),
+                'version': f'{in_use}@{digest[:12]}'}
+    return _once(CHOICE_KEY + digest, CHOICE_LOCK + digest, build)
+
+
 def _real_by_hazard(events):
     kinds = defaultdict(list)
     for e in events:
@@ -319,34 +502,56 @@ def _real_by_hazard(events):
 def _fitted(hazard, events, until, today):
     """
     The test result and the table for one hazard type, cached until its record
-    changes: {'places', 'report', 'table', 'in_training', 'reason'}. The table
-    is trained on the months before `until` (a period that has started), or on
-    the whole record when they hold too few events, with `in_training` set. It
-    is None, with `reason`, when the record is too small to train and test, or
-    when the period comes before the record began.
+    or the building counts change: {'places', 'report', 'table',
+    'in_training', 'reason', 'version', 'candidate'}. The table is trained on
+    the months before `until` (a period that has started), or on the whole
+    record when they hold too few events, with `in_training` set. It is None,
+    with `reason`, when the record is too small to train and test, or when the
+    period comes before the record began.
+
+    Fire's model in use is the winner of fire_candidate.compare (its result is
+    `candidate`; None for the other types, which hold too few records). The
+    comparison, the test and `version` do not depend on `until`: they are
+    built once per records, month and building counts (_chosen) and shared by
+    every period, so a period only adds the fit of its own table.
     """
-    last = max(e['when'] for e in events)
-    tag = f'{hazard}|{len(events)}|{last.isoformat()}|{until}|{_label(_index(today))}'
-    # v2: the cached value gained in_training and reason, and a table whenever the record allows one
-    key = 'forecast-model-v2:' + hashlib.sha1(tag.encode('utf-8')).hexdigest()
+    tag = _record_tag(hazard, events, today)
+    # v3: the cached value gained version and candidate; fire's model is chosen by the comparison
+    key = 'forecast-model-v3:' + hashlib.sha1(f'{tag}|{until}'.encode('utf-8')).hexdigest()
 
     def build():
-        where = places()
-        out = {'places': where, 'report': evaluate(events, where, today), 'table': None, 'in_training': False,
-               'reason': TOO_FEW.format(hazard.lower())}
+        chosen = _chosen(hazard, events, today, tag)
+        where, table_fn = chosen['places'], _table_fn(chosen['in_use'], chosen['buildings'])
+        out = {'places': where, 'report': chosen['report'], 'table': None, 'in_training': False,
+               'reason': TOO_FEW.format(hazard.lower()), 'version': chosen['version'],
+               'candidate': chosen['candidate']}
         if out['report']['status'] == 'too_few_records':
             return out
-        table = rates_table(events, where, until=until, today=today)
+        table = table_fn(events, where, until=until, today=today)
         if table is None and until is not None:
             first = min(e['when'] for e in _known(events, where))
             if until < date(first.year, first.month, 1):
                 out['reason'] = RECORDS_START.format(hazard, first)
                 return out
-            table, out['in_training'] = rates_table(events, where, until=None, today=today), True
+            table, out['in_training'] = table_fn(events, where, until=None, today=today), True
         if table is not None:
             out.update(table=table, reason=None)
         return out
     return cache.get_or_set(key, build, CACHE_SECONDS)
+
+
+def warm_fire(today):
+    """
+    Fit fire now, so the cache holds its comparison, which every period
+    shares, and the table the forecast for a period not yet started and the
+    accuracy card read (spec 4.6). The records are read as the forecast reads
+    them, so the cache keys are the ones its requests make.
+    """
+    from apps.history.views import _forecast_events     # the forecast's own reading of the records
+
+    fires = _real_by_hazard(_forecast_events()).get('Fire')
+    if fires:
+        _fitted('Fire', fires, None, today)
 
 
 def _added(tables):
@@ -363,7 +568,8 @@ def use_models(result, events, month, day=None, hazard=None, barangay=None, toda
     little. The year chart follows the models only when every hazard type it
     covers has one, so it never leaves a type out. Returns {hazard type: why it
     has no figures} for the types left as they were; the caller marks those
-    unavailable, never counting.
+    unavailable, never counting; one whose model another request is still
+    building after WAIT_SECONDS is unavailable with PREPARING.
     """
     today = today or date.today()
     window = result.get('window')
@@ -372,7 +578,11 @@ def use_models(result, events, month, day=None, hazard=None, barangay=None, toda
              if not hazard or name.lower() == hazard.lower()}
     tables, unavailable = {}, {}
     for name, rows in kinds.items():
-        fitted = _fitted(name, rows, until, today)
+        try:
+            fitted = _fitted(name, rows, until, today)
+        except Preparing:
+            unavailable[name] = PREPARING.format(name.lower())
+            continue
         if fitted['table'] is None:
             unavailable[name] = fitted['reason']
             continue
@@ -384,7 +594,36 @@ def use_models(result, events, month, day=None, hazard=None, barangay=None, toda
     return unavailable
 
 
+def _fire_logged(fires):
+    """
+    Fire's `logged` block: its prediction log's month rows scored against
+    these fires (prediction_log.logged_summary, spec 3.5). None when nothing
+    is logged or the log cannot be read: it never takes the accuracy card down.
+    """
+    from apps.history.hazard_data import Record
+    from apps.history.prediction_log import logged_summary
+
+    records = [Record('', 'Fire', e['barangay_id'], e['when'].date(), '', e['is_sample']) for e in fires]
+    try:
+        return logged_summary('Fire', records)
+    except Exception:
+        logger.exception("Fire's prediction log could not be scored; the accuracy card goes without it.")
+        return None
+
+
 def accuracy_reports(events, today):
-    """The test result for every hazard type with real records, for the panel and the thesis."""
+    """
+    The test result for every hazard type with real records, for the panel and
+    the thesis, with `candidate`: fire's comparison of its two models (None
+    for the other types). Fire's entry also has `logged`, its logged month
+    chances against the fires since (_fire_logged).
+    """
     kinds = _real_by_hazard(events)
-    return [{'hazard': name, **_fitted(name, kinds[name], None, today)['report']} for name in sorted(kinds)]
+    reports = []
+    for name in sorted(kinds):
+        fitted = _fitted(name, kinds[name], None, today)
+        entry = {'hazard': name, **fitted['report'], 'candidate': fitted['candidate']}
+        if name == 'Fire':
+            entry['logged'] = _fire_logged(kinds[name])
+        reports.append(entry)
+    return reports

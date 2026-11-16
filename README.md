@@ -74,28 +74,75 @@ On Linux, cron:   * * * * *  cd /path/to/backend && venv/bin/python manage.py re
 Running it on more than one machine is safe: nothing is sent twice. On your own laptop
 while developing you don't need it.
 
---------------------------------------------------------------------------------
-Flood and landslide chances (rain and terrain models)
+Prediction log (once the hazard_prediction_log table exists, migration 0008): once a day
+the server should also write down the chances it gave, so they can be checked against
+what happened. Its rows can never be changed or removed, so exactly ONE machine writes
+it: the deployed server. Put this line in that server's backend/.env, and nowhere else:
 
-The flood and landslide forecast needs three files in backend/apps/history/data/. Make
+HAZARD_LOG_WRITER=true
+
+Teammates who run runserver against the shared database leave it out (it is off by
+default): their warm-up then writes nothing, and log_hazard_predictions stops with a
+message saying logging is off on that machine.
+
+Windows Task Scheduler (one line; change both paths):
+
+schtasks /Create /TN "GeoAlert prediction log" /SC DAILY /ST 06:00 /TR "\"C:\path\to\Geoalert\backend\venv\Scripts\python.exe\" \"C:\path\to\Geoalert\backend\manage.py\" log_hazard_predictions"
+
+On Linux, cron:   0 6 * * *  cd /path/to/backend && venv/bin/python manage.py log_hazard_predictions
+
+Running it twice on the same day adds no rows. Flood and landslide days it missed are
+filled in by the next run, up to 30 days back. (On the server with HAZARD_LOG_WRITER=true
+the forecast's warm-up also runs it once a day, but only when someone opens the site.)
+
+--------------------------------------------------------------------------------
+Flood and landslide chances (rain, storm and exposure models)
+
+The flood and landslide forecast needs these files in backend/apps/history/data/. Make
 them in this order, from the backend folder:
 
 python manage.py fetch_rain
+python manage.py fetch_storms
 python manage.py build_hazard_features
 python manage.py test_hazard_models
 
-fetch_rain downloads daily rain from NASA POWER into rain_daily.csv (about a minute; no
-account or key). build_hazard_features measures terrain per barangay into
-barangay_terrain.csv. test_hazard_models runs the held-out test and writes
-hazard_model_report.json; it takes a few minutes. The last two read the database only.
-The forecast refits the chosen model itself and caches the result for 6 hours. If the
-report or a data file is missing, flood and landslide show "unavailable" with the reason;
-they are never estimated by counting past events, and they are left out of the All
-hazards chance.
+None of the downloads needs an account or a key.
+- fetch_rain downloads daily rain from NASA POWER, from 2006-12-18 to a few days ago, into
+  rain_daily.csv (about a minute, one request per year).
+- fetch_storms downloads the IBTrACS storm tracks (NOAA NCEI; the West Pacific file, about
+  115 MB, read as it streams and never kept whole, plus the last-3-years file) and writes
+  storm_days.csv and storm_days.meta.json: each day a storm centre came within 300 km of
+  Talisay in the 72 hours to the end of the day. fetch_storms --recent reads only the
+  last-3-years file (about 12 MB) and merges it in.
+- build_hazard_features measures terrain per barangay into barangay_terrain.csv
+  (elevation and OpenStreetMap, reused from .hazard_cache when saved), and flood exposure
+  into barangay_exposure.csv: buildings (Microsoft building footprints) in the UP NOAH
+  25-year and 100-year Medium/High flood areas (the Cebu maps, about 120 MB, from the
+  bettergovph mirror on Hugging Face) and on ground under 2 m above drainage.
+- test_hazard_models downloads the NASA Global Landslide Catalog (data.nasa.gov, no login)
+  into .hazard_cache when it is not there, runs the held-out tests, applies the rule for
+  replacing the current model, fits both models on the whole study period and writes
+  hazard_model_report.json (version 2). It takes about a minute. It stops, and keeps the
+  old report, when any input is missing; the message names the command to run.
+All four read the database only. Raw downloads stay in backend/.hazard_cache, which is not
+in git; the NASA catalogue's rows never leave it (it states no licence). The data files
+above are in git; data/ATTRIBUTION.md gives their sources and licences (ODbL for
+barangay_exposure.csv). NASA catalogue events left out by hand are listed, with the
+reason, in data/landslide_catalogue_exclusions.csv.
+
+The forecast scores every day from the fit saved in the report (it does not refit) and
+caches the result for 6 hours; once a day the warm-up refreshes the recent storm tracks.
+A day the storm file does not cover gets no flood chance. If the report or a data file is
+missing, or the report is from an older version, flood and landslide show "unavailable"
+with the reason; they are never estimated by counting past events, and they are left out
+of the All hazards chance.
 
 Fire's chance comes from its own Poisson regression (apps/history/model_forecast.py),
-refitted from the records by the forecast itself and cached for 6 hours; it needs no
-files. It is never estimated by counting either:
+refitted from the records by the forecast itself and cached for 6 hours. Each refit also
+tests a second model, a pooled Poisson regression that uses each barangay's building
+count from barangay_exposure.csv (apps/history/fire_candidate.py), on the last 9 full
+months; it takes over only if it scores clearly better there. Without that file today's
+model is used. Fire is never estimated by counting either:
 - With too few fire records to train and test (100 to train, 20 to test), fire shows
   "unavailable".
 - For a past period with fewer than 100 fires before it (2023-2024 today), the model
@@ -103,7 +150,7 @@ files. It is never estimated by counting either:
 - A period from before the first fire record shows "unavailable".
 
 Each year (say every January): run fetch_rain so the newest full year joins the rain
-scenarios, then run test_hazard_models.
+scenarios, and fetch_storms, then run test_hazard_models.
 
 After adding flood or landslide records for a finished year: set STUDY_END in
 apps/history/hazard_data.py to the end of that year, then rerun test_hazard_models.

@@ -1,778 +1,1192 @@
 {
-  "generated": "2026-11-13T00:57:19+08:00",
+  "version": 2,
+  "generated": "2026-11-16T13:48:16+08:00",
   "study": {
     "start": "2021-01-01",
     "end": "2025-12-31"
   },
   "files": {
-    "rain_sha1": "9717b5a3f6425cb44894c1edb114734a2b5d1bb4",
+    "rain_sha1": "7b0a406a9716f5f2a2d8d696ed9560e0e837f528",
     "terrain_sha1": "f3e782fa3b42b7a6d9505dd7daf2440df41718bd",
-    "exclusions_sha1": "387df3cad65999b568bda82b1d5f8832cf5a0f76"
+    "exclusions_sha1": "387df3cad65999b568bda82b1d5f8832cf5a0f76",
+    "exposure_sha1": "892fb294591f4550b4e277d0fefdffaa30b207f6",
+    "storms_sha1": "b0f2f03b1c9c9429bd8786df7d8a0ef9ceb2a0a5",
+    "catalogue_sha1": "b47293b919dc92e4233cd94c2c5225631d43e9f9",
+    "catalogue_exclusions_sha1": "280cf09dc697e7a3827ac8594431181039ae3961"
   },
   "hazards": {
     "Flood": {
       "hazard": "Flood",
-      "tested_at": "2026-11-13T00:56:24+08:00",
+      "in_use": "logistic_regression",
+      "verdict": {
+        "adopted": false,
+        "rule": null,
+        "reasons": [
+          "The interval of the log-score difference does not lie wholly below zero (0.00016 to 0.000791).",
+          "It gave a lower chance to the hit barangays on 2021-06-12.",
+          "It gave a lower chance to the hit barangays on 2025-08-12.",
+          "It gave a lower chance to the hit barangays on 2025-10-07.",
+          "It gave a lower chance to the hit barangays on 2025-11-04.",
+          "It gave the hit barangays a better log score on only 1 of the 5 event days, not more than half.",
+          "The leakage check passed: every training day lay more than 14 days from the block it predicted."
+        ],
+        "leakage_checked": true
+      },
+      "fits": {
+        "two_part": {
+          "kind": "two_part",
+          "hazard": "Flood",
+          "when": {
+            "features": [
+              "log1p_r3",
+              "storm72"
+            ],
+            "coef": [
+              1.2075021840693072,
+              0.9966590827183881
+            ],
+            "intercepts": {
+              "geoalert": -9.72106756038835
+            }
+          },
+          "shares": {
+            "1": 0.241064549820997,
+            "2": 0.31298666632309735,
+            "4": 0.028070965405695758,
+            "5": 0.30218774239757584,
+            "6": 0.39598878071733046,
+            "7": 0.026836343333591306,
+            "8": 0.1208158711418379,
+            "9": 0.028951879223246157,
+            "10": 0.09869855427909202,
+            "11": 0.11425434230629083,
+            "12": 0.17458741765672736,
+            "13": 0.02771837615839856,
+            "14": 0.0021738747385013912,
+            "15": 0.04744050922938747,
+            "16": 0.19993692126357065,
+            "17": 0.24394939929301973,
+            "18": 0.1348923960799584,
+            "19": 0.5466376646453541,
+            "20": 0.2630371573128194,
+            "21": 0.2347068330398404,
+            "22": 0.00848738773724289,
+            "23": 0.046576367896425164
+          },
+          "lam": 0.0005440602585415765,
+          "beta": null,
+          "training_max": {
+            "log1p_r3": 5.007697650108913,
+            "storm72": 1.0
+          }
+        },
+        "logistic_regression": {
+          "kind": "logistic_regression",
+          "features": [
+            "r0",
+            "r1",
+            "r3",
+            "r7",
+            "r14",
+            "hand_lt2",
+            "hand_lt5",
+            "elev_lt10",
+            "water_200",
+            "coast_500",
+            "built_density"
+          ],
+          "medians": [
+            3.32,
+            3.32,
+            13.4,
+            38.07,
+            81.17,
+            0.3807161790178315,
+            0.6322591558864645,
+            0.01868220003573905,
+            0.5608824001028467,
+            0.0,
+            0.7099536061286926
+          ],
+          "log_columns": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "mean": [
+            1.4777953654529121,
+            1.4782453498220511,
+            2.495827935189226,
+            3.4181115026201745,
+            4.197607539776297,
+            0.3659575239981779,
+            0.5402876438496306,
+            0.26974287333930025,
+            0.5479914706414719,
+            0.1754399885712646,
+            2.307760042053732
+          ],
+          "scale": [
+            0.9720931327043467,
+            0.9726292664276963,
+            1.0610775349771577,
+            0.9882953114900278,
+            0.8520651206818349,
+            0.2714871415020496,
+            0.3609803089609228,
+            0.36952886254279566,
+            0.15782063166763113,
+            0.2863938327352686,
+            3.533826067455771
+          ],
+          "coef": [
+            1.736058195988808,
+            1.7658742617476522,
+            -0.6490771657973078,
+            -1.3703024480187338,
+            1.5893389113324738,
+            -0.2187136594790124,
+            0.46637800349268804,
+            -0.610355727474021,
+            -0.17043538923876658,
+            -0.04902594746834875,
+            0.3664973276440814
+          ],
+          "intercept": -10.735474418143049,
+          "training_max": {
+            "r0": 105.06,
+            "r1": 105.06,
+            "r3": 148.56,
+            "r7": 254.67000000000004,
+            "r14": 323.35,
+            "hand_lt2": 0.8008871365204534,
+            "hand_lt5": 0.9925579103006407,
+            "elev_lt10": 0.9961016265627101,
+            "water_200": 0.835485460818137,
+            "coast_500": 0.9940852265089394,
+            "built_density": 13.995179176330566
+          }
+        }
+      },
       "rows": 40172,
       "positives": 18,
-      "prevalence": 0.00044807328487503736,
       "positive_days": 5,
-      "dropped": 0,
-      "unplaced": 1,
-      "features": [
-        "r0",
-        "r1",
-        "r3",
-        "r7",
-        "r14",
-        "hand_lt2",
-        "hand_lt5",
-        "elev_lt10",
-        "water_200",
-        "coast_500",
-        "built_density"
-      ],
-      "folds": [
-        {
-          "train_years": [
-            2021,
-            2022
-          ],
-          "test_year": 2023,
-          "train_positives": 7,
-          "train_positive_days": 1
-        },
-        {
-          "train_years": [
-            2021,
-            2022,
-            2023
-          ],
-          "test_year": 2024,
-          "train_positives": 7,
-          "train_positive_days": 1
-        },
-        {
-          "train_years": [
-            2021,
-            2022,
-            2023,
-            2024
-          ],
-          "test_year": 2025,
-          "train_positives": 7,
-          "train_positive_days": 1
-        }
-      ],
-      "winner": "logistic_regression",
-      "leader": "xgboost",
-      "calibrated_all_folds": false,
-      "candidates": {
-        "logistic_regression": {
-          "mean_log_loss": 0.0029676019818826505,
-          "pooled": {
-            "log_loss": 0.002965108394037828,
-            "brier": 0.0004529657243476618,
-            "roc_auc": 0.9593076107743549,
-            "pr_auc": 0.054325793216381396
+      "event_days": 5,
+      "tests": {
+        "loso": {
+          "rows": 40172,
+          "days": 1826,
+          "event_days": 5,
+          "hit_rows": 18,
+          "blocks": {
+            "event": 4,
+            "month": 60
           },
-          "intervals": {
-            "log_loss": [
-              0.0005403289913632144,
-              0.007563546721271247
-            ],
-            "brier": [
-              4.1151564475930306e-05,
-              0.0012935443900409182
-            ],
-            "pr_auc": [
-              0.0003852577087994506,
-              0.2587833685894967
-            ]
+          "reps": 1000,
+          "models": {
+            "two_part": {
+              "scores": {
+                "log_loss": 0.0038646222054659236,
+                "brier": 0.00044867486253022116,
+                "brier_skill_climatology": -0.0014721684942675672,
+                "brier_skill_rate": 0.0040107882793524174,
+                "pr_auc": 0.0014926076265758294,
+                "no_skill_pr_auc": 0.00044807328487503736,
+                "roc_auc": 0.7550776731804774,
+                "calibration_slope": 0.5109810348575436,
+                "rows": 40172,
+                "events": 18
+              },
+              "log_loss_interval": [
+                0.00197000857627089,
+                0.005752264307517884
+              ],
+              "when": {
+                "auc": 0.7196046128500824,
+                "log_loss": 0.022014900097945177,
+                "days": 1826,
+                "event_days": 5
+              },
+              "where": {
+                "auc": 0.4355952380952381,
+                "auc_days": 5,
+                "lift": 1.2222222222222223,
+                "hit_rows": 18
+              },
+              "levels": [
+                {
+                  "cutoff": 0.25,
+                  "hits": 0,
+                  "misses": 18,
+                  "false_alarms": 0,
+                  "correct_negatives": 1302,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                },
+                {
+                  "cutoff": 0.15,
+                  "hits": 0,
+                  "misses": 18,
+                  "false_alarms": 1,
+                  "correct_negatives": 1301,
+                  "pod": 0.0,
+                  "far": 1.0,
+                  "peirce": -0.0007680491551459293,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.05555555555555555
+                }
+              ],
+              "per_year": [
+                {
+                  "year": 2021,
+                  "observed": 7,
+                  "expected": 4.139919023580832,
+                  "low": 2.8143630515198654,
+                  "high": 14.422675361702376
+                },
+                {
+                  "year": 2022,
+                  "observed": 0,
+                  "expected": 4.5658090170598165,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2023,
+                  "observed": 0,
+                  "expected": 2.930342547191451,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2024,
+                  "observed": 0,
+                  "expected": 2.595667694684725,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2025,
+                  "observed": 11,
+                  "expected": 3.7439685171447215,
+                  "low": 5.491160367236837,
+                  "high": 19.682038513301954
+                }
+              ]
+            },
+            "logistic_regression": {
+              "scores": {
+                "log_loss": 0.003379873756546659,
+                "brier": 0.00045483731044678686,
+                "brier_skill_climatology": -0.015227162574909414,
+                "brier_skill_rate": -0.009668898628171663,
+                "pr_auc": 0.004659085925255327,
+                "no_skill_pr_auc": 0.00044807328487503736,
+                "roc_auc": 0.9210774628790268,
+                "calibration_slope": 0.7244055416738372,
+                "rows": 40172,
+                "events": 18
+              },
+              "log_loss_interval": [
+                0.0016987314405006633,
+                0.0050207603676725885
+              ],
+              "when": {
+                "auc": 0.8200988467874795,
+                "log_loss": 0.023498020933266306,
+                "days": 1826,
+                "event_days": 5
+              },
+              "where": {
+                "auc": 0.5672619047619047,
+                "auc_days": 5,
+                "lift": 1.7111111111111112,
+                "hit_rows": 18
+              },
+              "levels": [
+                {
+                  "cutoff": 0.25,
+                  "hits": 0,
+                  "misses": 18,
+                  "false_alarms": 0,
+                  "correct_negatives": 1302,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                },
+                {
+                  "cutoff": 0.15,
+                  "hits": 0,
+                  "misses": 18,
+                  "false_alarms": 8,
+                  "correct_negatives": 1294,
+                  "pod": 0.0,
+                  "far": 1.0,
+                  "peirce": -0.006144393241167435,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.4444444444444444
+                }
+              ],
+              "per_year": [
+                {
+                  "year": 2021,
+                  "observed": 7,
+                  "expected": 3.2527167961852763,
+                  "low": 2.8143630515198654,
+                  "high": 14.422675361702376
+                },
+                {
+                  "year": 2022,
+                  "observed": 0,
+                  "expected": 7.941908954984735,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2023,
+                  "observed": 0,
+                  "expected": 2.7886817676970135,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2024,
+                  "observed": 0,
+                  "expected": 2.0372647717230654,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2025,
+                  "observed": 11,
+                  "expected": 4.505681303514385,
+                  "low": 5.491160367236837,
+                  "high": 19.682038513301954
+                }
+              ]
+            },
+            "climatology": {
+              "scores": {
+                "log_loss": 0.004102978772293719,
+                "brier": 0.000448015308508086,
+                "brier_skill_climatology": 0.0,
+                "brier_skill_rate": 0.005474896803037144,
+                "pr_auc": 0.00031027748180987365,
+                "no_skill_pr_auc": 0.00044807328487503736,
+                "roc_auc": 0.028935819317848513,
+                "calibration_slope": -7.329363166212584,
+                "rows": 40172,
+                "events": 18
+              },
+              "log_loss_interval": [
+                0.00158530373853672,
+                0.006650494187909432
+              ],
+              "when": {
+                "auc": 0.05216913783635363,
+                "log_loss": 0.023196914827931785,
+                "days": 1826,
+                "event_days": 5
+              },
+              "where": {
+                "auc": 0.5,
+                "auc_days": 5,
+                "lift": 1.0,
+                "hit_rows": 18
+              },
+              "levels": [
+                {
+                  "cutoff": 0.25,
+                  "hits": 0,
+                  "misses": 18,
+                  "false_alarms": 0,
+                  "correct_negatives": 1302,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                },
+                {
+                  "cutoff": 0.15,
+                  "hits": 0,
+                  "misses": 18,
+                  "false_alarms": 0,
+                  "correct_negatives": 1302,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                }
+              ],
+              "per_year": [
+                {
+                  "year": 2021,
+                  "observed": 7,
+                  "expected": 3.4721387645199764,
+                  "low": 2.8143630515198654,
+                  "high": 14.422675361702376
+                },
+                {
+                  "year": 2022,
+                  "observed": 0,
+                  "expected": 3.7169915355149126,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2023,
+                  "observed": 0,
+                  "expected": 3.7169915355149126,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2024,
+                  "observed": 0,
+                  "expected": 3.727327740016163,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2025,
+                  "observed": 11,
+                  "expected": 3.3959464690200463,
+                  "low": 5.491160367236837,
+                  "high": 19.682038513301954
+                }
+              ]
+            },
+            "rate": {
+              "scores": {
+                "log_loss": 0.0048336695542675195,
+                "brier": 0.00045048164904828736,
+                "brier_skill_climatology": -0.005505036308724343,
+                "brier_skill_rate": 0.0,
+                "pr_auc": 0.00031245738156035214,
+                "no_skill_pr_auc": 0.00044807328487503736,
+                "roc_auc": 0.03600443846745584,
+                "calibration_slope": -7.066459081534147,
+                "rows": 40172,
+                "events": 18
+              },
+              "log_loss_interval": [
+                0.0017287152103999319,
+                0.007862778622704744
+              ],
+              "when": {
+                "auc": 0.053871499176276774,
+                "log_loss": 0.027694962370533052,
+                "days": 1826,
+                "event_days": 5
+              },
+              "where": {
+                "auc": 0.5,
+                "auc_days": 5,
+                "lift": 1.0,
+                "hit_rows": 18
+              },
+              "levels": [
+                {
+                  "cutoff": 0.25,
+                  "hits": 0,
+                  "misses": 18,
+                  "false_alarms": 0,
+                  "correct_negatives": 1302,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                },
+                {
+                  "cutoff": 0.15,
+                  "hits": 0,
+                  "misses": 18,
+                  "false_alarms": 72,
+                  "correct_negatives": 1230,
+                  "pod": 0.0,
+                  "far": 1.0,
+                  "peirce": -0.055299539170506916,
+                  "sedi": null,
+                  "false_alarms_per_event": 4.0
+                }
+              ],
+              "per_year": [
+                {
+                  "year": 2021,
+                  "observed": 7,
+                  "expected": 2.890279177785678,
+                  "low": 2.8143630515198654,
+                  "high": 14.422675361702376
+                },
+                {
+                  "year": 2022,
+                  "observed": 0,
+                  "expected": 4.338598878164392,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2023,
+                  "observed": 0,
+                  "expected": 4.338598878164392,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2024,
+                  "observed": 0,
+                  "expected": 4.341203265547024,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2025,
+                  "observed": 11,
+                  "expected": 2.0938192724378957,
+                  "low": 5.491160367236837,
+                  "high": 19.682038513301954
+                }
+              ]
+            },
+            "pagasa_bands": {
+              "scores": {
+                "log_loss": 0.004174688738759721,
+                "brier": 0.0004507123369335584,
+                "brier_skill_climatology": -0.006019947029162198,
+                "brier_skill_rate": -0.0005120916373806406,
+                "pr_auc": 0.0003100372070029786,
+                "no_skill_pr_auc": 0.00044807328487503736,
+                "roc_auc": 0.027870476443470404,
+                "calibration_slope": -7.8809958187393585,
+                "rows": 40172,
+                "events": 18
+              },
+              "log_loss_interval": [
+                0.0016647151641703748,
+                0.0066840908319870385
+              ],
+              "when": {
+                "auc": 0.05079626578802854,
+                "log_loss": 0.025633636597753924,
+                "days": 1826,
+                "event_days": 5
+              },
+              "where": {
+                "auc": 0.5,
+                "auc_days": 5,
+                "lift": 1.0,
+                "hit_rows": 18
+              },
+              "levels": [
+                {
+                  "cutoff": 0.25,
+                  "hits": 0,
+                  "misses": 18,
+                  "false_alarms": 0,
+                  "correct_negatives": 1302,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                },
+                {
+                  "cutoff": 0.15,
+                  "hits": 0,
+                  "misses": 18,
+                  "false_alarms": 0,
+                  "correct_negatives": 1302,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                }
+              ],
+              "per_year": [
+                {
+                  "year": 2021,
+                  "observed": 7,
+                  "expected": 5.457468478587531,
+                  "low": 2.8143630515198654,
+                  "high": 14.422675361702376
+                },
+                {
+                  "year": 2022,
+                  "observed": 0,
+                  "expected": 4.927210313093784,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2023,
+                  "observed": 0,
+                  "expected": 4.10494737196837,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2024,
+                  "observed": 0,
+                  "expected": 4.116363072298592,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2025,
+                  "observed": 11,
+                  "expected": 4.498153875858223,
+                  "low": 5.491160367236837,
+                  "high": 19.682038513301954
+                }
+              ]
+            },
+            "rain_only": {
+              "scores": {
+                "log_loss": 0.0038493708057499364,
+                "brier": 0.00044827846552990014,
+                "brier_skill_climatology": -0.0005873839951819892,
+                "brier_skill_rate": 0.004890728674612599,
+                "pr_auc": 0.001266302489240126,
+                "no_skill_pr_auc": 0.00044807328487503736,
+                "roc_auc": 0.7595189077606769,
+                "calibration_slope": 0.5078834732740775,
+                "rows": 40172,
+                "events": 18
+              },
+              "log_loss_interval": [
+                0.00195053226834097,
+                0.005738668650094045
+              ],
+              "when": {
+                "auc": 0.7505766062602965,
+                "log_loss": 0.02169753023341352,
+                "days": 1826,
+                "event_days": 5
+              },
+              "where": {
+                "auc": 0.4355952380952381,
+                "auc_days": 5,
+                "lift": 1.2222222222222223,
+                "hit_rows": 18
+              },
+              "levels": [
+                {
+                  "cutoff": 0.25,
+                  "hits": 0,
+                  "misses": 18,
+                  "false_alarms": 0,
+                  "correct_negatives": 1302,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                },
+                {
+                  "cutoff": 0.15,
+                  "hits": 0,
+                  "misses": 18,
+                  "false_alarms": 0,
+                  "correct_negatives": 1302,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                }
+              ],
+              "per_year": [
+                {
+                  "year": 2021,
+                  "observed": 7,
+                  "expected": 3.4762205762437857,
+                  "low": 2.8143630515198654,
+                  "high": 14.422675361702376
+                },
+                {
+                  "year": 2022,
+                  "observed": 0,
+                  "expected": 4.641422763364432,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2023,
+                  "observed": 0,
+                  "expected": 3.3332626001793386,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2024,
+                  "observed": 0,
+                  "expected": 2.606384013318559,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2025,
+                  "observed": 11,
+                  "expected": 3.873301841694892,
+                  "low": 5.491160367236837,
+                  "high": 19.682038513301954
+                }
+              ]
+            },
+            "persistence": {
+              "scores": {
+                "log_loss": 0.004151688647381168,
+                "brier": 0.00044939162839619277,
+                "brier_skill_climatology": -0.0030720376334683053,
+                "brier_skill_rate": 0.0024196782585871324,
+                "pr_auc": 0.00031020773900886745,
+                "no_skill_pr_auc": 0.00044807328487503736,
+                "roc_auc": 0.028174860121864136,
+                "calibration_slope": -7.818438073006367,
+                "rows": 40172,
+                "events": 18
+              },
+              "log_loss_interval": [
+                0.0016977600638496525,
+                0.006632050517772709
+              ],
+              "when": {
+                "auc": 0.05079626578802855,
+                "log_loss": 0.02511780444648704,
+                "days": 1826,
+                "event_days": 5
+              },
+              "where": {
+                "auc": 0.5,
+                "auc_days": 5,
+                "lift": 1.0,
+                "hit_rows": 18
+              },
+              "levels": [
+                {
+                  "cutoff": 0.25,
+                  "hits": 0,
+                  "misses": 18,
+                  "false_alarms": 0,
+                  "correct_negatives": 1302,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                },
+                {
+                  "cutoff": 0.15,
+                  "hits": 0,
+                  "misses": 18,
+                  "false_alarms": 0,
+                  "correct_negatives": 1302,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                }
+              ],
+              "per_year": [
+                {
+                  "year": 2021,
+                  "observed": 7,
+                  "expected": 4.105306163721431,
+                  "low": 2.8143630515198654,
+                  "high": 14.422675361702376
+                },
+                {
+                  "year": 2022,
+                  "observed": 0,
+                  "expected": 4.097964419665353,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2023,
+                  "observed": 0,
+                  "expected": 4.097964419665353,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2024,
+                  "observed": 0,
+                  "expected": 4.109360413877718,
+                  "low": 0.0,
+                  "high": 3.6888794541139354
+                },
+                {
+                  "year": 2025,
+                  "observed": 11,
+                  "expected": 5.769457955668783,
+                  "low": 5.491160367236837,
+                  "high": 19.682038513301954
+                }
+              ]
+            }
           },
-          "per_year": [
+          "differences": {
+            "two_part - logistic_regression": {
+              "difference": 0.00048474844891939354,
+              "low": 0.00015966535837553126,
+              "high": 0.0007908807977860698
+            },
+            "two_part - climatology": {
+              "difference": -0.0002383565668284313,
+              "low": -0.0009657726202283567,
+              "high": 0.0004126614493902205
+            },
+            "two_part - rate": {
+              "difference": -0.000969047348799944,
+              "low": -0.0021452276664817656,
+              "high": 0.00016639589809958944
+            },
+            "two_part - pagasa_bands": {
+              "difference": -0.000310066533294523,
+              "low": -0.0010213702770457483,
+              "high": 0.00031158846394243163
+            },
+            "two_part - rain_only": {
+              "difference": 1.5251399716004633e-05,
+              "low": -0.00014822284220738867,
+              "high": 0.00016320729995582234
+            },
+            "two_part - persistence": {
+              "difference": -0.0002870664419143995,
+              "low": -0.0009709680770688121,
+              "high": 0.00030145166498783747
+            },
+            "logistic_regression - climatology": {
+              "difference": -0.0007231050157478248,
+              "low": -0.0017115542092467544,
+              "high": 0.00020566500710600202
+            },
+            "logistic_regression - rate": {
+              "difference": -0.0014537957977193375,
+              "low": -0.0029080778562516744,
+              "high": -2.893496366463994e-05
+            },
+            "logistic_regression - pagasa_bands": {
+              "difference": -0.0007948149822139166,
+              "low": -0.001723657853819613,
+              "high": 9.418297721227826e-05
+            },
+            "logistic_regression - rain_only": {
+              "difference": -0.0004694970492033889,
+              "low": -0.0008121885576617655,
+              "high": -0.00011648384367919378
+            },
+            "logistic_regression - persistence": {
+              "difference": -0.000771814890833793,
+              "low": -0.001697514084639981,
+              "high": 9.397903682882692e-05
+            }
+          },
+          "breakeven": [
             {
-              "year": 2023,
-              "rows": 8030,
-              "positives": 0,
-              "expected": 1.94273357943439,
-              "log_loss": 0.00024219877206898798,
-              "brier": 4.2926664841535695e-07,
-              "roc_auc": null,
-              "pr_auc": null
+              "cutoff": 0.25,
+              "false_alarms_per_event": 3.0
             },
             {
-              "year": 2024,
-              "rows": 8052,
-              "positives": 0,
-              "expected": 1.88750882864469,
-              "log_loss": 0.0002346297039573658,
-              "brier": 3.723820391978952e-07,
-              "roc_auc": null,
-              "pr_auc": null
+              "cutoff": 0.15,
+              "false_alarms_per_event": 5.666666666666667
+            }
+          ]
+        },
+        "yearly": {
+          "two_part": [
+            {
+              "train_years": [
+                2021,
+                2022
+              ],
+              "test_year": 2023,
+              "train_event_days": 1,
+              "test_event_days": 0,
+              "scores": {
+                "log_loss": 0.0003313433892719347,
+                "brier": 5.15599588113944e-07,
+                "brier_skill_climatology": null,
+                "brier_skill_rate": null,
+                "pr_auc": null,
+                "no_skill_pr_auc": 0.0,
+                "roc_auc": null,
+                "calibration_slope": null,
+                "rows": 8030,
+                "events": 0
+              },
+              "reason": null
             },
             {
-              "year": 2025,
-              "rows": 8030,
-              "positives": 11,
-              "expected": 2.942118306025377,
-              "log_loss": 0.008425977469621598,
-              "brier": 0.0013593355061151213,
-              "roc_auc": 0.946014579011212,
-              "pr_auc": 0.11843260467738032
+              "train_years": [
+                2021,
+                2022,
+                2023
+              ],
+              "test_year": 2024,
+              "train_event_days": 1,
+              "test_event_days": 0,
+              "scores": {
+                "log_loss": 0.00018131648591224425,
+                "brier": 2.2005370641334653e-07,
+                "brier_skill_climatology": null,
+                "brier_skill_rate": null,
+                "pr_auc": null,
+                "no_skill_pr_auc": 0.0,
+                "roc_auc": null,
+                "calibration_slope": null,
+                "rows": 8052,
+                "events": 0
+              },
+              "reason": null
+            },
+            {
+              "train_years": [
+                2021,
+                2022,
+                2023,
+                2024
+              ],
+              "test_year": 2025,
+              "train_event_days": 1,
+              "test_event_days": 4,
+              "scores": {
+                "log_loss": 0.009976131265810114,
+                "brier": 0.0013621429288420614,
+                "brier_skill_climatology": null,
+                "brier_skill_rate": null,
+                "pr_auc": 0.07557542156098504,
+                "no_skill_pr_auc": 0.0013698630136986301,
+                "roc_auc": 0.816606015259214,
+                "calibration_slope": 1.0289546447569164,
+                "rows": 8030,
+                "events": 11
+              },
+              "reason": null
             }
           ],
-          "calibrated": [
-            false,
-            false,
-            false
-          ],
-          "calibration_reason": [
-            "not_applicable",
-            "not_applicable",
-            "not_applicable"
-          ]
-        },
-        "random_forest": {
-          "mean_log_loss": 0.003551517022945393,
-          "pooled": {
-            "log_loss": 0.0035484538588934802,
-            "brier": 0.0004552529620991567,
-            "roc_auc": 0.8502136840794987,
-            "pr_auc": 0.004862611705707982
-          },
-          "intervals": {
-            "log_loss": [
-              0.0006101171624747713,
-              0.00891491078554913
-            ],
-            "brier": [
-              4.1116360700710115e-05,
-              0.0013022415594946663
-            ],
-            "pr_auc": [
-              8.094267006552272e-05,
-              0.021841033841371902
-            ]
-          },
-          "per_year": [
+          "logistic_regression": [
             {
-              "year": 2023,
-              "rows": 8030,
-              "positives": 0,
-              "expected": 2.410789296948793,
-              "log_loss": 0.0003005309218065021,
-              "brier": 4.96552627054889e-07,
-              "roc_auc": null,
-              "pr_auc": null
+              "train_years": [
+                2021,
+                2022
+              ],
+              "test_year": 2023,
+              "train_event_days": 1,
+              "test_event_days": 0,
+              "scores": {
+                "log_loss": 0.00024219877206899394,
+                "brier": 4.2926664841535965e-07,
+                "brier_skill_climatology": null,
+                "brier_skill_rate": null,
+                "pr_auc": null,
+                "no_skill_pr_auc": 0.0,
+                "roc_auc": null,
+                "calibration_slope": null,
+                "rows": 8030,
+                "events": 0
+              },
+              "reason": null
             },
             {
-              "year": 2024,
-              "rows": 8052,
-              "positives": 0,
-              "expected": 1.5626901479954158,
-              "log_loss": 0.00019428922204856473,
-              "brier": 3.082221834237619e-07,
-              "roc_auc": null,
-              "pr_auc": null
+              "train_years": [
+                2021,
+                2022,
+                2023
+              ],
+              "test_year": 2024,
+              "train_event_days": 1,
+              "test_event_days": 0,
+              "scores": {
+                "log_loss": 0.0002346297039573717,
+                "brier": 3.723820391978982e-07,
+                "brier_skill_climatology": null,
+                "brier_skill_rate": null,
+                "pr_auc": null,
+                "no_skill_pr_auc": 0.0,
+                "roc_auc": null,
+                "calibration_slope": null,
+                "rows": 8052,
+                "events": 0
+              },
+              "reason": null
             },
             {
-              "year": 2025,
-              "rows": 8030,
-              "positives": 11,
-              "expected": 1.8872095775301265,
-              "log_loss": 0.010159730924981113,
-              "brier": 0.0013662005354319663,
-              "roc_auc": 0.8479293496128514,
-              "pr_auc": 0.033907701243334386
+              "train_years": [
+                2021,
+                2022,
+                2023,
+                2024
+              ],
+              "test_year": 2025,
+              "train_event_days": 1,
+              "test_event_days": 4,
+              "scores": {
+                "log_loss": 0.008425977469621608,
+                "brier": 0.0013593355061151213,
+                "brier_skill_climatology": null,
+                "brier_skill_rate": null,
+                "pr_auc": 0.11843260467738032,
+                "no_skill_pr_auc": 0.0013698630136986301,
+                "roc_auc": 0.946014579011212,
+                "calibration_slope": 1.9901241800167369,
+                "rows": 8030,
+                "events": 11
+              },
+              "reason": null
             }
-          ],
-          "calibrated": [
-            false,
-            false,
-            false
-          ],
-          "calibration_reason": [
-            "no_event_in_calibration_year",
-            "no_event_in_calibration_year",
-            "no_event_in_calibration_year"
           ]
         },
-        "xgboost": {
-          "mean_log_loss": 0.0025394435310526144,
-          "pooled": {
-            "log_loss": 0.0025372447514900014,
-            "brier": 0.00040783143891281136,
-            "roc_auc": 0.7720539698465926,
-            "pr_auc": 0.4224752377661105
-          },
-          "intervals": {
-            "log_loss": [
-              0.0005580874036876243,
-              0.005624415105925728
+        "events": [
+          {
+            "day": "2021-06-12",
+            "subtypes": [
+              "RIVER OVERFLOW"
             ],
-            "brier": [
-              4.085240202426403e-05,
-              0.0011208152462994544
-            ],
-            "pr_auc": [
-              4.135478268061701e-05,
-              0.896633320415244
-            ]
-          },
-          "per_year": [
-            {
-              "year": 2023,
-              "rows": 8030,
-              "positives": 0,
-              "expected": 0.23554688692092896,
-              "log_loss": 2.9339973055128258e-05,
-              "brier": 1.321272678675435e-08,
-              "roc_auc": null,
-              "pr_auc": null
-            },
-            {
-              "year": 2024,
-              "rows": 8052,
-              "positives": 0,
-              "expected": 1.0032938718795776,
-              "log_loss": 0.00012958113042857889,
-              "brier": 9.130719337923341e-06,
-              "roc_auc": null,
-              "pr_auc": null
-            },
-            {
-              "year": 2025,
-              "rows": 8030,
-              "positives": 11,
-              "expected": 1.0091361999511719,
-              "log_loss": 0.007459409489674136,
-              "brier": 0.0012154427154122856,
-              "roc_auc": 0.8014148216168419,
-              "pr_auc": 0.6933219952360625
+            "storm": null,
+            "rain_1day": 19.99,
+            "rain_3day": 38.769999999999996,
+            "band": "under 50 mm",
+            "models": {
+              "two_part": {
+                "hit_chance": 0.0005460365948953703,
+                "hit_chance_before": 0.00029623705803610015,
+                "city_chance": 0.010076214201720113,
+                "high_barangays": 0
+              },
+              "logistic_regression": {
+                "hit_chance": 0.0017812405195238143,
+                "hit_chance_before": 0.0003429555554588396,
+                "city_chance": 0.03208070314041833,
+                "high_barangays": 0
+              }
             }
-          ],
-          "calibrated": [
-            false,
-            false,
-            false
-          ],
-          "calibration_reason": [
-            "no_event_in_calibration_year",
-            "no_event_in_calibration_year",
-            "no_event_in_calibration_year"
-          ]
-        }
-      },
-      "benchmark": {
-        "mean_log_loss": 0.00490317137626251,
-        "pooled": {
-          "log_loss": 0.004898962427147851,
-          "brier": 0.0004582850155790167,
-          "roc_auc": 0.2075074214197072,
-          "pr_auc": 0.00042528719184983126
-        },
-        "intervals": {
-          "log_loss": [
-            0.0006801725204395175,
-            0.013398090896988702
-          ],
-          "brier": [
-            4.24067054659379e-05,
-            0.0013084409071020175
-          ],
-          "pr_auc": [
-            4.0839663481172915e-05,
-            0.001269648243656625
-          ]
-        },
-        "per_year": [
-          {
-            "year": 2023,
-            "rows": 8030,
-            "positives": 0,
-            "expected": 3.489084264812481,
-            "log_loss": 0.0004361855708975748,
-            "brier": 3.3337915413364625e-06,
-            "roc_auc": null,
-            "pr_auc": null
           },
-          {
-            "year": 2024,
-            "rows": 8052,
-            "positives": 0,
-            "expected": 2.3289121986389296,
-            "log_loss": 0.0002901631465945865,
-            "brier": 1.847892436559262e-06,
-            "roc_auc": null,
-            "pr_auc": null
-          },
-          {
-            "year": 2025,
-            "rows": 8030,
-            "positives": 11,
-            "expected": 1.745672807685128,
-            "log_loss": 0.01398316541129537,
-            "brier": 0.001370923875425298,
-            "roc_auc": 0.6236608509335783,
-            "pr_auc": 0.0021605098815559586
-          }
-        ]
-      },
-      "no_skill": {
-        "mean_log_loss": 0.004164928519562491,
-        "pooled": {
-          "log_loss": 0.004161393565829846,
-          "brier": 0.0004561129322070127,
-          "roc_auc": 0.16636239160200822,
-          "pr_auc": 0.0004562043795620438
-        },
-        "intervals": {
-          "log_loss": [
-            0.00065914718777376,
-            0.011334043788739714
-          ],
-          "brier": [
-            4.092915620534926e-05,
-            0.001306407283204815
-          ],
-          "pr_auc": [
-            4.0839663481172915e-05,
-            0.0013068692313975333
-          ]
-        },
-        "per_year": [
-          {
-            "year": 2023,
-            "rows": 8030,
-            "positives": 0,
-            "expected": 3.5000000000000013,
-            "log_loss": 0.0004359605213383985,
-            "brier": 1.899787378898448e-07,
-            "roc_auc": null,
-            "pr_auc": null
-          },
-          {
-            "year": 2024,
-            "rows": 8052,
-            "positives": 0,
-            "expected": 2.33972602739726,
-            "log_loss": 0.0002906192285831816,
-            "brier": 8.443499461770881e-08,
-            "roc_auc": null,
-            "pr_auc": null
-          },
-          {
-            "year": 2025,
-            "rows": 8030,
-            "positives": 11,
-            "expected": 1.7488021902806294,
-            "log_loss": 0.011768205808765895,
-            "brier": 0.0013693137760315778,
-            "roc_auc": 0.5,
-            "pr_auc": 0.0013698630136986301
-          }
-        ]
-      },
-      "beats_benchmark": true,
-      "winner_minus_benchmark": [
-        -0.00547304620517566,
-        -0.00010742446700907168
-      ],
-      "differences": [
-        {
-          "a": "logistic_regression",
-          "b": "random_forest",
-          "low": -0.0014563920340864955,
-          "high": -2.490629173435658e-05
-        },
-        {
-          "a": "logistic_regression",
-          "b": "xgboost",
-          "low": -0.0011894067242850237,
-          "high": 0.0027539171399817773
-        },
-        {
-          "a": "random_forest",
-          "b": "xgboost",
-          "low": -0.0006548052969088948,
-          "high": 0.0037702764775008465
-        },
-        {
-          "a": "logistic_regression",
-          "b": "benchmark",
-          "low": -0.00547304620517566,
-          "high": -0.00010742446700907168
-        },
-        {
-          "a": "random_forest",
-          "b": "benchmark",
-          "low": -0.0039683837677289575,
-          "high": 1.3017692746236383e-05
-        },
-        {
-          "a": "xgboost",
-          "b": "benchmark",
-          "low": -0.007623427724101361,
-          "high": 0.00045856322654055226
-        },
-        {
-          "a": "logistic_regression",
-          "b": "no_skill",
-          "low": -0.003393716138712472,
-          "high": -5.246949944045855e-05
-        },
-        {
-          "a": "random_forest",
-          "b": "no_skill",
-          "low": -0.00218591168236946,
-          "high": 0.00032181898639873654
-        },
-        {
-          "a": "xgboost",
-          "b": "no_skill",
-          "low": -0.005960179178002334,
-          "high": 0.0008741520115369959
-        }
-      ],
-      "bootstrap": {
-        "reps": 1000,
-        "block_days": 7,
-        "seed": 0
-      },
-      "threshold": {
-        "rate": 0.01,
-        "folds": [
-          {
-            "year": 2023,
-            "cutoff": 0.007029439046890682,
-            "tp": 0,
-            "fp": 7,
-            "fn": 0,
-            "tn": 8023,
-            "precision": 0.0,
-            "recall": null,
-            "train_flagged_share": 0.010024906600249066
-          },
-          {
-            "year": 2024,
-            "cutoff": 0.0038709620606639595,
-            "tp": 0,
-            "fp": 37,
-            "fn": 0,
-            "tn": 8015,
-            "precision": 0.0,
-            "recall": null,
-            "train_flagged_share": 0.01000415110004151
-          },
-          {
-            "year": 2025,
-            "cutoff": 0.0028304193065536464,
-            "tp": 7,
-            "fp": 121,
-            "fn": 4,
-            "tn": 7898,
-            "precision": 0.0546875,
-            "recall": 0.6363636363636364,
-            "train_flagged_share": 0.010018044925642462
-          }
-        ],
-        "pooled": {
-          "tp": 7,
-          "fp": 165,
-          "fn": 4,
-          "tn": 23936,
-          "precision": 0.040697674418604654,
-          "recall": 0.6363636363636364
-        }
-      },
-      "calibration": {
-        "model": "logistic_regression",
-        "per_year": [
-          {
-            "year": 2023,
-            "observed": 0,
-            "expected": 1.94273357943439
-          },
-          {
-            "year": 2024,
-            "observed": 0,
-            "expected": 1.88750882864469
-          },
-          {
-            "year": 2025,
-            "observed": 11,
-            "expected": 2.942118306025377
-          }
-        ],
-        "slope": 0.9465797056759091,
-        "slope_ci": [
-          0.91028914373086,
-          2.9998421050303583
-        ],
-        "pooled": {
-          "observed": 11,
-          "expected": 6.772360714104456
-        }
-      },
-      "timing_auc": {
-        "auc": 0.8887362637362637,
-        "days": 1096,
-        "event_days": 4
-      },
-      "place_auc": {
-        "mean": 0.5349702380952381,
-        "per_day": [
           {
             "day": "2025-08-12",
-            "auc": 0.23809523809523814,
-            "hit": 1,
-            "barangays": 22
+            "subtypes": [
+              "FLASH FLOOD"
+            ],
+            "storm": null,
+            "rain_1day": 17.81,
+            "rain_3day": 29.519999999999996,
+            "band": "under 50 mm",
+            "models": {
+              "two_part": {
+                "hit_chance": 6.927265354114641e-06,
+                "hit_chance_before": 5.603788093423339e-06,
+                "city_chance": 0.010341047091655842,
+                "high_barangays": 0
+              },
+              "logistic_regression": {
+                "hit_chance": 2.840842809970212e-05,
+                "hit_chance_before": 5.739547392802358e-06,
+                "city_chance": 0.0007687536150150498,
+                "high_barangays": 0
+              }
+            }
           },
           {
             "day": "2025-08-18",
-            "auc": 0.9047619047619048,
-            "hit": 1,
-            "barangays": 22
+            "subtypes": [
+              "ROAD FLOODING"
+            ],
+            "storm": null,
+            "rain_1day": 14.06,
+            "rain_3day": 27.21,
+            "band": "under 50 mm",
+            "models": {
+              "two_part": {
+                "hit_chance": 0.0008155502347381413,
+                "hit_chance_before": 0.001098012078362051,
+                "city_chance": 0.00943379102070685,
+                "high_barangays": 0
+              },
+              "logistic_regression": {
+                "hit_chance": 0.0006362636503515207,
+                "hit_chance_before": 8.013186259214766e-05,
+                "city_chance": 0.010919200126639383,
+                "high_barangays": 0
+              }
+            }
           },
           {
             "day": "2025-10-07",
-            "auc": 0.23809523809523814,
-            "hit": 1,
-            "barangays": 22
+            "subtypes": [
+              "FLASH FLOOD (ROAD)"
+            ],
+            "storm": null,
+            "rain_1day": 9.35,
+            "rain_3day": 18.05,
+            "band": "under 50 mm",
+            "models": {
+              "two_part": {
+                "hit_chance": 3.817551667976775e-06,
+                "hit_chance_before": 1.5013121006373281e-06,
+                "city_chance": 0.006082591481635258,
+                "high_barangays": 0
+              },
+              "logistic_regression": {
+                "hit_chance": 0.0003320796718201402,
+                "hit_chance_before": 0.0001041432177803503,
+                "city_chance": 0.009782431387579393,
+                "high_barangays": 0
+              }
+            }
           },
           {
             "day": "2025-11-04",
-            "auc": 0.7589285714285714,
-            "hit": 8,
-            "barangays": 22
+            "subtypes": [
+              "RIVER OVERFLOW"
+            ],
+            "storm": "KALMAEGI",
+            "rain_1day": 31.43,
+            "rain_3day": 100.98,
+            "band": "under 50 mm",
+            "models": {
+              "two_part": {
+                "hit_chance": 0.0017714313072678387,
+                "hit_chance_before": 0.001313033872776064,
+                "city_chance": 0.03579634543864718,
+                "high_barangays": 0
+              },
+              "logistic_regression": {
+                "hit_chance": 0.004346758084885709,
+                "hit_chance_before": 0.006614162957323352,
+                "city_chance": 0.07661847427448687,
+                "high_barangays": 0
+              }
+            }
           }
         ],
-        "skipped_days": 0
+        "outside": null
       },
-      "lobo_auc": {
-        "auc": 0.44166666666666665,
-        "per_barangay": [
-          {
-            "barangay_id": 1,
-            "mean_chance": 3.1078882007202154e-05,
-            "had_event": true
-          },
-          {
-            "barangay_id": 2,
-            "mean_chance": 0.0011080958285221458,
-            "had_event": true
-          },
-          {
-            "barangay_id": 4,
-            "mean_chance": 0.0004345793134316801,
-            "had_event": false
-          },
-          {
-            "barangay_id": 5,
-            "mean_chance": 0.0002850402628181414,
-            "had_event": false
-          },
-          {
-            "barangay_id": 6,
-            "mean_chance": 0.00017961024564320797,
-            "had_event": true
-          },
-          {
-            "barangay_id": 7,
-            "mean_chance": 0.0004492444920912536,
-            "had_event": false
-          },
-          {
-            "barangay_id": 8,
-            "mean_chance": 0.00029536933657842157,
-            "had_event": true
-          },
-          {
-            "barangay_id": 9,
-            "mean_chance": 0.0008307713662918114,
-            "had_event": false
-          },
-          {
-            "barangay_id": 10,
-            "mean_chance": 0.0003751315093353368,
-            "had_event": true
-          },
-          {
-            "barangay_id": 11,
-            "mean_chance": 0.0003907997557212936,
-            "had_event": true
-          },
-          {
-            "barangay_id": 12,
-            "mean_chance": 0.0005103258686576343,
-            "had_event": false
-          },
-          {
-            "barangay_id": 13,
-            "mean_chance": 0.00043289067359779734,
-            "had_event": false
-          },
-          {
-            "barangay_id": 14,
-            "mean_chance": 0.0003388747717100558,
-            "had_event": true
-          },
-          {
-            "barangay_id": 15,
-            "mean_chance": 0.0005181741810714753,
-            "had_event": true
-          },
-          {
-            "barangay_id": 16,
-            "mean_chance": 0.0004630163295564791,
-            "had_event": false
-          },
-          {
-            "barangay_id": 17,
-            "mean_chance": 0.0001914633437335529,
-            "had_event": false
-          },
-          {
-            "barangay_id": 18,
-            "mean_chance": 0.0004974134185386529,
-            "had_event": true
-          },
-          {
-            "barangay_id": 19,
-            "mean_chance": 0.000295691833863059,
-            "had_event": false
-          },
-          {
-            "barangay_id": 20,
-            "mean_chance": 0.000727305634504199,
-            "had_event": true
-          },
-          {
-            "barangay_id": 21,
-            "mean_chance": 0.0005762703763354899,
-            "had_event": false
-          },
-          {
-            "barangay_id": 22,
-            "mean_chance": 0.00045041064669504446,
-            "had_event": false
-          },
-          {
-            "barangay_id": 23,
-            "mean_chance": 0.0004821419190622192,
-            "had_event": false
-          }
-        ]
-      },
-      "camp_iv": null,
-      "sensitivity": {
-        "model": "logistic_regression",
-        "log_loss": 0.002982007851298921,
-        "brier": 0.00045156829864333354,
-        "roc_auc": 0.9437971264866415,
-        "pr_auc": 0.05102071153055136,
-        "positives": 11,
-        "study_positives": 22
-      },
-      "by_type": [
-        {
-          "subtype": "RIVER OVERFLOW",
-          "positives": 8,
-          "mean_chance": 0.0053272320697930805
-        },
-        {
-          "subtype": "FLASH FLOOD",
-          "positives": 1,
-          "mean_chance": 0.00023304462892442658
-        },
-        {
-          "subtype": "FLASH FLOOD (ROAD)",
-          "positives": 1,
-          "mean_chance": 0.0008344735386996944
-        },
-        {
-          "subtype": "ROAD FLOODING",
-          "positives": 1,
-          "mean_chance": 0.0011405081879881035
-        }
+      "limits": [
+        "From 2021 to 2025, 18 reported flood barangay-days fall on 5 distinct days, so the evidence is closer to 5 days than to 40,172 rows.",
+        "With 5 such days, no model can be shown statistically better day by day: one that does better on all 5 days reaches at best p = 0.0625 on a two-sided sign test.",
+        "Rain comes from one NASA POWER grid cell (about 55 by 69 km) for the city's 22 barangays, and the cell's edge at 10.25\u00b0 N runs through Talisay, so part of the city lies outside the cell it reads and local downpours can be missed.",
+        "An empty barangay-day means no flood was reported, not that none happened: every chance is of a reported flood and reads lower than how often floods really happen.",
+        "The two-part model's flood shares use UP NOAH flood hazard maps, which are labelled beta, rest on about 30 years of rain and come from a community mirror; the Mananga River works planned for 2026 would change river-flood hazard, and the maps do not show them.",
+        "The 15% and 25% cut-offs and several earlier choices were made after seeing 2023\u20132025, so the 2026 season is the clean test."
       ],
-      "monthly_levels": [
-        {
-          "level": "High",
-          "rows": 0,
-          "events": 0,
-          "chance": null,
-          "happened": null,
-          "chance_sum": 0.0,
-          "months_with_event": 0
-        },
-        {
-          "level": "Moderate",
-          "rows": 0,
-          "events": 0,
-          "chance": null,
-          "happened": null,
-          "chance_sum": 0.0,
-          "months_with_event": 0
-        },
-        {
-          "level": "Low",
-          "rows": 792,
-          "events": 11,
-          "chance": 0.013,
-          "happened": 0.014,
-          "chance_sum": 10.289829369008201,
-          "months_with_event": 11
-        }
-      ],
-      "monthly_brier": {
-        "scenario": 0.013866210018120162,
-        "recorded_rain": 0.0134527731592815,
-        "benchmark": 0.015331713356947434,
-        "barangay_months": 792,
-        "skipped": {
-          "no_scenario": 0,
-          "incomplete_month": 0
-        }
-      },
-      "scenario_years_by_fold": [
-        {
-          "test_year": 2023,
-          "scenario_years": [
-            2017,
-            2018,
-            2019,
-            2020,
-            2021,
-            2022
-          ]
-        },
-        {
-          "test_year": 2024,
-          "scenario_years": [
-            2017,
-            2018,
-            2019,
-            2020,
-            2021,
-            2022,
-            2023
-          ]
-        },
-        {
-          "test_year": 2025,
-          "scenario_years": [
-            2017,
-            2018,
-            2019,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024
-          ]
-        }
+      "credits": [
+        "Rain: NASA POWER (CC BY 4.0).",
+        "Storm tracks: IBTrACS v04r01 (NOAA NCEI).",
+        "Flood exposure: UP NOAH flood hazard maps (ODbL), via the bettergovph mirror.",
+        "Buildings: Microsoft Global ML Building Footprints (ODbL)."
       ],
       "data_signature": "27435ad38a695e084f94fe6d9d65f177563587b2",
       "excluded": [
@@ -801,775 +1215,1286 @@
           "day": "2022-07-08"
         }
       ],
-      "limits": [
-        "18 reported flood barangay-days from 2021 to 2025 fall on 5 distinct days, so the evidence is closer to 5 days than to 40,172 rows.",
-        "The model learned from reported floods on 1 distinct day in the training years before each test year.",
-        "The 2023 and 2024 test years had no reported flood, so ROC-AUC, PR-AUC and recall are undefined for them; their log loss and Brier score still count, and only 2025 can show whether the model ranks events above non-events.",
-        "The logistic regression model beat the counting benchmark on test years it was not trained on: its mean log loss is lower and the 95% interval of the difference lies below zero.",
-        "It also beat always guessing the training years' average chance (no skill): the 95% interval of that difference lies below zero too.",
-        "The model was chosen from three candidates on these same test years, so its scores may be slightly optimistic.",
-        "Rain comes from 1 NASA POWER grid cell (about 55 km across) for 22 barangays, so barangays in one cell share the same rain and small storms can be missed.",
-        "The records come from news reports, so an empty barangay-day means nothing was reported, not that nothing happened: the chances describe reported floods and read lower than the true rate."
-      ]
+      "logged": null
     },
     "Landslide": {
       "hazard": "Landslide",
-      "tested_at": "2026-11-13T00:57:17+08:00",
+      "in_use": "logistic_regression",
+      "verdict": {
+        "adopted": false,
+        "rule": null,
+        "reasons": [
+          "The interval of the log-score difference does not lie wholly below zero (-0.000155 to 0.0000872).",
+          "It gave a lower chance to the hit barangays on 2021-11-04.",
+          "It gave a lower chance to the hit barangays on 2022-07-13.",
+          "It gave a lower chance to the hit barangays on 2024-10-01.",
+          "It gave a lower chance to the hit barangays on 2025-08-25.",
+          "It gave a lower chance to the hit barangays on 2025-12-12.",
+          "It gave the hit barangays a better log score on only 3 of the 8 event days, not more than half.",
+          "The leakage check passed: every training day lay more than 14 days from the block it predicted."
+        ],
+        "leakage_checked": true
+      },
+      "fits": {
+        "two_part": {
+          "kind": "two_part",
+          "hazard": "Landslide",
+          "when": {
+            "features": [
+              "log1p_r3",
+              "log1p_r14"
+            ],
+            "coef": [
+              0.7455100060927786,
+              1.9259864711777903
+            ],
+            "intercepts": {
+              "geoalert": -16.787434970772,
+              "catalogue": -15.435918246626839
+            }
+          },
+          "shares": {
+            "1": 0.002760862515332918,
+            "2": 0.0030490681105820316,
+            "4": 0.38580439621812157,
+            "5": 0.002760862515332918,
+            "6": 0.002760862515332918,
+            "7": 0.03766028538534394,
+            "8": 0.04101894976190612,
+            "9": 0.002760862515332918,
+            "10": 0.002760862515332918,
+            "11": 0.0035782168042653995,
+            "12": 0.002765110826809858,
+            "13": 0.06659152372767774,
+            "14": 0.26222804743901695,
+            "15": 0.002760862515332918,
+            "16": 0.002760862515332918,
+            "17": 0.002760862515332918,
+            "18": 0.002760862515332918,
+            "19": 0.002760862515332918,
+            "20": 0.0027754996567086465,
+            "21": 0.002760862515332918,
+            "22": 0.1312724272418322,
+            "23": 0.032886987159073566
+          },
+          "lam": 0.0027646807255688093,
+          "beta": 6.04746290623401,
+          "training_max": {
+            "log1p_r3": 5.064112867874402,
+            "log1p_r14": 5.781823179659065
+          }
+        },
+        "logistic_regression": {
+          "kind": "logistic_regression",
+          "features": [
+            "r0",
+            "r1",
+            "r3",
+            "r7",
+            "r14",
+            "slope_gt18",
+            "slope_gt30",
+            "relief",
+            "road_50",
+            "stream_150"
+          ],
+          "medians": [
+            3.32,
+            3.32,
+            13.4,
+            38.07,
+            81.17,
+            0.00012730204531952814,
+            0.0,
+            8.900519847869873,
+            0.8603884637761663,
+            0.4037375593095448
+          ],
+          "log_columns": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "mean": [
+            1.4777953654529121,
+            1.4782453498220511,
+            2.495827935189226,
+            3.4181115026201745,
+            4.197607539776297,
+            0.18960740411172028,
+            0.08144858541548305,
+            27.459769422357734,
+            0.7105023870692277,
+            0.41988651870293403
+          ],
+          "scale": [
+            0.9720931327043467,
+            0.9726292664276963,
+            1.0610775349771577,
+            0.9882953114900278,
+            0.8520651206818349,
+            0.28707620606753914,
+            0.13922022202895007,
+            30.505788534803507,
+            0.2979185210298147,
+            0.14036002184037916
+          ],
+          "coef": [
+            0.9746677664129146,
+            0.29865877382353473,
+            -0.3160435541503821,
+            -0.003174981612316939,
+            0.48639740655710295,
+            0.19796620812623983,
+            1.0038104855447396,
+            0.08259220146860034,
+            0.09190378917234038,
+            -0.6593388967027919
+          ],
+          "intercept": -10.308387245253638,
+          "training_max": {
+            "r0": 105.06,
+            "r1": 105.06,
+            "r3": 148.56,
+            "r7": 254.67000000000004,
+            "r14": 323.35,
+            "slope_gt18": 0.8552753244268724,
+            "slope_gt30": 0.4840098204891114,
+            "relief": 97.3690185546875,
+            "road_50": 0.966967543691185,
+            "stream_150": 0.6812775330396476
+          }
+        }
+      },
       "rows": 40172,
       "positives": 8,
-      "prevalence": 0.00019914368216668326,
       "positive_days": 8,
-      "dropped": 0,
-      "unplaced": 0,
-      "features": [
-        "r0",
-        "r1",
-        "r3",
-        "r7",
-        "r14",
-        "slope_gt18",
-        "slope_gt30",
-        "relief",
-        "road_50",
-        "stream_150"
-      ],
-      "folds": [
-        {
-          "train_years": [
-            2021,
-            2022
-          ],
-          "test_year": 2023,
-          "train_positives": 3,
-          "train_positive_days": 3
-        },
-        {
-          "train_years": [
-            2021,
-            2022,
-            2023
-          ],
-          "test_year": 2024,
-          "train_positives": 4,
-          "train_positive_days": 4
-        },
-        {
-          "train_years": [
-            2021,
-            2022,
-            2023,
-            2024
-          ],
-          "test_year": 2025,
-          "train_positives": 5,
-          "train_positive_days": 5
-        }
-      ],
-      "winner": "logistic_regression",
-      "leader": "xgboost",
-      "calibrated_all_folds": false,
-      "candidates": {
-        "logistic_regression": {
-          "mean_log_loss": 0.0015440053093824047,
-          "pooled": {
-            "log_loss": 0.001543671553988769,
-            "brier": 0.0002064709655444857,
-            "roc_auc": 0.9453768614925124,
-            "pr_auc": 0.019598844967424752
+      "event_days": 8,
+      "tests": {
+        "loso": {
+          "rows": 40172,
+          "days": 1826,
+          "event_days": 8,
+          "hit_rows": 8,
+          "blocks": {
+            "event": 8,
+            "month": 60
           },
-          "intervals": {
-            "log_loss": [
-              0.00046535582411839384,
-              0.002922991486981926
-            ],
-            "brier": [
-              4.1204731374262924e-05,
-              0.0004066405591616058
-            ],
-            "pr_auc": [
-              0.0009574981354516618,
-              0.12326372362367122
-            ]
+          "reps": 1000,
+          "models": {
+            "two_part": {
+              "scores": {
+                "log_loss": 0.0014625233144930714,
+                "brier": 0.00019872208457609745,
+                "brier_skill_climatology": 0.0019596558298045075,
+                "brier_skill_rate": 0.005142068722607029,
+                "pr_auc": 0.008050444847981843,
+                "no_skill_pr_auc": 0.00019914368216668326,
+                "roc_auc": 0.9570168558908475,
+                "calibration_slope": 0.9840317379702583,
+                "rows": 40172,
+                "events": 8
+              },
+              "log_loss_interval": [
+                0.0012940587180553327,
+                0.0016564614170935783
+              ],
+              "when": {
+                "auc": 0.7546754675467546,
+                "log_loss": 0.026439592763543573,
+                "days": 1826,
+                "event_days": 8
+              },
+              "where": {
+                "auc": 0.9583333333333333,
+                "auc_days": 8,
+                "lift": 4.4,
+                "hit_rows": 8
+              },
+              "levels": [
+                {
+                  "cutoff": 0.25,
+                  "hits": 0,
+                  "misses": 8,
+                  "false_alarms": 0,
+                  "correct_negatives": 1312,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                },
+                {
+                  "cutoff": 0.15,
+                  "hits": 0,
+                  "misses": 8,
+                  "false_alarms": 5,
+                  "correct_negatives": 1307,
+                  "pod": 0.0,
+                  "far": 1.0,
+                  "peirce": -0.0038109756097560975,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.625
+                }
+              ],
+              "per_year": [
+                {
+                  "year": 2021,
+                  "observed": 1,
+                  "expected": 1.4627291145108163,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2022,
+                  "observed": 2,
+                  "expected": 2.4124379783301615,
+                  "low": 0.242209278543965,
+                  "high": 7.22468766772396
+                },
+                {
+                  "year": 2023,
+                  "observed": 1,
+                  "expected": 1.164219714293035,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2024,
+                  "observed": 1,
+                  "expected": 0.9617333105207375,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2025,
+                  "observed": 3,
+                  "expected": 2.0154008204830816,
+                  "low": 0.6186721228956014,
+                  "high": 8.767273069742323
+                }
+              ]
+            },
+            "logistic_regression": {
+              "scores": {
+                "log_loss": 0.0014869584275088248,
+                "brier": 0.000198790427934741,
+                "brier_skill_climatology": 0.0016164155234850153,
+                "brier_skill_rate": 0.004799922893462316,
+                "pr_auc": 0.0072293000115035205,
+                "no_skill_pr_auc": 0.00019914368216668326,
+                "roc_auc": 0.9513930385419779,
+                "calibration_slope": 1.0968608221428737,
+                "rows": 40172,
+                "events": 8
+              },
+              "log_loss_interval": [
+                0.0013310206010848104,
+                0.0016830401776645302
+              ],
+              "when": {
+                "auc": 0.7206408140814081,
+                "log_loss": 0.02709925167981542,
+                "days": 1826,
+                "event_days": 8
+              },
+              "where": {
+                "auc": 0.9583333333333333,
+                "auc_days": 8,
+                "lift": 4.4,
+                "hit_rows": 8
+              },
+              "levels": [
+                {
+                  "cutoff": 0.25,
+                  "hits": 0,
+                  "misses": 8,
+                  "false_alarms": 0,
+                  "correct_negatives": 1312,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                },
+                {
+                  "cutoff": 0.15,
+                  "hits": 0,
+                  "misses": 8,
+                  "false_alarms": 3,
+                  "correct_negatives": 1309,
+                  "pod": 0.0,
+                  "far": 1.0,
+                  "peirce": -0.0022865853658536584,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.375
+                }
+              ],
+              "per_year": [
+                {
+                  "year": 2021,
+                  "observed": 1,
+                  "expected": 2.039063761878505,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2022,
+                  "observed": 2,
+                  "expected": 2.4936977157168423,
+                  "low": 0.242209278543965,
+                  "high": 7.22468766772396
+                },
+                {
+                  "year": 2023,
+                  "observed": 1,
+                  "expected": 1.827684232744194,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2024,
+                  "observed": 1,
+                  "expected": 1.4333106961930708,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2025,
+                  "observed": 3,
+                  "expected": 2.4480760262773624,
+                  "low": 0.6186721228956014,
+                  "high": 8.767273069742323
+                }
+              ]
+            },
+            "climatology": {
+              "scores": {
+                "log_loss": 0.0019176287976656458,
+                "brier": 0.00019911227610875962,
+                "brier_skill_climatology": 0.0,
+                "brier_skill_rate": 0.0031886615720414513,
+                "pr_auc": 0.00018051691732278512,
+                "no_skill_pr_auc": 0.00019914368216668326,
+                "roc_auc": 0.046767627726322064,
+                "calibration_slope": -14.561145545182484,
+                "rows": 40172,
+                "events": 8
+              },
+              "log_loss_interval": [
+                0.0018635431643987375,
+                0.0019799289071954318
+              ],
+              "when": {
+                "auc": 0.04486386138613866,
+                "log_loss": 0.02863726725678776,
+                "days": 1826,
+                "event_days": 8
+              },
+              "where": {
+                "auc": 0.5,
+                "auc_days": 8,
+                "lift": 1.0,
+                "hit_rows": 8
+              },
+              "levels": [
+                {
+                  "cutoff": 0.25,
+                  "hits": 0,
+                  "misses": 8,
+                  "false_alarms": 0,
+                  "correct_negatives": 1312,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                },
+                {
+                  "cutoff": 0.15,
+                  "hits": 0,
+                  "misses": 8,
+                  "false_alarms": 0,
+                  "correct_negatives": 1312,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                }
+              ],
+              "per_year": [
+                {
+                  "year": 2021,
+                  "observed": 1,
+                  "expected": 1.615165472375803,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2022,
+                  "observed": 2,
+                  "expected": 1.5814393723322229,
+                  "low": 0.242209278543965,
+                  "high": 7.22468766772396
+                },
+                {
+                  "year": 2023,
+                  "observed": 1,
+                  "expected": 1.616309246667901,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2024,
+                  "observed": 1,
+                  "expected": 1.62079058590858,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2025,
+                  "observed": 3,
+                  "expected": 1.5513097719607136,
+                  "low": 0.6186721228956014,
+                  "high": 8.767273069742323
+                }
+              ]
+            },
+            "rate": {
+              "scores": {
+                "log_loss": 0.001984818456474158,
+                "brier": 0.00019974920873469765,
+                "brier_skill_climatology": -0.003198861659288843,
+                "brier_skill_rate": 0.0,
+                "pr_auc": 0.0006825887918160618,
+                "no_skill_pr_auc": 0.00019914368216668326,
+                "roc_auc": 0.29295202171098494,
+                "calibration_slope": 0.4911285655527128,
+                "rows": 40172,
+                "events": 8
+              },
+              "log_loss_interval": [
+                0.0016724890514553715,
+                0.0022612533090323526
+              ],
+              "when": {
+                "auc": 0.15569994499449946,
+                "log_loss": 0.03339190421018256,
+                "days": 1826,
+                "event_days": 8
+              },
+              "where": {
+                "auc": 0.625,
+                "auc_days": 8,
+                "lift": 1.8499999999999999,
+                "hit_rows": 8
+              },
+              "levels": [
+                {
+                  "cutoff": 0.25,
+                  "hits": 0,
+                  "misses": 8,
+                  "false_alarms": 3,
+                  "correct_negatives": 1309,
+                  "pod": 0.0,
+                  "far": 1.0,
+                  "peirce": -0.0022865853658536584,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.375
+                },
+                {
+                  "cutoff": 0.15,
+                  "hits": 2,
+                  "misses": 6,
+                  "false_alarms": 27,
+                  "correct_negatives": 1285,
+                  "pod": 0.25,
+                  "far": 0.9310344827586207,
+                  "peirce": 0.22942073170731708,
+                  "sedi": 0.4955082776669613,
+                  "false_alarms_per_event": 3.375
+                }
+              ],
+              "per_year": [
+                {
+                  "year": 2021,
+                  "observed": 1,
+                  "expected": 1.7195578006734524,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2022,
+                  "observed": 2,
+                  "expected": 1.5163483423311641,
+                  "low": 0.242209278543965,
+                  "high": 7.22468766772396
+                },
+                {
+                  "year": 2023,
+                  "observed": 1,
+                  "expected": 1.7226253288883724,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2024,
+                  "observed": 1,
+                  "expected": 1.723874079517393,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2025,
+                  "observed": 3,
+                  "expected": 1.3041008601273485,
+                  "low": 0.6186721228956014,
+                  "high": 8.767273069742323
+                }
+              ]
+            },
+            "persistence": {
+              "scores": {
+                "log_loss": 0.0019284952241768916,
+                "brier": 0.0001991477582730322,
+                "brier_skill_climatology": -0.0001782017913007916,
+                "brier_skill_rate": 0.0030110280059445493,
+                "pr_auc": 0.00018043026801106783,
+                "no_skill_pr_auc": 0.00019914368216668326,
+                "roc_auc": 0.04457661089532914,
+                "calibration_slope": -15.600534075879965,
+                "rows": 40172,
+                "events": 8
+              },
+              "log_loss_interval": [
+                0.001874513330963664,
+                0.001990688629183451
+              ],
+              "when": {
+                "auc": 0.042663641364136404,
+                "log_loss": 0.028875712107310218,
+                "days": 1826,
+                "event_days": 8
+              },
+              "where": {
+                "auc": 0.5,
+                "auc_days": 8,
+                "lift": 1.0,
+                "hit_rows": 8
+              },
+              "levels": [
+                {
+                  "cutoff": 0.25,
+                  "hits": 0,
+                  "misses": 8,
+                  "false_alarms": 0,
+                  "correct_negatives": 1312,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                },
+                {
+                  "cutoff": 0.15,
+                  "hits": 0,
+                  "misses": 8,
+                  "false_alarms": 0,
+                  "correct_negatives": 1312,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                }
+              ],
+              "per_year": [
+                {
+                  "year": 2021,
+                  "observed": 1,
+                  "expected": 1.7832148404707102,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2022,
+                  "observed": 2,
+                  "expected": 1.8075366945018896,
+                  "low": 0.242209278543965,
+                  "high": 7.22468766772396
+                },
+                {
+                  "year": 2023,
+                  "observed": 1,
+                  "expected": 1.7844400652529218,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2024,
+                  "observed": 1,
+                  "expected": 1.7892193529176164,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2025,
+                  "observed": 3,
+                  "expected": 1.8353210425066724,
+                  "low": 0.6186721228956014,
+                  "high": 8.767273069742323
+                }
+              ]
+            },
+            "return_level": {
+              "scores": {
+                "log_loss": 0.0017255916215030687,
+                "brier": 0.00019940940826336913,
+                "brier_skill_climatology": -0.0014922844558675763,
+                "brier_skill_rate": 0.0017011355062729328,
+                "pr_auc": 0.00043364971191013613,
+                "no_skill_pr_auc": 0.00019914368216668326,
+                "roc_auc": 0.7476362538591773,
+                "calibration_slope": 0.5980299411039581,
+                "rows": 40172,
+                "events": 8
+              },
+              "log_loss_interval": [
+                0.0016725179682942216,
+                0.00178555238115096
+              ],
+              "when": {
+                "auc": 0.20541116611661164,
+                "log_loss": 0.02941517360526042,
+                "days": 1826,
+                "event_days": 8
+              },
+              "where": {
+                "auc": 0.8571428571428572,
+                "auc_days": 8,
+                "lift": 3.1428571428571432,
+                "hit_rows": 8
+              },
+              "levels": [
+                {
+                  "cutoff": 0.25,
+                  "hits": 0,
+                  "misses": 8,
+                  "false_alarms": 0,
+                  "correct_negatives": 1312,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                },
+                {
+                  "cutoff": 0.15,
+                  "hits": 0,
+                  "misses": 8,
+                  "false_alarms": 0,
+                  "correct_negatives": 1312,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                }
+              ],
+              "per_year": [
+                {
+                  "year": 2021,
+                  "observed": 1,
+                  "expected": 1.8143908837405394,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2022,
+                  "observed": 2,
+                  "expected": 2.1177550789112605,
+                  "low": 0.242209278543965,
+                  "high": 7.22468766772396
+                },
+                {
+                  "year": 2023,
+                  "observed": 1,
+                  "expected": 1.7772391354586765,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2024,
+                  "observed": 1,
+                  "expected": 1.8011100015711312,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2025,
+                  "observed": 3,
+                  "expected": 1.9755813683249002,
+                  "low": 0.6186721228956014,
+                  "high": 8.767273069742323
+                }
+              ]
+            },
+            "p95_7day": {
+              "scores": {
+                "log_loss": 0.001667979142546876,
+                "brier": 0.00019907102235084298,
+                "brier_skill_climatology": 0.00020718842013589533,
+                "brier_skill_rate": 0.003395189338423976,
+                "pr_auc": 0.0011826558850764897,
+                "no_skill_pr_auc": 0.00019914368216668326,
+                "roc_auc": 0.7632347998207349,
+                "calibration_slope": 0.7690740335413525,
+                "rows": 40172,
+                "events": 8
+              },
+              "log_loss_interval": [
+                0.001561201787617597,
+                0.0017667758850578917
+              ],
+              "when": {
+                "auc": 0.2546410891089109,
+                "log_loss": 0.028142862878012598,
+                "days": 1826,
+                "event_days": 8
+              },
+              "where": {
+                "auc": 0.8571428571428572,
+                "auc_days": 8,
+                "lift": 3.1428571428571432,
+                "hit_rows": 8
+              },
+              "levels": [
+                {
+                  "cutoff": 0.25,
+                  "hits": 0,
+                  "misses": 8,
+                  "false_alarms": 0,
+                  "correct_negatives": 1312,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                },
+                {
+                  "cutoff": 0.15,
+                  "hits": 0,
+                  "misses": 8,
+                  "false_alarms": 0,
+                  "correct_negatives": 1312,
+                  "pod": 0.0,
+                  "far": null,
+                  "peirce": 0.0,
+                  "sedi": null,
+                  "false_alarms_per_event": 0.0
+                }
+              ],
+              "per_year": [
+                {
+                  "year": 2021,
+                  "observed": 1,
+                  "expected": 1.8082569114789149,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2022,
+                  "observed": 2,
+                  "expected": 1.896479356518817,
+                  "low": 0.242209278543965,
+                  "high": 7.22468766772396
+                },
+                {
+                  "year": 2023,
+                  "observed": 1,
+                  "expected": 1.590417713741679,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2024,
+                  "observed": 1,
+                  "expected": 1.618157308494844,
+                  "low": 0.025317807984289876,
+                  "high": 5.571643390938898
+                },
+                {
+                  "year": 2025,
+                  "observed": 3,
+                  "expected": 1.906962351741189,
+                  "low": 0.6186721228956014,
+                  "high": 8.767273069742323
+                }
+              ]
+            }
           },
-          "per_year": [
+          "differences": {
+            "two_part - logistic_regression": {
+              "difference": -2.443511301560464e-05,
+              "low": -0.00015485902030290864,
+              "high": 8.72366187966602e-05
+            },
+            "two_part - climatology": {
+              "difference": -0.0004551054831718167,
+              "low": -0.0006247232477909032,
+              "high": -0.0002661353817513076
+            },
+            "two_part - rate": {
+              "difference": -0.0005222951419808202,
+              "low": -0.0007809423731522765,
+              "high": -0.00022707427097505602
+            },
+            "two_part - persistence": {
+              "difference": -0.00046597190968494405,
+              "low": -0.0006355005334659525,
+              "high": -0.0002769621975256417
+            },
+            "two_part - return_level": {
+              "difference": -0.00026306830700830526,
+              "low": -0.00044308736032037694,
+              "high": -6.773345302312221e-05
+            },
+            "two_part - p95_7day": {
+              "difference": -0.00020545582805211082,
+              "low": -0.0003208853521774914,
+              "high": -6.107541046694038e-05
+            },
+            "logistic_regression - climatology": {
+              "difference": -0.0004306703701562121,
+              "low": -0.00058611630083172,
+              "high": -0.0002471351419388814
+            },
+            "logistic_regression - rate": {
+              "difference": -0.0004978600289652156,
+              "low": -0.0007707641829860095,
+              "high": -0.00020236418908398866
+            },
+            "logistic_regression - persistence": {
+              "difference": -0.0004415367966693394,
+              "low": -0.0005969584714658223,
+              "high": -0.0002579892822225423
+            },
+            "logistic_regression - return_level": {
+              "difference": -0.00023863319399270062,
+              "low": -0.00040002434504615584,
+              "high": -4.8690880299580493e-05
+            },
+            "logistic_regression - p95_7day": {
+              "difference": -0.00018102071503650619,
+              "low": -0.0003071995269474244,
+              "high": -1.969041841543702e-05
+            }
+          },
+          "breakeven": [
             {
-              "year": 2023,
-              "rows": 8030,
-              "positives": 1,
-              "expected": 1.3896803646265419,
-              "log_loss": 0.0011609588729009717,
-              "brier": 0.00012493273412022632,
-              "roc_auc": 0.9118196537551376,
-              "pr_auc": 0.0014104372355430183
+              "cutoff": 0.25,
+              "false_alarms_per_event": 3.0
             },
             {
-              "year": 2024,
-              "rows": 8052,
-              "positives": 1,
-              "expected": 1.103950023311051,
-              "log_loss": 0.001178209397957786,
-              "brier": 0.0001244667553138459,
-              "roc_auc": 0.8941746366910943,
-              "pr_auc": 0.0011723329425556857
+              "cutoff": 0.15,
+              "false_alarms_per_event": 5.666666666666667
+            }
+          ]
+        },
+        "yearly": {
+          "two_part": [
+            {
+              "train_years": [
+                2021,
+                2022
+              ],
+              "test_year": 2023,
+              "train_event_days": 3,
+              "test_event_days": 1,
+              "scores": {
+                "log_loss": 0.001003065093062243,
+                "brier": 0.00012449649035794016,
+                "brier_skill_climatology": null,
+                "brier_skill_rate": null,
+                "pr_auc": 0.0035087719298245615,
+                "no_skill_pr_auc": 0.00012453300124533,
+                "roc_auc": 0.9646282226927388,
+                "calibration_slope": 1.0981080649502788,
+                "rows": 8030,
+                "events": 1
+              },
+              "reason": null
             },
             {
-              "year": 2025,
-              "rows": 8030,
-              "positives": 3,
-              "expected": 2.1419379541552,
-              "log_loss": 0.0022928476572884565,
-              "brier": 0.0003702380762685098,
-              "roc_auc": 0.98567335243553,
-              "pr_auc": 0.10871012968804765
+              "train_years": [
+                2021,
+                2022,
+                2023
+              ],
+              "test_year": 2024,
+              "train_event_days": 4,
+              "test_event_days": 1,
+              "scores": {
+                "log_loss": 0.001199966950150115,
+                "brier": 0.0001243915063579542,
+                "brier_skill_climatology": null,
+                "brier_skill_rate": null,
+                "pr_auc": 0.0012106537530266344,
+                "no_skill_pr_auc": 0.00012419274714356682,
+                "roc_auc": 0.8975282573593342,
+                "calibration_slope": 0.5404614985209797,
+                "rows": 8052,
+                "events": 1
+              },
+              "reason": null
+            },
+            {
+              "train_years": [
+                2021,
+                2022,
+                2023,
+                2024
+              ],
+              "test_year": 2025,
+              "train_event_days": 5,
+              "test_event_days": 3,
+              "scores": {
+                "log_loss": 0.0023333721449262097,
+                "brier": 0.0003704505125167429,
+                "brier_skill_climatology": null,
+                "brier_skill_rate": null,
+                "pr_auc": 0.07004715731468235,
+                "no_skill_pr_auc": 0.00037359900373599005,
+                "roc_auc": 0.9784062123665961,
+                "calibration_slope": 1.723552232725757,
+                "rows": 8030,
+                "events": 3
+              },
+              "reason": null
             }
           ],
-          "calibrated": [
-            false,
-            false,
-            false
-          ],
-          "calibration_reason": [
-            "not_applicable",
-            "not_applicable",
-            "not_applicable"
-          ]
-        },
-        "random_forest": {
-          "mean_log_loss": 0.0014815905758454259,
-          "pooled": {
-            "log_loss": 0.001481141144993506,
-            "brier": 0.00020673348340006164,
-            "roc_auc": 0.9717219065001867,
-            "pr_auc": 0.055888961396115246
-          },
-          "intervals": {
-            "log_loss": [
-              0.00045425933056289063,
-              0.0027942935805343938
-            ],
-            "brier": [
-              4.100109829916605e-05,
-              0.0004070339537431924
-            ],
-            "pr_auc": [
-              0.0016829518283006655,
-              0.264983951487027
-            ]
-          },
-          "per_year": [
+          "logistic_regression": [
             {
-              "year": 2023,
-              "rows": 8030,
-              "positives": 1,
-              "expected": 1.9833831399968447,
-              "log_loss": 0.0010094501127198567,
-              "brier": 0.00012441734661860988,
-              "roc_auc": 0.9717897621123428,
-              "pr_auc": 0.0043859649122807015
+              "train_years": [
+                2021,
+                2022
+              ],
+              "test_year": 2023,
+              "train_event_days": 3,
+              "test_event_days": 1,
+              "scores": {
+                "log_loss": 0.0011609588729009663,
+                "brier": 0.00012493273412022632,
+                "brier_skill_climatology": null,
+                "brier_skill_rate": null,
+                "pr_auc": 0.0014104372355430183,
+                "no_skill_pr_auc": 0.00012453300124533,
+                "roc_auc": 0.9118196537551376,
+                "calibration_slope": 0.6614012577694116,
+                "rows": 8030,
+                "events": 1
+              },
+              "reason": null
             },
             {
-              "year": 2024,
-              "rows": 8052,
-              "positives": 1,
-              "expected": 0.8417683654688507,
-              "log_loss": 0.000989014362141395,
-              "brier": 0.00012408897479415792,
-              "roc_auc": 0.9678921873059247,
-              "pr_auc": 0.003816793893129771
+              "train_years": [
+                2021,
+                2022,
+                2023
+              ],
+              "test_year": 2024,
+              "train_event_days": 4,
+              "test_event_days": 1,
+              "scores": {
+                "log_loss": 0.001178209397957774,
+                "brier": 0.0001244667553138459,
+                "brier_skill_climatology": null,
+                "brier_skill_rate": null,
+                "pr_auc": 0.0011723329425556857,
+                "no_skill_pr_auc": 0.00012419274714356682,
+                "roc_auc": 0.8941746366910943,
+                "calibration_slope": 0.597629706104922,
+                "rows": 8052,
+                "events": 1
+              },
+              "reason": null
             },
             {
-              "year": 2025,
-              "rows": 8030,
-              "positives": 3,
-              "expected": 1.4352430789963029,
-              "log_loss": 0.0024463072526750254,
-              "brier": 0.00037192055209866624,
-              "roc_auc": 0.9836177899588888,
-              "pr_auc": 0.185332978629068
+              "train_years": [
+                2021,
+                2022,
+                2023,
+                2024
+              ],
+              "test_year": 2025,
+              "train_event_days": 5,
+              "test_event_days": 3,
+              "scores": {
+                "log_loss": 0.0022928476572884643,
+                "brier": 0.0003702380762685098,
+                "brier_skill_climatology": null,
+                "brier_skill_rate": null,
+                "pr_auc": 0.10871012968804765,
+                "no_skill_pr_auc": 0.00037359900373599005,
+                "roc_auc": 0.98567335243553,
+                "calibration_slope": 2.422995795022269,
+                "rows": 8030,
+                "events": 3
+              },
+              "reason": null
             }
-          ],
-          "calibrated": [
-            true,
-            true,
-            true
-          ],
-          "calibration_reason": [
-            "platt",
-            "platt",
-            "platt"
           ]
         },
-        "xgboost": {
-          "mean_log_loss": 0.0014748526815176498,
-          "pooled": {
-            "log_loss": 0.0014746341163082255,
-            "brier": 0.00019861518681819958,
-            "roc_auc": 0.9720827975276891,
-            "pr_auc": 0.2049963435795227
-          },
-          "intervals": {
-            "log_loss": [
-              0.0005249606463715263,
-              0.0027565583473784364
+        "events": [
+          {
+            "day": "2021-11-04",
+            "subtypes": [
+              "ROAD LANDSLIDE"
             ],
-            "brier": [
-              4.793913903361207e-05,
-              0.0003972199815700885
-            ],
-            "pr_auc": [
-              0.002054492007973663,
-              0.7504745863908268
-            ]
-          },
-          "per_year": [
-            {
-              "year": 2023,
-              "rows": 8030,
-              "positives": 1,
-              "expected": 1.7328290032775409,
-              "log_loss": 0.0010585787384774963,
-              "brier": 0.00013227576242974532,
-              "roc_auc": 0.9799476896251089,
-              "pr_auc": 0.006024096385542169
-            },
-            {
-              "year": 2024,
-              "rows": 8052,
-              "positives": 1,
-              "expected": 1.2537846132240436,
-              "log_loss": 0.001235305211989195,
-              "brier": 0.0001280407206597061,
-              "roc_auc": 0.9491367531983603,
-              "pr_auc": 0.002421307506053269
-            },
-            {
-              "year": 2025,
-              "rows": 8030,
-              "positives": 3,
-              "expected": 3.801214007975714,
-              "log_loss": 0.002130674094086258,
-              "brier": 0.0003357224320669514,
-              "roc_auc": 0.9851542710020348,
-              "pr_auc": 0.3424338624338624
+            "storm": null,
+            "rain_1day": 12.5,
+            "rain_3day": 31.93,
+            "band": "under 50 mm",
+            "models": {
+              "two_part": {
+                "hit_chance": 0.002105754913159262,
+                "hit_chance_before": 0.0014399269211835663,
+                "city_chance": 0.008087313758912695,
+                "high_barangays": 0
+              },
+              "logistic_regression": {
+                "hit_chance": 0.0031831689692746745,
+                "hit_chance_before": 0.0026731666659894904,
+                "city_chance": 0.011321567457961645,
+                "high_barangays": 0
+              }
             }
-          ],
-          "calibrated": [
-            true,
-            true,
-            true
-          ],
-          "calibration_reason": [
-            "platt",
-            "platt",
-            "platt"
-          ]
-        }
-      },
-      "benchmark": {
-        "mean_log_loss": 0.002061815479662807,
-        "pooled": {
-          "log_loss": 0.0020612318560769105,
-          "brier": 0.00020788741016839024,
-          "roc_auc": 0.5031401667565437,
-          "pr_auc": 0.0008945169248040633
-        },
-        "intervals": {
-          "log_loss": [
-            0.0005840914480885517,
-            0.004057502582953962
-          ],
-          "brier": [
-            4.187290547903435e-05,
-            0.0004087373261426424
-          ],
-          "pr_auc": [
-            7.120840074547358e-05,
-            0.006539914258651233
-          ]
-        },
-        "per_year": [
-          {
-            "year": 2023,
-            "rows": 8030,
-            "positives": 1,
-            "expected": 1.4989450161825748,
-            "log_loss": 0.0013933528996262995,
-            "brier": 0.00012591532775317854,
-            "roc_auc": 0.7513388965001868,
-            "pr_auc": 0.000304228780042592
           },
           {
-            "year": 2024,
-            "rows": 8052,
-            "positives": 1,
-            "expected": 1.33283949097602,
-            "log_loss": 0.0014221640295201915,
-            "brier": 0.00012522532606681628,
-            "roc_auc": 0.2944975779406285,
-            "pr_auc": 0.00012419274714356682
+            "day": "2022-04-08",
+            "subtypes": [
+              "ROAD LANDSLIDE"
+            ],
+            "storm": null,
+            "rain_1day": 30.31,
+            "rain_3day": 97.53,
+            "band": "under 50 mm",
+            "models": {
+              "two_part": {
+                "hit_chance": 0.0080081630646862,
+                "hit_chance_before": 0.005405001085692392,
+                "city_chance": 0.030490607198534248,
+                "high_barangays": 0
+              },
+              "logistic_regression": {
+                "hit_chance": 0.0071743893293153005,
+                "hit_chance_before": 0.010439453050466396,
+                "city_chance": 0.02513549055035824,
+                "high_barangays": 0
+              }
+            }
           },
           {
-            "year": 2025,
-            "rows": 8030,
-            "positives": 3,
-            "expected": 1.2495065509439227,
-            "log_loss": 0.0033699295098419306,
-            "brier": 0.00037274804814846785,
-            "roc_auc": 0.5270752875711141,
-            "pr_auc": 0.0039527697061943635
-          }
-        ]
-      },
-      "no_skill": {
-        "mean_log_loss": 0.001978098900407854,
-        "pooled": {
-          "log_loss": 0.001977431765145131,
-          "brier": 0.00020732653737204525,
-          "roc_auc": 0.36657817231509515,
-          "pr_auc": 0.0001741985047857607
-        },
-        "intervals": {
-          "log_loss": [
-            0.0005275776391947574,
-            0.00373548638010206
-          ],
-          "brier": [
-            4.0855845297875025e-05,
-            0.00040829335922988233
-          ],
-          "pr_auc": [
-            6.125949522175937e-05,
-            0.00040468393813162254
-          ]
-        },
-        "per_year": [
-          {
-            "year": 2023,
-            "rows": 8030,
-            "positives": 1,
-            "expected": 1.5,
-            "log_loss": 0.0012559686175538103,
-            "brier": 0.0001245213698940306,
-            "roc_auc": 0.5,
-            "pr_auc": 0.00012453300124533
+            "day": "2022-07-13",
+            "subtypes": [
+              "ROAD LANDSLIDE"
+            ],
+            "storm": null,
+            "rain_1day": 10.82,
+            "rain_3day": 17.61,
+            "band": "under 50 mm",
+            "models": {
+              "two_part": {
+                "hit_chance": 0.0006125437307131832,
+                "hit_chance_before": 0.00042495031120471147,
+                "city_chance": 0.002357684199640997,
+                "high_barangays": 0
+              },
+              "logistic_regression": {
+                "hit_chance": 0.0021974600716079817,
+                "hit_chance_before": 0.0009490459215088509,
+                "city_chance": 0.007853594071366432,
+                "high_barangays": 0
+              }
+            }
           },
-          {
-            "year": 2024,
-            "rows": 8052,
-            "positives": 1,
-            "expected": 1.3369863013698633,
-            "log_loss": 0.0012469186524635889,
-            "brier": 0.00012417907483262835,
-            "roc_auc": 0.5,
-            "pr_auc": 0.00012419274714356682
-          },
-          {
-            "year": 2025,
-            "rows": 8030,
-            "positives": 3,
-            "expected": 1.2491444216290213,
-            "log_loss": 0.0034314094312061626,
-            "brier": 0.0003735069686567079,
-            "roc_auc": 0.5,
-            "pr_auc": 0.00037359900373599005
-          }
-        ]
-      },
-      "beats_benchmark": true,
-      "winner_minus_benchmark": [
-        -0.001216843102583776,
-        -4.057391274987375e-05
-      ],
-      "differences": [
-        {
-          "a": "logistic_regression",
-          "b": "random_forest",
-          "low": -0.00011034537751868812,
-          "high": 0.00028666831804822584
-        },
-        {
-          "a": "logistic_regression",
-          "b": "xgboost",
-          "low": -0.00016155368770313211,
-          "high": 0.0004432327069269061
-        },
-        {
-          "a": "random_forest",
-          "b": "xgboost",
-          "low": -0.000285224665194278,
-          "high": 0.0004218538042323531
-        },
-        {
-          "a": "logistic_regression",
-          "b": "benchmark",
-          "low": -0.001216843102583776,
-          "high": -4.057391274987375e-05
-        },
-        {
-          "a": "random_forest",
-          "b": "benchmark",
-          "low": -0.0012557634844238045,
-          "high": -4.967873753454558e-05
-        },
-        {
-          "a": "xgboost",
-          "b": "benchmark",
-          "low": -0.0013148005610878187,
-          "high": -5.9932974690375375e-05
-        },
-        {
-          "a": "logistic_regression",
-          "b": "no_skill",
-          "low": -0.0009593277149828767,
-          "high": -4.1406847976891284e-05
-        },
-        {
-          "a": "random_forest",
-          "b": "no_skill",
-          "low": -0.0010070329722937196,
-          "high": -0.00011630385420729409
-        },
-        {
-          "a": "xgboost",
-          "b": "no_skill",
-          "low": -0.001331307591648744,
-          "high": 2.044262023355175e-05
-        }
-      ],
-      "bootstrap": {
-        "reps": 1000,
-        "block_days": 7,
-        "seed": 0
-      },
-      "threshold": {
-        "rate": 0.01,
-        "folds": [
-          {
-            "year": 2023,
-            "cutoff": 0.0034893162517904072,
-            "tp": 0,
-            "fp": 58,
-            "fn": 1,
-            "tn": 7971,
-            "precision": 0.0,
-            "recall": 0.0,
-            "train_flagged_share": 0.010024906600249066
-          },
-          {
-            "year": 2024,
-            "cutoff": 0.0032238091882764346,
-            "tp": 0,
-            "fp": 49,
-            "fn": 1,
-            "tn": 8002,
-            "precision": 0.0,
-            "recall": 0.0,
-            "train_flagged_share": 0.01000415110004151
-          },
-          {
-            "year": 2025,
-            "cutoff": 0.003114487981376808,
-            "tp": 2,
-            "fp": 143,
-            "fn": 1,
-            "tn": 7884,
-            "precision": 0.013793103448275862,
-            "recall": 0.6666666666666666,
-            "train_flagged_share": 0.010018044925642462
-          }
-        ],
-        "pooled": {
-          "tp": 2,
-          "fp": 250,
-          "fn": 3,
-          "tn": 23857,
-          "precision": 0.007936507936507936,
-          "recall": 0.4
-        }
-      },
-      "calibration": {
-        "model": "logistic_regression",
-        "per_year": [
-          {
-            "year": 2023,
-            "observed": 1,
-            "expected": 1.3896803646265419
-          },
-          {
-            "year": 2024,
-            "observed": 1,
-            "expected": 1.103950023311051
-          },
-          {
-            "year": 2025,
-            "observed": 3,
-            "expected": 2.1419379541552
-          }
-        ],
-        "slope": 0.982462065545982,
-        "slope_ci": [
-          0.887900361564037,
-          1.1739940222075844
-        ],
-        "pooled": {
-          "observed": 5,
-          "expected": 4.635568342092793
-        }
-      },
-      "timing_auc": {
-        "auc": 0.6725939505041246,
-        "days": 1096,
-        "event_days": 5
-      },
-      "place_auc": {
-        "mean": 0.9619047619047618,
-        "per_day": [
           {
             "day": "2023-06-26",
-            "auc": 0.9523809523809523,
-            "hit": 1,
-            "barangays": 22
+            "subtypes": [
+              "ROAD LANDSLIDE"
+            ],
+            "storm": null,
+            "rain_1day": 0.42,
+            "rain_3day": 14.09,
+            "band": "under 50 mm",
+            "models": {
+              "two_part": {
+                "hit_chance": 0.000992430672929721,
+                "hit_chance_before": 0.0010311100862627925,
+                "city_chance": 0.0038177413158263507,
+                "high_barangays": 0
+              },
+              "logistic_regression": {
+                "hit_chance": 0.000168755998411374,
+                "hit_chance_before": 0.0014722163981146785,
+                "city_chance": 0.0007812708903524035,
+                "high_barangays": 0
+              }
+            }
           },
           {
             "day": "2024-10-01",
-            "auc": 0.9523809523809523,
-            "hit": 1,
-            "barangays": 22
+            "subtypes": [
+              "ROAD LANDSLIDE"
+            ],
+            "storm": null,
+            "rain_1day": 9.19,
+            "rain_3day": 9.42,
+            "band": "under 50 mm",
+            "models": {
+              "two_part": {
+                "hit_chance": 0.00015239796656660155,
+                "hit_chance_before": 8.52562111253767e-05,
+                "city_chance": 0.0005869770120926487,
+                "high_barangays": 0
+              },
+              "logistic_regression": {
+                "hit_chance": 0.00044451546412555,
+                "hit_chance_before": 9.926130522902588e-05,
+                "city_chance": 0.0016035127973855756,
+                "high_barangays": 0
+              }
+            }
           },
           {
             "day": "2025-08-25",
-            "auc": 1.0,
-            "hit": 1,
-            "barangays": 22
+            "subtypes": [
+              "ROAD LANDSLIDE / ROCKFALL"
+            ],
+            "storm": null,
+            "rain_1day": 24.98,
+            "rain_3day": 36.57,
+            "band": "under 50 mm",
+            "models": {
+              "two_part": {
+                "hit_chance": 0.005027252951025444,
+                "hit_chance_before": 0.0030219811227354407,
+                "city_chance": 0.013475014651376571,
+                "high_barangays": 0
+              },
+              "logistic_regression": {
+                "hit_chance": 0.006218384713922609,
+                "hit_chance_before": 0.0021436981385374865,
+                "city_chance": 0.017504059760951596,
+                "high_barangays": 0
+              }
+            }
           },
           {
             "day": "2025-11-04",
-            "auc": 0.9523809523809523,
-            "hit": 1,
-            "barangays": 22
+            "subtypes": [
+              "LANDSLIDE"
+            ],
+            "storm": null,
+            "rain_1day": 31.43,
+            "rain_3day": 100.98,
+            "band": "under 50 mm",
+            "models": {
+              "two_part": {
+                "hit_chance": 0.010885599454606567,
+                "hit_chance_before": 0.006924786172710623,
+                "city_chance": 0.041271564237522984,
+                "high_barangays": 0
+              },
+              "logistic_regression": {
+                "hit_chance": 0.007528179777642752,
+                "hit_chance_before": 0.016349724415106626,
+                "city_chance": 0.026471091929039847,
+                "high_barangays": 0
+              }
+            }
           },
           {
             "day": "2025-12-12",
-            "auc": 0.9523809523809523,
-            "hit": 1,
-            "barangays": 22
+            "subtypes": [
+              "ROAD LANDSLIDE"
+            ],
+            "storm": null,
+            "rain_1day": 9.44,
+            "rain_3day": 12.86,
+            "band": "under 50 mm",
+            "models": {
+              "two_part": {
+                "hit_chance": 0.001077166188645873,
+                "hit_chance_before": 0.0004024398560109301,
+                "city_chance": 0.00414319148333242,
+                "high_barangays": 0
+              },
+              "logistic_regression": {
+                "hit_chance": 0.0018063963257589633,
+                "hit_chance_before": 0.0005891316726582829,
+                "city_chance": 0.006478841867242013,
+                "high_barangays": 0
+              }
+            }
           }
         ],
-        "skipped_days": 0
-      },
-      "lobo_auc": {
-        "auc": 0.9,
-        "per_barangay": [
-          {
-            "barangay_id": 1,
-            "mean_chance": 1.866500210210634e-05,
-            "had_event": false
+        "outside": {
+          "current": {
+            "auc": 0.8539227502295683,
+            "observed": 54,
+            "expected": 19.686890122403653
           },
-          {
-            "barangay_id": 2,
-            "mean_chance": 3.377127294966662e-05,
-            "had_event": false
+          "catalogue_to_geoalert": {
+            "auc": 0.7735836083608361,
+            "slopes": {
+              "log1p_r3": {
+                "coef": 0.7813073142298788,
+                "low": 0.3747018564473559,
+                "high": 1.1879127720124016
+              },
+              "log1p_r14": {
+                "coef": 2.0287705605506186,
+                "low": 1.233130778756577,
+                "high": 2.82441034234466
+              }
+            }
           },
-          {
-            "barangay_id": 4,
-            "mean_chance": 0.007343118337650006,
-            "had_event": true
-          },
-          {
-            "barangay_id": 5,
-            "mean_chance": 1.6969059443524874e-05,
-            "had_event": false
-          },
-          {
-            "barangay_id": 6,
-            "mean_chance": 1.6758499441461286e-05,
-            "had_event": false
-          },
-          {
-            "barangay_id": 7,
-            "mean_chance": 0.00011973525373848628,
-            "had_event": false
-          },
-          {
-            "barangay_id": 8,
-            "mean_chance": 0.00020925825115573494,
-            "had_event": false
-          },
-          {
-            "barangay_id": 9,
-            "mean_chance": 0.00013472483970315032,
-            "had_event": false
-          },
-          {
-            "barangay_id": 10,
-            "mean_chance": 1.4251203159820128e-05,
-            "had_event": false
-          },
-          {
-            "barangay_id": 11,
-            "mean_chance": 9.444380811258099e-05,
-            "had_event": false
-          },
-          {
-            "barangay_id": 12,
-            "mean_chance": 9.063522978892334e-06,
-            "had_event": false
-          },
-          {
-            "barangay_id": 13,
-            "mean_chance": 0.0003716381223496154,
-            "had_event": false
-          },
-          {
-            "barangay_id": 14,
-            "mean_chance": 0.0002067305141817785,
-            "had_event": true
-          },
-          {
-            "barangay_id": 15,
-            "mean_chance": 6.642228854045156e-05,
-            "had_event": false
-          },
-          {
-            "barangay_id": 16,
-            "mean_chance": 5.1989496963874884e-05,
-            "had_event": false
-          },
-          {
-            "barangay_id": 17,
-            "mean_chance": 2.335359719840819e-05,
-            "had_event": false
-          },
-          {
-            "barangay_id": 18,
-            "mean_chance": 7.01230132869055e-05,
-            "had_event": false
-          },
-          {
-            "barangay_id": 19,
-            "mean_chance": 6.977618133701024e-06,
-            "had_event": false
-          },
-          {
-            "barangay_id": 20,
-            "mean_chance": 1.8146487792683757e-05,
-            "had_event": false
-          },
-          {
-            "barangay_id": 21,
-            "mean_chance": 3.53478323317636e-05,
-            "had_event": false
-          },
-          {
-            "barangay_id": 22,
-            "mean_chance": 0.0005000547095620124,
-            "had_event": false
-          },
-          {
-            "barangay_id": 23,
-            "mean_chance": 0.00028740280309047007,
-            "had_event": false
+          "geoalert_to_catalogue": {
+            "auc": 0.8616037266605449,
+            "slopes": {
+              "log1p_r3": {
+                "coef": 0.45621373805025117,
+                "low": -0.5211108248310401,
+                "high": 1.4335383009315423
+              },
+              "log1p_r14": {
+                "coef": 1.423163874110632,
+                "low": -0.32635883827823187,
+                "high": 3.1726865864994958
+              }
+            }
           }
-        ]
-      },
-      "camp_iv": [
-        {
-          "barangay_id": 4,
-          "day": "2025-08-25",
-          "chance": 0.0051228948642803585,
-          "percentile": 99.62640099626401
-        }
-      ],
-      "sensitivity": null,
-      "by_type": null,
-      "monthly_levels": [
-        {
-          "level": "High",
-          "rows": 0,
-          "events": 0,
-          "chance": null,
-          "happened": null,
-          "chance_sum": 0.0,
-          "months_with_event": 0
-        },
-        {
-          "level": "Moderate",
-          "rows": 0,
-          "events": 0,
-          "chance": null,
-          "happened": null,
-          "chance_sum": 0.0,
-          "months_with_event": 0
-        },
-        {
-          "level": "Low",
-          "rows": 792,
-          "events": 5,
-          "chance": 0.007,
-          "happened": 0.006,
-          "chance_sum": 5.430375438767146,
-          "months_with_event": 5
-        }
-      ],
-      "monthly_brier": {
-        "scenario": 0.005851484281743971,
-        "recorded_rain": 0.005860607629483474,
-        "benchmark": 0.006616896427541596,
-        "barangay_months": 792,
-        "skipped": {
-          "no_scenario": 0,
-          "incomplete_month": 0
         }
       },
-      "scenario_years_by_fold": [
-        {
-          "test_year": 2023,
-          "scenario_years": [
-            2017,
-            2018,
-            2019,
-            2020,
-            2021,
-            2022
-          ]
-        },
-        {
-          "test_year": 2024,
-          "scenario_years": [
-            2017,
-            2018,
-            2019,
-            2020,
-            2021,
-            2022,
-            2023
-          ]
-        },
-        {
-          "test_year": 2025,
-          "scenario_years": [
-            2017,
-            2018,
-            2019,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024
-          ]
-        }
+      "limits": [
+        "From 2021 to 2025, 8 reported landslide barangay-days fall on 8 distinct days, so the evidence is closer to 8 days than to 40,172 rows.",
+        "With 8 such days, a model that does better on all 8 days reaches p = 0.007812 on a two-sided sign test; doing better on fewer of them is weaker evidence.",
+        "Rain comes from one NASA POWER grid cell (about 55 by 69 km) for the city's 22 barangays, and the cell's edge at 10.25\u00b0 N runs through Talisay, so part of the city lies outside the cell it reads and local downpours can be missed.",
+        "An empty barangay-day means no landslide was reported, not that none happened: every chance is of a reported landslide and reads lower than how often landslides really happen.",
+        "The two-part model also learns landslide timing from NASA's Global Landslide Catalog, which states no licence, often places an event only to within 5\u201325 km, and covers 2007\u20132017, not the years the forecast is for.",
+        "The 15% and 25% cut-offs and several earlier choices were made after seeing 2023\u20132025, so the 2026 season is the clean test."
+      ],
+      "credits": [
+        "Rain: NASA POWER (CC BY 4.0).",
+        "Landslide timing also learned from NASA Global Landslide Catalog days near Talisay, 2007\u20132017."
       ],
       "data_signature": "43e3238da0360c09ade4b1032d29d7ac8830140d",
       "excluded": [],
-      "limits": [
-        "8 reported landslide barangay-days from 2021 to 2025 fall on 8 distinct days, so the evidence is closer to 8 days than to 40,172 rows.",
-        "The model learned from reported landslides on 3, 4 and 5 distinct days in the training years before 2023, 2024 and 2025 respectively.",
-        "The logistic regression model beat the counting benchmark on test years it was not trained on: its mean log loss is lower and the 95% interval of the difference lies below zero.",
-        "It also beat always guessing the training years' average chance (no skill): the 95% interval of that difference lies below zero too.",
-        "The model was chosen from three candidates on these same test years, so its scores may be slightly optimistic.",
-        "Rain comes from 1 NASA POWER grid cell (about 55 km across) for 22 barangays, so barangays in one cell share the same rain and small storms can be missed.",
-        "The records come from news reports, so an empty barangay-day means nothing was reported, not that nothing happened: the chances describe reported landslides and read lower than the true rate."
-      ]
+      "logged": null
     }
   }
 }
