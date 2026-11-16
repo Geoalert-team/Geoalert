@@ -1,5 +1,5 @@
 """
-The tutorial videos API (docs/superpowers/specs/2026-11-11-tutorial-videos-design.md).
+The tutorial videos API (docs/design/specs/2026-11-11-tutorial-videos-design.md).
 
   GET    /api/tutorials/                   every video, by category: public
   POST   /api/tutorials/                   add one video: DRRMO officers and admins

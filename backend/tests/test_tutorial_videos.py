@@ -1,5 +1,5 @@
 """
-Tutorial videos (docs/superpowers/specs/2026-11-11-tutorial-videos-design.md):
+Tutorial videos (docs/design/specs/2026-11-11-tutorial-videos-design.md):
 the YouTube link reader, the two tables, and the /api/tutorials/ endpoints.
 Against a real database; uploads go to a temporary folder; YouTube is mocked.
 """

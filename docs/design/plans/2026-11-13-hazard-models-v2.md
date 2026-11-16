@@ -19,7 +19,7 @@ prediction in a table that is never overwritten.
 **Tech Stack:** Django 4.2 + DRF + PostGIS (GeoDjango GDAL for reading shapefiles), NumPy, SciPy,
 scikit-learn 1.9.1 (fire only), `requests`; React (react-scripts, Jest).
 
-**Spec:** `docs/superpowers/specs/2026-11-13-hazard-models-v2-design.md` (approved 2026-11-13). Read
+**Spec:** `docs/design/specs/2026-11-13-hazard-models-v2-design.md` (approved 2026-11-13). Read
 it beside this plan; section numbers (1.3, 2.5, 3.4…) refer to it.
 
 ## Global Constraints

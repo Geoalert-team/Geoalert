@@ -8,7 +8,7 @@
 
 **Tech Stack:** Django 4.2 + DRF 3.15, `requests` (already installed), django-storages; React 18 (react-scripts, Jest, `createRoot` + `act` tests), axios.
 
-**Spec:** `docs/superpowers/specs/2026-11-11-tutorial-videos-design.md`
+**Spec:** `docs/design/specs/2026-11-11-tutorial-videos-design.md`
 
 ## Global Constraints
 
@@ -57,7 +57,7 @@
 
 ```python
 """
-Tutorial videos (docs/superpowers/specs/2026-11-11-tutorial-videos-design.md):
+Tutorial videos (docs/design/specs/2026-11-11-tutorial-videos-design.md):
 the YouTube link reader, the two tables, and the /api/tutorials/ endpoints.
 Against a real database; uploads go to a temporary folder; YouTube is mocked.
 """

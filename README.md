@@ -1,3 +1,16 @@
+# GeoAlert
+
+A Community Geospatial Hazard Guidance and Risk Awareness System for the Talisay City
+DRRMO: a public hazard map with safety guidance, and dashboards for the DRRMO, barangay
+personnel, the BFP and the system administrator.
+
+- Live website: https://geoalert-talisay.vercel.app
+- **Where everything is in the code: [docs/CODEBASE_GUIDE.md](docs/CODEBASE_GUIDE.md)**
+- Hosting it: [deploy/FREE_HOSTING.md](deploy/FREE_HOSTING.md)
+- Design notes and research: [docs/design/](docs/design/), [docs/research/](docs/research/)
+
+The rest of this file sets the project up on a laptop.
+
 --------------------------------------------------------------------------------
 Clones the Repository
 

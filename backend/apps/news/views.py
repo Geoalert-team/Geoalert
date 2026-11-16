@@ -1,5 +1,5 @@
 """
-The newsfeed's API (docs/superpowers/specs/2026-11-04-newsfeed-design.md).
+The newsfeed's API (docs/design/specs/2026-11-04-newsfeed-design.md).
 
   GET    /api/news/        the public feed
   POST   /api/news/        post an announcement: DRRMO, admins and BFP

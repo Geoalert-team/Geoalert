@@ -8,7 +8,7 @@
 
 **Tech Stack:** Django 4.2 + DRF (Python 3.11.9 venv); React 18, react-router 6, Jest via react-scripts 5.0.1.
 
-**Spec:** `docs/superpowers/specs/2026-10-21-forgot-password-design.md`
+**Spec:** `docs/design/specs/2026-10-21-forgot-password-design.md`
 
 ## Global Constraints
 

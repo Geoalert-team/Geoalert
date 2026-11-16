@@ -11,12 +11,12 @@
 
 **Tech Stack:** Django 4.2 + GeoDjango + DRF (`SimpleTestCase`), React 18 + react-leaflet, Jest via react-scripts 5.
 
-**Spec:** `docs/superpowers/specs/2026-10-25-report-driven-fire-hazards-design.md`, specifically:
+**Spec:** `docs/design/specs/2026-10-25-report-driven-fire-hazards-design.md`, specifically:
 - the Decisions row "Puroks on a fire report"
 - "Data model › IncidentReport"
 - "Design › 1. Submitting a fire report"
 
-This plan replaces round 1's purok and pin handling (`docs/superpowers/plans/2026-10-25-fire-report-form.md`).
+This plan replaces round 1's purok and pin handling (`docs/design/plans/2026-10-25-fire-report-form.md`).
 
 ## Global Constraints
 

@@ -1,6 +1,6 @@
 """
 The public newsfeed: announcements, and a post for each hazard alert that
-went out, newest first (spec: docs/superpowers/specs/2026-11-04-newsfeed-design.md §2).
+went out, newest first (spec: docs/design/specs/2026-11-04-newsfeed-design.md §2).
 
 Alert posts are read from the hazard zones each time, not stored, so a post
 always shows its zone as it is now: Resolved once it is over, gone if it is

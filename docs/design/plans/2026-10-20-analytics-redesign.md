@@ -8,7 +8,7 @@
 
 **Tech Stack:** Django 4.2 + DRF (Python 3.11.9 venv); React 18, react-chartjs-2 5 / Chart.js 4, Jest via react-scripts 5.0.1.
 
-**Spec:** `docs/superpowers/specs/2026-10-20-analytics-redesign-design.md`
+**Spec:** `docs/design/specs/2026-10-20-analytics-redesign-design.md`
 
 ## Global Constraints
 

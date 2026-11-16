@@ -8,7 +8,7 @@
 
 **Tech Stack:** Django 4.2.13 + GeoDjango, DRF, PostgreSQL/PostGIS (shared Supabase), openpyxl, Django `SimpleTestCase` tests.
 
-**Spec:** `docs/superpowers/specs/2026-10-25-report-driven-fire-hazards-design.md` (sections "Data model › HistoricalRecord", "Importing the BFP fire log", "Order of work" steps 1–2). Import rules come from `docs/superpowers/specs/2026-10-23-purok-fire-data-design.md` ("Import", "Linking an address to a purok").
+**Spec:** `docs/design/specs/2026-10-25-report-driven-fire-hazards-design.md` (sections "Data model › HistoricalRecord", "Importing the BFP fire log", "Order of work" steps 1–2). Import rules come from `docs/design/specs/2026-10-23-purok-fire-data-design.md` ("Import", "Linking an address to a purok").
 
 This is plan 1 of 3. Plan 2 is the hazard-levels spec with its amendments; plan 3 is the fire flow (report fields, decision, fire out / close, map, history panel).
 

@@ -13,7 +13,7 @@
 
 **Tech Stack:** Django 4.2 + GeoDjango + DRF, React 18 + react-leaflet, Jest.
 
-**Spec:** `docs/superpowers/specs/2026-10-25-report-driven-fire-hazards-design.md`:
+**Spec:** `docs/design/specs/2026-10-25-report-driven-fire-hazards-design.md`:
 - section 3 "The DRRMO decision"
 - section 5 "Pins on the map" (pins only, without the related-pin badge)
 - the Decisions rows "Alert level" and "Extreme"

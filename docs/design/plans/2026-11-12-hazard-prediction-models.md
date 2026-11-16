@@ -20,7 +20,7 @@ rain scenarios, and add an "All hazards" combined chance with hazard filtering o
   Open-Meteo HTTP via `requests`.
 - **Frontend:** React (react-scripts, Jest).
 
-**Spec:** `docs/superpowers/specs/2026-11-12-hazard-prediction-models-design.md` (approved
+**Spec:** `docs/design/specs/2026-11-12-hazard-prediction-models-design.md` (approved
 2026-11-12). Read it alongside this plan. Section and item numbers below (B.3, D.5, 2.3…)
 refer to it.
 

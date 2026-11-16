@@ -13,7 +13,7 @@
 
 **Tech Stack:** Django 4.2 + GeoDjango (PostGIS) + DRF, numpy/scipy (the estimate grid), React 18 + react-leaflet 4, Jest (react-scripts).
 
-**Spec:** `docs/superpowers/specs/2026-10-28-sitio-areas-and-address-linking-design.md`
+**Spec:** `docs/design/specs/2026-10-28-sitio-areas-and-address-linking-design.md`
 
 ## Global Constraints
 

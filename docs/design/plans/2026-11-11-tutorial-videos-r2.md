@@ -6,9 +6,9 @@
 
 **Architecture:** Changes the existing `apps/tutorials` app (one new column, cascade delete in the view) and `components/Tutorials/` (header and arrows in `TutorialVideos.jsx`, description fields in `CategoryPicker.jsx`, the admin dashboard's `ConfirmDialog` for confirmations).
 
-**Tech Stack:** as the first plan (`docs/superpowers/plans/2026-11-11-tutorial-videos.md`).
+**Tech Stack:** as the first plan (`docs/design/plans/2026-11-11-tutorial-videos.md`).
 
-**Spec:** `docs/superpowers/specs/2026-11-11-tutorial-videos-design.md`, section "Revision 2".
+**Spec:** `docs/design/specs/2026-11-11-tutorial-videos-design.md`, section "Revision 2".
 
 ## Global Constraints
 

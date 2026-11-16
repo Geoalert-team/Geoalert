@@ -8,7 +8,7 @@
 
 **Tech Stack:** Django 4.2 management command, numpy 2.4.2, scipy 1.17.1, Pillow 10.3.0, tifffile, imagecodecs (backend venv: Python 3.11.9); React 18 + react-leaflet 4 + Leaflet 1.9, Jest via react-scripts 5.
 
-**Spec:** `docs/superpowers/specs/2026-10-19-terrain-elevation-design.md`
+**Spec:** `docs/design/specs/2026-10-19-terrain-elevation-design.md`
 
 ## Global Constraints
 

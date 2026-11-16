@@ -10,7 +10,7 @@
 
 **Tech Stack:** Django 4.2 + GeoDjango (PostGIS) + DRF, React 18 + react-leaflet 4, Jest (react-scripts).
 
-**Spec:** `docs/superpowers/specs/2026-10-26-purok-history-map-design.md`, which builds on
+**Spec:** `docs/design/specs/2026-10-26-purok-history-map-design.md`, which builds on
 `2026-10-25-history-based-hazard-levels-design.md` §1 and §6 and
 `2026-10-25-report-driven-fire-hazards-design.md` §6.
 

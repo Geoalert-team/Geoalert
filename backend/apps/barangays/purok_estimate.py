@@ -2,7 +2,7 @@
 Estimated purok outlines, until the Barangay Hall sends official ones.
 
 No purok or sitio boundaries are published for Talisay, so the map draws
-estimates (design: docs/superpowers/specs/2026-10-23-purok-boundaries-design.md).
+estimates (design: docs/design/specs/2026-10-23-purok-boundaries-design.md).
 A barangay is split into as many areas as it has puroks. Each purok whose
 place was found (data/puroks/purok_points.csv) starts there, from its whole
 outline if Wikimapia or OSM has one; puroks nobody could place start at the

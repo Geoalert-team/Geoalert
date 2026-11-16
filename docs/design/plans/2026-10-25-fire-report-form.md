@@ -8,7 +8,7 @@
 
 **Tech Stack:** Django 4.2 + GeoDjango + DRF (backend, `SimpleTestCase`), React 18 with react-scripts 5 / Jest (frontend).
 
-**Spec:** `docs/superpowers/specs/2026-10-25-report-driven-fire-hazards-design.md`. This plan covers "Data model › IncidentReport" (`started_at`, `purok`, `purok_other`) and "Design › 1. Submitting a fire report", plus showing the start time and purok wherever reports are listed. The DRRMO decision, tracker, fire out / close, map and history panel are later plans.
+**Spec:** `docs/design/specs/2026-10-25-report-driven-fire-hazards-design.md`. This plan covers "Data model › IncidentReport" (`started_at`, `purok`, `purok_other`) and "Design › 1. Submitting a fire report", plus showing the start time and purok wherever reports are listed. The DRRMO decision, tracker, fire out / close, map and history panel are later plans.
 
 ## Global Constraints
 

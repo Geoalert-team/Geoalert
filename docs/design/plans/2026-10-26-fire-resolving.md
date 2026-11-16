@@ -14,7 +14,7 @@
 
 **Tech Stack:** Django 4.2 + GeoDjango + DRF, openpyxl 3.1.5, React 18, Jest.
 
-**Spec:** `docs/superpowers/specs/2026-10-25-report-driven-fire-hazards-design.md`:
+**Spec:** `docs/design/specs/2026-10-25-report-driven-fire-hazards-design.md`:
 - "Data model" (`HazardZone` status `Resolving`, `fire_out_at` / `fire_out_by`; the `HistoricalRecord` fields)
 - section 4 "Fire out and closing"
 - section 7 "Fire history and the BFP export"
