@@ -67,7 +67,9 @@ MODERATE_CHANCE = 0.15
 MIN_RATE = 0.01
 TOP_BARANGAYS = 5
 TIE_DRAWS = 50
-CACHE_SECONDS = 6 * 60 * 60
+# The keys change with the records, the month and the building counts (_record_tag), so a fit never goes
+# stale and the time limit only bounds the cache. Refitting takes minutes on a small server.
+CACHE_SECONDS = 7 * 24 * 60 * 60
 AREA_SRID = 32651  # UTM 51N, metres over Cebu
 NEIGHBOUR_METRES = 1  # boundaries that touch or lie this close make neighbours (spec 4.5)
 

@@ -5,8 +5,9 @@ and chart it gives.
 deployed() scores the saved fit that `manage.py test_hazard_models` wrote into
 its report (version 2, spec 3.1-3.2) for every barangay-day of the rain file:
 the model in use, `two_part` or `logistic_regression`, is never refitted here,
-only scored with NumPy (hazard_scoring.py). The result is kept for 6 hours
-behind a lock, so one request builds it while the others wait.
+only scored with NumPy (hazard_scoring.py). The result is kept until an input
+file changes (its cache key covers them all) and built behind a lock, so one
+request builds it while the others wait.
 use_hazard_models() turns those daily chances into each period's chance by
 replaying past years' rain (hazard_scenarios.py) and puts them on a
 seasonal_forecast result (spec 2.3-2.6). A model that cannot run gives
@@ -47,7 +48,15 @@ from apps.history.two_part import FEATURES, NO_EXPOSURE, when_row
 
 logger = logging.getLogger(__name__)
 
-CACHE_SECONDS = 6 * 60 * 60
+# The key changes with every input file (_inputs), so a build never goes stale and the time limit only
+# bounds the cache. Each rebuild takes minutes on a small server and slows every request meanwhile.
+CACHE_SECONDS = 7 * 24 * 60 * 60
+# Except a build that read the live storm days (flood's two-part model): those are not in the key, so it
+# is redone this often, and a storm that came near since reaches the flood chances
+LIVE_STORMS_CACHE_SECONDS = 6 * 60 * 60
+# The warm-up's daily jobs (the storm refresh, the prediction log) ran on this Manila day
+WARMED_DAY_KEY = 'geoalert:hazard-warm-day'
+WARMED_DAY_SECONDS = 2 * 24 * 60 * 60
 LOCK_SECONDS = 300
 WAIT_SECONDS = 60
 POLL_SECONDS = 0.5
@@ -292,7 +301,8 @@ def deployed(hazard: str) -> Deployed:
                 if hit is not None:
                     return hit
                 built = _build(hazard, inputs)
-                cache.set(inputs.key, built, CACHE_SECONDS)
+                keep = CACHE_SECONDS if built.storms is None else LIVE_STORMS_CACHE_SECONDS
+                cache.set(inputs.key, built, keep)
                 return built
             finally:
                 with _LOCK:
@@ -302,12 +312,19 @@ def deployed(hazard: str) -> Deployed:
         _sleep(POLL_SECONDS)
 
 
+def _today():
+    """Today in Manila, the day the daily jobs and the prediction log count by."""
+    return datetime.now(MANILA).date()
+
+
 def warm_in_background() -> bool:
     """
-    Start building both models in a daemon thread when either is missing from
-    the cache and no build is running. True only when a thread was started. A
-    hazard that cannot run (flood without its storm days, say) is logged and
-    left out of the check, so the other is still warmed.
+    Start the warm-up in a daemon thread when either model is missing from the
+    cache, or once a Manila day for its daily jobs (the storm refresh and the
+    prediction log, where the builds are cache hits), and no build is running.
+    True only when a thread was started. A hazard that cannot run (flood
+    without its storm days, say) is logged and left out of the check, so the
+    other is still warmed.
     """
     ready = []
     for hazard in HAZARDS:
@@ -317,14 +334,19 @@ def warm_in_background() -> bool:
             logger.warning('The %s model cannot be warmed: %s', hazard.lower(), exc)
         except Exception:
             logger.exception('Could not tell whether the %s model is ready.', hazard.lower())
-    if not ready or all(cache.has_key(i.key) for i in ready) or any(cache.has_key(i.lock) for i in ready):
+    if not ready or any(cache.has_key(i.lock) for i in ready):
         return False
+    today = _today().isoformat()
+    if all(cache.has_key(i.key) for i in ready) and cache.get(WARMED_DAY_KEY) == today:
+        return False
+    # Marked before the thread starts, so the checks while it runs start no second one
+    cache.set(WARMED_DAY_KEY, today, WARMED_DAY_SECONDS)
     threading.Thread(target=_warm, name=WARM_THREAD_NAME, daemon=True).start()
     return True
 
 
 def _warm():
-    today = datetime.now(MANILA).date()
+    today = _today()
     try:
         # the last-3-years storm tracks first, at most once a Manila day; without them the models are still
         # built, and only the latest days may go without a flood chance

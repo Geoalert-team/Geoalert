@@ -659,6 +659,18 @@ class ForecastViewTests(FireSetupMixin, TestCase):
         self.assertEqual([c.args[0] for c in built.call_args_list], ['Flood', 'Landslide'])
         closed.assert_called_once_with()
 
+    def test_a_fitted_fire_model_is_kept_until_its_records_change(self):
+        # The key changes with the records, the month and the building counts (_record_tag), so a fit is
+        # kept for days: refitting costs minutes of CPU on a small server and slows every request meanwhile
+        self.fires()
+        fires = mf._real_by_hazard(_forecast_events())['Fire']
+        today = dj_timezone.localdate()
+        first = mf._fitted('Fire', fires, None, today)
+        later = time.time() + 3 * 24 * 60 * 60
+        with mock.patch('django.core.cache.backends.filebased.time.time', return_value=later), \
+                mock.patch.object(mf, 'places', side_effect=AssertionError('fitted again')):
+            self.assertEqual(mf._fitted('Fire', fires, None, today)['version'], first['version'])
+
     def test_accuracy_never_counts_sample_records(self):
         HistoricalRecord.objects.create(barangay=self.home, hazard_type=self.flood, severity_level='Green',
                                         occurred_at=dj_timezone.now() - timedelta(days=30), is_sample=True)

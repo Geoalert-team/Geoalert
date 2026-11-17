@@ -122,7 +122,8 @@ class HazardZoneListView(APIView):
         # an unanswered Extreme alert gets sent once its window is up.
         release_overdue_quietly()
         # The uptime ping lands here too, so it starts fitting the flood and
-        # landslide models in the background when a restart emptied the cache.
+        # landslide models in the background when a restart emptied the cache,
+        # and runs the warm-up's daily jobs once a day.
         # A warm-up problem must never break the hazard list.
         try:
             from apps.history import hazard_forecast

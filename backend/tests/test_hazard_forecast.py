@@ -16,6 +16,7 @@ from collections import Counter
 from datetime import date, datetime, timedelta
 from math import prod
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 import numpy as np
@@ -710,6 +711,50 @@ class HazardForecastTests(TestCase):
         self.report_path.unlink()
         with self.assertLogs('apps.history.hazard_forecast', level='WARNING'):      # no key without a report
             self.assertEqual(warm(), (False, [], 0))
+
+    def test_warm_in_background_runs_the_daily_jobs_once_a_day(self):
+        # Both models cached: the warm-up still runs once a Manila day, for the storm refresh and the
+        # prediction log, and its builds are cache hits there
+        def warm():
+            with mock.patch.object(hazard_forecast, 'deployed') as built, \
+                    mock.patch.object(model_forecast, 'warm_fire'), \
+                    mock.patch.object(hazard_forecast.connections, 'close_all'):
+                started = hazard_forecast.warm_in_background()
+                for t in threading.enumerate():
+                    if t.name == hazard_forecast.WARM_THREAD_NAME:
+                        t.join(10)
+            return started, built.call_count
+
+        cache.set(hazard_forecast.cache_key('Flood'), 'ready', 60)
+        cache.set(hazard_forecast.cache_key('Landslide'), 'ready', 60)
+        with mock.patch.object(hazard_forecast, '_today', return_value=date(2026, 11, 17)):
+            self.assertEqual(warm(), (True, 2))                                     # not run yet today
+            self.assertEqual(warm(), (False, 0))                                    # once a day
+        self.assertEqual(self.refresh.call_count, 1)
+        self.log.assert_called_once_with(date(2026, 11, 17))
+        with mock.patch.object(hazard_forecast, '_today', return_value=date(2026, 11, 18)):
+            self.assertEqual(warm(), (True, 2))                                     # the next Manila day
+
+    def test_a_built_model_is_kept_until_its_inputs_change(self):
+        # The key changes with every input file (the tests above), so a build is kept for days: each
+        # rebuild costs minutes of CPU on a small server and slows every request meanwhile
+        built = SimpleNamespace(storms=None)                 # read no live storm days; the cache pickles it
+        with mock.patch.object(hazard_forecast, '_build', return_value=built) as build:
+            hazard_forecast.deployed('Flood')
+            later = time.time() + 3 * 24 * 60 * 60
+            with mock.patch('django.core.cache.backends.filebased.time.time', return_value=later):
+                self.assertEqual(hazard_forecast.deployed('Flood').storms, None)
+        build.assert_called_once()
+
+    def test_a_build_that_read_the_live_storm_days_is_kept_six_hours(self):
+        # The live storm days are not in the key, so a build that read them is redone after six hours, and
+        # a storm that came near since reaches the flood chances
+        with mock.patch.object(hazard_forecast, '_build', return_value=SimpleNamespace(storms='read')) as build:
+            hazard_forecast.deployed('Flood')
+            later = time.time() + 7 * 60 * 60
+            with mock.patch('django.core.cache.backends.filebased.time.time', return_value=later):
+                hazard_forecast.deployed('Flood')
+        self.assertEqual(build.call_count, 2)
 
     def test_warm_refreshes_storms_first(self):
         order = []
