@@ -28,7 +28,7 @@ export default function LatestNews() {
       <div className="ph-container">
         <div className="ph-section-head">
           <h2 id="nw-latest-title">Latest updates</h2>
-          <p>What DRRMO and BFP announced, and the hazard alerts that went out.</p>
+          <p>The latest announcements from DRRMO and BFP.</p>
         </div>
         <div className="nw-list nw-latest-list">
           {posts.map((post) => <NewsCard key={`${post.kind}-${post.id}`} post={post} />)}

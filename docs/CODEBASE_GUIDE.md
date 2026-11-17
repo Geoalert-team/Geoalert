@@ -168,7 +168,7 @@ There are four staff roles. Residents use the public pages without an account.
 
 | | Where |
 |---|---|
-| News and advisories | [news/](../backend/apps/news/) (`/api/news/`): announcements, plus a post for each alert ([feed.py](../backend/apps/news/feed.py)); screens [News.jsx](../frontend/src/pages/News.jsx), [components/News/](../frontend/src/components/News/) |
+| News and advisories | [news/](../backend/apps/news/) (`/api/news/`): announcements from DRRMO and BFP ([feed.py](../backend/apps/news/feed.py)); hazard alerts are not posted here, they show on the map and in the bell; screens [News.jsx](../frontend/src/pages/News.jsx), [components/News/](../frontend/src/components/News/) |
 | Tutorial videos | [tutorials/](../backend/apps/tutorials/) (`/api/tutorials/`), YouTube links ([youtube.py](../backend/apps/tutorials/youtube.py)); on the What to do page via [components/Tutorials/](../frontend/src/components/Tutorials/) |
 
 ## The predictive feature

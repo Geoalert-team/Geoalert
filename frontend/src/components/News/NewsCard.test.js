@@ -9,10 +9,6 @@ const ANNOUNCEMENT = {
   kind: 'announcement', id: 'a1', title: 'Typhoon advisory', body: 'Line one\nLine two', photo_url: null,
   source: 'DRRMO', published_at: hoursAgo(2), edited_at: null, can_edit: false,
 };
-const ALERT = {
-  kind: 'alert', id: 'z1', hazard_type: 'Fire', severity: 'Orange', published_at: hoursAgo(1),
-  barangay: 'Home', puroks: ['Purok Near'], status: 'active', map_link: '/map?zone=z1',
-};
 
 beforeAll(() => { global.IS_REACT_ACT_ENVIRONMENT = true; });
 
@@ -68,26 +64,6 @@ test('HTML typed into a post shows as text', async () => {
   expect(el.querySelector('h3').textContent).toBe('<b>x</b>');
   expect(el.querySelector('b')).toBeNull();
   expect(el.querySelector('.nw-body img')).toBeNull();
-});
-
-test('an alert post comes from GeoAlert with the hazard badge, level, place, status and the map while active', async () => {
-  const el = await render({ post: ALERT });
-  expect(el.querySelector('.nw-office').textContent).toBe('GeoAlert Talisay');
-  expect(el.querySelector('.nw-avatar-badge svg')).not.toBeNull();
-  expect(el.textContent).toMatch('Fire alert (Moderate) for Home · Purok Near');
-  expect(el.querySelector('.nw-status').textContent).toBe('Active');
-  expect(el.querySelector('a[href="/map?zone=z1"]').textContent).toMatch('View on map');
-});
-
-test('an alert whose hazard type is gone still shows', async () => {
-  const el = await render({ post: { ...ALERT, hazard_type: null } });
-  expect(el.textContent).toMatch('Hazard alert (Moderate) for Home · Purok Near');
-});
-
-test('a resolved alert says so and has no map link', async () => {
-  const el = await render({ post: { ...ALERT, status: 'resolved', map_link: null } });
-  expect(el.querySelector('.nw-status').textContent).toBe('Resolved');
-  expect(el.querySelector('a[href^="/map"]')).toBeNull();
 });
 
 test('Edit and Delete only on a post the reader may change', async () => {

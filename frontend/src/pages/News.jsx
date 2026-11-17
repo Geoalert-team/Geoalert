@@ -27,8 +27,8 @@ function Skeletons() {
 }
 
 /**
- * The public newsfeed: what DRRMO and BFP announced and the hazard alerts
- * that went out, newest first, ten at a time (backend apps/news). Anyone can
+ * The public newsfeed: what DRRMO and BFP announced, newest first, ten at a
+ * time (backend apps/news); hazard alerts show on the map instead. Anyone can
  * read it; DRRMO, admins and BFP post here, and edit or delete the posts the
  * server marks can_edit.
  */
@@ -106,7 +106,7 @@ export default function News() {
           <div className="nw-header-text">
             <p className="nw-eyebrow">Talisay City, Cebu</p>
             <h1>News &amp; Advisories</h1>
-            <p>Official updates from Talisay City DRRMO and BFP, and every hazard alert GeoAlert sent.</p>
+            <p>Official updates and advisories from Talisay City DRRMO and BFP.</p>
           </div>
           {canPostNews && (
             <button type="button" className="nw-btn nw-btn-primary" onClick={() => setEditing('new')}>
@@ -125,7 +125,7 @@ export default function News() {
         ) : posts.length === 0 ? (
           <div className="nw-empty">
             <p className="nw-empty-title">No news yet</p>
-            <p>Announcements and hazard alerts will appear here as they are posted.</p>
+            <p>Announcements will appear here as they are posted.</p>
           </div>
         ) : (
           <div className="nw-list">

@@ -1,7 +1,7 @@
 """
 The newsfeed: announcements DRRMO, admins and BFP post, edit and delete,
-and the public feed that merges them with a post for each hazard alert
-that went out. Against a real database; photos go to a temporary folder.
+and the public feed of them, which leaves hazard alerts to the map and the
+notification bell. Against a real database; photos go to a temporary folder.
 """
 import io
 import shutil
@@ -12,7 +12,6 @@ from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 from PIL import Image
 from rest_framework.test import APIRequestFactory, force_authenticate
 
@@ -168,9 +167,9 @@ class NewsFeedTests(NewsTestCase):
     def ago(self, minutes):
         return timezone.now() - timedelta(minutes=minutes)
 
-    def went_out(self, zone, minutes_ago, severity=None):
+    def went_out(self, zone, minutes_ago):
         alert = HazardAlert.objects.create(hazard_zone=zone, issued_by=self.officer, hazard_type=zone.hazard_type,
-                                           severity=severity or zone.severity)
+                                           severity=zone.severity)
         HazardAlert.objects.filter(pk=alert.pk).update(created_at=self.ago(minutes_ago))
         return HazardAlert.objects.get(pk=alert.pk)
 
@@ -180,50 +179,16 @@ class NewsFeedTests(NewsTestCase):
                                                        updated_at=self.ago(minutes_ago))
         return Announcement.objects.get(pk=post.pk)
 
-    def alerts(self, response):
-        return [r for r in response.data['results'] if r['kind'] == 'alert']
-
-    def test_public_newest_first_mixing_both(self):
+    def test_the_feed_is_announcements_newest_first_with_no_hazard_alerts(self):
+        # Hazard alerts reach people through the map and the notification bell, so a zone that
+        # went out has no post here, whether it is still active or resolved
         old = self.posted(self.officer, 120)
-        zone = self.zone(self.near)
-        self.went_out(zone, 60)
+        self.went_out(self.zone(self.near), 60)
+        self.went_out(self.zone(self.near, status='Resolved'), 30)
         new = self.posted(self.bfp, 0)
         results = self.feed().data['results']
         self.assertEqual([(r['kind'], r['id']) for r in results],
-                         [('announcement', str(new.id)), ('alert', str(zone.id)), ('announcement', str(old.id))])
-
-    def test_alert_post_shows_the_zone(self):
-        zone = self.zone(self.near)
-        self.report(self.near, hazard_zone=zone, status='Validated')
-        first = self.went_out(zone, 30)
-        self.went_out(zone, 10)
-        [post] = self.alerts(self.feed())
-        self.assertEqual(
-            {k: post[k] for k in ('hazard_type', 'severity', 'barangay', 'puroks', 'status', 'map_link')},
-            {'hazard_type': 'Fire', 'severity': 'Orange', 'barangay': 'Home', 'puroks': ['Purok Near'],
-             'status': 'active', 'map_link': f'/map?zone={zone.id}'})
-        self.assertEqual(parse_datetime(post['published_at']), first.created_at)
-
-    def test_a_raised_zone_is_one_post(self):
-        zone = self.zone(self.near, severity='Red')
-        first = self.went_out(zone, 30, severity='Orange')
-        self.went_out(zone, 10, severity='Red')
-        posts = self.alerts(self.feed())
-        self.assertEqual(len(posts), 1)
-        self.assertEqual(posts[0]['severity'], 'Red')
-        self.assertEqual(parse_datetime(posts[0]['published_at']), first.created_at)
-
-    def test_a_resolved_zone_shows_resolved_without_a_map_link(self):
-        zone = self.zone(self.near, status='Resolved')
-        self.went_out(zone, 30)
-        [post] = self.alerts(self.feed())
-        self.assertEqual((post['status'], post['map_link']), ('resolved', None))
-
-    def test_sample_withdrawn_and_held_zones_are_left_out(self):
-        self.went_out(self.zone(self.near, is_sample=True), 30)
-        self.went_out(self.zone(self.near, status='Retracted'), 20)
-        self.zone(self.near, status='Awaiting_Approval', severity='Red')  # held: no alert went out
-        self.assertEqual(self.alerts(self.feed()), [])
+                         [('announcement', str(new.id)), ('announcement', str(old.id))])
 
     def test_paging_with_before(self):
         for minutes in (30, 20, 10):

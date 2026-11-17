@@ -18,11 +18,6 @@
   --nw-white: #ffffff;
   --nw-blue: #1d5fbf;
   --nw-active: #a12f2f;
-  --nw-active-dot: #d64545;
-  --nw-active-tint: #fcebeb;
-  --nw-resolved: #16693a;
-  --nw-resolved-dot: #1f9d55;
-  --nw-resolved-tint: #e8f6ee;
   --nw-bfp: #b3261e;
   --nw-shadow: 0 1px 2px rgba(20, 36, 59, .05), 0 8px 24px -12px rgba(20, 36, 59, .16);
   --nw-font-head: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
@@ -75,11 +70,6 @@
 .nw-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: contain; }
 .nw-avatar.is-bfp { border: 0; background: radial-gradient(circle at 30% 30%, #e0473d, var(--nw-bfp)); color: var(--nw-white); }
 .nw-avatar.is-bfp svg { width: 22px; height: 22px; fill: currentColor; }
-.nw-avatar-badge {
-  position: absolute; right: -3px; bottom: -3px; display: inline-flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--nw-white); color: var(--nw-white);
-}
-.nw-avatar-badge svg { width: 11px; height: 11px; fill: currentColor; }
 
 .nw-byline { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .nw-office-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -97,22 +87,6 @@
 .nw-see-more { margin-top: 4px; padding: 0; border: 0; background: none; font: inherit; font-weight: 800; font-size: .88rem; color: var(--nw-blue); cursor: pointer; }
 .nw-see-more:hover { text-decoration: underline; }
 .nw-photo { display: block; width: 100%; max-height: 420px; margin-top: 14px; object-fit: cover; border-radius: 12px; border: 1px solid var(--nw-line); }
-
-.nw-card-alert { border-left: 4px solid var(--nw-hazard, var(--nw-navy)); }
-.nw-status {
-  flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
-  font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
-}
-.nw-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.nw-status.is-active { background: var(--nw-active-tint); color: var(--nw-active); }
-.nw-status.is-active::before { background: var(--nw-active-dot); box-shadow: 0 0 0 3px rgba(214, 69, 69, .2); }
-.nw-status.is-resolved { background: var(--nw-resolved-tint); color: var(--nw-resolved); }
-.nw-status.is-resolved::before { background: var(--nw-resolved-dot); }
-.nw-map-link {
-  display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 7px 14px; border-radius: 10px;
-  border: 1px solid var(--nw-line); font-weight: 800; font-size: .88rem; color: var(--nw-navy); text-decoration: none;
-}
-.nw-map-link:hover { background: var(--nw-mist); }
 
 .nw-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
@@ -132,7 +106,7 @@
   font: inherit; font-weight: 800; font-size: .9rem; cursor: pointer; background: var(--nw-white); color: var(--nw-navy);
 }
 .nw-btn:disabled { opacity: .6; cursor: default; }
-.nw-btn:focus-visible, .nw-see-more:focus-visible, .nw-map-link:focus-visible { outline: 3px solid rgba(29, 95, 191, .35); outline-offset: 2px; }
+.nw-btn:focus-visible, .nw-see-more:focus-visible { outline: 3px solid rgba(29, 95, 191, .35); outline-offset: 2px; }
 .nw-btn-small { padding: 5px 10px; font-size: .8rem; }
 .nw-btn-primary { background: var(--nw-navy); border-color: var(--nw-navy); color: var(--nw-white); }
 .nw-btn-primary:hover:not(:disabled) { background: var(--nw-navy-hover); }
