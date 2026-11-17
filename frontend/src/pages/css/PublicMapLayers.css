@@ -55,8 +55,18 @@
 .pm-basemap { bottom: 140px; }
 
 @media (max-width: 860px) {
-  .pm-north { top: 124px; }
-  .pm-legend { max-height: 45%; }
+  .pm-north { top: calc(var(--pm-chips-bottom, 116px) + 8px); }
+  /* The right edge stays clear for the zoom buttons */
+  .pm-legend { max-height: 45%; max-width: calc(100% - 84px); }
+  /* Above the folded legend, which with the rain data's credit reaches about 190px */
+  .pm-basemap { bottom: 204px; }
+  /* Folded on a phone: the heading and the colours in one line, nothing more */
+  .pm-legend.is-collapsed { padding: 10px 14px; }
+  .pm-legend.is-collapsed .pm-legend-title { display: none; }
+  .pm-legend.is-collapsed ul { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .pm-legend.is-collapsed .pm-legend-toggle { padding-bottom: 6px; margin-bottom: 6px; }
+  /* Nothing under the heading (Past hazards, folded): no rule under it either */
+  .pm-legend.is-collapsed .pm-legend-toggle:last-child { padding-bottom: 0; margin-bottom: 0; border-bottom: 0; }
 }
 
 /* No focus box when clicking a barangay or other map shape.

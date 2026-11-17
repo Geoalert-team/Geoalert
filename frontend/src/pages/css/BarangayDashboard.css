@@ -27,12 +27,16 @@
 
 .brg-choice-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .brg-choice {
+  position: relative;
   display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px;
   border: 1.5px solid var(--adm-line-strong); border-radius: 12px; background: var(--adm-surface);
   font-weight: 700; color: var(--db-heading) !important; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease;
 }
 .brg-choice:hover { border-color: #9fb0c8; }
-.brg-choice input { position: absolute; opacity: 0; pointer-events: none; }
+/* The hidden radio stays a 1px box inside its chip. .adm-field input (AdminDashboard.css), meant for
+   text fields, would make it as wide as the screen, starting at the chip: the page then scrolls sideways
+   on a phone. The longer selector outranks that rule. */
+.brg-choice-row .brg-choice input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .brg-choice:focus-within { box-shadow: var(--adm-focus); }
 .brg-choice.is-checked { border-color: var(--db-navy); box-shadow: 0 0 0 1px var(--db-navy); }
 .drm-hazard-sm { width: 30px; height: 30px; border-radius: 9px; }
@@ -54,8 +58,10 @@
 .adm-hint { margin-top: 6px; font-size: .78rem; color: var(--db-soft); }
 
 /* The real input is hidden but still focusable, so the label below acts as
-   the button and keyboard users keep the focus ring. */
-.brg-photo-input {
+   the button and keyboard users keep the focus ring. Inside .adm-field too,
+   whose input rule would otherwise make it as wide as the screen. */
+.brg-photo-input,
+.adm-field .brg-photo-input {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }

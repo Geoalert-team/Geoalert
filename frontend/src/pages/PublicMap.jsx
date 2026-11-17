@@ -199,6 +199,14 @@ function MapClickHandler({ onMapClick }) {
   return null;
 }
 
+// The phone layout's width, the same as the @media rules in PublicMap.css
+const PHONE_QUERY = '(max-width: 860px)';
+
+function isPhone() {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    && window.matchMedia(PHONE_QUERY).matches;
+}
+
 function NorthArrow() {
   return (
     <div className="pm-north" aria-label="North is up" role="img">
@@ -234,7 +242,24 @@ export default function PublicMap() {
   const [layerTypes, setLayerTypes] = useState([]);   // from /api/hazards/layers/
   const [layersFailed, setLayersFailed] = useState(false);
   const [layersOpen, setLayersOpen] = useState(false);
-  const [legendOpen, setLegendOpen] = useState(true);
+  // Open on a computer; folded on a phone, where the open legend covers half the map
+  const [legendOpen, setLegendOpen] = useState(() => !isPhone());
+  // On a phone the chips wrap onto as many rows as the screen needs, and the
+  // status pills and the north arrow sit just below them: --pm-chips-bottom
+  const chipsRef = useRef(null);
+  const [chipsBottom, setChipsBottom] = useState(null);
+  useEffect(() => {
+    const chips = chipsRef.current;
+    if (!chips || typeof ResizeObserver === 'undefined') return undefined;
+    const measure = () => {
+      const topbar = chips.offsetParent;
+      setChipsBottom(topbar ? topbar.offsetTop + chips.offsetTop + chips.offsetHeight : null);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(chips);
+    measure();
+    return () => observer.disconnect();
+  }, []);
   const [query, setQuery] = useState('');
   const [selection, setSelection] = useState(null); // { kind: 'hazard' | 'barangay', id }
   // Ids of the hazards at the spot last clicked, most serious first. Kept fixed
@@ -717,7 +742,10 @@ export default function PublicMap() {
     <div className="pm">
       <PublicNavbar />
 
-      <div className="pm-stage">
+      <div
+        className="pm-stage"
+        style={chipsBottom ? { '--pm-chips-bottom': `${chipsBottom}px` } : undefined}
+      >
         {/* ============ MAP ============ */}
         <MapContainer
           ref={setMap}
@@ -946,7 +974,7 @@ export default function PublicMap() {
             )}
           </div>
 
-          <div className="pm-chips" role="group" aria-label="Map layers">
+          <div className="pm-chips" role="group" aria-label="Map layers" ref={chipsRef}>
             <div className="pm-mode" role="group" aria-label="Shading">
               {VIEWS.map((m) => (
                 <button
@@ -1058,10 +1086,12 @@ export default function PublicMap() {
                   </li>
                 ))}
               </ul>
+              {/* The explanations fold away with the legend; the warnings and the
+                  rain data's credit stay while its colours are on the map */}
               {likely?.error && <p className="pm-legend-note">Could not load the likelihood.</p>}
               {/* The past years the colours come from, so a coming year reads as
                   the usual pattern; a past period also says what happened */}
-              {likely && !likely.error && (
+              {legendOpen && likely && !likely.error && (
                 <p className="pm-legend-note">
                   {likely.years?.length
                     ? `From ${periodIn(likelyPeriod)} in ${yearSpan(likely.years)}.`
@@ -1071,7 +1101,7 @@ export default function PublicMap() {
                     : ` It has started: ${likely.outcome.events} event${likely.outcome.events === 1 ? '' : 's'} so far.`)}
                 </p>
               )}
-              {likely && !likely.error && rainNote && (
+              {legendOpen && likely && !likely.error && rainNote && (
                 <p className="pm-legend-note">
                   Flood and landslide chances come from rain and terrain in {rainNote}.
                 </p>

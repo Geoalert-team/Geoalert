@@ -261,6 +261,12 @@
   justify-content: center;
 }
 
+/* A 375px phone: the 24px sides and gap left the bell and menu 5px past the
+   screen's edge, so every page scrolled sideways */
+@media (max-width: 480px) {
+  .pn-inner { padding: 0 16px; gap: 16px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pn-header *,
   .pn-header *::before,
