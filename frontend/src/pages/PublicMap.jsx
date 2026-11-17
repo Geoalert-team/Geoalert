@@ -244,19 +244,27 @@ export default function PublicMap() {
   const [layersOpen, setLayersOpen] = useState(false);
   // Open on a computer; folded on a phone, where the open legend covers half the map
   const [legendOpen, setLegendOpen] = useState(() => !isPhone());
-  // On a phone the chips wrap onto as many rows as the screen needs, and the
-  // status pills and the north arrow sit just below them: --pm-chips-bottom
+  // The chips wrap onto as many rows as they need. On a phone the status pills
+  // and the north arrow sit just below them (--pm-chips-bottom); on a computer
+  // the search and chips stop short of the status pills (--pm-status-room), so
+  // a long row, as in the Likely view, never runs under them.
   const chipsRef = useRef(null);
-  const [chipsBottom, setChipsBottom] = useState(null);
+  const statusRef = useRef(null);
+  const [overlay, setOverlay] = useState(null);
   useEffect(() => {
     const chips = chipsRef.current;
-    if (!chips || typeof ResizeObserver === 'undefined') return undefined;
+    const status = statusRef.current;
+    if (!chips || !status || typeof ResizeObserver === 'undefined') return undefined;
     const measure = () => {
       const topbar = chips.offsetParent;
-      setChipsBottom(topbar ? topbar.offsetTop + chips.offsetTop + chips.offsetHeight : null);
+      setOverlay({
+        chipsBottom: topbar ? topbar.offsetTop + chips.offsetTop + chips.offsetHeight : null,
+        statusRoom: status.offsetWidth ? status.offsetWidth + 12 : 0,
+      });
     };
     const observer = new ResizeObserver(measure);
     observer.observe(chips);
+    observer.observe(status);
     measure();
     return () => observer.disconnect();
   }, []);
@@ -744,7 +752,10 @@ export default function PublicMap() {
 
       <div
         className="pm-stage"
-        style={chipsBottom ? { '--pm-chips-bottom': `${chipsBottom}px` } : undefined}
+        style={overlay ? {
+          ...(overlay.chipsBottom ? { '--pm-chips-bottom': `${overlay.chipsBottom}px` } : {}),
+          '--pm-status-room': `${overlay.statusRoom}px`,
+        } : undefined}
       >
         {/* ============ MAP ============ */}
         <MapContainer
@@ -1026,7 +1037,7 @@ export default function PublicMap() {
         </div>
 
         {/* ============ STATUS MESSAGES ============ */}
-        <div className={`pm-status ${panelOpen ? 'is-hidden-mobile' : ''}`}>
+        <div className={`pm-status ${panelOpen ? 'is-hidden-mobile' : ''}`} ref={statusRef}>
           {loading && <span className="pm-pill">Loading hazards…</span>}
           {!loading && loadFailed && <span className="pm-pill pm-pill-error">Live hazard data is unavailable right now</span>}
           {tilesDown && (

@@ -79,7 +79,8 @@
   position: absolute;
   top: 16px;
   left: 16px;
-  right: 16px;
+  /* Stops short of the status pills, measured in PublicMap.jsx */
+  right: calc(16px + var(--pm-status-room, 0px));
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -146,14 +147,15 @@
 .pm-results-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
 .pm-results-empty { padding: 12px; color: var(--pm-soft); }
 
+/* The chips wrap rather than scroll: scrolled, with no scrollbar showing,
+   Layers and the month pickers sat out of sight, under the status pill on a
+   laptop and off the screen on a phone */
 .pm-chips {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding-top: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
 }
-.pm-chips::-webkit-scrollbar { display: none; }
 
 .pm-chip {
   flex-shrink: 0;
@@ -538,11 +540,10 @@
    Mobile: search on top, panel becomes a bottom sheet
    ========================================================= */
 @media (max-width: 860px) {
-  .pm-topbar { flex-direction: column; gap: 8px; }
+  /* The status pills sit below the chips on a phone, so the bar takes the full width */
+  .pm-topbar { flex-direction: column; gap: 8px; right: 16px; }
   .pm-search { width: 100%; }
-  /* The chips wrap rather than scroll: scrolled, Layers and the month sat
-     off the screen with nothing to show they were there */
-  .pm-chips { width: 100%; padding-top: 0; flex-wrap: wrap; overflow-x: visible; }
+  .pm-chips { width: 100%; padding-top: 0; }
 
   /* Just below the chips, however many rows they take (PublicMap.jsx measures it) */
   .pm-status { top: calc(var(--pm-chips-bottom, 116px) + 8px); left: 16px; right: auto; align-items: flex-start; }
