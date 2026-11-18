@@ -15,6 +15,7 @@ import {
 import PurokPreviewMap from '../../components/Map/PurokPreviewMap';
 import ActiveZonesCard from '../../components/Resolve/ActiveZonesCard';
 import AwaitingApprovalCard from '../../components/Resolve/AwaitingApprovalCard';
+import RainWatchCard from '../../components/RainWatch/RainWatchCard';
 import BarangayLikelihood from '../../components/Forecast/BarangayLikelihood';
 import '../css/Dashboard.css';
 import '../css/AdminDashboard.css';
@@ -741,6 +742,9 @@ export default function DRRMODashboard() {
         </section>
 
         <ActiveZonesCard onResolved={load} />
+
+        {/* Next 3 days of rain: every colour, the PAGASA alerts and hand-set levels */}
+        <RainWatchCard />
 
         {/* What the hazard models say is coming, so the office can prepare ahead */}
         <section className="adm-card">

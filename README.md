@@ -194,6 +194,20 @@ rain was also tested and gave weaker results; the comparison is kept locally (no
 .superpowers/sdd/2026-11-12-hazard-prediction-models/imerg-test/.
 
 --------------------------------------------------------------------------------
+Rain watch: Next 3 days
+
+The public map's "Next 3 days" view colours each barangay for Today, Tomorrow and the Day
+after, from the rain forecast and PAGASA's alerts. It is separate from the monthly models
+above. Three parts run in three places: a GitHub job (tools/rain_forecast, every 6 hours,
+.github/workflows/rain-forecast.yml) fetches NOAA GFS rain and posts it to the site; the
+site (apps/rainwatch) reads PAGASA's public alert feed hourly; and the colours are worked
+out on request from the stored rain, the alerts and any DRRMO override. The heavy
+libraries live only in tools/rain_forecast/requirements.txt, never on the server. Setup
+is in deploy/FREE_HOSTING.md ("Rain watch: GitHub job"); the design is in
+docs/design/specs/2026-11-18-rain-watch-design.md. Credits are in
+apps/history/data/ATTRIBUTION.md.
+
+--------------------------------------------------------------------------------
 Deploying
 
 See deploy/README.md.

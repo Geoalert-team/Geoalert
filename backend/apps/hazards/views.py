@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.gis.geos import Polygon
+from django.conf import settings
 from django.core.cache import cache
 from django.db import DatabaseError, transaction
 from django.db.models import Count, Q
@@ -139,6 +140,21 @@ class HazardZoneListView(APIView):
                 hazard_forecast.warm_in_background()
         except Exception:
             logger.exception('Could not start warming the flood and landslide models.')
+
+        # On the one machine that reads PAGASA's alert feed, the same ping starts
+        # the hourly check in the background. It must never break the hazard list.
+        try:
+            if settings.PAGASA_FEED_WRITER:
+                from apps.rainwatch import pagasa
+                try:
+                    pagasa_due = cache.add(pagasa.CHECK_KEY, 1, timeout=pagasa.CHECK_EVERY)
+                except Exception:
+                    logger.warning('Cache unavailable; checking the PAGASA feed without a limit')
+                    pagasa_due = True
+                if pagasa_due:
+                    pagasa.check_in_background()
+        except Exception:
+            logger.exception('Could not start the PAGASA feed check.')
 
         # Nothing changed since this browser last asked: no queries at all
         etag = map_version.etag_for(request)

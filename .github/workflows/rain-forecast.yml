@@ -1,0 +1,43 @@
+# Rain watch forecast job: fetches NOAA GFS rain for the 4 grid points around Talisay
+# and posts it to GeoAlert every 6 hours. GitHub runs scheduled workflows only from the
+# default branch, so this file (and tools/rain_forecast/) must be on `main` to run on schedule.
+# It never pushes to the repository.
+name: Rain forecast
+
+on:
+  schedule:
+    - cron: '17 4,10,16,22 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Print what would be posted; post nothing
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency: rain-forecast
+
+jobs:
+  forecast:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install requirements
+        run: pip install -r tools/rain_forecast/requirements.txt
+      - name: Fetch and post the forecast
+        env:
+          RAIN_WATCH_API_URL: ${{ secrets.RAIN_WATCH_API_URL }}
+          RAIN_WATCH_INGEST_TOKEN: ${{ secrets.RAIN_WATCH_INGEST_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            python tools/rain_forecast/fetch.py --dry-run
+          else
+            python tools/rain_forecast/fetch.py
+          fi

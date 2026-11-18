@@ -1,0 +1,44 @@
+/* Rain watch: the day picker, hint, banner and legend on the public map.
+   Orange and Red are their own set, apart from the monthly High/Moderate/Low. */
+.rw-picker-wrap { display: flex; flex-direction: column; gap: 4px; min-width: 0; max-width: 100%; }
+.rw-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+.rw-hint {
+  align-self: flex-start; max-width: 100%; padding: 4px 10px; border: 0; border-radius: 999px;
+  background: #fff; color: #7a2a00; font: inherit; font-size: 0.8rem; text-align: left;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2); cursor: pointer;
+}
+.rw-banner {
+  display: block; box-sizing: border-box; max-width: 100%; padding: 6px 12px; border: 0;
+  border-left: 5px solid var(--rw-color, #ef7d22); border-radius: 6px; background: #fff;
+  color: #1f2937; font: inherit; font-size: 0.85rem; font-weight: 600; text-align: left;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25); cursor: pointer;
+}
+.rw-legend { min-width: 0; }
+.rw-stale { color: #a12f2f; font-weight: 600; }
+.rw-monthly-note button {
+  margin-left: 6px; padding: 2px 10px; border: 1px solid #9aa3b2; border-radius: 999px;
+  background: #fff; font: inherit; cursor: pointer;
+}
+.pm-chips .rw-banner { flex: 1 1 100%; }
+
+/* Rain watch card on the DRRMO dashboard */
+.rw-card { min-width: 0; }
+.rw-table-wrap { max-width: 100%; overflow-x: auto; }
+.rw-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.rw-table th, .rw-table td { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; text-align: left; white-space: nowrap; }
+.rw-chip { display: inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 700; font-size: 0.8rem; }
+.rw-muted { color: #64748b; font-size: 0.85rem; margin: 8px 0; }
+.rw-sub { margin: 16px 0 6px; font-size: 0.95rem; }
+.rw-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.rw-list li { min-width: 0; overflow-wrap: anywhere; }
+.rw-note { margin: 2px 0 6px; font-size: 0.85rem; }
+.rw-badge { margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: #e5e7eb; font-size: 0.75rem; font-weight: 700; }
+.rw-badge.is-applied { background: #d1fae5; color: #065f46; }
+.rw-form { display: flex; flex-direction: column; gap: 14px; }
+.rw-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.rw-form textarea { width: 100%; box-sizing: border-box; font: inherit; resize: vertical; }
+.rw-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+@media (max-width: 480px) { .rw-form-row { grid-template-columns: 1fr; } }
+
+.rw-reason { display: block; max-width: 220px; margin-top: 2px; color: #64748b; font-size: 0.72rem; font-weight: 400; white-space: normal; }

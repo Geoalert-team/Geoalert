@@ -262,3 +262,8 @@ export const RAIN_ATTRIBUTION = {
 
 export const IN_TRAINING_NOTE =
   'The model learned from this period; see the accuracy check for results on years it never saw.';
+
+// Under the monthly view when Flood or Landslide is ticked: why it stays green, and where rain that is coming shows
+export const FLOOD_LANDSLIDE_MONTHLY_NOTE =
+  'Floods and landslides are rare in any one month, so this view stays mostly green, even in the rainy season. '
+  + 'For rain that is coming, see Next 3 days.';

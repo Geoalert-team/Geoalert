@@ -19,9 +19,15 @@ import {
   LIKELIHOOD, FORECAST_DISCLAIMER, RAIN_ATTRIBUTION, aboutChanceText, chanceText, combinedByBarangay, combinedText,
   combinedUnavailable, defaultPeriod, hazardsParam,
   levelLabel, likelihoodInfo, likelyKey, periodIn, periodLabel, periodParams, periodYearsText, rainYearsText, unavailableNote,
-  yearSpan,
+  yearSpan, FLOOD_LANDSLIDE_MONTHLY_NOTE,
 } from '../components/Forecast/forecastLevels';
 import ForecastPeriodPicker from '../components/Forecast/ForecastPeriodPicker';
+import { rainWatchApi } from '../api/rainWatchApi';
+import RainWatchDayPicker from '../components/RainWatch/RainWatchDayPicker';
+import RainWatchBanner from '../components/RainWatch/RainWatchBanner';
+import RainWatchLegend from '../components/RainWatch/RainWatchLegend';
+import { RAIN_FILL_OPACITY, bannerInfo, mapLevel, rainLevel, rainWatchSignature, rainWatchTooltip, withClientStale } from '../components/RainWatch/rainWatchLevels';
+import '../components/RainWatch/rainWatch.css';
 import { hazardAreas, hazardAt, hazardPuroks, markerSpots } from '../components/Map/hazardPins';
 import './css/PublicMap.css';
 import './css/PublicMapGis.css';
@@ -74,7 +80,10 @@ const VIEWS = [
   // model (backend apps/history/model_forecast.py for fire, hazard_forecast.py
   // for flood and landslide); a hazard whose model cannot run is unavailable.
   { key: 'likely', label: 'Likely by month', note: FORECAST_DISCLAIMER },
+  // The next 3 days of heavy rain, from the rain watch (backend apps/rainwatch)
+  { key: 'next3', label: 'Next 3 days', note: null },
 ];
+const RAIN_WATCH_REFRESH_MS = 10 * 60 * 1000;
 
 // Barangay fill per likelihood level in the 'likely' view
 const LIKELY_FILL = { High: 0.42, Moderate: 0.32, Low: 0.22, None: 0 };
@@ -233,6 +242,13 @@ export default function PublicMap() {
   // The time the likelihood is for: a month, a month in a year, or a date
   const [likelyPeriod, setLikelyPeriod] = useState(defaultPeriod);
   const [likely, setLikely] = useState(null);
+  // Rain watch for the next 3 days: the last answer (kept if a refresh fails) and the chosen day
+  const [rainRaw, setRainRaw] = useState(null);
+  const [rainTick, setRainTick] = useState(0); // each poll, so an answer going old is noticed even when the poll fails
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const rainWatch = useMemo(() => withClientStale(rainRaw), [rainRaw, rainTick]);
+  const [rainFailed, setRainFailed] = useState(false); // the last request for the rain watch failed
+  const [rainDay, setRainDay] = useState('today');
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -691,6 +707,22 @@ export default function PublicMap() {
     return map;
   }, [likely, activeTypes]);
 
+  // Fetched in any view, for the banner; a failed refresh keeps the last answer
+  useEffect(() => {
+    let alive = true;
+    const load = () => rainWatchApi.get({ background: true })
+      .then((d) => { if (alive) { setRainRaw(d); setRainFailed(false); } })
+      .catch(() => { if (alive) setRainFailed(true); })
+      .then(() => { if (alive) setRainTick((n) => n + 1); });
+    load();
+    const id = setInterval(load, RAIN_WATCH_REFRESH_MS);
+    return () => { alive = false; clearInterval(id); };
+  }, []);
+  // Changes only when what the map shows changes, so tooltips are rebuilt then (setStyle alone leaves them as they were)
+  const rainSignature = useMemo(() => rainWatchSignature(rainWatch), [rainWatch]);
+  const rainBanner = useMemo(() => bannerInfo(rainWatch, activeTypes), [rainWatch, activeTypes]);
+  const showRainDay = (key) => { setRainDay(key); setView('next3'); };
+
   // Thin dark boundaries, like sub-catchment lines on a GIS map. Transparent fill keeps them clickable.
   function barangayStyle(feature) {
     if (view === 'likely') {
@@ -701,6 +733,15 @@ export default function PublicMap() {
       return {
         className: 'pm-brgy', color: '#2b2b2b', weight: 1, opacity: 0.8,
         fillColor: info.color, fillOpacity: LIKELY_FILL[level] ?? 0,
+      };
+    }
+    if (view === 'next3') {
+      const level = mapLevel(rainWatch, rainDay, featureId(feature), activeTypes);
+      return {
+        className: 'pm-brgy', color: '#2b2b2b', weight: 1, opacity: 0.8,
+        fillColor: rainLevel(level).color || '#000',
+        // No rain watch, and Green, are no fill: only Yellow, Orange, Red and out-of-date are coloured
+        fillOpacity: rainLevel(level).rank < 1 && level !== 'unknown' ? 0 : level === 'unknown' ? 0.25 : RAIN_FILL_OPACITY,
       };
     }
     // Bold only while its panel is open
@@ -838,7 +879,7 @@ export default function PublicMap() {
           {/* Barangay boundaries: hover for the name, click for barangay-specific hazards */}
           {barangayGeo && (
             <GeoJSON
-              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}-${view}-${periodLabel(likelyPeriod)}-${likelyKey(likely)}-${[...activeTypes].join('')}-${!!selectedPuroks}`}
+              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}-${view}-${periodLabel(likelyPeriod)}-${likelyKey(likely)}-${[...activeTypes].join('')}-${!!selectedPuroks}${view === 'next3' ? `-${rainSignature}-${rainDay}` : ''}`}
               data={barangayGeo}
               style={barangayStyle}
               bubblingMouseEvents={false}
@@ -875,6 +916,9 @@ export default function PublicMap() {
                     : c || rows.length
                     ? `<strong>${name}</strong><br>${[head, ...lines].join('<br>')}`
                     : `<strong>${name}</strong><br>Nothing on record in ${periodIn(likelyPeriod)} in past years`;
+                }
+                if (view === 'next3') {
+                  tip = rainWatchTooltip(name, featureId(feature), rainWatch, rainDay, activeTypes);
                 }
                 layer.bindTooltip(tip, {
                   sticky: true,
@@ -1000,6 +1044,14 @@ export default function PublicMap() {
               ))}
             </div>
 
+            {rainBanner && (
+              <RainWatchBanner info={rainBanner} data={rainWatch} onView={showRainDay} />
+            )}
+
+            {view === 'next3' && (
+              <RainWatchDayPicker data={rainWatch} value={rainDay} onChange={setRainDay} activeTypes={activeTypes} />
+            )}
+
             {view === 'likely' && (
               <ForecastPeriodPicker
                 value={likelyPeriod}
@@ -1075,9 +1127,11 @@ export default function PublicMap() {
             aria-expanded={legendOpen}
             onClick={() => setLegendOpen((open) => !open)}
           >
-            <span>{view === 'likely' ? 'Likely hazard levels' : 'Past hazard levels'}</span>
+            <span>{view === 'likely' ? 'Likely hazard levels' : view === 'next3' ? 'Rain watch' : 'Past hazard levels'}</span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
           </button>
+
+          {view === 'next3' && <RainWatchLegend data={rainWatch} failed={rainFailed} />}
 
           {view === 'likely' && (
             <>
@@ -1118,6 +1172,12 @@ export default function PublicMap() {
                 </p>
               )}
               {unavailableLegend && <p className="pm-legend-note">{unavailableLegend}</p>}
+              {(activeTypes.has('Flood') || activeTypes.has('Landslide')) && (
+                <p className="pm-legend-note rw-monthly-note">
+                  {FLOOD_LANDSLIDE_MONTHLY_NOTE}
+                  <button type="button" onClick={() => setView('next3')}>Next 3 days</button>
+                </p>
+              )}
               {likely && !likely.error && (likely.results || []).some((r) => r.hazard_type !== 'Fire') && (
                 <p className="pm-legend-note">
                   Rain data from{' '}
