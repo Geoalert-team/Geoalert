@@ -44,14 +44,14 @@ Cadulawan,Upper Mahayahay,sitio,Sitio Mahayahay,10.279288,123.842392,estimated i
 Cadulawan,Purok Kamunggay,purok,Lower Mahayahay,10.276130,123.845200,"Overture address ""Purok Kamungay, Candulawan""",low,fire log; Overture Maps,
 Cadulawan,Zone II (Lower),zone,,10.278342,123.841811,"estimated from outage notice: 2 neighbours within 203 m (Purok Mangga, Purok Tambis), set 70 m off their middle; shares the estimate with 1 other name(s), order unknown",low,fire log; city profile 2010; research 2026-11-08,"fire log: ""Lower Candulawan""; its notices name no road found on the map in Cadulawan"
 Cadulawan,Purok Mangga,purok,Zone II (Lower),10.278312,123.844188,Google Maps place,medium,fire log; fire log research 2026-11-06,its notices name no road found on the map in Cadulawan
-Cadulawan,Purok Boongon,purok,,10.278797,123.843461,"OpenStreetMap: Candulawan Barangay Hall, which stands in it",medium,fire log; CDN 2024; OpenStreetMap,"CDN 2024: ""barangay hall at Purok Boongon"""
+Cadulawan,Purok Boongon,purok,Zone IV (Proper),10.278797,123.843461,"OpenStreetMap: Candulawan Barangay Hall, which stands in it",medium,fire log; CDN 2024; OpenStreetMap,"CDN 2024: ""barangay hall at Purok Boongon"""
 Cadulawan,Purok Nangka,purok,,,,,,CDN 2024,
 Cadulawan,Purok Chicos,purok,,10.278970,123.842917,"estimated from outage notice: 2 neighbours within 203 m (Purok Mangga, Purok Tambis), set 70 m off their middle; shares the estimate with 1 other name(s), order unknown",low,Visayan Electric; research 2026-11-08,its notices name no road found on the map in Cadulawan
-Cadulawan,Sitio Tubod,sitio,,,,,,Visayan Electric,its notices name no road found on the map in Cadulawan
+Cadulawan,Sitio Tubod,sitio,,,,,,Visayan Electric,"its notices name no road found on the map in Cadulawan; the 12 Aug 2025 notice lists it under Talisay, Brgy. Cadulawan, with Purok Chicos (Minglanilla's barangay Tubod is a different place)"
 Cadulawan,Zone I,zone,,,,,,city profile 2010; SunStar 2014 hazard list,
 Cadulawan,Sitio Mahayahay,sitio,,10.279288,123.842392,"Overture address ""Mahayahay, Candulawan"", 90 m from the barangay hall",medium,fire log; Visayan Electric; Overture Maps,Upper and Lower Mahayahay are its parts
 Cadulawan,Sitio Little Bamboo,sitio,,,,,,SunStar 2014 hazard list,
-Cadulawan,Zone IV (Proper),zone,,,,,,city profile 2010,
+Cadulawan,Zone IV (Proper),zone,,10.278797,123.843461,"OpenStreetMap: Candulawan Barangay Hall (""Proper"" is the barangay centre)",low,city profile 2010; OpenStreetMap,placed as Camp IV's Sitio Proper is; exact extent unknown
 Cadulawan,Zone V (Upper),zone,,,,,,city profile 2010,
 Cadulawan,Vista Grande,subdivision,,10.279777,123.836265,OpenStreetMap outline,high,Visayan Electric; OpenStreetMap,
 Cadulawan,Purok Miracle,purok,,10.275756,123.843294,name on the pin: Purok miracle (Google Maps),low,Overture Maps,
@@ -231,7 +231,6 @@ Manipis,Camp 6,sitio,,10.320982,123.786523,"OpenStreetMap: Manipis Elementary Sc
 Manipis,Sitio Langoyon,sitio,,,,,,landslide log; ABS-CBN 2022; CDN 2021,CDN spells it Languyon; a landslide spot on the Manipis road
 Manipis,Camp 8,sitio,,10.315027,123.789380,OpenStreetMap place,high,OpenStreetMap,
 Manipis,Sitio Camp 5,sitio,,10.325680,123.806800,"name on the pin: Camp 5 manipis, talisay city, cebu (Google Maps)",medium,SunStar 2014 hazard list,SunStar also lists a Camp 5 in Camp IV
-Manipis,Nagoyon,sitio,,,,,,SunStar 2014 hazard list,"SunStar: ""Proper Nagoyon""; spelling unconfirmed"
 Manipis,Purok Araw-Araw,purok,,10.321840,123.780760,"Overture place ""Manokan sa Purok Araw-Araw"", Toledo-Manipis Rd",medium,Overture Maps,
 Mohon,Upper Mohon,sitio,,10.255533,123.821429,OpenStreetMap place,high,fire log; OpenStreetMap,
 Mohon,Purok Bontory,purok,Upper Mohon,10.255533,123.821429,"estimated inside Upper Mohon (fire log: Bontory, Upper Mohon); exact spot in the sitio unknown",low,fire log; research 2026-11-08,position inside its parent estimated
@@ -373,7 +372,7 @@ Tangke,Purok Mamsa,purok,Sitio Tunga,10.251524,123.859415,outage notices (1) alo
 Tangke,Sitio Magay,sitio,,10.251332,123.860022,outage notices (4) along Rafael Rabaya Street,low,Visayan Electric; fire log,Magay St; position along road approximate
 Tangke,Sitio Rattan,sitio,,10.251382,123.859819,outage notices (4) along Rafael Rabaya Street,low,Visayan Electric; fire log; Inquirer,also spelled Ratan; position along road approximate
 Tangke,Sitio Sambagan,sitio,,10.251423,123.859677,outage notices (5) along Rafael Rabaya Street,low,fire log,
-Tangke,Sitio Salvador,sitio,,10.252040,123.864502,street named after it (Salvador Street),medium,fire log,Salvador St
+Tangke,Sitio Salvador,sitio,,10.255680,123.866290,"OpenStreetMap: Salvador Community Center; a CHR report (2020) meets at it in ""Sitio Salvador"", and Tanke National High School beside it gives ""Sitio Salvador Street""",high,fire log; OpenStreetMap; Commission on Human Rights 2020,"was pinned on Salvador Street, on the same spot as Sitio Dali-Dali"
 Tangke,Sitio Dali-Dali,sitio,,10.252056,123.864508,"outage notices (1) along Galaxy Street, Salvador Street",low,Visayan Electric,
 Tangke,Sitio Galaxy,sitio,,10.250008,123.861888,street named after it (Galaxy Street),medium,Visayan Electric,Galaxy St
 Tangke,Sitio Kalinaw,sitio,,10.259995,123.870288,Wikimapia outline,high,Visayan Electric; Wikimapia; OpenStreetMap,OSM: Kalinao
@@ -383,7 +382,7 @@ Tapul,Sitio Catican,sitio,,10.289850,123.813030,"name on the pin: Katikan, Napu,
 Tapul,Sitio Hawanay,sitio,,10.306768,123.793119,OpenStreetMap place,high,OpenStreetMap,
 Tapul,Sitio Campo,sitio,,,,,,SunStar 2014 hazard list,
 Tapul,Purok 1,purok,Sitio Napo,10.293163,123.805792,name on the pin: Napu Purok 1 Lower; two shops give Purok 1 Napu,medium,Visayan Electric; Google Maps 2026-11-08,"its notices name no road found on the map in Tapul; research 2026-11-11 A: parent fix, chapel ""Napu Purok 1 Lower"" and ""Purok 1 Napu Tapul"" (Google and Apple, 3 pins)"
-Tapul,Purok 2,purok,,,,,,Visayan Electric,its notices name no road found on the map in Tapul
+Tapul,Purok 2,purok,Sitio Campo,,,,,Visayan Electric,its notices name no road found on the map in Tapul
 Tapul,Purok 3,purok,,10.289939,123.805397,Wikimapia outline,high,Visayan Electric; Wikimapia,
 Tapul,Purok 4,purok,,10.290100,123.800950,Google Maps pin,medium,Visayan Electric; fire log; fire log research 2026-11-06,its notices name no road found on the map in Tapul
 Tapul,Purok 5,purok,,,,,,Visayan Electric,its notices name no road found on the map in Tapul
@@ -410,7 +409,7 @@ Dumlog,Sitio Florida,sitio,,10.243246,123.840714,Overture: KFC Compound Florida 
 Dumlog,Zone 6,zone,,10.238308,123.836205,Google Maps: Zone-6 Sitio Roma Dumlog talisay city,medium,Google Maps,
 Jaclupan,Purok Caimito,purok,,10.298274,123.818344,Google Maps: PUROK CAIMITO,medium,Google Maps,
 Jaclupan,Purok Kolo,purok,,10.302135,123.817170,Google Maps: Purok Kolo,medium,Google Maps,
-Jaclupan,Purok Sabana,purok,,10.300295,123.810422,Google Maps: Purok Sabana,medium,Google Maps,"DOUBTFUL: the point sits exactly on Google's label point for the barangay (a default pin, not the place); search again"
+Jaclupan,Purok Sabana,purok,Sitio Malunhaw,10.300295,123.810422,Google Maps: Purok Sabana,medium,Google Maps,"DOUBTFUL: the point sits exactly on Google's label point for the barangay (a default pin, not the place); search again"
 Jaclupan,Sitio Badbad,sitio,,10.298820,123.821147,Google Maps: Sitio Badbad Chapel (Bugna),medium,Google Maps,
 Jaclupan,Sitio Bugna,sitio,,10.298820,123.821147,Google Maps: Sitio Badbad Chapel (Bugna),medium,Google Maps,
 Jaclupan,Sitio Dike,sitio,,10.294979,123.818531,"nearby address: JC Store, 7RV9+XCR, Sitio Dike",low,Google Maps; Google Maps 2026-11-08,moved 2026-11-08: the earlier pin sat on Google's barangay label point
@@ -667,3 +666,23 @@ Tabunok,Purok Hannos,purok,Zone 2,10.260980,123.840710,"Google Maps place ""Puro
 Tabunok,Purok Masinabtanon,purok,Tali Plains Subdivision,10.261660,123.849520,"Google Maps place ""Purok Masinabtanon"" (Dawis Rd)",medium,Google Maps,research 2026-11-11 B: parent by location only
 Manipis,Purok Mangga,purok,Camp 6,10.320860,123.781040,"Google Maps address ""Camp 6 manipis, PUROK MANGGA"" (Sari2x Store)",low,Google Maps,research 2026-11-11 N A: parent named in the address; point is a store on that address
 Dumlog,Purok Chicos,purok,South Covina,10.239710,123.842910,"Google Maps place ""Purok chicos letting dumlog""",medium,Google Maps,research 2026-11-11 N B: parent by location only
+Tangke,Kalinao 1,purok,Sitio Kalinaw,10.260068,123.869404,"OpenStreetMap: Kalinao 1 Chapel (address ""Kalinao 1"")",high,OpenStreetMap,"chapel building, way 679623681"
+Tangke,Kalinao 2,purok,Sitio Kalinaw,10.259923,123.870595,OpenStreetMap: Kalinao 2 Chapel,high,OpenStreetMap,"chapel building, way 742392923; node 8562702064 also says Kalinao 2 but stands on the Kalinao 1 chapel"
+Tangke,Purok Anduhaw,purok,Sitio Rattan,,,,,CDN Digital 2024,"fire of 16 Dec 2024, in the fire log as ""Sitio Ratan""; no pin yet"
+San Isidro,Sitio Tabulasan,sitio,,10.260570,123.841675,street named after it (Tabulasan Street),medium,City of Talisay website 2022; OpenStreetMap,"city post: ""Sitio Tabulasan, luyo sa Agura"""
+Dumlog,Purok Emerald,purok,,10.241012,123.839873,"one address: ""Purok Emerald Zone 3 Bascon St"" (Ernesto Bascon Street)",low,Facebook business page,address also names Zone 3; position along the street approximate
+Jaclupan,Manguilamon,sitio,,10.305372,123.812105,school named after it (Manguilamon Elementary School),high,OpenStreetMap,"the school's OSM address says Camp 4, Iba; it is inside Jaclupan on the PSA outline"
+Jaclupan,Sitio Malunhaw,sitio,,,,,,Facebook business page,"address ""Purok Sabana Sitio Malunhaw Jaclupan""; no pin yet"
+Jaclupan,Purok Maribago,purok,Camp 2,,,,,Facebook business page,"address ""Jaclupan Camp 2 Purok Maribago""; no pin yet"
+Manipis,Sitio YMCA,sitio,,,,,,Barangay Manipis Facebook page,named in a barangay clean-up post; no pin yet
+Biasong,Purok Sunflower,purok,,,,,,CDN Digital 2021,"DOUBTFUL: fire of Saturday 18 Sep 2021 (CDN video, ""Barangay Biason""); the only addresses naming a Purok Sunflower (Overture) are in Lower Linao-Lipata, Minglanilla, outside Talisay"
+Dumlog,Sitio Mangga,sitio,,,,,,CDN Digital,"video: residents in Sitio Mangga, Barangay Dumlog; no pin yet"
+Cadulawan,Purok Sambag,purok,,,,,,Facebook business page,"address ""Purok Sambag"", Candulawan; no pin yet"
+Cansojong,Purok Lingko,purok,,,,,,CDN Digital 2020,fire of 12 Jul 2020 (15 houses); no pin yet
+Linao,St. Mary's Heights,subdivision,,10.257430,123.820610,"Overture place ""St. Mary's Heights Linao""",low,Overture Maps 2026-11-18.0,
+Linao,West Boxhill Residences,subdivision,,10.247270,123.817540,"Overture place ""West Boxhill Residences""",low,Overture Maps 2026-11-18.0,its listing says Mohon; the point is inside Linao on the PSA outline
+Pooc,Graceville Subdivision,subdivision,,10.240450,123.823050,"Overture place ""Graceville Subdivision""",low,Overture Maps 2026-11-18.0,
+San Isidro,Sto. Nino Village,subdivision,,10.254250,123.838460,"Overture place ""Sto. Niño Village""",low,Overture Maps 2026-11-18.0,
+Poblacion,Sitio Baracca,sitio,,,,,,Overture Maps 2026-11-18.0,"address ""Lower General Luna Street Sitio Baracca Brgy Poblacion II""; the listing's point is a shared default, not used"
+Tabunok,Purok Mahigugmaon,purok,Sitio Neighborhood,,,,,Overture Maps 2026-11-18.0,"address ""Purok Mahigugmaon, Neighborhood, Tabunoc""; the listing's point is a shared default, not used"
+Biasong,Purok 5,purok,,10.245306,123.831735,"OpenStreetMap place ""Purok 5"" (tagged a purok)",high,OpenStreetMap,node 11282551593
