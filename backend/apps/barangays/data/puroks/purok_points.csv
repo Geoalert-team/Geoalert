@@ -45,7 +45,7 @@ Cadulawan,Purok Kamunggay,purok,Lower Mahayahay,10.276130,123.845200,"Overture a
 Cadulawan,Zone II (Lower),zone,,10.278342,123.841811,"estimated from outage notice: 2 neighbours within 203 m (Purok Mangga, Purok Tambis), set 70 m off their middle; shares the estimate with 1 other name(s), order unknown",low,fire log; city profile 2010; research 2026-11-08,"fire log: ""Lower Candulawan""; its notices name no road found on the map in Cadulawan"
 Cadulawan,Purok Mangga,purok,Zone II (Lower),10.278312,123.844188,Google Maps place,medium,fire log; fire log research 2026-11-06,its notices name no road found on the map in Cadulawan
 Cadulawan,Purok Boongon,purok,Zone IV (Proper),10.278797,123.843461,"OpenStreetMap: Candulawan Barangay Hall, which stands in it",medium,fire log; CDN 2024; OpenStreetMap,"CDN 2024: ""barangay hall at Purok Boongon"""
-Cadulawan,Purok Nangka,purok,,,,,,CDN 2024,
+Cadulawan,Purok Nangka,purok,,,,,,CDN 2024; SunStar 2023,
 Cadulawan,Purok Chicos,purok,,10.278970,123.842917,"estimated from outage notice: 2 neighbours within 203 m (Purok Mangga, Purok Tambis), set 70 m off their middle; shares the estimate with 1 other name(s), order unknown",low,Visayan Electric; research 2026-11-08,its notices name no road found on the map in Cadulawan
 Cadulawan,Sitio Tubod,sitio,,,,,,Visayan Electric,"its notices name no road found on the map in Cadulawan; the 12 Aug 2025 notice lists it under Talisay, Brgy. Cadulawan, with Purok Chicos (Minglanilla's barangay Tubod is a different place)"
 Cadulawan,Zone I,zone,,,,,,city profile 2010; SunStar 2014 hazard list,
@@ -62,13 +62,13 @@ Camp IV,Cambawog Upper,sitio,,10.309506,123.816231,"Overture listing ""Cambawog,
 Camp IV,Purok Pinya,purok,Cambawog Upper,10.309506,123.816231,"estimated inside Cambawog Upper (fire log: Cambawog Upper, Purok Pinya; camp4talisay.com); exact spot in the sitio unknown",low,fire log; research 2026-11-08,its notices name no road found on the map in Camp IV; position inside its parent estimated
 Camp IV,Purok Santol,purok,Sitio Camp 5,10.326201,123.808563,"Reports place Sitio Santol on Manipis Road by the viewing deck, 40 m from the Camp IV line; barangay site lists Purok Santol under Sitio Camp-5; DPWH ",low,fire log; fire log research 2026-11-06,SunStar 2024: a cliff on the road where an SUV fell; parent from: camp4talisay.com: Camp-5 > Santol
 Camp IV,Sitio Caolong,sitio,,10.317859,123.818825,"nearby address: Google place Purok Lubi, 8R99+4GW, Sitio Caolong",low,fire log; news 2025-2026; Google Maps 2026-11-08,position approximate
-Camp IV,Purok Lubi,purok,Sitio Caolong,10.317859,123.818825,name on the pin: Purok Lubi (Google Maps),low,fire log; news 2025-2026; Overture Maps,
+Camp IV,Purok Lubi,purok,Sitio Caolong,10.317859,123.818825,name on the pin: Purok Lubi (Google Maps),low,fire log; news 2025-2026; Overture Maps; SunStar Superbalita 2026,"research 2026-11-21: SunStar Superbalita 2026: ""Purok Lubi, Sitio Caolong, Barangay Campo 4"""
 Camp IV,Sitio Languyon,sitio,,,,,,city profile 2010,
 Camp IV,Sitio Pangi,sitio,,10.333760,123.804977,Wikimapia outline,high,Wikimapia,
 Camp IV,Sitio Nangka,sitio,,,,,,news 2025-2026,hanging bridge lost to Typhoon Tino; its notices name no road found on the map in Camp IV
 Camp IV,Sitio Camp 5,sitio,,10.325680,123.806800,barangay site lists Camp-5 as a Camp IV sitio; name on the pin: Camp 5 manipis (Google Maps),medium,SunStar 2014 hazard list; camp4talisay.com; research 2026-11-08,"SunStar also lists a Camp 5 in Manipis; pin 99 m over the PSA line, in Manipis"
 Camp IV,Sitio Curba,sitio,,,,,,landslide log; CDN 2021,a landslide spot on the Manipis road
-Camp IV,Purok Saging,purok,,,,,,Bombo Radyo 2026,
+Camp IV,Purok Saging,purok,,,,,,Bombo Radyo 2026; SunStar Superbalita 2026,
 Cansojong,Kimba,sitio,,10.256855,123.850629,street in its address (Rafael Rabaya Street),medium,Wikipedia 2017; fire log; Inquirer,"fire log also lists ""Kimba, San Roque"""
 Cansojong,Sitio Atisan,sitio,,10.252569,123.855071,name on the pin: Atisan (Google Maps),medium,Wikipedia 2017; fire log,also spelled Antisan
 Cansojong,Sitio Mahayahay,sitio,,10.247666,123.855460,Wikimapia outline,high,Wikimapia; Wikipedia 2017; fire log,
@@ -146,8 +146,8 @@ Lagtang,Sitio Mananga,sitio,,10.265748,123.838291,outage notices (4) along Molav
 Lagtang,Sitio Paraiso,sitio,,,,,,Visayan Electric,
 Lagtang,Sitio Riverside,sitio,,10.265108,123.837069,outage notices (6) along Molave Extension,low,Visayan Electric,
 Lagtang,Purok Emilio Aguinaldo,purok,,10.265058,123.837002,outage notices (2) along Molave Extension,low,Visayan Electric,
-Lagtang,Purok Jacinto Zamora,purok,,10.265168,123.837150,outage notices (1) along Molave Extension,low,Visayan Electric,position along road approximate
-Lagtang,Purok Jose Rizal,purok,,10.265411,123.837522,outage notices (1) along Molave Extension,low,Visayan Electric,position along road approximate
+Lagtang,Purok Jacinto Zamora,purok,,10.265168,123.837150,outage notices (1) along Molave Extension,low,Visayan Electric,"position along road approximate; research 2026-11-21: SunStar 2025 puts Puroks Jacinto Zamora and Jose Rizal in Sitio Mananga 2, Tabunok, 300 m away; may be those"
+Lagtang,Purok Jose Rizal,purok,,10.265411,123.837522,outage notices (1) along Molave Extension,low,Visayan Electric,"position along road approximate; research 2026-11-21: SunStar 2025 puts Puroks Jacinto Zamora and Jose Rizal in Sitio Mananga 2, Tabunok, 300 m away; may be those"
 Lagtang,Purok Melchora,purok,,10.265609,123.837933,outage notices (1) along Molave Extension,low,Visayan Electric,position along road approximate
 Lagtang,Sitio Iba,sitio,,10.290699,123.824992,OpenStreetMap place,high,city profile 2010; OpenStreetMap; SunStar 2014 hazard list,fire log puts a Sitio Iba in Lawaan II too
 Lagtang,Kasambagan,sitio,,10.268446,123.835072,OpenStreetMap place,high,OpenStreetMap; Visayan Electric,
@@ -177,13 +177,13 @@ Lawaan II,Sitio Puso-an,sitio,,10.251792,123.835019,name on the pin: Sitio Puso-
 Lawaan II,Sitio Gangan,sitio,,10.250798,123.834082,"nearby address: Madrinan Building, Sitio Gangan",low,Wikipedia 2017; Google Maps 2026-11-08,position approximate
 Lawaan II,Sitio Oregano,sitio,,10.254683,123.829371,outage notices (1) along Cebu South Coastal Road,low,Wikipedia 2017,
 Lawaan II,Sitio Luy-a,sitio,,10.250870,123.835460,"Overture address ""Sitio Luy-a Lawaan 2""",low,Wikipedia 2017; Overture Maps,
-Lawaan II,Sitio Sombria,sitio,,10.254286,123.831071,"outage notices (1) along Cebu South Coastal Road, Cong. A. Bacaltos Street, Fidel Bas Street",low,Wikipedia 2017,
+Lawaan II,Sitio Sombria,sitio,,10.254286,123.831071,"outage notices (1) along Cebu South Coastal Road, Cong. A. Bacaltos Street, Fidel Bas Street",low,Wikipedia 2017,"research 2026-11-21: SunStar 2016 and The Freeman 2019 put it in Lawaan 1, where its St. Ignatius de Loyola Subdivision stands"
 Lawaan II,Sitio Mangga,sitio,,10.253703,123.833677,"outage notices (2) along Cebu South Coastal Road, Garnet Street, Gold Street, Natalio Bacalso Avenue, Pearl Street",low,Wikipedia 2017,order along road unknown
 Lawaan II,Sitio Gabon,sitio,,10.256800,123.831400,"Overture addresses (2) ""Sitio Gabon, Lawaan II""",low,Overture Maps,
 Lawaan II,Sitio Kalachuchi,sitio,,10.258380,123.831310,"Overture address ""A. Bacaltos, Sitio Kalachuchi""",low,Overture Maps,
 Lawaan II,Fairview Village,subdivision,,10.257778,123.834098,Wikimapia outline,high,Wikimapia; OpenStreetMap,OSM has Fairview Village's Chapel; its streets are named after gems
 Lawaan III,Sitio Crusher,sitio,,10.265199,123.829305,"OpenStreetMap place ""Selma Crusher"", tagged a purok of Lawaan III",high,Visayan Electric; fire log; OpenStreetMap,OSM: Selma Crusher; outage notices also name it along Maghaway Road
-Lawaan III,Purok Chicos,purok,,,,,,fire log,
+Lawaan III,Purok Chicos,purok,,,,,,fire log,"research 2026-11-21: Philstar Banat 2025 gives a Purok Chicos in Lawaan 2, burned with Purok Guyabano"
 Lawaan III,Caduldulan,sitio,,10.260659,123.833574,outage notices (5) along Lawaan 3 Street,low,Visayan Electric; fire log; SunStar 2014 hazard list,SunStar: Canduldulan
 Lawaan III,Sitio Pagtambayayong,sitio,,10.264156,123.824763,outage notices (7) along Maghaway Road,low,fire log,
 Lawaan III,Purok Cadicay,purok,Sitio Pagtambayayong,10.266530,123.829610,"Overture address ""Sitio Cadikay, Brgy Lawaan 3""",medium,fire log; Visayan Electric; SunStar 2014 hazard list; Overture Maps,SunStar: Candicay
@@ -225,7 +225,7 @@ Maghaway,Azienda Milan,subdivision,,10.272354,123.818918,OpenStreetMap place,hig
 Maghaway,Sta. Maria Heights,subdivision,,10.283010,123.817236,Wikimapia outline,high,Visayan Electric; SunStar 2014 hazard list,
 Maghaway,Purok Kulo 3,purok,,10.268760,123.823810,"Overture address ""Purok Kulo 3 Maghaway Rd.""",low,Overture Maps,
 Maghaway,San Jose Maria,subdivision,,10.274087,123.820671,"Overture place ""San Josemaria Village"", Maghaway Rd",medium,fire log; Overture Maps,
-Manipis,Purok Bamboo,purok,,,,,,GMA News,
+Manipis,Purok Bamboo,purok,,,,,,GMA News,research 2026-11-21: SunStar 2025 gives a Sitio Bamboo in Campo 4 on the Toledo Wharf Road
 Manipis,Purok Kaimito,purok,Camp 6,10.321664,123.786624,"Google Maps place ""Purok Kaymito"" (plus code 8QCP+MJ9)",medium,GMA News,research 2026-11-11 O: pin inside Camp 6 on the Talisay-Toledo Wharf Road; sitio by location only; GMA 2025 flood names it
 Manipis,Camp 6,sitio,,10.320982,123.786523,"OpenStreetMap: Manipis Elementary School, formerly Camp 6 Elementary School",high,landslide log; OpenStreetMap,OSM addr:neighbourhood=Camp 6; the barangay hall is beside it
 Manipis,Sitio Langoyon,sitio,,,,,,landslide log; ABS-CBN 2022; CDN 2021,CDN spells it Languyon; a landslide spot on the Manipis road
@@ -250,7 +250,7 @@ Mohon,Boxhill Residences,subdivision,,10.250395,123.820661,OpenStreetMap outline
 Poblacion,Sitio Miramar,sitio,,10.241749,123.845504,Wikimapia outline,high,Wikimapia,"fire log: ""Marimar Phase 2"""
 Poblacion,Purok Alubati,purok,Sitio Miramar,10.241749,123.845504,"estimated inside Sitio Miramar (fire log: Purok Alubati, Marimar Phase 2); exact spot in the sitio unknown",low,fire log; research 2026-11-08,position inside its parent estimated
 Poblacion,Sitio Libra,sitio,,10.241364,123.847825,name on the pin: Sitio Libra,medium,DSWD DROMIC; fire log; Google Maps 2026-11-08,also spelled Labra
-Poblacion,Purok Kamunggay,purok,Sitio Libra,10.247050,123.847140,Overture: Libra Chapel - Purok Kamunggay,medium,fire log; Overture Maps,
+Poblacion,Purok Kamunggay,purok,Sitio Libra,10.247050,123.847140,Overture: Libra Chapel - Purok Kamunggay,medium,fire log; Overture Maps; SunStar Superbalita 2024; Philstar Banat 2024,
 Poblacion,Tres Alinos,sitio,,10.241773,123.847317,"outage notices (1) along Burgos Street, Cabalan Street, J. P. Rizal Street, Los Marteres Street, Main Street, P. del Rosario Street, Tres Aliños Street, Vicente H. Garces Street",low,fire log,position along road approximate
 Poblacion,Purok Saluyot,purok,Tres Alinos,10.245980,123.847830,"address on the pin: Purok Saluyot, P. Del Rosario (Google Maps); fire log: Tres Alinos, Purok Saluyot",medium,fire log; research 2026-11-08,
 Poblacion,Garden,sitio,,10.246393,123.848816,name on the pin: Sitio Garden (Overture),low,fire log,
@@ -273,7 +273,7 @@ Pooc,Sitio Cabutoy,sitio,,10.242860,123.821820,"Overture address ""Z1 Sitio Cabu
 Pooc,Sitio Maharlika,sitio,,10.238718,123.819677,Wikimapia outline,high,Wikimapia,
 Pooc,Purok 3,purok,Sitio Sunrise,10.239900,123.824530,"Overture address ""Purok 3-Sitio Sunrise, Pooc""",low,Visayan Electric; Overture Maps,
 Pooc,Purok 6,purok,,,,,,Visayan Electric,its notices name no road found on the map in Pooc
-Pooc,Rainbowville,subdivision,,10.242460,123.827000,"Overture place ""Rainbowville, Pooc""",medium,fire log; Overture Maps,
+Pooc,Rainbowville,subdivision,,10.242460,123.827000,"Overture place ""Rainbowville, Pooc""",medium,fire log; Overture Maps,"research 2026-11-21: SunStar 2024 gives ""Purok Rainbowville, Barangay Biasong""; the pin is in Pooc near the boundary"
 Pooc,Roseville Subdivision,subdivision,,10.240690,123.825520,"Overture place ""Roseville Subdivision""",medium,city profile 2010; Visayan Electric; Overture Maps,
 Pooc,Corona del Mar,subdivision,,10.241991,123.819876,Wikimapia outline,high,Visayan Electric; Wikimapia; OpenStreetMap,OSM outlines its Escala phase
 Pooc,Sea Breeze Homes,subdivision,,10.245773,123.824152,OpenStreetMap outline,high,OpenStreetMap,
@@ -588,7 +588,7 @@ Lawaan III,Purok Cherries,purok,,10.262192,123.830484,nearby address: Amarah's P
 Lawaan III,Purok Pomelo,purok,,10.263108,123.832417,"estimated from outage notice: Sitio Crusher, Purok Cadicay, Purok Grapes, Purok Lumboy",low,6 neighbours within 487 m,
 Lawaan III,Sitio Riverside,sitio,,10.266330,123.830138,road in outage notice: Molave St.,low,Visayan Electric + OpenStreetMap,
 Linao,Purok Sampaguita,purok,,10.263162,123.816388,nearby address: Gamboa's Apartment,low,Google Maps,
-Linao,Sitio Molila,sitio,,10.255439,123.821877,nearby address: Trust Rent A Car,low,Overture,
+Linao,Sitio Molila,sitio,,10.255439,123.821877,nearby address: Trust Rent A Car,low,Overture,"research 2026-11-21: SunStar 2023 gives ""Sitio Molila, Barangay Lawaan 1"""
 Linao,Sitio Orchid Bell,sitio,,10.255744,123.818573,nearby address: nahmee prints,low,Overture,
 Maghaway,Sitio Bulahan,sitio,,10.272018,123.821115,road in outage notice: Maghaway Road,low,Visayan Electric + OpenStreetMap,
 Maghaway,Sitio Daku,sitio,,10.272018,123.821115,road in outage notice: Maghaway Road,low,Visayan Electric + OpenStreetMap,
@@ -673,11 +673,11 @@ San Isidro,Sitio Tabulasan,sitio,,10.260570,123.841675,street named after it (Ta
 Dumlog,Purok Emerald,purok,,10.241012,123.839873,"one address: ""Purok Emerald Zone 3 Bascon St"" (Ernesto Bascon Street)",low,Facebook business page,address also names Zone 3; position along the street approximate
 Jaclupan,Manguilamon,sitio,,10.305372,123.812105,school named after it (Manguilamon Elementary School),high,OpenStreetMap,"the school's OSM address says Camp 4, Iba; it is inside Jaclupan on the PSA outline"
 Jaclupan,Sitio Malunhaw,sitio,,,,,,Facebook business page,"address ""Purok Sabana Sitio Malunhaw Jaclupan""; no pin yet"
-Jaclupan,Purok Maribago,purok,Camp 2,,,,,Facebook business page,"address ""Jaclupan Camp 2 Purok Maribago""; no pin yet"
+Jaclupan,Purok Maribago,purok,Camp 2,,,,,Facebook business page; SunStar Superbalita 2022,"address ""Jaclupan Camp 2 Purok Maribago""; no pin yet"
 Manipis,Sitio YMCA,sitio,,,,,,Barangay Manipis Facebook page,named in a barangay clean-up post; no pin yet
-Biasong,Purok Sunflower,purok,,,,,,CDN Digital 2021,"DOUBTFUL: fire of Saturday 18 Sep 2021 (CDN video, ""Barangay Biason""); the only addresses naming a Purok Sunflower (Overture) are in Lower Linao-Lipata, Minglanilla, outside Talisay"
+Biasong,Purok Sunflower,purok,,,,,,CDN Digital 2021,"DOUBTFUL: fire of Saturday 18 Sep 2021 (CDN video, ""Barangay Biason""); the only addresses naming a Purok Sunflower (Overture) are in Lower Linao-Lipata, Minglanilla, outside Talisay; research 2026-11-21: two 2025 reports (Banat, SunStar) give a Purok Sunflower in San Roque"
 Dumlog,Sitio Mangga,sitio,,,,,,CDN Digital,"video: residents in Sitio Mangga, Barangay Dumlog; no pin yet"
-Cadulawan,Purok Sambag,purok,,,,,,Facebook business page,"address ""Purok Sambag"", Candulawan; no pin yet"
+Cadulawan,Purok Sambag,purok,,,,,,Facebook business page; SunStar 2024,"address ""Purok Sambag"", Candulawan; no pin yet"
 Cansojong,Purok Lingko,purok,,,,,,CDN Digital 2020,fire of 12 Jul 2020 (15 houses); no pin yet
 Linao,St. Mary's Heights,subdivision,,10.257430,123.820610,"Overture place ""St. Mary's Heights Linao""",low,Overture Maps 2026-11-18.0,
 Linao,West Boxhill Residences,subdivision,,10.247270,123.817540,"Overture place ""West Boxhill Residences""",low,Overture Maps 2026-11-18.0,its listing says Mohon; the point is inside Linao on the PSA outline
@@ -686,3 +686,54 @@ San Isidro,Sto. Nino Village,subdivision,,10.254250,123.838460,"Overture place "
 Poblacion,Sitio Baracca,sitio,,,,,,Overture Maps 2026-11-18.0,"address ""Lower General Luna Street Sitio Baracca Brgy Poblacion II""; the listing's point is a shared default, not used"
 Tabunok,Purok Mahigugmaon,purok,Sitio Neighborhood,,,,,Overture Maps 2026-11-18.0,"address ""Purok Mahigugmaon, Neighborhood, Tabunoc""; the listing's point is a shared default, not used"
 Biasong,Purok 5,purok,,10.245306,123.831735,"OpenStreetMap place ""Purok 5"" (tagged a purok)",high,OpenStreetMap,node 11282551593
+Biasong,Purok Akasia,purok,Zone 2,10.237120,123.829270,estimated at the barangay hall (Zone 2): Philstar Banat 2022 puts it behind the hall,low,SunStar 2023; Philstar Banat 2022,research 2026-11-21: also spelled Purok Acacia; Banat 2022: behind the Biasong Barangay Hall; position approximate
+Biasong,Purok Malonawon,purok,,,,,,SunStar Superbalita 2024,research 2026-11-21: no location in the source
+Biasong,Sitio Maanyag,sitio,,,,,,Rappler 2019,"research 2026-11-21: an ambush there, just after the victim left a slaughterhouse; no location"
+Bulacao,Main Court Subdivision,subdivision,,,,,,SunStar Superbalita 2025,research 2026-11-21: no location in the source
+Bulacao,Sitio Little Baguio,sitio,,,,,,Philstar/The Freeman 2013,research 2026-11-21: fire of May 2013; no location
+Cadulawan,Purok Colis,purok,,,,,,SunStar 2023; SunStar 2024,research 2026-11-21: treasure-hunt dig (2023) and an arrest (2024) there; no location
+Camp IV,Sitio Bamboo,sitio,,,,,,SunStar 2025; SunStar Superbalita 2025,research 2026-11-21: landslide on the Toledo Wharf Road; may be the Purok Bamboo on file (no pin) for Manipis on the same road
+Camp IV,Sitio Kambawog,sitio,,,,,,SunStar 2024,research 2026-11-21: a ravine above the river; no location
+Cansojong,Sitio Riverside,sitio,,,,,,Philstar Banat 2020; SunStar 2018,"research 2026-11-21: SunStar spells it ""sitio Riverside 1""; may be the Zodiac Riverside on file (no pin)"
+Dumlog,Purok Acacia,purok,,,,,,SunStar 2024,research 2026-11-21: no location in the source
+Dumlog,Purok Jade,purok,,,,,,SunStar Superbalita 2026,research 2026-11-21: at a motor shop; no Jade Street in Dumlog on the map (Opal and Emerald are its neighbours in name)
+Dumlog,Sitio Cagang,sitio,,,,,,SunStar Superbalita 2022,research 2026-11-21: no location in the source
+Jaclupan,Purok 4,purok,,,,,,SunStar 2018; SunStar Superbalita 2025,research 2026-11-21: on the road (a 2025 road accident there); no location
+Jaclupan,Sitio Rambutan,sitio,,,,,,SunStar Superbalita 2025,research 2026-11-21: spelled Rambutam there; no location
+Jaclupan,Purok Bugnay,purok,Sitio Bugna,10.298820,123.821147,estimated inside Sitio Bugna,low,Philstar Banat 2023,"research 2026-11-21: ""Purok Bugnay, Sitio Bugna, Barangay Jaclupan""; position inside its parent estimated"
+Jaclupan,Purok Seneguelas,purok,,,,,,Talisay City Police Station post 2026 (seen only as a search snippet),research 2026-11-21: one source; check with the Barangay Hall
+Lagtang,Purok Tubig,purok,Sitio Ilang-Ilang,10.267835,123.837546,estimated inside Sitio Ilang-Ilang,low,SunStar Superbalita 2025,"research 2026-11-21: ""Purok Tubig, Sitio Ilang-Ilang, Brgy. Lagtang""; position inside its parent estimated"
+Lagtang,Purok Centro,purok,Sitio Kawayan,10.265376,123.837457,estimated inside Sitio Kawayan,low,SunStar Superbalita 2024,research 2026-11-21: the source spells the sitio Kawayanan; position inside its parent estimated
+Lagtang,Purok Gabison,purok,,,,,,SunStar 2024,research 2026-11-21: no location in the source
+Lagtang,Sitio Quadro,sitio,,,,,,SunStar 2025,research 2026-11-21: landslide of July 2025 there; no location
+Lagtang,Purok Caimito,purok,,,,,,Bombo Radyo Cebu 2024,"research 2026-11-21: spelled ""Purol Caimito"" there; no location"
+Lagtang,Sitio Lasco,sitio,,,,,,SunStar Superbalita 2026,research 2026-11-21: on the road from Tabunok up to Campo 4; no exact spot
+Lagtang,Sitio Bahala,sitio,,,,,,SunStar 2025,research 2026-11-21: a Sitio Bahala is also on file in Dumlog
+Lawaan I,Sitio Sombria,sitio,,10.257928,123.830250,St. Ignatius de Loyola Subdivision lies in it (SunStar 2016),low,SunStar 2016; Philstar/The Freeman 2019,research 2026-11-21: spelled Sombrea in 2016; also on file in Lawaan II from one outage notice; the boundary may cut through it; position approximate
+Lawaan I,Sitio Molila,sitio,,,,,,SunStar 2023,research 2026-11-21: also on file in Linao from one address; the boundary may cut through it
+Lawaan II,Purok Chicos,purok,,10.254142,123.831713,estimated at Purok Guyabano: one fire hit both,low,Philstar Banat 2025 (seen as a search snippet); SunStar Superbalita 2025,research 2026-11-21: one fire (July 2025) hit it and Purok Guyabano together; position approximate
+Lawaan III,Purok Saging,purok,,,,,,GMA Regional TV 2025,research 2026-11-21: flooded in Typhoon Tino; no location
+Lawaan III,Purok Lubi,purok,,,,,,SunStar Superbalita 2026,research 2026-11-21: no location in the source
+Lawaan III,Sitio Blissed,sitio,,,,,,SunStar Superbalita 2020,"research 2026-11-21: the source says only ""Barangay Lawaan""; the operation was in Lawaan III"
+Linao,Sitio Tambis,sitio,,,,,,SunStar 2018,research 2026-11-21: no location in the source
+Maghaway,Purok Avocado,purok,,,,,,SunStar 2023,research 2026-11-21: a junk shop there; no location
+Maghaway,Sitio Nursery,sitio,,,,,,SunStar Superbalita 2014,research 2026-11-21: no location in the source
+Manipis,Sitio Campo 7,sitio,,,,,,Philstar/The Freeman 2017; CDN Digital 2016 (search snippet),"research 2026-11-21: in the barangay captain's lists; Minglanilla's barangay Camp 7 lies next to it, west of Camp 6"
+Manipis,Sitio Latawan,sitio,,,,,,Philstar/The Freeman 2017; Philstar 2005,"research 2026-11-21: in the barangay captain's list (2017); on the Sinsin (Cebu City) boundary, part disputed in 2005 (spelled Lantawan)"
+Manipis,Sitio Manutu,sitio,,,,,,CDN Digital 2016 (search snippet; the page refuses downloads),research 2026-11-21: the barangay captain's list of landslide-prone sitios
+Mohon,Purok Riverside,purok,,,,,,SunStar 2024,research 2026-11-21: no location in the source
+Mohon,Purok Mangga,purok,,,,,,SunStar 2023,research 2026-11-21: spelled Manga there; Purok Mangga 3 is on file
+Poblacion,Purok Atis,purok,Sitio Litmon,10.243971,123.844980,estimated inside Sitio Litmon,low,SunStar Superbalita 2026,"research 2026-11-21: ""Purok Atis, Litmon, Barangay Poblacion""; position inside its parent estimated"
+Poblacion,Sitio Machacao,sitio,,,,,,SunStar 2023,research 2026-11-21: no location in the source
+Pooc,Sitio Ranger 2,sitio,,,,,,Philstar Banat 2025,research 2026-11-21: Purok Ranger is on file; no location
+San Roque,Purok Bangus,purok,Sitio Sawsawan,10.256243,123.864960,estimated inside Sitio Sawsawan,low,SunStar Superbalita 2025,"research 2026-11-21: ""Purok Bangus, Sitio Sawsawan, Barangay San Roque""; position inside its parent estimated"
+San Roque,Purok Ito,purok,Sitio Sawsawan,10.256243,123.864960,estimated inside Sitio Sawsawan,low,SunStar Superbalita 2026,"research 2026-11-21: ""Purok Ito, Sityo Sawsawan, Barangay San Roque""; Tangke has a Purok Eto in Sitio Salvador; position inside its parent estimated"
+San Roque,Purok Sampaguita,purok,,,,,,Talisay City Police Station post 2026 (seen only as a search snippet),research 2026-11-21: one source; check with the Barangay Hall
+San Roque,Purok Sunflower,purok,,,,,,Philstar Banat 2025; SunStar Superbalita 2025,research 2026-11-21: the Biasong Purok Sunflower on file has no pin and a doubtful source; this may be it
+Tabunok,Purok Julian Felipe,purok,Sitio Mananga II,10.262621,123.834787,estimated inside Sitio Mananga II,low,SunStar 2025,research 2026-11-21: fire of 25 June 2025 in Sitio Mananga 2; position inside its parent estimated
+Tabunok,Purok Jacinto Zamora,purok,Sitio Mananga II,10.262621,123.834787,estimated inside Sitio Mananga II,low,SunStar 2025,research 2026-11-21: fire of 25 June 2025 started there; Lagtang's Purok Jacinto Zamora (one outage notice) is 300 m away and may be this one; position inside its parent estimated
+Tabunok,Purok Manggihatagon,purok,,,,,,SunStar 2024,research 2026-11-21: no location in the source
+Tabunok,Purok Matinumanon,purok,,,,,,SunStar 2024,research 2026-11-21: no location in the source
+Tabunok,Purok Matinabangon,purok,,,,,,SunStar 2024,research 2026-11-21: a Purok Matinabangon is also on file in Bulacao
+Tangke,Purok Eto,purok,Sitio Salvador,10.255680,123.866290,estimated inside Sitio Salvador,low,SunStar 2024,"research 2026-11-21: ""Purok Eto, Sitio Salvador, Barangay Tangke""; position inside its parent estimated"
+Tangke,Purok Manggahan,purok,,,,,,SunStar Superbalita 2026,research 2026-11-21: a Sitio Manggahan is on file in Cadulawan; no location

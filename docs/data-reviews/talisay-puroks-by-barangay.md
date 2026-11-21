@@ -2,7 +2,7 @@
 
 Every purok, sitio, zone and subdivision name on file for the 22 barangays, from
 `backend/apps/barangays/data/puroks/purok_points.csv` (where each came from: `SOURCES.md` beside it).
-Generated 2026-11-19. Talisay has no official purok list, so these names come from the BFP fire log,
+Generated 2026-11-19, updated 2026-11-21. Talisay has no official purok list, so these names come from the BFP fire log,
 news, Visayan Electric outage notices, maps and listings, and the areas on the map are estimates.
 
 - **Pin**: where the name sits on the map. *No pin* means a source names it but none says where.
@@ -12,36 +12,35 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 - **Unnamed areas**: places the map gives an area to but no source has named yet. They carry a
   landmark label ("Near Tanke National High School") until the Barangay Hall names them.
 
-**687 names** (642 pinned, 45 without a pin); **9 unnamed areas** left in 5 barangays.
+**738 names** (654 pinned, 84 without a pin); **19 unnamed areas** left in 8 barangays.
 
 | Barangay | Names | Pinned | No pin | Unnamed areas | Sitios in the 2010 city profile |
 |---|---:|---:|---:|---:|---:|
-| [Biasong](#biasong) | 35 | 33 | 2 | — | — |
-| [Bulacao](#bulacao) | 40 | 40 | 0 | — | — |
-| [Cadulawan](#cadulawan) | 27 | 21 | 6 | 2 | 5 |
-| [Camp IV](#camp-iv) | 17 | 13 | 4 | — | 9 |
-| [Cansojong](#cansojong) | 44 | 40 | 4 | 3 | 26 |
-| [Dumlog](#dumlog) | 59 | 58 | 1 | — | — |
-| [Jaclupan](#jaclupan) | 25 | 22 | 3 | — | 9 |
-| [Lagtang](#lagtang) | 46 | 43 | 3 | — | — |
-| [Lawaan I](#lawaan-i) | 16 | 16 | 0 | — | — |
-| [Lawaan II](#lawaan-ii) | 26 | 26 | 0 | — | 14 |
-| [Lawaan III](#lawaan-iii) | 30 | 29 | 1 | — | — |
-| [Linao](#linao) | 30 | 27 | 3 | — | — |
-| [Maghaway](#maghaway) | 30 | 30 | 0 | — | 6 |
-| [Manipis](#manipis) | 12 | 9 | 3 | 2 | — |
-| [Mohon](#mohon) | 25 | 25 | 0 | — | — |
-| [Poblacion](#poblacion) | 20 | 19 | 1 | — | — |
-| [Pooc](#pooc) | 30 | 27 | 3 | 1 | 12 |
+| [Biasong](#biasong) | 38 | 34 | 4 | — | — |
+| [Bulacao](#bulacao) | 42 | 40 | 2 | 1 | — |
+| [Cadulawan](#cadulawan) | 28 | 21 | 7 | 3 | 5 |
+| [Camp IV](#camp-iv) | 19 | 13 | 6 | — | 9 |
+| [Cansojong](#cansojong) | 45 | 40 | 5 | 4 | 26 |
+| [Dumlog](#dumlog) | 62 | 58 | 4 | — | — |
+| [Jaclupan](#jaclupan) | 29 | 23 | 6 | — | 9 |
+| [Lagtang](#lagtang) | 53 | 45 | 8 | 2 | — |
+| [Lawaan I](#lawaan-i) | 18 | 17 | 1 | 1 | — |
+| [Lawaan II](#lawaan-ii) | 27 | 27 | 0 | — | 14 |
+| [Lawaan III](#lawaan-iii) | 33 | 29 | 4 | — | — |
+| [Linao](#linao) | 31 | 27 | 4 | — | — |
+| [Maghaway](#maghaway) | 32 | 30 | 2 | — | 6 |
+| [Manipis](#manipis) | 15 | 9 | 6 | 5 | — |
+| [Mohon](#mohon) | 27 | 25 | 2 | — | — |
+| [Poblacion](#poblacion) | 22 | 20 | 2 | — | — |
+| [Pooc](#pooc) | 31 | 27 | 4 | 2 | 12 |
 | [San Isidro](#san-isidro) | 42 | 40 | 2 | — | — |
-| [San Roque](#san-roque) | 60 | 57 | 3 | — | — |
-| [Tabunok](#tabunok) | 45 | 44 | 1 | — | 22 |
-| [Tangke](#tangke) | 16 | 15 | 1 | — | 9 |
+| [San Roque](#san-roque) | 64 | 59 | 5 | — | — |
+| [Tabunok](#tabunok) | 50 | 46 | 4 | — | 22 |
+| [Tangke](#tangke) | 18 | 16 | 2 | — | 9 |
 | [Tapul](#tapul) | 12 | 8 | 4 | 1 | — |
 
 ## Biasong
-
-35 names · 2 without a pin · 1509 households (2015 census)
+38 names · 4 without a pin · 1509 households (2015 census)
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
@@ -80,10 +79,14 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Puerto del Sol Subdivision | subdivision |  | yes | high |  | Wikimapia |
 | Raphael Homes | subdivision |  | yes | high |  | fire log; OpenStreetMap |
 | Villa Donna Subdivision | subdivision |  | yes | medium |  | Google Maps |
+| Purok Akasia | purok | Zone 2 | yes | low | Purok Acacia | SunStar 2023; Philstar Banat 2022; also spelled Purok Acacia; Banat 2022: behind the Biasong Barangay Hall; position approximate |
+| Purok Malonawon | purok |  | **no pin** | — |  | SunStar Superbalita 2024; no location in the source |
+| Sitio Maanyag | sitio |  | **no pin** | — |  | Rappler 2019; an ambush there, just after the victim left a slaughterhouse; no location |
 
 ## Bulacao
+42 names · 2 without a pin · 2949 households (2015 census)
 
-40 names · 0 without a pin · 2949 households (2015 census)
+**Unnamed areas, still to be named:** Along Andrin Street
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
@@ -127,16 +130,17 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Villa Estelita Subdivision | subdivision |  | yes | high |  | Wikimapia |
 | Villa Verna IV Subdivision | subdivision |  | yes | high |  | Wikimapia |
 | Villa Verna Subdivision | subdivision |  | yes | high |  | Map outline |
+| Main Court Subdivision | subdivision |  | **no pin** | — |  | SunStar Superbalita 2025; no location in the source |
+| Sitio Little Baguio | sitio |  | **no pin** | — |  | Philstar/The Freeman 2013; fire of May 2013; no location |
 
 ## Cadulawan
+28 names · 7 without a pin · 5 sitios in the 2010 city profile · 1095 households (2015 census)
 
-27 names · 6 without a pin · 5 sitios in the 2010 city profile · 1095 households (2015 census)
-
-**Unnamed areas, still to be named:** 1.2 km west of Candulawan National High School; Along Bulacao River
+**Unnamed areas, still to be named:** 1.1 km west of Candulawan National High School; 1.2 km west of Candulawan National High School; Along Bulacao River
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
-| Sitio Camachili | sitio |  | yes | medium | Purok Camachile | Google Maps |
+| Sitio Camachili | sitio |  | yes | medium | Purok Camachile; Purok Camansili; Purok Camanchili; Purok Chamachille | Google Maps |
 | Sitio Little Bamboo | sitio |  | **no pin** | — |  | SunStar 2014 hazard list |
 | Sitio Mahayahay | sitio |  | yes | medium |  | fire log; Visayan Electric; Overture Maps; Upper and Lower Mahayahay are its parts |
 | Sitio Tubod | sitio |  | **no pin** | — |  | Visayan Electric; its notices name no road found on the map in Cadulawan; the 12 Aug 2025 notice lists it under Talisay, Brgy. C… |
@@ -155,7 +159,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Purok Sambag | purok |  | **no pin** | — |  | Facebook business page; address "Purok Sambag", Candulawan; no pin yet |
 | Purok Singuelas | purok |  | yes | medium |  | Google Maps |
 | Purok Tambis | purok |  | yes | medium |  | Overture Maps |
-| Purok Kamunggay | purok | Lower Mahayahay | yes | low |  | fire log; Overture Maps |
+| Purok Kamunggay | purok | Lower Mahayahay | yes | low | Purok Camunggay; Purok Kamungay | fire log; Overture Maps |
 | Purok Mangga | purok | Zone II (Lower) | yes | medium |  | fire log; fire log research 2026-11-06; its notices name no road found on the map in Cadulawan |
 | Purok Boongon | purok | Zone IV (Proper) | yes | medium |  | fire log; CDN 2024; OpenStreetMap; CDN 2024: "barangay hall at Purok Boongon" |
 | Casilda Homes | subdivision |  | yes | medium |  | research 2026-11-08; Listed under Bulacao, but the pin falls in Cadulawan |
@@ -163,10 +167,10 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Pacific Heights | subdivision |  | yes | high |  | Wikimapia |
 | Smyrna Subdivision | subdivision |  | yes | medium |  | Google Maps; Listed under Bulacao, but the pin falls in Cadulawan |
 | Vista Grande | subdivision |  | yes | high |  | Visayan Electric; OpenStreetMap |
+| Purok Colis | purok |  | **no pin** | — |  | SunStar 2023; SunStar 2024; treasure-hunt dig (2023) and an arrest (2024) there; no location |
 
 ## Camp IV
-
-17 names · 4 without a pin · 9 sitios in the 2010 city profile · 687 households (2015 census)
+19 names · 6 without a pin · 9 sitios in the 2010 city profile · 687 households (2015 census)
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
@@ -187,12 +191,13 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Purok Lubi | purok | Sitio Caolong | yes | low |  | fire log; news 2025-2026; Overture Maps |
 | Purok Mangga | purok | Sitio Crossing | yes | low |  | research 2026-11-08; position inside its parent estimated |
 | Purok Sambag | purok | Sitio Proper | yes | low |  | fire log; camp4talisay.com; research 2026-11-08; position inside its parent estimated |
+| Sitio Bamboo | sitio |  | **no pin** | — |  | SunStar 2025; SunStar Superbalita 2025; landslide on the Toledo Wharf Road; may be the Purok Bamboo on file (no pin) for Manipis on the same road |
+| Sitio Kambawog | sitio |  | **no pin** | — |  | SunStar 2024; a ravine above the river; no location |
 
 ## Cansojong
+45 names · 5 without a pin · 26 sitios in the 2010 city profile · 3921 households (2015 census)
 
-44 names · 4 without a pin · 26 sitios in the 2010 city profile · 3921 households (2015 census)
-
-**Unnamed areas, still to be named:** Along Mitzi's Drive; Along Vicente H. Garces Street; Near Lokal ng Cansojong
+**Unnamed areas, still to be named:** Along Dawis Road; Along Mitzi's Drive; Along Vicente H. Garces Street; Near Lokal ng Cansojong
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
@@ -202,8 +207,8 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Sitio Asan | sitio |  | yes | high |  | Visayan Electric; Wikimapia |
 | Sitio Atisan | sitio |  | yes | medium | Antisan | Wikipedia 2017; fire log; also spelled Antisan |
 | Sitio Balut | sitio |  | yes | high |  | Visayan Electric; Wikimapia; notices spell it Balot |
-| Sitio Caneba | sitio |  | yes | low |  | fire log |
-| Sitio Casare | sitio |  | yes | low |  | Wikipedia 2017; fire log; city profile 2010; Philstar 2022; No map source names it. Philstar 2022 places an arrest there beside South Road Properties. The boundary is an … |
+| Sitio Caneba | sitio |  | yes | low | Sitio Caniba | fire log |
+| Sitio Casare | sitio |  | yes | low | Sitio Cassare | Wikipedia 2017; fire log; city profile 2010; Philstar 2022; No map source names it. Philstar 2022 places an arrest there beside South Road Properties. The boundary is an … |
 | Sitio Daghang Bayut | sitio |  | yes | medium |  | Google Maps |
 | Sitio Ibabao | sitio |  | **no pin** | — |  | Wikipedia 2017 |
 | Sitio Ibacan | sitio |  | yes | medium | Sitio Ebacan | Wikipedia 2017; fire log; fire log research 2026-11-06; also spelled Ibacan; BFP spelling; was Sitio Ebacan |
@@ -240,10 +245,10 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Stero Homes | subdivision |  | yes | medium |  | Google Maps |
 | Villa Lucita Subdivision | subdivision |  | yes | medium |  | Google Maps |
 | Southwinds Subdivision | subdivision | Kimba | yes | high |  | Wikimapia; Wikimapia: "Southwinds Subdivision, Kimba" |
+| Sitio Riverside | sitio |  | **no pin** | — |  | Philstar Banat 2020; SunStar 2018; SunStar spells it "sitio Riverside 1"; may be the Zodiac Riverside on file (no pin) |
 
 ## Dumlog
-
-59 names · 1 without a pin · 4245 households (2015 census)
+62 names · 4 without a pin · 4245 households (2015 census)
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
@@ -306,10 +311,12 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Sta. Rita Ville | subdivision |  | yes | low |  | research 2026-11-08; position approximate |
 | Sta. Theresa Village I | subdivision |  | yes | medium |  | Google Maps 2026-11-08; position approximate |
 | Univille Homes | subdivision |  | yes | medium |  | Google Maps place |
+| Purok Acacia | purok |  | **no pin** | — |  | SunStar 2024; no location in the source |
+| Purok Jade | purok |  | **no pin** | — |  | SunStar Superbalita 2026; at a motor shop; no Jade Street in Dumlog on the map (Opal and Emerald are its neighbours in name) |
+| Sitio Cagang | sitio |  | **no pin** | — |  | SunStar Superbalita 2022; no location in the source |
 
 ## Jaclupan
-
-25 names · 3 without a pin · 9 sitios in the 2010 city profile · 1921 households (2015 census)
+29 names · 6 without a pin · 9 sitios in the 2010 city profile · 1921 households (2015 census)
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
@@ -327,7 +334,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Sitio Ibo | sitio | Camp 2 | yes | low |  | 7 neighbours within 672 m |
 | Sitio Tinubdan | sitio | Camp 2 | yes | medium |  | research 2026-11-08; pin 127 m over the PSA line |
 | Purok Avocado | purok |  | yes | low |  | Visayan Electric; position along road approximate |
-| Purok Banana | purok |  | yes | medium |  | Visayan Electric; position along road approximate; research 2026-11-11 C: moved 222 m from the outage-notice estimate to the Goo… |
+| Purok Banana | purok |  | yes | medium | Purok Banana 1 | Visayan Electric; position along road approximate; research 2026-11-11 C: moved 222 m from the outage-notice estimate to the Goo… |
 | Purok Caimito | purok |  | yes | medium |  | Google Maps |
 | Purok Kasagingan | purok |  | yes | low |  | Visayan Electric; position along road approximate |
 | Purok Kolo | purok |  | yes | medium |  | Google Maps |
@@ -338,10 +345,15 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Purok Lubi | purok | Sitio Ibo | yes | low |  | 2 neighbours within 183 m |
 | Purok Sabana | purok | Sitio Malunhaw | yes | medium |  | Google Maps; DOUBTFUL: the point sits exactly on Google's label point for the barangay (a default pin, not the place); sear… |
 | Purok Lumboy | purok | Sitio Tinubdan | yes | medium |  | research 2026-11-08; shares its sitio's pin |
+| Purok 4 | purok |  | **no pin** | — |  | SunStar 2018; SunStar Superbalita 2025; on the road (a 2025 road accident there); no location |
+| Sitio Rambutan | sitio |  | **no pin** | — | Sitio Rambutam | SunStar Superbalita 2025; spelled Rambutam there; no location |
+| Purok Bugnay | purok | Sitio Bugna | yes | low |  | Philstar Banat 2023; "Purok Bugnay, Sitio Bugna, Barangay Jaclupan"; position inside its parent estimated |
+| Purok Seneguelas | purok |  | **no pin** | — |  | Talisay City Police Station post 2026 (seen only as a search snippet); one source; check with the Barangay Hall |
 
 ## Lagtang
+53 names · 8 without a pin · 3071 households (2015 census)
 
-46 names · 3 without a pin · 3071 households (2015 census)
+**Unnamed areas, still to be named:** Along Bulacao River; Near Iba Elementary School
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
@@ -356,7 +368,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Sitio Hollow Block | sitio |  | yes | high |  | Visayan Electric; Wikimapia |
 | Sitio Iba | sitio |  | yes | high |  | city profile 2010; OpenStreetMap; SunStar 2014 hazard list; fire log puts a Sitio Iba in Lawaan II too |
 | Sitio Ilang-Ilang | sitio |  | yes | medium |  | fire log; Visayan Electric; Ilang-ilang Rd |
-| Sitio Kawayan | sitio |  | yes | low |  | fire log; order along road unknown; position along road approximate |
+| Sitio Kawayan | sitio |  | yes | low | Sitio Kawayanan | fire log; order along road unknown; position along road approximate |
 | Sitio Luna | sitio |  | yes | low |  | Visayan Electric; fire log |
 | Sitio Lupa | sitio |  | yes | low |  | Overture Maps |
 | Sitio Luyongan | sitio |  | yes | low |  | research 2026-11-08; one address |
@@ -364,12 +376,12 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Sitio Paraiso | sitio |  | **no pin** | — |  | Visayan Electric |
 | Sitio Pier 7 | sitio |  | yes | medium |  | Overture |
 | Sitio Riverside | sitio |  | yes | low |  | Visayan Electric |
-| Sitio Sambagan | sitio |  | yes | medium |  | Overture |
+| Sitio Sambagan | sitio |  | yes | medium | Sitio Sambag | Overture |
 | Sitio Sapa-sapa | sitio |  | yes | medium |  | Google Maps |
 | Sitio Sta. Catalina | sitio |  | yes | low |  | SunStar 2014 hazard list |
 | Sitio Tungasan | sitio |  | yes | medium |  | Overture Maps |
 | Tangub | sitio |  | **no pin** | — |  | fire log |
-| Tigib | sitio |  | yes | low |  | fire log; SunStar 2014 hazard list; order along road unknown; position along road approximate |
+| Tigib | sitio |  | yes | low | Sitio Tiguib | fire log; SunStar 2014 hazard list; order along road unknown; position along road approximate |
 | Zone 2 | zone | Sitio Hollow Block | yes | low |  | Overture |
 | Zone 3 | zone | Sitio Ilang-Ilang | yes | low |  | Overture |
 | Purok 1 | purok |  | **no pin** | — |  | fire log |
@@ -391,10 +403,18 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Riverview Village | subdivision |  | yes | high |  | Wikimapia |
 | Saint Gabriel Village | subdivision |  | yes | medium |  | research 2026-11-08 |
 | Santa Catalina Subdivision | subdivision |  | yes | medium |  | Overture |
+| Purok Tubig | purok | Sitio Ilang-Ilang | yes | low |  | SunStar Superbalita 2025; "Purok Tubig, Sitio Ilang-Ilang, Brgy. Lagtang"; position inside its parent estimated |
+| Purok Centro | purok | Sitio Kawayan | yes | low |  | SunStar Superbalita 2024; the source spells the sitio Kawayanan; position inside its parent estimated |
+| Purok Gabison | purok |  | **no pin** | — |  | SunStar 2024; no location in the source |
+| Sitio Quadro | sitio |  | **no pin** | — |  | SunStar 2025; landslide of July 2025 there; no location |
+| Purok Caimito | purok |  | **no pin** | — |  | Bombo Radyo Cebu 2024; spelled "Purol Caimito" there; no location |
+| Sitio Lasco | sitio |  | **no pin** | — |  | SunStar Superbalita 2026; on the road from Tabunok up to Campo 4; no exact spot |
+| Sitio Bahala | sitio |  | **no pin** | — |  | SunStar 2025; a Sitio Bahala is also on file in Dumlog |
 
 ## Lawaan I
+18 names · 1 without a pin · 2052 households (2015 census)
 
-16 names · 0 without a pin · 2052 households (2015 census)
+**Unnamed areas, still to be named:** Along Beldad Street
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
@@ -414,10 +434,11 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | St. Ignatius De Loyola Townhomes | subdivision |  | yes | medium |  | research 2026-11-08; position approximate |
 | Tahoma Village | subdivision |  | yes | medium |  | Google Maps |
 | Tierra Grande | subdivision |  | yes | medium |  | fire log; Overture Maps |
+| Sitio Sombria | sitio |  | yes | low | Sitio Sombrea | SunStar 2016; Philstar/The Freeman 2019; spelled Sombrea in 2016; also on file in Lawaan II from one outage notice; the boundary may cut through it; position a… |
+| Sitio Molila | sitio |  | **no pin** | — |  | SunStar 2023; also on file in Linao from one address; the boundary may cut through it |
 
 ## Lawaan II
-
-26 names · 0 without a pin · 14 sitios in the 2010 city profile · 1301 households (2015 census)
+27 names · 0 without a pin · 14 sitios in the 2010 city profile · 1301 households (2015 census)
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
@@ -447,15 +468,15 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | GK Mananga | subdivision |  | yes | high |  | OpenStreetMap |
 | New San Lorenzo Ruiz Village | subdivision |  | yes | low |  | Google Maps 2026-11-08; position approximate |
 | Santa Monica Estate | subdivision |  | yes | medium |  | Overture |
+| Purok Chicos | purok |  | yes | low |  | Philstar Banat 2025 (seen as a search snippet); SunStar Superbalita 2025; one fire (July 2025) hit it and Purok Guyabano together; position approximate |
 
 ## Lawaan III
-
-30 names · 1 without a pin · 2598 households (2015 census)
+33 names · 4 without a pin · 2598 households (2015 census)
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
-| Caduldulan | sitio |  | yes | low |  | Visayan Electric; fire log; SunStar 2014 hazard list; SunStar: Canduldulan |
-| Sitio Crusher | sitio |  | yes | high |  | Visayan Electric; fire log; OpenStreetMap; OSM: Selma Crusher; outage notices also name it along Maghaway Road |
+| Caduldulan | sitio |  | yes | low | Sitio Canduldulan | Visayan Electric; fire log; SunStar 2014 hazard list; SunStar: Canduldulan |
+| Sitio Crusher | sitio |  | yes | high | Sitio Crasher | Visayan Electric; fire log; OpenStreetMap; OSM: Selma Crusher; outage notices also name it along Maghaway Road |
 | Sitio Pagtambayayong | sitio |  | yes | low |  | fire log |
 | Sitio Pungsod | sitio |  | yes | high |  | Visayan Electric; Wikimapia |
 | Sitio Riverside | sitio |  | yes | low |  | Visayan Electric + OpenStreetMap |
@@ -473,7 +494,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Purok Butyog | purok | Lower Caduldulan | yes | medium |  | Google Maps; research 2026-11-10 A: parent named on the pin |
 | Purok Grapes | purok | Purok Cadicay | yes | low |  | Visayan Electric; "Upper Cadicay Purok Grapes" |
 | Purok Tambis | purok | Sitio Crusher | yes | low |  | Google Maps 2026-11-08; position approximate |
-| Purok Cadicay | purok | Sitio Pagtambayayong | yes | medium |  | fire log; Visayan Electric; SunStar 2014 hazard list; Overture Maps; SunStar: Candicay |
+| Purok Cadicay | purok | Sitio Pagtambayayong | yes | medium | Sitio Candicay | fire log; Visayan Electric; SunStar 2014 hazard list; Overture Maps; SunStar: Candicay |
 | Purok Avocado | purok | Sitio Pungsod | yes | medium |  | research 2026-11-08 |
 | Alpha Executive Homes | subdivision |  | yes | high |  | Wikimapia |
 | Antara | subdivision |  | yes | medium |  | Google Maps |
@@ -484,15 +505,17 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Kamagayan Village | subdivision |  | yes | high |  | OpenStreetMap; Visayan Electric |
 | Luzminda Estate Park Subdivision | subdivision |  | yes | medium |  | research 2026-11-08 |
 | San Jose Village | subdivision |  | yes | high |  | Wikimapia |
+| Purok Saging | purok |  | **no pin** | — |  | GMA Regional TV 2025; flooded in Typhoon Tino; no location |
+| Purok Lubi | purok |  | **no pin** | — |  | SunStar Superbalita 2026; no location in the source |
+| Sitio Blissed | sitio |  | **no pin** | — |  | SunStar Superbalita 2020; the source says only "Barangay Lawaan"; the operation was in Lawaan III |
 
 ## Linao
-
-30 names · 3 without a pin · 2199 households (2015 census)
+31 names · 4 without a pin · 2199 households (2015 census)
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
 | Sitio Antipolo | sitio |  | yes | low |  | fire log; Visayan Electric; Overture Maps; its notices name no road found on the map in Linao |
-| Sitio Candaya | sitio |  | yes | medium |  | Overture |
+| Sitio Candaya | sitio |  | yes | medium | Sitio Kandaya | Overture |
 | Sitio Didos | sitio |  | yes | medium |  | Google Maps |
 | Sitio Hagdanan | sitio |  | **no pin** | — |  | Overture Maps; its notices name no road found on the map in Linao |
 | Sitio Lower | sitio |  | yes | medium |  | fire log; Visayan Electric; Overture Maps; its notices name no road found on the map in Linao |
@@ -521,10 +544,10 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Saint Therese Homes | subdivision |  | yes | medium |  | Google Maps |
 | St. Mary's Heights | subdivision |  | yes | low |  | Overture Maps 2026-11-18.0 |
 | West Boxhill Residences | subdivision |  | yes | low |  | Overture Maps 2026-11-18.0; its listing says Mohon; the point is inside Linao on the PSA outline |
+| Sitio Tambis | sitio |  | **no pin** | — |  | SunStar 2018; no location in the source |
 
 ## Maghaway
-
-30 names · 0 without a pin · 6 sitios in the 2010 city profile · 1632 households (2015 census)
+32 names · 2 without a pin · 6 sitios in the 2010 city profile · 1632 households (2015 census)
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
@@ -539,7 +562,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Sitio Lawis | sitio |  | yes | high |  | Visayan Electric; Wikimapia; fire log |
 | Purok Avocado 1 | purok |  | yes | medium |  | Google Maps |
 | Purok Kulo 3 | purok |  | yes | low |  | Overture Maps |
-| Purok Lomboy 1 | purok |  | yes | medium |  | Google Maps 2026-11-08; position approximate |
+| Purok Lomboy 1 | purok |  | yes | medium | Purok Lumboy 1 | Google Maps 2026-11-08; position approximate |
 | Purok Mangga 3 | purok |  | yes | medium |  | Google Maps |
 | Purok Sambag 1 | purok |  | yes | medium |  | Google Maps |
 | Purok Sambag 2 | purok |  | yes | low |  | Visayan Electric; fire log; fire log research 2026-11-06; its notices name no road found on the map in Maghaway |
@@ -558,20 +581,21 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | St. Arnold Janssen Village | subdivision |  | yes | medium |  | research 2026-11-08; position approximate |
 | Sta. Maria Heights | subdivision |  | yes | high |  | Visayan Electric; SunStar 2014 hazard list |
 | Talisay View Homes | subdivision |  | yes | medium |  | research 2026-11-08 |
+| Purok Avocado | purok |  | **no pin** | — |  | SunStar 2023; a junk shop there; no location |
+| Sitio Nursery | sitio |  | **no pin** | — |  | SunStar Superbalita 2014; no location in the source |
 
 ## Manipis
+15 names · 6 without a pin · 521 households (2015 census)
 
-12 names · 3 without a pin · 521 households (2015 census)
-
-**Unnamed areas, still to be named:** 1.2 km northeast of Camp 8 Elementary School; Along Toledo - Tabunok Road
+**Unnamed areas, still to be named:** 1.2 km northeast of Camp 8 Elementary School; 1.8 km west of Camp 4 Barangay Hall; 800 m northeast of Manipis Barangay Hall; Along Camp 8 Road; Along Toledo - Tabunok Road
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
 | Camp 6 | sitio |  | yes | high |  | landslide log; OpenStreetMap; OSM addr:neighbourhood=Camp 6; the barangay hall is beside it |
 | Camp 8 | sitio |  | yes | high |  | OpenStreetMap |
 | Sitio Camp 5 | sitio |  | yes | medium |  | SunStar 2014 hazard list; SunStar also lists a Camp 5 in Camp IV |
-| Sitio Campinsa | sitio |  | yes | medium |  | Google Maps |
-| Sitio Langoyon | sitio |  | **no pin** | — | Languyon, Nagoyon | landslide log; ABS-CBN 2022; CDN 2021; CDN spells it Languyon; a landslide spot on the Manipis road |
+| Sitio Campinsa | sitio |  | yes | medium | Sitio Campinza; Sitio Campensa | Google Maps |
+| Sitio Langoyon | sitio |  | **no pin** | — | Languyon, Nagoyon; Languyon; Nagoyon | landslide log; ABS-CBN 2022; CDN 2021; CDN spells it Languyon; a landslide spot on the Manipis road |
 | Sitio Telepono | sitio |  | yes | medium |  | Google Maps |
 | Sitio YMCA | sitio |  | **no pin** | — |  | Barangay Manipis Facebook page; named in a barangay clean-up post; no pin yet |
 | Purok Araw-Araw | purok |  | yes | medium |  | Overture Maps |
@@ -579,10 +603,12 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Purok Mahogany | purok |  | yes | medium |  | Google Maps |
 | Purok Kaimito | purok | Camp 6 | yes | medium |  | GMA News; research 2026-11-11 O: pin inside Camp 6 on the Talisay-Toledo Wharf Road; sitio by location only; GMA 2025 fl… |
 | Purok Mangga | purok | Camp 6 | yes | low |  | Google Maps; research 2026-11-11 N A: parent named in the address; point is a store on that address |
+| Sitio Campo 7 | sitio |  | **no pin** | — |  | Philstar/The Freeman 2017; CDN Digital 2016 (search snippet); in the barangay captain's lists; Minglanilla's barangay Camp 7 lies next to it, west of Camp 6 |
+| Sitio Latawan | sitio |  | **no pin** | — |  | Philstar/The Freeman 2017; Philstar 2005; in the barangay captain's list (2017); on the Sinsin (Cebu City) boundary, part disputed in 2005 (spelled Lantawan) |
+| Sitio Manutu | sitio |  | **no pin** | — |  | CDN Digital 2016 (search snippet; the page refuses downloads); the barangay captain's list of landslide-prone sitios |
 
 ## Mohon
-
-25 names · 0 without a pin · 2372 households (2015 census)
+27 names · 2 without a pin · 2372 households (2015 census)
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
@@ -611,10 +637,11 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Valley View Village | subdivision |  | yes | high |  | OpenStreetMap; Visayan Electric |
 | Villa Plantana | subdivision |  | yes | medium |  | Google Maps |
 | San Rafael Homes de Cebu | subdivision | Sitio Libo | yes | high |  | research 2026-11-08 |
+| Purok Riverside | purok |  | **no pin** | — |  | SunStar 2024; no location in the source |
+| Purok Mangga | purok |  | **no pin** | — | Purok Manga | SunStar 2023; spelled Manga there; Purok Mangga 3 is on file |
 
 ## Poblacion
-
-20 names · 1 without a pin · 2027 households (2015 census)
+22 names · 2 without a pin · 2027 households (2015 census)
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
@@ -624,7 +651,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Sitio Kalubihan | sitio |  | yes | medium |  | Google Maps |
 | Sitio Libra | sitio |  | yes | medium |  | DSWD DROMIC; fire log; Google Maps 2026-11-08; also spelled Labra |
 | Sitio Litmon | sitio |  | yes | low |  | fire log; OpenStreetMap; OSM: Sitio Letmon Chapel; position along road approximate |
-| Sitio Miramar | sitio |  | yes | high | Marimar, Marimar Phase 2 | Wikimapia; fire log: "Marimar Phase 2" |
+| Sitio Miramar | sitio |  | yes | high | Marimar, Marimar Phase 2; Marimar; Marimar Phase 2 | Wikimapia; fire log: "Marimar Phase 2" |
 | Sitio Rojaluca | sitio |  | yes | medium |  | Google Maps |
 | Tres Alinos | sitio |  | yes | low |  | fire log; position along road approximate |
 | Purok Bantiyong | purok |  | yes | low |  | DSWD DROMIC; General Luna St |
@@ -638,17 +665,18 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Carmen Village | subdivision |  | yes | high | Carmenville | fire log |
 | Lariosa Compound | subdivision |  | yes | high |  | Wikimapia |
 | Sarihville Subdivision | subdivision |  | yes | medium |  | Overture |
+| Purok Atis | purok | Sitio Litmon | yes | low |  | SunStar Superbalita 2026; "Purok Atis, Litmon, Barangay Poblacion"; position inside its parent estimated |
+| Sitio Machacao | sitio |  | **no pin** | — |  | SunStar 2023; no location in the source |
 
 ## Pooc
+31 names · 4 without a pin · 12 sitios in the 2010 city profile · 2322 households (2015 census)
 
-30 names · 3 without a pin · 12 sitios in the 2010 city profile · 2322 households (2015 census)
-
-**Unnamed areas, still to be named:** 300 m southeast of Mohon Elementary School
+**Unnamed areas, still to be named:** 300 m east of Mohon Elementary School; 400 m southeast of Mohon Elementary School
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
 | Sitio Borromeo | sitio |  | yes | medium |  | Overture Maps |
-| Sitio Cabutoy | sitio |  | yes | medium |  | city profile 2010; Visayan Electric; Overture Maps; notices spell it Kabutoy |
+| Sitio Cabutoy | sitio |  | yes | medium | Sitio Cabotoy | city profile 2010; Visayan Electric; Overture Maps; notices spell it Kabutoy |
 | Sitio Cainta | sitio |  | yes | medium |  | city profile 2010; Visayan Electric; Overture Maps |
 | Sitio Centro | sitio |  | yes | low | Centro 1 | city profile 2010; fire log; Visayan Electric; SunStar 2024; position approximate |
 | Sitio Dapdap | sitio |  | **no pin** | — |  | city profile 2010 |
@@ -677,9 +705,9 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | UC Homes | subdivision |  | yes | medium |  | Google Maps place |
 | Villa Solana Subdivision | subdivision |  | yes | high |  | Wikimapia |
 | Woodway Townhomes | subdivision |  | yes | high |  | Wikimapia |
+| Sitio Ranger 2 | sitio |  | **no pin** | — |  | Philstar Banat 2025; Purok Ranger is on file; no location |
 
 ## San Isidro
-
 42 names · 2 without a pin · 3647 households (2015 census)
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
@@ -728,8 +756,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Vergara Village | subdivision |  | yes | medium |  | fire log research 2026-11-06 |
 
 ## San Roque
-
-60 names · 3 without a pin · 4183 households (2015 census)
+64 names · 5 without a pin · 4183 households (2015 census)
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
@@ -742,7 +769,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Sitio Ramona | sitio |  | yes | medium |  | fire log; Dawis Rd |
 | Sitio San Roque Proper | sitio |  | yes | high |  | Wikimapia |
 | Sitio Sawsawan | sitio |  | yes | medium |  | Overture |
-| Sitio Ughay | sitio |  | yes | medium | Ughai, Ughay 1 | fire log; Visayan Electric; Wikimapia; Overture Maps; also spelled Ughai |
+| Sitio Ughay | sitio |  | yes | medium | Ughai, Ughay 1; Ughai; Ughay 1 | fire log; Visayan Electric; Wikimapia; Overture Maps; also spelled Ughai |
 | Along Cebu South Coastal Road | purok |  | yes | low |  | estimated area, fire log |
 | Purok Agoho | purok |  | yes | low |  | Visayan Electric; order along road unknown; position along road approximate |
 | Purok Altis | purok |  | yes | low |  | Visayan Electric |
@@ -777,7 +804,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Purok Bayabas | purok | Sitio Laray | yes | medium |  | Visayan Electric; research 2026-11-08 |
 | Purok Kabayoan 2 | purok | Sitio Laray | yes | low |  | fire log; Visayan Electric; research 2026-11-08; position inside its parent estimated |
 | Purok Macopa | purok | Sitio Laray | yes | medium |  | Visayan Electric; fire log; Google Maps 2026-11-08; its notices name no road found on the map in San Roque |
-| Purok Sambag | purok | Sitio Laray | yes | low |  | fire log |
+| Purok Sambag | purok | Sitio Laray | yes | low | Sitio Sambag | fire log |
 | Purok Calachuchi | purok | Sitio Ughay | yes | low |  | Visayan Electric; fire log; "Ughay 1"; position along road approximate |
 | 88 Brookside | subdivision |  | yes | high |  | Wikimapia |
 | Asterra Townhomes | subdivision |  | yes | high |  | Wikimapia |
@@ -793,10 +820,13 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Jamestown | subdivision | Sitio Laray | yes | high |  | OpenStreetMap; Wikimapia |
 | Plainville 2 | subdivision | Sitio Laray | yes | high |  | OpenStreetMap; Wikimapia |
 | Skyview Village | subdivision | Sitio Laray | yes | medium |  | research 2026-11-08; pin 46 m over the PSA line |
+| Purok Bangus | purok | Sitio Sawsawan | yes | low |  | SunStar Superbalita 2025; "Purok Bangus, Sitio Sawsawan, Barangay San Roque"; position inside its parent estimated |
+| Purok Ito | purok | Sitio Sawsawan | yes | low |  | SunStar Superbalita 2026; "Purok Ito, Sityo Sawsawan, Barangay San Roque"; Tangke has a Purok Eto in Sitio Salvador; position inside its parent estimated |
+| Purok Sampaguita | purok |  | **no pin** | — |  | Talisay City Police Station post 2026 (seen only as a search snippet); one source; check with the Barangay Hall |
+| Purok Sunflower | purok |  | **no pin** | — |  | Philstar Banat 2025; SunStar Superbalita 2025; the Biasong Purok Sunflower on file has no pin and a doubtful source; this may be it |
 
 ## Tabunok
-
-45 names · 1 without a pin · 22 sitios in the 2010 city profile · 3454 households (2015 census)
+50 names · 4 without a pin · 22 sitios in the 2010 city profile · 3454 households (2015 census)
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
@@ -805,8 +835,8 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Sitio Kalubihan | sitio |  | yes | high |  | Wikimapia; fire log |
 | Sitio Kawatan | sitio |  | yes | medium |  | Google Maps 2026-11-08; position approximate |
 | Sitio Mahayahay | sitio |  | yes | low |  | fire log; Visayan Electric |
-| Sitio Mananga I | sitio |  | yes | medium |  | DSWD DROMIC |
-| Sitio Mananga II | sitio |  | yes | high |  | DSWD DROMIC; fire log; news 2025-2026 |
+| Sitio Mananga I | sitio |  | yes | medium | Sitio Mananga 1 | DSWD DROMIC |
+| Sitio Mananga II | sitio |  | yes | high | Sitio Mananga 2; Sitio Mananga Dos | DSWD DROMIC; fire log; news 2025-2026 |
 | Sitio Neighborhood | sitio |  | yes | high |  | Wikimapia; fire log |
 | Sitio Nonoc | sitio |  | yes | medium |  | fire log |
 | Sitio Panaghiusa | sitio |  | yes | low |  | Visayan Electric |
@@ -819,14 +849,14 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Purok Lopez Jaena | purok |  | yes | high |  | Visayan Electric; OpenStreetMap |
 | Purok Maalagaron | purok |  | yes | medium |  | Google Maps |
 | Purok Mabini | purok |  | yes | low |  | Visayan Electric |
-| Purok Makatarunganon | purok |  | yes | medium |  | Overture Maps |
+| Purok Makatarunganon | purok |  | yes | medium | Purok Makatarungan | Overture Maps |
 | Purok Malipayon | purok |  | yes | low |  | Visayan Electric |
 | Purok Melchora | purok |  | yes | low |  | Visayan Electric; order along road unknown; position along road approximate |
 | Purok Rafael Palma | purok |  | yes | low |  | Overture Maps |
 | Purok Sangi | purok |  | yes | medium |  | Overture |
 | Purok Suliman | purok |  | yes | low | Purok Soliman | fire log; Visayan Electric; fire log: Purok Suliman, Nunez Compound; BFP spelling; was Purok Soliman |
 | Purok Alisto | purok | Sitio Kalubihan | yes | medium |  | fire log; fire log research 2026-11-06; parent from: Google: Purok Alisto, Kalubihan, Nonoc Rd |
-| Purok Rizal | purok | Sitio Mananga II | yes | low |  | fire log; research 2026-11-08; position inside its parent estimated |
+| Purok Rizal | purok | Sitio Mananga II | yes | low | Purok Jose Rizal | fire log; research 2026-11-08; position inside its parent estimated |
 | Purok Mahigugmaon | purok | Sitio Neighborhood | **no pin** | — |  | Overture Maps 2026-11-18.0; address "Purok Mahigugmaon, Neighborhood, Tabunoc"; the listing's point is a shared default, not used |
 | Purok Determinado | purok | Sitio Nonoc | yes | medium |  | Overture Maps |
 | Purok Maloloy-on | purok | Sitio Nonoc | yes | medium |  | Google Maps; research 2026-11-10 A: parent named in the address |
@@ -845,17 +875,21 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Ruiz Compound | subdivision |  | yes | low |  | research 2026-11-08; position approximate |
 | Tali Plains Subdivision | subdivision |  | yes | high |  | Wikimapia |
 | Victoria Village | subdivision |  | yes | medium |  | Google Maps |
+| Purok Julian Felipe | purok | Sitio Mananga II | yes | low |  | SunStar 2025; fire of 25 June 2025 in Sitio Mananga 2; position inside its parent estimated |
+| Purok Jacinto Zamora | purok | Sitio Mananga II | yes | low |  | SunStar 2025; fire of 25 June 2025 started there; Lagtang's Purok Jacinto Zamora (one outage notice) is 300 m away and may be this one; position inside its par… |
+| Purok Manggihatagon | purok |  | **no pin** | — |  | SunStar 2024; no location in the source |
+| Purok Matinumanon | purok |  | **no pin** | — |  | SunStar 2024; no location in the source |
+| Purok Matinabangon | purok |  | **no pin** | — |  | SunStar 2024; a Purok Matinabangon is also on file in Bulacao |
 
 ## Tangke
-
-16 names · 1 without a pin · 9 sitios in the 2010 city profile · 3187 households (2015 census)
+18 names · 2 without a pin · 9 sitios in the 2010 city profile · 3187 households (2015 census)
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
 | Sitio Dali-Dali | sitio |  | yes | low |  | Visayan Electric |
 | Sitio Galaxy | sitio |  | yes | medium |  | Visayan Electric; Galaxy St |
 | Sitio Kalinaw | sitio |  | yes | high | Kalinao | Visayan Electric; Wikimapia; OpenStreetMap; OSM: Kalinao |
-| Sitio Kilawan | sitio |  | yes | medium |  | Wikimapia |
+| Sitio Kilawan | sitio |  | yes | medium | Sitio Kilawam; Sitio Kilawin | Wikimapia |
 | Sitio Magay | sitio |  | yes | low |  | Visayan Electric; fire log; Magay St; position along road approximate |
 | Sitio Rattan | sitio |  | yes | low |  | Visayan Electric; fire log; Inquirer; also spelled Ratan; position along road approximate |
 | Sitio Salvador | sitio |  | yes | high |  | fire log; OpenStreetMap; Commission on Human Rights 2020; was pinned on Salvador Street, on the same spot as Sitio Dali-Dali |
@@ -868,9 +902,10 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Purok Mamsa | purok | Sitio Tunga | yes | low |  | fire log |
 | Alayon Cresmer Homes | subdivision |  | yes | medium |  | Google Maps |
 | Almond Drive | subdivision |  | yes | medium |  | Google Maps |
+| Purok Eto | purok | Sitio Salvador | yes | low |  | SunStar 2024; "Purok Eto, Sitio Salvador, Barangay Tangke"; position inside its parent estimated |
+| Purok Manggahan | purok |  | **no pin** | — |  | SunStar Superbalita 2026; a Sitio Manggahan is on file in Cadulawan; no location |
 
 ## Tapul
-
 12 names · 4 without a pin · 346 households (2015 census)
 
 **Unnamed areas, still to be named:** Along Camp 8 Road
@@ -888,4 +923,4 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Purok 6 | purok |  | **no pin** | — |  | Visayan Electric; its notices name no road found on the map in Tapul |
 | Purok 2 | purok | Sitio Campo | **no pin** | — |  | Visayan Electric; its notices name no road found on the map in Tapul |
 | Purok 7 | purok | Sitio Catican | yes | medium |  | Visayan Electric; fire log; SunStar 2014 hazard list; fire log research 2026-11-06; DOUBTFUL: the point sits exactly on Google's label point for the barangay (a default pin, not the place); sear… |
-| Purok 1 | purok | Sitio Napo | yes | medium |  | Visayan Electric; Google Maps 2026-11-08; its notices name no road found on the map in Tapul; research 2026-11-11 A: parent fix, chapel "Napu Purok 1 Lo… |
+| Purok 1 | purok | Sitio Napo | yes | medium | Purok Uno | Visayan Electric; Google Maps 2026-11-08; its notices name no road found on the map in Tapul; research 2026-11-11 A: parent fix, chapel "Napu Purok 1 Lo… |
