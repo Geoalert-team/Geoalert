@@ -29,6 +29,8 @@ COUNTS_FILE = DATA_DIR / 'barangay_counts.csv'
 # Written beside the outlines: the area each landmark stands in and each street mostly runs through,
 # for linking fire addresses (apps/history/bfp_link.load_link_index)
 PLACES_NAME = 'place_areas.csv'
+# When a name gets squeezed out of its barangay, up to this many fewer unnamed areas are tried
+MAX_FEWER_UNNAMED = 3
 
 
 def read_research(points_file=POINTS_FILE, outlines_file=OUTLINES_FILE, counts_file=COUNTS_FILE):
@@ -210,59 +212,73 @@ class Command(BaseCommand):
                 drawn[row['name']] = sus.draw_polygons(grid, rings)[win] == 1
             return drawn[row['name']]
 
-        # Cut-off bits smaller than a tenth of a typical area (or 0.1 ha) join their surroundings
-        min_cells = max(pe.MIN_PIECE_HA * 10_000 / grid.res ** 2, inside.sum() / n / 10)
-        # Names placed only from outage notices are roughly right: they may start at a nearby house cluster
-        named, unnamed_cells = pe.split_nested(inside, houses[win], step[win], n, top, to_cell, preset_for,
-                                               barrier=barrier[win], dem=dem[win].astype(np.float64),
-                                               loose_reach=pe.LOOSE_REACH_M / grid.res, min_cells=min_cells)
-        # One grid to draw from: each cell goes to the deepest name holding it, so a sitio's
-        # own label is the part of it none of its puroks cover
-        labels = np.full(inside.shape, -1, np.int32)
-        for i, (_, cells, _) in enumerate(named):
-            labels[cells] = i
-        for j, cells in enumerate(unnamed_cells):
-            labels[cells] = len(named) + j
-        shapes = pe.outline_areas(pe.extend(labels))
-
         def to_lnglat(x, y):
             return sus.px_to_lnglat(grid.px0 + c0 + x, grid.py0 + r0 + y, grid.zoom)
 
-        own = {}
-        for label, shape in shapes.items():
-            geom = pe.to_map(shape, to_lnglat).intersection(barangay.boundary)
-            pieces = [g for g in pe.polygons(geom) if pe.area_m2(g) >= pe.MIN_PIECE_HA * 10_000]
-            if pieces:
-                own[label] = MultiPolygon(*pieces, srid=4326)
-        index_of = {id(row): i for i, (row, _, _) in enumerate(named)}
+        def attempt(count):
+            """Split into count areas: (named, unnamed cells, own areas, found, lost names)."""
+            # Cut-off bits smaller than a tenth of a typical area (or 0.1 ha) join their surroundings
+            min_cells = max(pe.MIN_PIECE_HA * 10_000 / grid.res ** 2, inside.sum() / count / 10)
+            # Names placed only from outage notices are roughly right: they may start at a nearby house cluster
+            named, unnamed_cells = pe.split_nested(inside, houses[win], step[win], count, top, to_cell, preset_for,
+                                                   barrier=barrier[win], dem=dem[win].astype(np.float64),
+                                                   loose_reach=pe.LOOSE_REACH_M / grid.res, min_cells=min_cells)
+            # One grid to draw from: each cell goes to the deepest name holding it, so a sitio's
+            # own label is the part of it none of its puroks cover
+            labels = np.full(inside.shape, -1, np.int32)
+            for i, (_, cells, _) in enumerate(named):
+                labels[cells] = i
+            for j, cells in enumerate(unnamed_cells):
+                labels[cells] = len(named) + j
+            shapes = pe.outline_areas(pe.extend(labels))
 
-        def whole(node):
-            """A name's area with all of its puroks': a sitio's outline goes around them."""
-            parts = [own[index_of[id(node.row)]]] if index_of[id(node.row)] in own else []
-            parts += [g for g in (whole(c) for c in node.children) if g is not None]
-            if not parts:
-                return None
-            union = parts[0]
-            for part in parts[1:]:
-                union = union.union(part)
-            return MultiPolygon(*pe.polygons(union), srid=4326)
+            own = {}
+            for label, shape in shapes.items():
+                geom = pe.to_map(shape, to_lnglat).intersection(barangay.boundary)
+                pieces = [g for g in pe.polygons(geom) if pe.area_m2(g) >= pe.MIN_PIECE_HA * 10_000]
+                if pieces:
+                    own[label] = MultiPolygon(*pieces, srid=4326)
+            index_of = {id(row): i for i, (row, _, _) in enumerate(named)}
 
-        found = []  # (row, area, members), sitios before their puroks
+            def whole(node):
+                """A name's area with all of its puroks': a sitio's outline goes around them."""
+                parts = [own[index_of[id(node.row)]]] if index_of[id(node.row)] in own else []
+                parts += [g for g in (whole(c) for c in node.children) if g is not None]
+                if not parts:
+                    return None
+                union = parts[0]
+                for part in parts[1:]:
+                    union = union.union(part)
+                return MultiPolygon(*pe.polygons(union), srid=4326)
 
-        def collect(node):
-            area = whole(node) if node.children else own.get(index_of[id(node.row)])
-            if area is not None:
-                found.append((node.row, area, len(node.children)))
-            for child in node.children:
-                collect(child)
-        for node in top:
-            collect(node)
+            found = []  # (row, area, members), sitios before their puroks
+
+            def collect(node):
+                area = whole(node) if node.children else own.get(index_of[id(node.row)])
+                if area is not None:
+                    found.append((node.row, area, len(node.children)))
+                for child in node.children:
+                    collect(child)
+            for node in top:
+                collect(node)
+            lost = [r['name'] for r, _, _ in named if r['name'] not in {f['name'] for f, _, _ in found}]
+            return named, unnamed_cells, own, found, lost
+
+        named, unnamed_cells, own, found, lost = attempt(n)
+        # An unnamed area can start so close to a name that the name is squeezed out. A name
+        # matters more than a stand-in, so try with fewer stand-ins, keeping a try only if it
+        # gives more names an area
+        tries = n
+        while lost and tries > placed and n - tries < MAX_FEWER_UNNAMED:
+            tries -= 1
+            retry = attempt(tries)
+            if len(retry[4]) < len(lost):
+                named, unnamed_cells, own, found, lost = retry
         unnamed = [own[len(named) + j] for j in range(len(unnamed_cells)) if len(named) + j in own]
         # North to south, then west to east, so a landmark shared by two goes the same way every build
         unnamed.sort(key=lambda g: (-round(g.point_on_surface.y, 3), g.point_on_surface.x))
         described = pe.area_names(unnamed, *landmarks, taken={r['name'] for r, _, _ in found})
 
-        lost = [r['name'] for r, _, _ in named if r['name'] not in {f['name'] for f, _, _ in found}]
         sitios = sum(1 for _, _, members in found if members)
         log(f'  {barangay.name}: {len(found)} named ({sitios} sitios) + {len(unnamed)} unnamed areas '
             f'(target {n}, from {basis}); {len(names) - placed} names still to place')

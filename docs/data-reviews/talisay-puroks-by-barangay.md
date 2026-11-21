@@ -12,13 +12,13 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 - **Unnamed areas**: places the map gives an area to but no source has named yet. They carry a
   landmark label ("Near Tanke National High School") until the Barangay Hall names them.
 
-**738 names** (654 pinned, 84 without a pin); **19 unnamed areas** left in 8 barangays.
+**738 names** (654 pinned, 84 without a pin); **18 unnamed areas** left in 8 barangays.
 
 | Barangay | Names | Pinned | No pin | Unnamed areas | Sitios in the 2010 city profile |
 |---|---:|---:|---:|---:|---:|
 | [Biasong](#biasong) | 38 | 34 | 4 | — | — |
 | [Bulacao](#bulacao) | 42 | 40 | 2 | 1 | — |
-| [Cadulawan](#cadulawan) | 28 | 21 | 7 | 3 | 5 |
+| [Cadulawan](#cadulawan) | 28 | 21 | 7 | 2 | 5 |
 | [Camp IV](#camp-iv) | 19 | 13 | 6 | — | 9 |
 | [Cansojong](#cansojong) | 45 | 40 | 5 | 4 | 26 |
 | [Dumlog](#dumlog) | 62 | 58 | 4 | — | — |
@@ -136,7 +136,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 ## Cadulawan
 28 names · 7 without a pin · 5 sitios in the 2010 city profile · 1095 households (2015 census)
 
-**Unnamed areas, still to be named:** 1.1 km west of Candulawan National High School; 1.2 km west of Candulawan National High School; Along Bulacao River
+**Unnamed areas, still to be named:** 1.2 km west of Candulawan National High School; Along Bulacao River
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
