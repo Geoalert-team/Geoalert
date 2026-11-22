@@ -12,7 +12,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 - **Unnamed areas**: places the map gives an area to but no source has named yet. They carry a
   landmark label ("Near Tanke National High School") until the Barangay Hall names them.
 
-**738 names** (654 pinned, 84 without a pin); **18 unnamed areas** left in 8 barangays.
+**738 names** (656 pinned, 82 without a pin); **15 unnamed areas** left in 8 barangays.
 
 | Barangay | Names | Pinned | No pin | Unnamed areas | Sitios in the 2010 city profile |
 |---|---:|---:|---:|---:|---:|
@@ -29,7 +29,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | [Lawaan III](#lawaan-iii) | 33 | 29 | 4 | — | — |
 | [Linao](#linao) | 31 | 27 | 4 | — | — |
 | [Maghaway](#maghaway) | 32 | 30 | 2 | — | 6 |
-| [Manipis](#manipis) | 15 | 9 | 6 | 5 | — |
+| [Manipis](#manipis) | 15 | 11 | 4 | 2 | — |
 | [Mohon](#mohon) | 27 | 25 | 2 | — | — |
 | [Poblacion](#poblacion) | 22 | 20 | 2 | — | — |
 | [Pooc](#pooc) | 31 | 27 | 4 | 2 | 12 |
@@ -187,7 +187,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Purok Saging | purok |  | **no pin** | — |  | Bombo Radyo 2026 |
 | Purok Pinya | purok | Cambawog Upper | yes | low |  | fire log; research 2026-11-08; its notices name no road found on the map in Camp IV; position inside its parent estimated |
 | Purok Caimito | purok | Sitio Bogo | yes | low |  | research 2026-11-08; position inside its parent estimated |
-| Purok Santol | purok | Sitio Camp 5 | yes | low |  | fire log; fire log research 2026-11-06; SunStar 2024: a cliff on the road where an SUV fell; parent from: camp4talisay.com: Camp-5 > Santol |
+| Purok Santol | purok | Sitio Camp 5 | yes | low | Sitio Santol | fire log; fire log research 2026-11-06; SunStar 2024: a cliff on the road where an SUV fell; parent from: camp4talisay.com: Camp-5 > Santol |
 | Purok Lubi | purok | Sitio Caolong | yes | low |  | fire log; news 2025-2026; Overture Maps |
 | Purok Mangga | purok | Sitio Crossing | yes | low |  | research 2026-11-08; position inside its parent estimated |
 | Purok Sambag | purok | Sitio Proper | yes | low |  | fire log; camp4talisay.com; research 2026-11-08; position inside its parent estimated |
@@ -585,21 +585,21 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Sitio Nursery | sitio |  | **no pin** | — |  | SunStar Superbalita 2014; no location in the source |
 
 ## Manipis
-15 names · 6 without a pin · 521 households (2015 census)
+15 names · 4 without a pin · 521 households (2015 census)
 
-**Unnamed areas, still to be named:** 1.2 km northeast of Camp 8 Elementary School; 1.8 km west of Camp 4 Barangay Hall; 800 m northeast of Manipis Barangay Hall; Along Camp 8 Road; Along Toledo - Tabunok Road
+**Unnamed areas, still to be named:** 1.2 km northeast of Camp 8 Elementary School; Along Toledo - Tabunok Road
 
 | Name | Kind | Under | Pin | Confidence | Also spelled | Sources |
 |---|---|---|---|---|---|---|
-| Camp 6 | sitio |  | yes | high |  | landslide log; OpenStreetMap; OSM addr:neighbourhood=Camp 6; the barangay hall is beside it |
+| Camp 6 | sitio |  | yes | high | Campo 6; Sitio Campo 6 | landslide log; OpenStreetMap; OSM addr:neighbourhood=Camp 6; the barangay hall is beside it |
 | Camp 8 | sitio |  | yes | high |  | OpenStreetMap |
-| Sitio Camp 5 | sitio |  | yes | medium |  | SunStar 2014 hazard list; SunStar also lists a Camp 5 in Camp IV |
+| Sitio Camp 5 | sitio |  | yes | medium | Sitio Campo 5; Campo 5 | SunStar 2014 hazard list; SunStar also lists a Camp 5 in Camp IV |
 | Sitio Campinsa | sitio |  | yes | medium | Sitio Campinza; Sitio Campensa | Google Maps |
-| Sitio Langoyon | sitio |  | **no pin** | — | Languyon, Nagoyon; Languyon; Nagoyon | landslide log; ABS-CBN 2022; CDN 2021; CDN spells it Languyon; a landslide spot on the Manipis road |
+| Sitio Langoyon | sitio | Camp 6 | yes | low | Languyon, Nagoyon; Languyon; Nagoyon | landslide log; ABS-CBN 2022; CDN 2021; CDN spells it Languyon; a landslide spot on the Manipis road; Bombo Radyo 2021: "Sitio Langoyon, Campo 6, Barangay Manipis"; position inside its sitio estimated |
 | Sitio Telepono | sitio |  | yes | medium |  | Google Maps |
 | Sitio YMCA | sitio |  | **no pin** | — |  | Barangay Manipis Facebook page; named in a barangay clean-up post; no pin yet |
 | Purok Araw-Araw | purok |  | yes | medium |  | Overture Maps |
-| Purok Bamboo | purok |  | **no pin** | — |  | GMA News |
+| Purok Bamboo | purok | Sitio Camp 5 | yes | low |  | GMA News; SunStar 2025: "Purok Bamboo, Sitio Campo 5, Barangay Manipis"; position inside its sitio estimated |
 | Purok Mahogany | purok |  | yes | medium |  | Google Maps |
 | Purok Kaimito | purok | Camp 6 | yes | medium |  | GMA News; research 2026-11-11 O: pin inside Camp 6 on the Talisay-Toledo Wharf Road; sitio by location only; GMA 2025 fl… |
 | Purok Mangga | purok | Camp 6 | yes | low |  | Google Maps; research 2026-11-11 N A: parent named in the address; point is a store on that address |

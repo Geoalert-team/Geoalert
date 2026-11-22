@@ -225,10 +225,10 @@ Maghaway,Azienda Milan,subdivision,,10.272354,123.818918,OpenStreetMap place,hig
 Maghaway,Sta. Maria Heights,subdivision,,10.283010,123.817236,Wikimapia outline,high,Visayan Electric; SunStar 2014 hazard list,
 Maghaway,Purok Kulo 3,purok,,10.268760,123.823810,"Overture address ""Purok Kulo 3 Maghaway Rd.""",low,Overture Maps,
 Maghaway,San Jose Maria,subdivision,,10.274087,123.820671,"Overture place ""San Josemaria Village"", Maghaway Rd",medium,fire log; Overture Maps,
-Manipis,Purok Bamboo,purok,,,,,,GMA News,research 2026-11-21: SunStar 2025 gives a Sitio Bamboo in Campo 4 on the Toledo Wharf Road
+Manipis,Purok Bamboo,purok,Sitio Camp 5,10.325680,123.806800,"estimated inside Sitio Camp 5: ""Purok Bamboo, Sitio Campo 5, Barangay Manipis"", by the roadside (SunStar 2025)",low,GMA News; SunStar 2025; SunStar Superbalita 2025; Brigada News 2025; GMA Regional TV 2025,research 2026-11-21: SunStar 2025 gives a Sitio Bamboo in Campo 4 on the Toledo Wharf Road; research 2026-11-22: position inside its parent estimated; flooded with Purok Kaimito in Aug 2025
 Manipis,Purok Kaimito,purok,Camp 6,10.321664,123.786624,"Google Maps place ""Purok Kaymito"" (plus code 8QCP+MJ9)",medium,GMA News,research 2026-11-11 O: pin inside Camp 6 on the Talisay-Toledo Wharf Road; sitio by location only; GMA 2025 flood names it
 Manipis,Camp 6,sitio,,10.320982,123.786523,"OpenStreetMap: Manipis Elementary School, formerly Camp 6 Elementary School",high,landslide log; OpenStreetMap,OSM addr:neighbourhood=Camp 6; the barangay hall is beside it
-Manipis,Sitio Langoyon,sitio,,,,,,landslide log; ABS-CBN 2022; CDN 2021,CDN spells it Languyon; a landslide spot on the Manipis road
+Manipis,Sitio Langoyon,sitio,Camp 6,10.320982,123.786523,"estimated inside Camp 6: ""Sitio Langoyon, Campo 6, Barangay Manipis"" (Bombo Radyo 2021)",low,landslide log; ABS-CBN 2022; CDN 2021; Bombo Radyo Cebu 2021; SunStar 2022; SunStar 2023,CDN spells it Languyon; a landslide spot on the Manipis road; research 2026-11-22: position inside its parent estimated; landslide spot on the Manipis road
 Manipis,Camp 8,sitio,,10.315027,123.789380,OpenStreetMap place,high,OpenStreetMap,
 Manipis,Sitio Camp 5,sitio,,10.325680,123.806800,"name on the pin: Camp 5 manipis, talisay city, cebu (Google Maps)",medium,SunStar 2014 hazard list,SunStar also lists a Camp 5 in Camp IV
 Manipis,Purok Araw-Araw,purok,,10.321840,123.780760,"Overture place ""Manokan sa Purok Araw-Araw"", Toledo-Manipis Rd",medium,Overture Maps,
@@ -692,7 +692,7 @@ Biasong,Sitio Maanyag,sitio,,,,,,Rappler 2019,"research 2026-11-21: an ambush th
 Bulacao,Main Court Subdivision,subdivision,,,,,,SunStar Superbalita 2025,research 2026-11-21: no location in the source
 Bulacao,Sitio Little Baguio,sitio,,,,,,Philstar/The Freeman 2013,research 2026-11-21: fire of May 2013; no location
 Cadulawan,Purok Colis,purok,,,,,,SunStar 2023; SunStar 2024,research 2026-11-21: treasure-hunt dig (2023) and an arrest (2024) there; no location
-Camp IV,Sitio Bamboo,sitio,,,,,,SunStar 2025; SunStar Superbalita 2025,research 2026-11-21: landslide on the Toledo Wharf Road; may be the Purok Bamboo on file (no pin) for Manipis on the same road
+Camp IV,Sitio Bamboo,sitio,,,,,,SunStar 2025; SunStar Superbalita 2025,"research 2026-11-21: landslide on the Toledo Wharf Road; may be the Purok Bamboo on file (no pin) for Manipis on the same road; research 2026-11-22: Purok Bamboo, Sitio Campo 5, Manipis (SunStar Sep 2025) is on the same road; may be one place across the boundary"
 Camp IV,Sitio Kambawog,sitio,,,,,,SunStar 2024,research 2026-11-21: a ravine above the river; no location
 Cansojong,Sitio Riverside,sitio,,,,,,Philstar Banat 2020; SunStar 2018,"research 2026-11-21: SunStar spells it ""sitio Riverside 1""; may be the Zodiac Riverside on file (no pin)"
 Dumlog,Purok Acacia,purok,,,,,,SunStar 2024,research 2026-11-21: no location in the source
