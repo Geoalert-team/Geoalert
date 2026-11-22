@@ -12,21 +12,18 @@ export const historyApi = {
   detail: (id) =>
     client.get(`/api/history/${id}/`).then((r) => r.data),
 
-  // Likelihood per barangay: fire from a model of past fires (apps/history/model_forecast.py),
-  // flood and landslide from models of rain and terrain (apps/history/hazard_forecast.py), and a
-  // combined chance of any hazard asked for. Chance is 0 to 1; level (Low, Moderate, High) is on the
+  // Fire's likelihood per barangay (the only hazard with a prediction model since 2026-11-22;
+  // flood and landslide are being rebuilt). Chance is 0 to 1; level (Low, Moderate, High) is on the
   // month's chance.
-  // params: month (1-12), or month and year, or date; hazards (comma list, e.g. 'Fire,Flood', see
-  // hazardsParam) or hazard_type_name (one hazard; not both); barangay (adds that barangay's
+  // params: month (1-12), or month and year, or date; hazards: 'Fire' (see hazardsParam) or
+  // hazard_type_name: 'Fire' (not both; any other hazard is a 400); barangay (adds that barangay's
   // 12-month profile)
-  // response: results (one row per barangay and hazard: method 'model' with model, probability,
-  // level, range, rain_years, recorded_rain_probability, in_training; or method 'unavailable' with
-  // reason), combined (one row per barangay: probability, level, top_hazard, hazards, missing),
-  // hazards_included, model_hazards, unavailable_hazards, by_barangay, profile
+  // response: results (one row per barangay: method 'model' with probability, level, in_training;
+  // or method 'unavailable' with reason), model_hazards, unavailable_hazards, by_barangay, profile
   forecast: (params) =>
     client.get('/api/history/forecast/', { params }).then((r) => r.data),
 
-  // How each hazard type's trained model did against counting, on months it never saw
+  // How the fire model did on fires it never saw: { hazards: [{ hazard: 'Fire', kind, status, reason?, ... }] }
   forecastAccuracy: () =>
     client.get('/api/history/forecast/accuracy/').then((r) => r.data),
 

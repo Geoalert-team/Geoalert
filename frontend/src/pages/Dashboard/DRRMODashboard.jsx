@@ -15,7 +15,6 @@ import {
 import PurokPreviewMap from '../../components/Map/PurokPreviewMap';
 import ActiveZonesCard from '../../components/Resolve/ActiveZonesCard';
 import AwaitingApprovalCard from '../../components/Resolve/AwaitingApprovalCard';
-import RainWatchCard from '../../components/RainWatch/RainWatchCard';
 import BarangayLikelihood from '../../components/Forecast/BarangayLikelihood';
 import '../css/Dashboard.css';
 import '../css/AdminDashboard.css';
@@ -743,17 +742,14 @@ export default function DRRMODashboard() {
 
         <ActiveZonesCard onResolved={load} />
 
-        {/* Next 3 days of rain: every colour, the PAGASA alerts and hand-set levels */}
-        <RainWatchCard />
-
         {/* What the hazard models say is coming, so the office can prepare ahead */}
         <section className="adm-card">
           <div className="drm-section-head">
             <div>
-              <h2>Likely hazards</h2>
+              <h2>Likely fires</h2>
               <p>
-                Barangays the hazard models rate most likely to be hit: next month to start, or pick a
-                month, a month and year, or a date.{' '}
+                Barangays the fire model rates most likely to have a fire: next month to start, or pick a
+                month, a month and year, or a date. Flood and landslide predictions are being rebuilt.{' '}
                 <Link to="/app/reports?tab=analytics">See every barangay and month</Link>
               </p>
             </div>

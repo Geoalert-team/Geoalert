@@ -104,108 +104,28 @@ schtasks /Create /TN "GeoAlert prediction log" /SC DAILY /ST 06:00 /TR "\"C:\pat
 
 On Linux, cron:   0 6 * * *  cd /path/to/backend && venv/bin/python manage.py log_hazard_predictions
 
-Running it twice on the same day adds no rows. Flood and landslide days it missed are
-filled in by the next run, up to 30 days back. (On the server with HAZARD_LOG_WRITER=true
-the forecast's warm-up also runs it once a day, but only when someone opens the site.)
+Running it twice on the same day adds no rows. Since 2026-11-22 it writes nothing: the
+flood, landslide and old fire models it logged were removed, and the fire purok log that
+replaces them is not built yet (plan docs/design/plans/2026-11-22-fire-purok-model.md,
+Task B6). The rows already in hazard_prediction_log stay, unchanged.
 
 --------------------------------------------------------------------------------
-Flood and landslide chances (rain, storm and exposure models)
+Hazard prediction (rebuild in progress, 2026-11-22)
 
-The flood and landslide forecast needs these files in backend/apps/history/data/. Make
-them in this order, from the backend folder:
+Flood and landslide prediction, the old barangay fire model and the Rain watch ("Next 3
+days") were removed on 2026-11-22: flood and landslide will be rebuilt later, and fire is
+being rebuilt as a per-purok model adapted from the City of Pittsburgh Bureau of Fire's
+fire risk model. Design: docs/design/specs/2026-11-22-fire-purok-model-design.md. Plan:
+docs/design/plans/2026-11-22-fire-purok-model.md. Background and the data checks behind
+it: docs/research/2026-11-22-fire-purok-prediction-audit.md.
 
-python manage.py fetch_rain
-python manage.py fetch_storms
-python manage.py build_hazard_features
-python manage.py test_hazard_models
-
-None of the downloads needs an account or a key.
-- fetch_rain downloads daily rain from NASA POWER, from 2006-12-18 to a few days ago, into
-  rain_daily.csv (about a minute, one request per year).
-- fetch_storms downloads the IBTrACS storm tracks (NOAA NCEI; the West Pacific file, about
-  115 MB, read as it streams and never kept whole, plus the last-3-years file) and writes
-  storm_days.csv and storm_days.meta.json: each day a storm centre came within 300 km of
-  Talisay in the 72 hours to the end of the day. fetch_storms --recent reads only the
-  last-3-years file (about 12 MB) and merges it in.
-- build_hazard_features measures terrain per barangay into barangay_terrain.csv
-  (elevation and OpenStreetMap, reused from .hazard_cache when saved), and flood exposure
-  into barangay_exposure.csv: buildings (Microsoft building footprints) in the UP NOAH
-  25-year and 100-year Medium/High flood areas (the Cebu maps, about 120 MB, from the
-  bettergovph mirror on Hugging Face) and on ground under 2 m above drainage.
-- test_hazard_models downloads the NASA Global Landslide Catalog (data.nasa.gov, no login)
-  into .hazard_cache when it is not there, runs the held-out tests, applies the rule for
-  replacing the current model, fits both models on the whole study period and writes
-  hazard_model_report.json (version 2). It takes about a minute. It stops, and keeps the
-  old report, when any input is missing; the message names the command to run.
-All four read the database only. Raw downloads stay in backend/.hazard_cache, which is not
-in git; the NASA catalogue's rows never leave it (it states no licence). The data files
-above are in git; data/ATTRIBUTION.md gives their sources and licences (ODbL for
-barangay_exposure.csv). NASA catalogue events left out by hand are listed, with the
-reason, in data/landslide_catalogue_exclusions.csv.
-
-The forecast scores every day from the fit saved in the report (it does not refit) and
-caches the result for 6 hours; once a day the warm-up refreshes the recent storm tracks.
-A day the storm file does not cover gets no flood chance. If the report or a data file is
-missing, or the report is from an older version, flood and landslide show "unavailable"
-with the reason; they are never estimated by counting past events, and they are left out
-of the All hazards chance.
-
-Fire's chance comes from its own Poisson regression (apps/history/model_forecast.py),
-refitted from the records by the forecast itself and cached for 6 hours. Each refit also
-tests a second model, a pooled Poisson regression that uses each barangay's building
-count from barangay_exposure.csv (apps/history/fire_candidate.py), on the last 9 full
-months; it takes over only if it scores clearly better there. Without that file today's
-model is used. Fire is never estimated by counting either:
-- With too few fire records to train and test (100 to train, 20 to test), fire shows
-  "unavailable".
-- For a past period with fewer than 100 fires before it (2023-2024 today), the model
-  trained on every record is used, and the rows say it learned from that period.
-- A period from before the first fire record shows "unavailable".
-
-Each year (say every January): run fetch_rain so the newest full year joins the rain
-scenarios, and fetch_storms, then run test_hazard_models.
-
-After adding flood or landslide records for a finished year: set STUDY_END in
-apps/history/hazard_data.py to the end of that year, then rerun test_hazard_models.
-Until it is rerun, the accuracy card shows "stale" whenever study-period records have
-changed. Records left out of the main run, with the reason for each, are listed in
-data/hazard_model_exclusions.csv.
-
-test_hazard_models always tests 2023, 2024 and 2025 (FOLDS in
-apps/history/hazard_models.py); a newly added year is tested only after a fold for it is
-added there.
-
-Rain source: NASA POWER (https://power.larc.nasa.gov), daily corrected rain
-(PRECTOTCORR) from NASA's MERRA-2 and GEOS-IT models, free with no restrictions on use,
-commercial use included (CC BY 4.0). Its grid is about 55 km across, so the whole city
-reads one cell, and it runs a few days behind today; the live "rain so far" uses the same
-service. Training and live rain must come from the same source: changing the source means
-downloading the rain again, rerunning test_hazard_models and checking the accuracy card.
-Keep the credit line "Rain data from NASA POWER (CC BY 4.0), processed into hazard chances
-by GeoAlert". In the thesis or any publication, use POWER's acknowledgment: "The data was
-obtained from the National Aeronautics and Space Administration (NASA) Langley Research
-Center's Prediction Of Worldwide Energy Resources (POWER) project funded through the NASA
-Earth Science Division." Nothing else is required: no account, key or email. (Optional
-courtesy: POWER likes to hear of published work that uses its data, at
-larc-power-project@mail.nasa.gov.)
-
-Open-Meteo is no longer used (its free API is non-commercial only). NASA IMERG satellite
-rain was also tested and gave weaker results; the comparison is kept locally (not in git) in
-.superpowers/sdd/2026-11-12-hazard-prediction-models/imerg-test/.
-
---------------------------------------------------------------------------------
-Rain watch: Next 3 days
-
-The public map's "Next 3 days" view colours each barangay for Today, Tomorrow and the Day
-after, from the rain forecast and PAGASA's alerts. It is separate from the monthly models
-above. Three parts run in three places: a GitHub job (tools/rain_forecast, every 6 hours,
-.github/workflows/rain-forecast.yml) fetches NOAA GFS rain and posts it to the site; the
-site (apps/rainwatch) reads PAGASA's public alert feed hourly; and the colours are worked
-out on request from the stored rain, the alerts and any DRRMO override. The heavy
-libraries live only in tools/rain_forecast/requirements.txt, never on the server. Setup
-is in deploy/FREE_HOSTING.md ("Rain watch: GitHub job"); the design is in
-docs/design/specs/2026-11-18-rain-watch-design.md. Credits are in
-apps/history/data/ATTRIBUTION.md.
+Until the new fire model is built and trained, the "Likely by month" map view and the
+forecast cards show fire as "unavailable" with the reason, never a counted figure; asking
+the forecast for flood or landslide is a 400. The commands fetch_rain, fetch_storms,
+build_hazard_features and test_hazard_models are gone, with their data files. Past
+hazards, the History page and every history record are unchanged. Nothing was dropped
+from the database (the rainwatch tables and hazard_prediction_log are still there,
+unused).
 
 --------------------------------------------------------------------------------
 Deploying

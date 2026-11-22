@@ -259,16 +259,14 @@ def _forecast_events():
 
 
 PUBLIC_CACHE = 'public, max-age=600'
-# What each flood and landslide model reads, for the basis line: (model in use, hazard) -> its inputs
-BASIS_INPUTS = {
-    ('two_part', 'Flood'): 'rain, storm tracks and flood-hazard exposure',
-    ('two_part', 'Landslide'): 'rain and terrain',
-    ('logistic_regression', 'Flood'): 'rain and terrain',
-    ('logistic_regression', 'Landslide'): 'rain and terrain',
-}
-BASIS_NOTE = 'Every chance is of a reported event. Counting past years is only a benchmark in the accuracy check.'
-COMBINED_NOTE = 'Built from the three tested models; not tested on its own.'
-RAIN_TERRAIN_REPORT_DOWN = 'The flood and landslide test report could not be loaded right now.'
+# Flood and landslide prediction was removed on 2026-11-22 (they are being rebuilt), so fire is the only hazard the
+# forecast covers (docs/design/specs/2026-11-22-fire-purok-model-design.md, section 0)
+FORECAST_HAZARDS = ('Fire',)
+FIRE_ONLY = 'Only fire has a prediction model for now.'
+BOTH_PARAMETERS = 'Use hazards or hazard_type_name, not both.'
+NOT_TRAINED = 'The fire model has not been trained yet.'
+BASIS_REBUILDING = ("Fire's prediction model is being rebuilt, so no chances are shown until it is trained. "
+                    'Flood and landslide predictions are being rebuilt too.')
 
 
 def _public(response):
@@ -277,142 +275,86 @@ def _public(response):
     return response
 
 
-def basis_method(scen) -> str:
-    """
-    The forecast's basis line, naming only what each model in use reads:
-    fire's Poisson regression and, for flood and landslide, the inputs of the
-    model their report names (`scen`, hazard_forecast.use_hazard_models'
-    result). A hazard with no model running is left out.
-    """
-    groups = {}
-    for hazard in ('Flood', 'Landslide'):
-        dep = (scen.get(hazard) or {}).get('deployed')
-        if dep is not None:
-            groups.setdefault(BASIS_INPUTS[(dep.name, hazard)], []).append(hazard.lower())
-    models = ['a Poisson regression on past fires for fire'] + [
-        f'a model of {inputs} for {" and ".join(names)}' for inputs, names in groups.items()]
-    listed = models[0] if len(models) == 1 else f"{', '.join(models[:-1])}, and {models[-1]}"
-    return f"From each hazard's trained model: {listed}. {BASIS_NOTE}"
+def basis_method() -> str:
+    """The forecast's basis line: what its chances come from."""
+    return BASIS_REBUILDING
 
 
-def forecast_result(*, month, day, year, included, barangay, years, exclude_samples, now) -> dict:
+def parse_hazards(params):
     """
-    The forecast for a period, as GET /api/history/forecast/ serves it
-    (HistoricalForecastView, which parses the request into these). `included`
-    is the hazards to cover, in FORECAST_HAZARDS order; `now` the local time
-    it is read at. The prediction log's month rows come from here too, so the
-    log holds what the page shows.
+    The hazards a forecast request covers: ?hazards=Fire or ?hazard_type_name=Fire, read without regard to case or
+    spaces; neither means fire. Raises ValueError with a sentence for the page when both are given or any name is
+    not fire (FIRE_ONLY).
     """
-    from apps.history import hazard_forecast, model_forecast
+    listed = (params.get('hazards') or '').strip()
+    single = (params.get('hazard_type_name') or '').strip()
+    if listed and single:
+        raise ValueError(BOTH_PARAMETERS)
+    names = [n.strip() for n in (listed or single).split(',') if n.strip()]
+    if any(n.lower() != 'fire' for n in names):
+        raise ValueError(FIRE_ONLY)
+    return list(FORECAST_HAZARDS)
+
+
+def forecast_result(*, month, day, year, barangay, years, exclude_samples, now) -> dict:
+    """
+    The fire forecast for a period, as GET /api/history/forecast/ serves it
+    (HistoricalForecastView, which parses the request into these); `now` is
+    the local time it is read at. The rows' history (years hit, what
+    happened) comes from the records; every figure from the fire model, and
+    until it is trained every row is unavailable with NOT_TRAINED, never a
+    counted figure.
+    """
+    from apps.history import forecast_rows
     from apps.history.forecast import drop_samples, empty_profile, seasonal_forecast
 
-    single = included[0] if len(included) == 1 else None
     events = drop_samples(_forecast_events(), exclude_samples)
-    # Filtered once: the counting and fire's model see only the hazards asked for
-    wanted = {h.lower() for h in included}
-    picked = [e for e in events if (e['hazard'] or '').lower() in wanted]
-    today = now.date()
-
-    # The rows' history (years hit, what happened) comes from the records; every figure from the models.
-    # The 12-month chart starts empty: the models fill it, or it stays unavailable, never counted.
-    result = seasonal_forecast(picked, month, now, max_years=years, day=day, year=year)
+    fires = [e for e in events if (e['hazard'] or '').lower() == 'fire']
+    result = seasonal_forecast(fires, month, now, max_years=years, day=day, year=year)
     result['profile'] = empty_profile()
     result['profile_barangay'] = barangay
-    result['hazard_type'] = single
+    result['hazard_type'] = 'Fire'
     result['basis'] = {
-        'records': len(picked),
-        'sample_records': sum(1 for e in picked if e['is_sample']),
-        'method': None,         # set once the flood and landslide models in use are known (basis_method)
+        'records': len(fires),
+        'sample_records': sum(1 for e in fires if e['is_sample']),
+        'method': basis_method(),
     }
     result['model_hazards'] = []
     result['unavailable_hazards'] = []
     result['profile_method'] = 'unavailable'
-    # Each model step stands alone: a model problem never takes the forecast down (spec 2.8).
-    # Fire first: its apply_table ranks every row, which needs flood and landslide's figures not yet None.
-    fire_down = {}
-    try:
-        fire_down = model_forecast.use_models(result, picked, month, day=day, hazard=single, barangay=barangay,
-                                              today=today)
-    except Exception:
-        logger.exception('The fire model failed; its rows are unavailable.')
-        fire_down = {'Fire': model_forecast.MODEL_DOWN}
-    places, scen = [], {}
-    try:
-        places = model_forecast.places()
-        scen = hazard_forecast.use_hazard_models(result, month=month, day=day, year=year, hazards=included,
-                                                 barangay=barangay, places=places, today=today)
-    except Exception:
-        logger.exception('The flood and landslide models failed; their rows are unavailable.')
-        for hazard in included:
-            if hazard in hazard_forecast.HAZARDS:
-                hazard_forecast.mark_unavailable(result, hazard, places, hazard_forecast.MODELS_DOWN)
-        if single in hazard_forecast.HAZARDS:
-            hazard_forecast.mark_profile_unavailable(result)     # never the counting chart
-    result['basis']['method'] = basis_method(scen)
-    # Fire with no model figures is unavailable, never counted (too few records, a period before them, an error)
-    if 'Fire' in included and 'Fire' not in result['model_hazards']:
-        reason = fire_down.get('Fire') or model_forecast.TOO_FEW.format('fire')
-        hazard_forecast.mark_unavailable(result, 'Fire', places, reason)
-        if single == 'Fire':
-            hazard_forecast.mark_profile_unavailable(result)
-    try:
-        fire_table = hazard_forecast.fire_month_table(result, picked, today)
-        hazard_forecast.combine(result, scen, fire_table, included, month, day, year, barangay, places, today)
-    except Exception:
-        logger.exception('The combined chance failed; serving each hazard on its own.')
-        result['hazards_included'] = included
-        result['combined'] = []
-        if single is None:
-            hazard_forecast.mark_profile_unavailable(result)     # the several-hazard chart is the combined one
+    forecast_rows.mark_unavailable(result, 'Fire', forecast_rows.places(), NOT_TRAINED)
+    forecast_rows.mark_profile_unavailable(result)
     return result
 
 
 class HistoricalForecastView(APIView):
     """
     GET /api/history/forecast/?month=11
-    The likelihood of each hazard per barangay for a period, as a heads-up
+    The chance of a reported fire per barangay for a period, as a heads-up
     for preparing, not an alert. Public.
 
-    The scale is the same for every hazard: `probability` is the chance of at
-    least one reported event in the period, from 0 to 1, and `level` is Low,
-    Moderate or High on the chance for the MONTH (model_forecast.level_for),
-    also in the week view. "None" means no figure.
-
-    Fire: its trained model (apps/history/model_forecast.py) when it beat the
-    counting in apps/history/forecast.py on held-back months, else that
-    counting. Flood and landslide: their rain-and-terrain model
-    (apps/history/hazard_forecast.py), never counting; one that cannot run
-    gives rows with `method: unavailable` and a `reason`, and is named in
-    `unavailable_hazards`. Each modelled hazard is named in `model_hazards`.
+    `probability` is the chance of at least one reported fire in the period,
+    from 0 to 1, and `level` is Low, Moderate or High on the chance for the
+    MONTH, also in the week view. "None" means no figure: a row with
+    `method: unavailable` has a `reason`, and fire is then named in
+    `unavailable_hazards`. Flood and landslide have no prediction model for
+    now (removed 2026-11-22): asking for them is a 400.
 
       ?month=1-12            defaults to next month
-      ?year=2024             with month: that month in that year, read from
-                             the years before it; once it has started, each
-                             row also has `actual`, what happened in it
+      ?year=2024             with month: that month in that year; once it has
+                             started, each row also has `actual`, what
+                             happened in it
       ?date=2027-11-15       instead of month: the week around that date
-      ?hazards=Fire,Flood    the hazards to cover, case-insensitive; the rows
-                             and the combined chance cover only these
-      ?hazard_type_name=Flood  the same as hazards=Flood. Giving both, or an
-                             unknown name, is a 400. Neither: all three.
+      ?hazards=Fire          or ?hazard_type_name=Fire; any other name is a 400
       ?barangay=7            the 12-month profile is that barangay's
       ?years=10              how many past years the history reads (1-10)
-      ?exclude_samples=true  leave seeded sample records out. Off by default:
-                             the public map and the dashboard label sample
-                             data instead; Reports › Analytics leaves it out.
+      ?exclude_samples=true  leave seeded sample records out
 
-    Beside each hazard's `results` rows: `hazards_included`; `combined`, one
-    row per barangay with the chance that any included hazard is reported,
-    its level, `top_hazard`, each hazard's chance and level and the hazards
-    `missing` from it (spec 3.2); `by_barangay`, the old summary shape, now
-    from `combined`; and `profile`, the 12 months: the one hazard's, or the
-    combined chance when several are included. Without ?barangay the profile
-    is the whole city's. The answer is sent with Cache-Control
-    public, max-age=600.
+    Sent with Cache-Control public, max-age=600.
     """
     permission_classes = [AllowAny]
 
     def get(self, request):
-        from apps.history import hazard_forecast
         from apps.history.forecast import MAX_YEARS
 
         now = timezone.localtime()
@@ -445,7 +387,7 @@ class HistoricalForecastView(APIView):
             years = MAX_YEARS
 
         try:
-            included = hazard_forecast.parse_hazards(request.query_params, list(hazard_forecast.FORECAST_HAZARDS))
+            parse_hazards(request.query_params)
         except ValueError as exc:
             return Response({'error': str(exc)}, status=400)
         barangay = request.query_params.get('barangay')
@@ -455,44 +397,30 @@ class HistoricalForecastView(APIView):
             return Response({'error': 'barangay must be an id.'}, status=400)
         exclude_samples = (request.query_params.get('exclude_samples') or '').strip().lower() in TRUTHY
 
-        return _public(Response(forecast_result(month=month, day=day, year=year, included=included, barangay=barangay,
-                                                years=years, exclude_samples=exclude_samples, now=now)))
+        return _public(Response(forecast_result(month=month, day=day, year=year, barangay=barangay, years=years,
+                                                exclude_samples=exclude_samples, now=now)))
+
+
+def fire_accuracy_entry() -> dict:
+    """
+    Fire's entry on the accuracy card. One shape whether or not the model is
+    trained: {'hazard': 'Fire', 'kind': 'fire_purok', 'status', ...}; until
+    train_fire_model has run, status is 'unavailable' with the reason.
+    """
+    return {'hazard': 'Fire', 'kind': 'fire_purok', 'status': 'unavailable', 'reason': NOT_TRAINED}
 
 
 class ForecastAccuracyView(APIView):
     """
     GET /api/history/forecast/accuracy/
-    How each hazard's model did on data it never saw. Fire: its model against
-    counting on the months it never saw, and whether it is in use
-    (model_forecast.accuracy_reports). Flood and landslide: the rain-and-
-    terrain test report (hazard_models.accuracy_entries, `kind: rain_terrain`),
-    with `status` and `stale`. The combined chance has no test of its own,
-    which `combined_note` says. Real records only, whatever the page shows.
+    How the fire model did on fires it never saw (its saved report). Flood
+    and landslide have no model for now, so fire's is the only entry.
     Sent with Cache-Control public, max-age=600.
-
-    Fire's report does not depend on the flood and landslide module (fire's
-    own model uses scikit-learn): when their report cannot be loaded, flood and landslide are `unavailable` entries and
-    fire's stands. Only fire's own failure is a 503.
     """
     permission_classes = [AllowAny]
 
     def get(self, request):
-        try:
-            from apps.history.model_forecast import accuracy_reports
-            today = timezone.localdate()
-            fire = [r for r in accuracy_reports(_forecast_events(), today) if r['hazard'] == 'Fire']
-        except Exception:
-            logger.exception('The likelihood model could not be tested.')
-            return Response({'error': 'The model could not be tested right now.'}, status=503)
-        try:
-            # hazard_models imports scikit-learn and scipy, which can fail to load
-            from apps.history.hazard_models import accuracy_entries
-            rain_terrain = accuracy_entries(today)
-        except Exception:
-            logger.exception('The flood and landslide test report could not be loaded.')
-            rain_terrain = [{'hazard': hazard, 'kind': 'rain_terrain', 'status': 'unavailable',
-                             'reason': RAIN_TERRAIN_REPORT_DOWN} for hazard in ('Flood', 'Landslide')]
-        return _public(Response({'hazards': fire + rain_terrain, 'combined_note': COMBINED_NOTE}))
+        return _public(Response({'hazards': [fire_accuracy_entry()]}))
 
 
 class EventOptionsView(APIView):

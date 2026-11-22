@@ -16,18 +16,11 @@ import { hazardsApi } from '../api/hazardsApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { historyApi } from '../api/historyApi';
 import {
-  LIKELIHOOD, FORECAST_DISCLAIMER, RAIN_ATTRIBUTION, aboutChanceText, chanceText, combinedByBarangay, combinedText,
-  combinedUnavailable, defaultPeriod, hazardsParam,
-  levelLabel, likelihoodInfo, likelyKey, periodIn, periodLabel, periodParams, periodYearsText, rainYearsText, unavailableNote,
-  yearSpan, FLOOD_LANDSLIDE_MONTHLY_NOTE,
+  LIKELIHOOD, FIRE_ONLY_NOTE, FORECAST_DISCLAIMER, chanceText, defaultPeriod, hazardsParam,
+  levelLabel, likelihoodInfo, likelyKey, periodIn, periodLabel, periodParams, periodYearsText, unavailableNote,
+  yearSpan,
 } from '../components/Forecast/forecastLevels';
 import ForecastPeriodPicker from '../components/Forecast/ForecastPeriodPicker';
-import { rainWatchApi } from '../api/rainWatchApi';
-import RainWatchDayPicker from '../components/RainWatch/RainWatchDayPicker';
-import RainWatchBanner from '../components/RainWatch/RainWatchBanner';
-import RainWatchLegend from '../components/RainWatch/RainWatchLegend';
-import { RAIN_FILL_OPACITY, bannerInfo, mapLevel, rainLevel, rainWatchSignature, rainWatchTooltip, withClientStale } from '../components/RainWatch/rainWatchLevels';
-import '../components/RainWatch/rainWatch.css';
 import { hazardAreas, hazardAt, hazardPuroks, markerSpots } from '../components/Map/hazardPins';
 import './css/PublicMap.css';
 import './css/PublicMapGis.css';
@@ -76,14 +69,11 @@ const TILE_FAIL_LIMIT = 6;
 // (components/Map/purokLevels.js).
 const VIEWS = [
   { key: 'past', label: 'Past hazards', note: null },
-  // Likelihood per barangay for a chosen month, from each hazard's trained
-  // model (backend apps/history/model_forecast.py for fire, hazard_forecast.py
-  // for flood and landslide); a hazard whose model cannot run is unavailable.
+  // Fire's chance per barangay for a chosen month, from the fire model (the
+  // only hazard with one since 2026-11-22; flood and landslide are being
+  // rebuilt); a model that cannot run is unavailable, never counted.
   { key: 'likely', label: 'Likely by month', note: FORECAST_DISCLAIMER },
-  // The next 3 days of heavy rain, from the rain watch (backend apps/rainwatch)
-  { key: 'next3', label: 'Next 3 days', note: null },
 ];
-const RAIN_WATCH_REFRESH_MS = 10 * 60 * 1000;
 
 // Barangay fill per likelihood level in the 'likely' view
 const LIKELY_FILL = { High: 0.42, Moderate: 0.32, Low: 0.22, None: 0 };
@@ -242,13 +232,6 @@ export default function PublicMap() {
   // The time the likelihood is for: a month, a month in a year, or a date
   const [likelyPeriod, setLikelyPeriod] = useState(defaultPeriod);
   const [likely, setLikely] = useState(null);
-  // Rain watch for the next 3 days: the last answer (kept if a refresh fails) and the chosen day
-  const [rainRaw, setRainRaw] = useState(null);
-  const [rainTick, setRainTick] = useState(0); // each poll, so an answer going old is noticed even when the poll fails
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const rainWatch = useMemo(() => withClientStale(rainRaw), [rainRaw, rainTick]);
-  const [rainFailed, setRainFailed] = useState(false); // the last request for the rain watch failed
-  const [rainDay, setRainDay] = useState('today');
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -676,72 +659,37 @@ export default function PublicMap() {
     setPanelOpen(false);
   }
 
+  // Fire is the only hazard with a prediction model since 2026-11-22: the
+  // view asks for fire while its layer is ticked, and for nothing otherwise
+  const likelyHazards = hazardsParam(activeTypes);
+
   // Seasonal likelihood, fetched only while that view is open
   useEffect(() => {
     if (view !== 'likely') return undefined;
-    // No layer ticked, nothing to ask for
-    if (activeTypes.size === 0) { setLikely(null); return undefined; }
+    // Fire not ticked, nothing to ask for: the legend says only fire has a prediction
+    if (!likelyHazards) { setLikely(null); return undefined; }
     let cancelled = false;
-    historyApi.forecast({ ...periodParams(likelyPeriod), hazards: hazardsParam(activeTypes) })
+    historyApi.forecast({ ...periodParams(likelyPeriod), hazards: likelyHazards })
       .then((d) => { if (!cancelled) setLikely(d); })
-      .catch(() => { if (!cancelled) setLikely({ error: true, results: [], combined: [] }); });
+      .catch(() => { if (!cancelled) setLikely({ error: true, results: [] }); });
     return () => { cancelled = true; };
-  }, [view, likelyPeriod, activeTypes]);
+  }, [view, likelyPeriod, likelyHazards]);
 
-  // Per barangay: the combined chance of the hazard layers ticked
-  const combinedRows = useMemo(() => combinedByBarangay(likely), [likely]);
-
-  // Per barangay: its rows for the hazard types shown, worst first. The
-  // layer checkboxes apply here too, so "Fire only" shows fire likelihood.
-  const likelyByBarangay = useMemo(() => {
-    const map = new Map();
-    (likely?.results || [])
-      .filter((r) => activeTypes.has(hazardKey(r.hazard_type)))
-      .forEach((r) => {
-        const key = String(r.barangay_id);
-        if (!map.has(key)) map.set(key, []);
-        map.get(key).push(r);
-      });
-    map.forEach((rows) => rows.sort((a, b) => likelihoodInfo(b.level).rank - likelihoodInfo(a.level).rank
-      || b.probability - a.probability));
-    return map;
-  }, [likely, activeTypes]);
-
-  // Fetched in any view, for the banner; a failed refresh keeps the last answer
-  useEffect(() => {
-    let alive = true;
-    const load = () => rainWatchApi.get({ background: true })
-      .then((d) => { if (alive) { setRainRaw(d); setRainFailed(false); } })
-      .catch(() => { if (alive) setRainFailed(true); })
-      .then(() => { if (alive) setRainTick((n) => n + 1); });
-    load();
-    const id = setInterval(load, RAIN_WATCH_REFRESH_MS);
-    return () => { alive = false; clearInterval(id); };
-  }, []);
-  // Changes only when what the map shows changes, so tooltips are rebuilt then (setStyle alone leaves them as they were)
-  const rainSignature = useMemo(() => rainWatchSignature(rainWatch), [rainWatch]);
-  const rainBanner = useMemo(() => bannerInfo(rainWatch, activeTypes), [rainWatch, activeTypes]);
-  const showRainDay = (key) => { setRainDay(key); setView('next3'); };
+  // Per barangay: its fire row
+  const fireRows = useMemo(() => new Map((likely?.results || [])
+    .filter((r) => r.hazard_type === 'Fire')
+    .map((r) => [String(r.barangay_id), r])), [likely]);
 
   // Thin dark boundaries, like sub-catchment lines on a GIS map. Transparent fill keeps them clickable.
   function barangayStyle(feature) {
     if (view === 'likely') {
-      // No combined chance (no data, or every ticked hazard unavailable) is no data, not Low
-      const c = combinedRows.get(String(featureId(feature)));
-      const level = c && c.probability != null ? c.level : 'None';
+      // No fire figure (no data, or the model unavailable) is no data, not Low
+      const r = fireRows.get(String(featureId(feature)));
+      const level = r && r.probability != null ? r.level : 'None';
       const info = likelihoodInfo(level);
       return {
         className: 'pm-brgy', color: '#2b2b2b', weight: 1, opacity: 0.8,
         fillColor: info.color, fillOpacity: LIKELY_FILL[level] ?? 0,
-      };
-    }
-    if (view === 'next3') {
-      const level = mapLevel(rainWatch, rainDay, featureId(feature), activeTypes);
-      return {
-        className: 'pm-brgy', color: '#2b2b2b', weight: 1, opacity: 0.8,
-        fillColor: rainLevel(level).color || '#000',
-        // No rain watch, and Green, are no fill: only Yellow, Orange, Red and out-of-date are coloured
-        fillOpacity: rainLevel(level).rank < 1 && level !== 'unknown' ? 0 : level === 'unknown' ? 0.25 : RAIN_FILL_OPACITY,
       };
     }
     // Bold only while its panel is open
@@ -764,15 +712,8 @@ export default function PublicMap() {
       : '';
     return line ? `${purokTooltip(f)}<br>${line}` : purokTooltip(f);
   }, [view, levels, thresholds, visibleTypeList]);
-  const rainNote = rainYearsText([...new Set((likely?.results || [])
-    .filter((r) => r.method === 'model' && Array.isArray(r.rain_years))
-    .flatMap((r) => r.rain_years))].sort((a, b) => a - b));
-  // A ticked hazard the models could not give, named in the legend instead of dropped silently
-  const unavailableLegend = unavailableNote(likely, [...activeTypes]);
-  const layerName =
-    activeTypes.size === HAZARD_TYPES.length ? 'all hazards'
-      : activeTypes.size === 0 ? 'no layers shown'
-        : visibleTypeList.join(', ');
+  // Fire with no figures, named in the legend with its reason instead of dropped silently
+  const unavailableLegend = unavailableNote(likely);
 
   // What the checkbox panel lists: the API's counts when available, otherwise
   // counts worked out from the pins already on the map.
@@ -879,7 +820,7 @@ export default function PublicMap() {
           {/* Barangay boundaries: hover for the name, click for barangay-specific hazards */}
           {barangayGeo && (
             <GeoJSON
-              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}-${view}-${periodLabel(likelyPeriod)}-${likelyKey(likely)}-${[...activeTypes].join('')}-${!!selectedPuroks}${view === 'next3' ? `-${rainSignature}-${rainDay}` : ''}`}
+              key={`brgy-${selectedBarangayId ?? 'none'}-${panelOpen}-${view}-${periodLabel(likelyPeriod)}-${likelyKey(likely)}-${[...activeTypes].join('')}-${!!selectedPuroks}`}
               data={barangayGeo}
               style={barangayStyle}
               bubblingMouseEvents={false}
@@ -889,36 +830,18 @@ export default function PublicMap() {
                 const name = feature.properties?.name || 'Barangay';
                 let tip = name;
                 if (view === 'likely') {
-                  const rows = likelyByBarangay.get(String(featureId(feature))) || [];
+                  const r = fireRows.get(String(featureId(feature)));
                   // A past period also says what happened in it
-                  const happened = (r) => (r.actual == null ? '' : `; ${r.actual || 'none'} happened`);
-                  const c = combinedRows.get(String(featureId(feature)));
-                  const lines = rows.map((r) => {
-                    if (r.method === 'unavailable') return `${r.hazard_type}: ${levelLabel(r)}${r.reason ? ` (${r.reason})` : ''}`;
-                    if (r.method === 'model') {
-                      if (r.hazard_type === 'Fire') return `${r.hazard_type}: ${likelihoodInfo(r.level).label}, about ${chanceText(r)}${happened(r)}`;
-                      const years = rainYearsText(r.rain_years);
-                      const rain = years ? `, from ${years}` : '';
-                      return `${r.hazard_type}: ${likelihoodInfo(r.level).label}, ${aboutChanceText(r.probability)}${rain}${happened(r)}`;
-                    }
-                    return `${r.hazard_type}: ${likelihoodInfo(r.level).label}${chanceText(r) && `, about ${chanceText(r)}`} (${periodYearsText(r, likelyPeriod)}${happened(r)})`;
-                  });
-                  // No chance because a shown hazard the response calls unavailable is missing is said
-                  // so; anything else with no figure stays "no data"
-                  const unavailable = likely?.unavailable_hazards || [];
-                  const head = c && c.probability != null
-                    ? `All shown hazards: ${likelihoodInfo(c.level).label}, ${aboutChanceText(c.probability)} (${combinedText(c, unavailable)})`
-                    : c && combinedUnavailable(c, unavailable)
-                      ? `All shown hazards: Unavailable right now (${combinedText(c, unavailable)})`
-                      : 'All shown hazards: no data';
-                  tip = activeTypes.size === 0
-                    ? `<strong>${name}</strong><br>Tick a hazard layer to see its chance.`
-                    : c || rows.length
-                    ? `<strong>${name}</strong><br>${[head, ...lines].join('<br>')}`
+                  const happened = r && r.actual != null ? `; ${r.actual || 'none'} happened` : '';
+                  let line = '';
+                  if (r?.method === 'unavailable') line = `Fire: ${levelLabel(r)}${r.reason ? ` (${r.reason})` : ''}`;
+                  else if (r?.method === 'model') line = `Fire: ${likelihoodInfo(r.level).label}, about ${chanceText(r)}${happened}`;
+                  else if (r) line = `Fire: ${likelihoodInfo(r.level).label} (${periodYearsText(r, likelyPeriod)}${happened})`;
+                  tip = !likelyHazards
+                    ? `<strong>${name}</strong><br>${FIRE_ONLY_NOTE} Tick the Fire layer to see its chance.`
+                    : line
+                    ? `<strong>${name}</strong><br>${line}`
                     : `<strong>${name}</strong><br>Nothing on record in ${periodIn(likelyPeriod)} in past years`;
-                }
-                if (view === 'next3') {
-                  tip = rainWatchTooltip(name, featureId(feature), rainWatch, rainDay, activeTypes);
                 }
                 layer.bindTooltip(tip, {
                   sticky: true,
@@ -1044,14 +967,6 @@ export default function PublicMap() {
               ))}
             </div>
 
-            {rainBanner && (
-              <RainWatchBanner info={rainBanner} data={rainWatch} onView={showRainDay} />
-            )}
-
-            {view === 'next3' && (
-              <RainWatchDayPicker data={rainWatch} value={rainDay} onChange={setRainDay} activeTypes={activeTypes} />
-            )}
-
             {view === 'likely' && (
               <ForecastPeriodPicker
                 value={likelyPeriod}
@@ -1127,18 +1042,16 @@ export default function PublicMap() {
             aria-expanded={legendOpen}
             onClick={() => setLegendOpen((open) => !open)}
           >
-            <span>{view === 'likely' ? 'Likely hazard levels' : view === 'next3' ? 'Rain watch' : 'Past hazard levels'}</span>
+            <span>{view === 'likely' ? 'Likely fire levels' : 'Past hazard levels'}</span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
           </button>
-
-          {view === 'next3' && <RainWatchLegend data={rainWatch} failed={rainFailed} />}
 
           {view === 'likely' && (
             <>
               <p className="pm-legend-title">
-                {activeTypes.size === 0
-                  ? `Likely in ${periodLabel(likelyPeriod)}: no hazard layer is ticked`
-                  : `Likely in ${periodLabel(likelyPeriod)}: chance of any of ${layerName.toLowerCase()}`}
+                {!likelyHazards
+                  ? `Likely in ${periodLabel(likelyPeriod)}: ${FIRE_ONLY_NOTE} Tick the Fire layer.`
+                  : `Likely in ${periodLabel(likelyPeriod)}: chance of a fire`}
               </p>
               <ul>
                 {['High', 'Moderate', 'Low', 'None'].map((k) => (
@@ -1151,8 +1064,7 @@ export default function PublicMap() {
                   </li>
                 ))}
               </ul>
-              {/* The explanations fold away with the legend; the warnings and the
-                  rain data's credit stay while its colours are on the map */}
+              {/* The explanations fold away with the legend; the warnings stay while its colours are on the map */}
               {likely?.error && <p className="pm-legend-note">Could not load the likelihood.</p>}
               {/* The past years the colours come from, so a coming year reads as
                   the usual pattern; a past period also says what happened */}
@@ -1166,26 +1078,7 @@ export default function PublicMap() {
                     : ` It has started: ${likely.outcome.events} event${likely.outcome.events === 1 ? '' : 's'} so far.`)}
                 </p>
               )}
-              {legendOpen && likely && !likely.error && rainNote && (
-                <p className="pm-legend-note">
-                  Flood and landslide chances come from rain and terrain in {rainNote}.
-                </p>
-              )}
               {unavailableLegend && <p className="pm-legend-note">{unavailableLegend}</p>}
-              {(activeTypes.has('Flood') || activeTypes.has('Landslide')) && (
-                <p className="pm-legend-note rw-monthly-note">
-                  {FLOOD_LANDSLIDE_MONTHLY_NOTE}
-                  <button type="button" onClick={() => setView('next3')}>Next 3 days</button>
-                </p>
-              )}
-              {likely && !likely.error && (likely.results || []).some((r) => r.hazard_type !== 'Fire') && (
-                <p className="pm-legend-note">
-                  Rain data from{' '}
-                  <a href={RAIN_ATTRIBUTION.links[0].href} target="_blank" rel="noopener noreferrer">{RAIN_ATTRIBUTION.links[0].label}</a>
-                  {' '}(<a href={RAIN_ATTRIBUTION.links[1].href} target="_blank" rel="noopener noreferrer">{RAIN_ATTRIBUTION.links[1].label}</a>),
-                  processed into hazard chances by GeoAlert
-                </p>
-              )}
               {likely?.basis?.sample_records > 0 && (
                 <p className="pm-legend-note">
                   Includes {likely.basis.sample_records} sample records made for testing.

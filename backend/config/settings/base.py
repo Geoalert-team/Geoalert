@@ -36,7 +36,6 @@ LOCAL_APPS = [
     'apps.admin_dashboard',
     'apps.news',
     'apps.tutorials',
-    'apps.rainwatch',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -273,13 +272,6 @@ BEHIND_PROXY = env.bool('BEHIND_PROXY', default=False)
 # its .env. Off by default, so a teammate's runserver against the shared
 # database never adds rows from its own report and data files.
 HAZARD_LOG_WRITER = env.bool('HAZARD_LOG_WRITER', default=False)
-
-# Rain watch: the scheduled forecast job posts runs with this bearer token. Empty
-# (the default) means every post is refused, so nothing can be added by accident.
-RAIN_WATCH_INGEST_TOKEN = env('RAIN_WATCH_INGEST_TOKEN', default='')
-# Exactly one machine (the deployed server, PAGASA_FEED_WRITER=true in its .env)
-# fetches and stores PAGASA alerts. Off by default so a teammate's runserver doesn't.
-PAGASA_FEED_WRITER = env.bool('PAGASA_FEED_WRITER', default=False)
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')

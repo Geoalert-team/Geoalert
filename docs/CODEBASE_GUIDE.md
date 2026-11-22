@@ -173,26 +173,24 @@ There are four staff roles. Residents use the public pages without an account.
 
 ## The predictive feature
 
-The likelihood of a fire, flood or landslide per barangay and period, from past
-records. Everything is in [backend/apps/history/](../backend/apps/history/).
+**Rebuild in progress (2026-11-22).** Flood and landslide prediction, the old barangay fire
+model and the Rain watch were removed. Fire is being rebuilt as a per-purok model adapted
+from the City of Pittsburgh Bureau of Fire's fire risk model; until it is trained, fire
+shows "unavailable" with the reason. Design:
+[2026-11-22-fire-purok-model-design.md](design/specs/2026-11-22-fire-purok-model-design.md);
+plan: [2026-11-22-fire-purok-model.md](design/plans/2026-11-22-fire-purok-model.md);
+research: [2026-11-22-fire-purok-prediction-audit.md](research/2026-11-22-fire-purok-prediction-audit.md).
+Everything is in [backend/apps/history/](../backend/apps/history/).
 
 | File | Role |
 |---|---|
-| [views.py](../backend/apps/history/views.py) | The API: `HistoricalForecastView` (`/api/history/forecast/`) and `ForecastAccuracyView` (`/api/history/forecast/accuracy/`) |
-| [model_forecast.py](../backend/apps/history/model_forecast.py) | **Fire:** a Poisson regression refitted from the fire records, and its test against counting on the last months, which it never saw |
-| [hazard_forecast.py](../backend/apps/history/hazard_forecast.py) | **Flood and landslide:** scores the saved model (two-part model or logistic regression) and turns daily chances into a period's chance |
-| [hazard_models.py](../backend/apps/history/hazard_models.py), [two_part.py](../backend/apps/history/two_part.py), [firth.py](../backend/apps/history/firth.py), [hazard_scoring.py](../backend/apps/history/hazard_scoring.py), [hazard_scenarios.py](../backend/apps/history/hazard_scenarios.py) | The flood and landslide models themselves, and scoring them with NumPy only |
-| [hazard_data.py](../backend/apps/history/hazard_data.py), [rain.py](../backend/apps/history/rain.py), [storms.py](../backend/apps/history/storms.py), [exposure.py](../backend/apps/history/exposure.py), [landslide_catalogue.py](../backend/apps/history/landslide_catalogue.py) | The inputs: records, daily rain (NASA POWER), storm days (IBTrACS), flood exposure, NASA's landslide catalogue |
-| [hazard_tests.py](../backend/apps/history/hazard_tests.py), [hazard_verdict.py](../backend/apps/history/hazard_verdict.py), [fire_candidate.py](../backend/apps/history/fire_candidate.py) | The tests that decide which model is used, run by `manage.py test_hazard_models` |
-| [prediction_log.py](../backend/apps/history/prediction_log.py) | Keeps the chances shown, so they can be scored against what happens |
-| [forecast.py](../backend/apps/history/forecast.py) | Counting (the share of past years with an event): only the benchmark the models are scored against, never shown as a forecast |
+| [views.py](../backend/apps/history/views.py) | The API: `HistoricalForecastView` (`/api/history/forecast/`, fire only; any other hazard is a 400) and `ForecastAccuracyView` (`/api/history/forecast/accuracy/`) |
+| [forecast_rows.py](../backend/apps/history/forecast_rows.py) | The forecast's barangay rows, and marking a hazard unavailable with its reason |
+| [prediction_log.py](../backend/apps/history/prediction_log.py) | Will keep the fire model's purok figures (plan Task B6); writes nothing until then. The old `hazard_prediction_log` rows stay, unchanged |
+| [forecast.py](../backend/apps/history/forecast.py) | Counting (the share of past years with an event): the rows' history columns and a comparison baseline only, never shown as a forecast |
 
-The saved results and inputs are in [history/data/](../backend/apps/history/data/)
-(`hazard_model_report.json`, `rain_daily.csv`, `storm_days.csv`). The screens are in
-[components/Forecast/](../frontend/src/components/Forecast/) and the map's "Likely by
-month" view in [PublicMap.jsx](../frontend/src/pages/PublicMap.jsx). The design and the
-research behind it: [docs/design/specs/](design/specs/) (the 2026-11-12 and 2026-11-13
-files) and [docs/research/](research/).
+The screens are in [components/Forecast/](../frontend/src/components/Forecast/) and the
+map's "Likely by month" view in [PublicMap.jsx](../frontend/src/pages/PublicMap.jsx).
 
 ## Shared building blocks
 
@@ -222,7 +220,7 @@ files) and [docs/research/](research/).
 | `import_bfp_fires`, `import_flood_landslide` | Imports the official fire log and the flood and landslide log |
 | `release_pending_alerts` | The timed alert jobs (held Extreme alerts, reminders) |
 | `build_hazard_index` | Builds the susceptibility maps for the public map |
-| `fetch_rain`, `fetch_storms`, `build_hazard_features`, `test_hazard_models` | Refreshes the predictive models' inputs and tests the models |
+| `log_hazard_predictions` | The daily prediction log (writes nothing until the fire purok log is built) |
 | `seed_fake_hazards` | Adds or removes sample hazards for demos |
 
 ## Tests

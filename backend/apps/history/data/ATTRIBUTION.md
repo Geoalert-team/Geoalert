@@ -1,11 +1,10 @@
 # Data attribution
 
-- `barangay_exposure.csv` is derived from the UP NOAH flood hazard maps (ODbL, via the bettergovph
-  mirror on Hugging Face) and the Microsoft Global ML Building Footprints (ODbL). It is offered
-  under the Open Database License (ODbL).
-- `storm_days.csv` is derived from IBTrACS v04r01 (NOAA NCEI). Commercial use is subject to
-  WMO Resolution 40.
-- The Rain watch forecast uses NOAA GFS (public domain), fetched from NOAA NOMADS. When NOAA is
-  late, the fallback is "NOAA GFS from dynamical.org" (CC BY 4.0, credit dynamical.org).
-- Rain watch alerts come from PAGASA's public alert feed
-  (https://publicalert.pagasa.dost.gov.ph/feeds/), CC BY 4.0. Credit PAGASA.
+No third-party data file is kept here at present. The flood exposure (UP NOAH, Microsoft
+building footprints), storm days (IBTrACS), rain (NASA POWER) and Rain watch (NOAA GFS,
+PAGASA) files were removed on 2026-11-22 with flood and landslide prediction and the Rain
+watch (docs/design/specs/2026-11-22-fire-purok-model-design.md, Part A).
+
+The fire purok model's feature file (plan Task B1) will be credited here when it is built:
+Microsoft Global ML Building Footprints (ODbL), OpenStreetMap (ODbL), ESA WorldCover 2021
+v200 (CC BY 4.0) and, if used, WorldPop (CC BY 4.0).

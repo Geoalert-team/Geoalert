@@ -26,14 +26,27 @@ async function render(node) {
   return el;
 }
 
+// Fire is the only hazard the forecast covers since 2026-11-22
 const row = (i) => ({
-  barangay_id: i, barangay: `B${i}`, hazard_type: 'Flood', level: 'Moderate',
+  barangay_id: i, barangay: `B${i}`, hazard_type: 'Fire', level: 'Moderate',
   years_hit: 1, years_considered: 4, typical_severity: 'Orange',
 });
-const forecast = (hazard, n = 2) => ({
+const forecast = (n = 2) => ({
   results: Array.from({ length: n }, (_, i) => row(i)), years: [2023, 2024, 2025, 2026],
-  basis: { records: 10, sample_records: 0 }, hazard_type: hazard || null,
+  basis: { records: 10, sample_records: 0 }, hazard_type: 'Fire',
   profile: [{ month: 11, month_name: 'November', level: 'Moderate', probability: 0.4, years_hit: 1, years_considered: 4 }],
+});
+const modelled = (extra = {}) => ({
+  ...forecast(), model_hazards: ['Fire'], profile_method: 'model',
+  results: [{ ...row(1), method: 'model', probability: 0.234 }], ...extra,
+});
+const NOT_TRAINED = 'The fire model has not been trained yet.';
+const untrained = (n = 2) => ({
+  ...forecast(n), unavailable_hazards: ['Fire'], profile_method: 'unavailable',
+  basis: { records: 10, sample_records: 0, method: "Fire's prediction model is being rebuilt, so no chances are shown until it is trained. Flood and landslide predictions are being rebuilt too." },
+  results: Array.from({ length: n }, (_, i) => ({
+    ...row(i), method: 'unavailable', probability: null, expected_events: null, level: 'None', reason: NOT_TRAINED,
+  })),
 });
 
 test('outlook reads one hazard type and leaves sample records out', async () => {
@@ -57,15 +70,24 @@ test('outlook says so when it cannot load', async () => {
   expect(el.textContent).toContain('The seasonal outlook could not be loaded right now.');
 });
 
-test('likelihood takes its hazard from outside and can leave samples out', async () => {
+test('likelihood asks for fire only and can leave samples out', async () => {
   historyApi.forecast.mockResolvedValue({ results: [], years: [], basis: { records: 0, sample_records: 0 } });
-  const el = await render(<BarangayLikelihood hazard="Flood" excludeSamples />);
+  const el = await render(<BarangayLikelihood excludeSamples />);
   expect(historyApi.forecast).toHaveBeenCalledWith(expect.objectContaining({
-    hazard_type_name: 'Flood', exclude_samples: 'true',
+    hazard_type_name: 'Fire', exclude_samples: 'true',
   }));
   // The period picker only: what kind of period, and the month
   expect([...el.querySelectorAll('select')].map((s) => s.closest('label').querySelector('span').textContent))
     .toEqual(['Period', 'Month']);
+});
+
+test('a flood or landslide filter shows the fire-only note and asks for nothing', async () => {
+  for (const hazard of ['Flood', 'Landslide']) {
+    const el = await render(<BarangayLikelihood hazard={hazard} />);
+    expect(el.textContent).toContain('Only fire has a prediction for now.');
+    expect(el.querySelector('table')).toBeNull();
+  }
+  expect(historyApi.forecast).not.toHaveBeenCalled();
 });
 
 const pick = (el, label, value) => act(async () => {
@@ -77,33 +99,33 @@ const pick = (el, label, value) => act(async () => {
 });
 
 test('an exact date asks for the week around it', async () => {
-  historyApi.forecast.mockResolvedValue(forecast('Flood'));
-  const el = await render(<BarangayLikelihood hazard="Flood" />);
+  historyApi.forecast.mockResolvedValue(forecast());
+  const el = await render(<BarangayLikelihood hazard="Fire" />);
   await pick(el, 'Period', 'date');
   await pick(el, 'Date', '2027-11-15');
-  expect(historyApi.forecast).toHaveBeenLastCalledWith({ date: '2027-11-15', hazard_type_name: 'Flood' });
+  expect(historyApi.forecast).toHaveBeenLastCalledWith({ date: '2027-11-15', hazard_type_name: 'Fire' });
   expect(el.querySelector('th:nth-child(4)').textContent).toBe('On record in past years, week of Nov 15');
 });
 
 test('a past month and year shows what happened beside the likelihood', async () => {
   historyApi.forecast.mockResolvedValue({
-    ...forecast(''), year: 2024, years: [2021, 2022, 2023], outcome: { complete: true, events: 3 },
+    ...forecast(), year: 2024, years: [2021, 2022, 2023], outcome: { complete: true, events: 3 },
     results: [{ ...row(1), actual: 3 }, { ...row(2), actual: 0 }],
   });
-  const el = await render(<BarangayLikelihood hazard="Flood" />);
+  const el = await render(<BarangayLikelihood />);
   await pick(el, 'Period', 'monthYear');
   await pick(el, 'Year', '2024');
   expect(historyApi.forecast).toHaveBeenLastCalledWith(expect.objectContaining({ year: 2024 }));
   expect([...el.querySelectorAll('th')].map((th) => th.textContent)).toContain('What happened');
   expect([...el.querySelectorAll('tbody tr')].map((tr) => tr.children[4].textContent)).toEqual(['3 events', 'None']);
   expect(el.textContent).toMatch(/[A-Z][a-z]+ 2024 is over: 3 events happened\./);
-  // the figures come from the models, not from counting these years
+  // the figures come from the model, not from counting these years
   expect(el.textContent).not.toContain('2021–2023');
 });
 
 test('a period with nothing before it never says there is nothing to estimate from', async () => {
   historyApi.forecast.mockResolvedValue(modelled({ year: 2023, years: [], in_training: true,
-    results: [{ ...row(1), hazard_type: 'Fire', method: 'model', probability: 0.36, in_training: true }] }));
+    results: [{ ...row(1), method: 'model', probability: 0.36, in_training: true }] }));
   const el = await render(<BarangayLikelihood hazard="Fire" />);
   expect(el.textContent).not.toContain('Nothing on record before');
   expect(el.textContent).toContain('36%');
@@ -111,17 +133,13 @@ test('a period with nothing before it never says there is nothing to estimate fr
 });
 
 test('the dashboard card sends the rest to Analytics, not History', async () => {
-  historyApi.forecast.mockResolvedValue(forecast('Flood', 7));
-  const el = await render(<BarangayLikelihood compact limit={5} hazard="Flood" />);
+  historyApi.forecast.mockResolvedValue(forecast(7));
+  const el = await render(<BarangayLikelihood compact limit={5} />);
+  expect(el.querySelectorAll('tbody tr')).toHaveLength(5);
   const more = [...el.querySelectorAll('a')].find((a) => a.textContent.includes('2 more'));
   expect(more.textContent).toBe('2 more in Reports › Analytics');
   expect(more.getAttribute('href')).toBe('/app/reports?tab=analytics');
   expect(el.textContent).not.toContain('Historical Data');
-});
-
-const modelled = (extra = {}) => ({
-  ...forecast('Fire'), model_hazards: ['Fire'], profile_method: 'model',
-  results: [{ ...row(1), hazard_type: 'Fire', method: 'model', probability: 0.234 }], ...extra,
 });
 
 test('a model row shows its chance beside the level', async () => {
@@ -132,34 +150,41 @@ test('a model row shows its chance beside the level', async () => {
   expect(el.querySelector('tbody tr').children[heads.indexOf('Chance')].textContent).toBe('23%');
 });
 
-test('counting rows get no chance column', async () => {
-  historyApi.forecast.mockResolvedValue(forecast('Flood'));
-  const el = await render(<BarangayLikelihood hazard="Flood" />);
+test('rows with no method get no chance column', async () => {
+  historyApi.forecast.mockResolvedValue(forecast());
+  const el = await render(<BarangayLikelihood />);
   expect([...el.querySelectorAll('th')].map((th) => th.textContent)).not.toContain('Chance');
 });
 
-test('the method names the model and the hazard types it covers', async () => {
-  historyApi.forecast.mockResolvedValue(modelled({ model_hazards: ['Fire', 'Flood', 'Landslide'] }));
-  const el = await render(<BarangayLikelihood hazard="Fire" />);
-  expect(el.querySelector('.db-method').textContent).toContain('Fire comes from a trained model');
-  expect(el.querySelector('.db-method').textContent).not.toContain('no AI');
+test('an untrained fire model shows its reason on each row and names fire under the table', async () => {
+  historyApi.forecast.mockResolvedValue(untrained());
+  const el = await render(<BarangayLikelihood />);
+  const heads = [...el.querySelectorAll('th')].map((th) => th.textContent);
+  const first = el.querySelector('tbody tr');
+  expect(first.children[heads.indexOf('Likelihood')].textContent).toBe('Unavailable right now');
+  expect(first.children[heads.indexOf('Chance')].textContent).toBe(NOT_TRAINED);
+  expect(el.textContent).not.toContain('None on record');
+  expect([...el.querySelectorAll('p.fc-note')].map((p) => p.textContent))
+    .toContain(`Fire is unavailable right now: ${NOT_TRAINED}`);
 });
 
-test('the method no longer describes counting, and keeps the cut-offs', async () => {
-  historyApi.forecast.mockResolvedValue(modelled());
-  const el = await render(<BarangayLikelihood hazard="Fire" />);
+test('the method shows the basis line and keeps the cut-offs', async () => {
+  historyApi.forecast.mockResolvedValue(untrained());
+  const el = await render(<BarangayLikelihood />);
   const method = el.querySelector('.db-method').textContent;
-  expect(method).not.toContain('counts the years');
-  expect(method).not.toContain('plain counting');
+  expect(method).toContain("Fire's prediction model is being rebuilt");
   expect(method).toContain('25% or more is High');
+  expect(method).not.toContain('counts the years');
+  expect(method).not.toContain('daily rain');
+  expect(method).not.toContain('All hazards');
 });
 
 test('the year chart says what its bars are', async () => {
   historyApi.forecast.mockResolvedValue(modelled());
   const el = await render(<BarangayLikelihood hazard="Fire" />);
   expect(el.querySelector('.fc-profile').textContent).toContain("average barangay's chance");
-  historyApi.forecast.mockResolvedValue({ ...forecast('Flood'), profile_method: 'unavailable' });
-  await el.rerender(<BarangayLikelihood hazard="Flood" />);
+  historyApi.forecast.mockResolvedValue({ ...forecast(), profile_method: 'unavailable' });
+  await el.rerender(<BarangayLikelihood hazard="Fire" excludeSamples />);
   expect(el.querySelector('.fc-profile').textContent).toContain('The model gives no chart for this period.');
   expect(el.querySelector('.fc-profile').textContent).not.toContain('share of past years');
 });
@@ -169,45 +194,40 @@ test('a month on the chart is described by its chance, never a count of years', 
     profile: [
       { month: 6, month_name: 'June', level: 'Moderate', probability: 0.206, years_hit: 4, years_considered: 6 },
       { month: 7, month_name: 'July', level: 'None', probability: null },
+      { month: 12, month_name: 'December', level: 'Low', probability: 0.004 },
+      { month: 1, month_name: 'January', level: 'Low', probability: 0 },
     ],
   }));
   const el = await render(<BarangayLikelihood hazard="Fire" />);
   expect([...el.querySelectorAll('.fc-months li')].map((li) => li.getAttribute('title')))
-    .toEqual(['June: Moderate (21%)', 'July: no figure']);
+    .toEqual(['June: Moderate (21%)', 'July: no figure', 'December: Low (under 1%)', 'January: Low (0%)']);
 });
 
 test('short history is never called rough: every level comes from a model', async () => {
   historyApi.forecast.mockResolvedValue(modelled({ limited: true }));
   const el = await render(<BarangayLikelihood hazard="Fire" />);
   expect(el.textContent).not.toContain('levels are rough');
-  historyApi.forecast.mockResolvedValue({ ...forecast('Flood'), limited: true });
-  await el.rerender(<BarangayLikelihood hazard="Flood" />);
-  expect(el.textContent).not.toContain('levels are rough');
-});
-
-test('the method says what fire uses when too few fires came before the period', async () => {
-  historyApi.forecast.mockResolvedValue(modelled());
-  const el = await render(<BarangayLikelihood hazard="Fire" />);
-  expect(el.querySelector('.db-method').textContent).toContain(
-    'When fewer than 100 fires came before it, the model trained on every record is used, and the table says it learned from that period.',
-  );
 });
 
 test('the full table points at the History archive for the records', async () => {
-  historyApi.forecast.mockResolvedValue(forecast(''));
-  const el = await render(<BarangayLikelihood hazard="Flood" />);
+  historyApi.forecast.mockResolvedValue(forecast());
+  const el = await render(<BarangayLikelihood />);
   expect(el.textContent).not.toContain('records below');
   expect(el.textContent).toContain('archived records on the History page');
 });
 
-test('the year profile keeps the label of the figures it shows while a new type loads', async () => {
-  historyApi.forecast.mockResolvedValueOnce(forecast('Flood'));
-  const el = await render(<BarangayLikelihood hazard="Flood" />);
-  expect(el.querySelector('.fc-profile h3').textContent).toContain(', flood');
-  historyApi.forecast.mockReturnValueOnce(new Promise(() => {}));
-  await el.rerender(<BarangayLikelihood hazard="Fire" />);
-  expect(el.querySelector('.fc-profile h3').textContent).toContain(', flood');
-  expect(el.querySelector('.fc-profile h3').textContent).not.toContain('fire');
+test('the likelihood table scrolls inside its card on a narrow phone, not the page', async () => {
+  historyApi.forecast.mockResolvedValue(forecast());
+  const el = await render(<BarangayLikelihood />);
+  expect(el.querySelector('.fc-table').parentElement.classList.contains('fc-table-wrap')).toBe(true);
+});
+
+test('no rain attribution or combined table any more', async () => {
+  historyApi.forecast.mockResolvedValue(modelled());
+  const el = await render(<BarangayLikelihood />);
+  expect(el.querySelector('.fc-attribution')).toBeNull();
+  expect(el.textContent).not.toContain('NASA POWER');
+  expect([...el.querySelectorAll('th')].map((th) => th.textContent)).not.toContain('All hazards');
 });
 
 test('the outlook shows loading, not the last type\'s figures, while a new type loads', async () => {
@@ -218,232 +238,6 @@ test('the outlook shows loading, not the last type\'s figures, while a new type 
   await el.rerender(<SeasonalOutlook hazardTypeId="2" hazardName="Fire" includeSamples={false} />);
   expect(el.textContent).toContain('Loading the outlook…');
   expect(el.textContent).not.toContain('No archived events match');
-});
-
-test('the likelihood table scrolls inside its card on a narrow phone, not the page', async () => {
-  historyApi.forecast.mockResolvedValue(allHazards());
-  const el = await render(<BarangayLikelihood />);
-  expect(el.querySelector('.fc-table').parentElement.classList.contains('fc-table-wrap')).toBe(true);
-});
-
-const combinedRow = (i, extra = {}) => ({
-  barangay_id: i, barangay: `B${i}`, probability: 0.3, expected_events: 0.35, level: 'High', top_hazard: 'Landslide',
-  hazards: [{ hazard_type: 'Fire', probability: 0.08, level: 'Low' }, { hazard_type: 'Flood', probability: 0.031, level: 'Low' },
-    { hazard_type: 'Landslide', probability: 0.3, level: 'High' }],
-  missing: [], ...extra,
-});
-const modelRow = (i, hazard, extra = {}) => ({
-  ...row(i), hazard_type: hazard, method: 'model', model: 'logistic_regression', probability: 0.031, level: 'Low',
-  range: [0.03, 0.41], rain_years: [2021, 2022, 2023], ...extra,
-});
-const allHazards = (n = 2) => ({
-  ...forecast('', n), hazards_included: ['Fire', 'Flood', 'Landslide'], model_hazards: ['Fire', 'Flood', 'Landslide'],
-  profile_method: 'model', combined: Array.from({ length: n }, (_, i) => combinedRow(i)),
-  results: Array.from({ length: n }, (_, i) => modelRow(i, 'Flood')),
-});
-
-test('the method says the rain is the city’s and the terrain each barangay’s', async () => {
-  historyApi.forecast.mockResolvedValue(allHazards());
-  const el = await render(<BarangayLikelihood />);
-  const method = el.querySelector('.db-method').textContent;
-  expect(method).toContain('learns, from past years of daily rain over the city and each barangay’s terrain');
-  expect(method).not.toContain('rain at each barangay');
-});
-
-test('all hazard types shows the combined table with each hazard', async () => {
-  historyApi.forecast.mockResolvedValue(allHazards());
-  const el = await render(<BarangayLikelihood />);
-  expect([...el.querySelectorAll('th')].map((th) => th.textContent))
-    .toEqual(['Barangay', 'All hazards', 'Chance', 'Biggest share', 'Each hazard']);
-  const cells = [...el.querySelector('tbody tr').children].map((td) => td.textContent);
-  expect(cells).toEqual(['B0', 'High', '30%', 'Landslide', 'Fire 8% · Flood 3% · Landslide 30%']);
-});
-
-test('the combined table adds what happened once a period has started', async () => {
-  historyApi.forecast.mockResolvedValue({
-    ...allHazards(), year: 2024, years: [2021, 2022, 2023], outcome: { complete: true, events: 3 },
-    results: [modelRow(0, 'Flood', { actual: 2 }), modelRow(0, 'Fire', { actual: 1 }), modelRow(1, 'Flood', { actual: 0 })],
-  });
-  const el = await render(<BarangayLikelihood />);
-  const heads = [...el.querySelectorAll('th')].map((th) => th.textContent);
-  expect(heads[heads.length - 1]).toBe('What happened');
-  expect([...el.querySelectorAll('tbody tr')].map((tr) => tr.lastChild.textContent)).toEqual(['3 events', 'None']);
-});
-
-test('one hazard shows its range, rain so far and the in-training note', async () => {
-  historyApi.forecast.mockResolvedValue({
-    ...forecast('Flood'), model_hazards: ['Fire', 'Flood', 'Landslide'], profile_method: 'model',
-    results: [
-      modelRow(0, 'Flood', { recorded_rain_probability: 0.12, in_training: true }),
-      { ...row(1), method: 'unavailable', probability: null, expected_events: null, level: 'None', reason: 'no rain years before this period' },
-    ],
-  });
-  const el = await render(<BarangayLikelihood hazard="Flood" />);
-  const heads = [...el.querySelectorAll('th')].map((th) => th.textContent);
-  const [first, second] = [...el.querySelectorAll('tbody tr')];
-  const chance = heads.indexOf('Chance');
-  expect(first.children[chance].textContent).toContain('3%');
-  expect(first.children[chance].textContent).toContain('3–41% across past rain years');
-  expect(first.children[chance].textContent).toContain('With rain so far: 12%');
-  expect(el.textContent).toContain('The model learned from this period; see the accuracy check for results on years it never saw.');
-  expect(second.textContent).toContain('Unavailable right now');
-  expect(second.textContent).not.toContain('None on record');
-  expect(second.textContent).not.toMatch(/\d%/);
-  expect(el.querySelector('.db-method').textContent).toContain('logistic regression');
-  expect(el.querySelector('.db-method').textContent).not.toContain('counts the years');
-});
-
-test('a tiny flood chance reads under 1%, not 0%, and fire is unchanged', async () => {
-  historyApi.forecast.mockResolvedValue({
-    ...forecast('Flood'), model_hazards: ['Fire', 'Flood', 'Landslide'], profile_method: 'model',
-    results: [modelRow(0, 'Flood', { probability: 0.004, recorded_rain_probability: 0.004 })],
-  });
-  let el = await render(<BarangayLikelihood hazard="Flood" />);
-  let heads = [...el.querySelectorAll('th')].map((th) => th.textContent);
-  let cell = el.querySelector('tbody tr').children[heads.indexOf('Chance')].textContent;
-  expect(cell).toContain('under 1%');
-  expect(cell).toContain('With rain so far: under 1%');
-  expect(cell).not.toMatch(/(^|[^\d])0%/);
-
-  historyApi.forecast.mockResolvedValue({
-    ...forecast('Fire'), model_hazards: ['Fire', 'Flood', 'Landslide'], profile_method: 'model',
-    results: [modelRow(0, 'Fire', { probability: 0.004 })],
-  });
-  el = await render(<BarangayLikelihood hazard="Fire" />);
-  heads = [...el.querySelectorAll('th')].map((th) => th.textContent);
-  cell = el.querySelector('tbody tr').children[heads.indexOf('Chance')].textContent;
-  expect(cell).toContain('0%');
-  expect(cell).not.toContain('under 1%');
-});
-
-const UNAVAILABLE_FLOOD = 'Unavailable right now in some or all barangays, and left out of their All hazards chance: Flood.';
-
-test('the combined table names an unavailable hazard and says it is left out', async () => {
-  const response = {
-    ...allHazards(), unavailable_hazards: ['Flood'],
-    combined: [combinedRow(0, {
-      probability: 0.19, level: 'Moderate', top_hazard: 'Fire', missing: ['Flood'],
-      hazards: [{ hazard_type: 'Fire', probability: 0.19, level: 'Moderate' }, { hazard_type: 'Flood', probability: null, level: 'None' },
-        { hazard_type: 'Landslide', probability: 0.01, level: 'Low' }],
-    }), combinedRow(1)],
-  };
-  historyApi.forecast.mockResolvedValue(response);
-  const el = await render(<BarangayLikelihood />);
-  const [first, second] = [...el.querySelectorAll('tbody tr')].map((tr) => [...tr.children].map((td) => td.textContent));
-  expect(first).toEqual(['B0', 'Moderate', '19%', 'Fire', 'Fire 19% · Flood unavailable · Landslide 1%']);
-  expect(second[4]).toBe('Fire 8% · Flood 3% · Landslide 30%');
-  // under the table, before the disclaimer
-  const notes = [...el.querySelectorAll('p.fc-note')].map((p) => p.textContent);
-  expect(notes).toContain(UNAVAILABLE_FLOOD);
-  expect(notes.indexOf(UNAVAILABLE_FLOOD)).toBeLessThan(notes.findIndex((t) => t.startsWith('Fire is estimated from past fires')));
-  expect(el.querySelector('.fc-table-wrap').nextElementSibling.textContent).toBe(UNAVAILABLE_FLOOD);
-  // and on the dashboard card
-  const card = await render(<BarangayLikelihood compact limit={5} />);
-  expect([...card.querySelectorAll('p.fc-note')].map((p) => p.textContent)).toContain(UNAVAILABLE_FLOOD);
-});
-
-test('no unavailable note when every hazard has its figure', async () => {
-  historyApi.forecast.mockResolvedValue({ ...allHazards(), unavailable_hazards: [] });
-  const el = await render(<BarangayLikelihood />);
-  expect(el.textContent).not.toContain('Unavailable right now');
-});
-
-test('a combined row with no chance because its hazards are unavailable says so', async () => {
-  historyApi.forecast.mockResolvedValue({
-    ...allHazards(), hazards_included: ['Flood', 'Landslide'], unavailable_hazards: ['Flood', 'Landslide'],
-    combined: [combinedRow(0, {
-      probability: null, expected_events: null, level: 'None', top_hazard: null, missing: ['Flood', 'Landslide'],
-      hazards: [{ hazard_type: 'Flood', probability: null, level: 'None' }, { hazard_type: 'Landslide', probability: null, level: 'None' }],
-    })],
-  });
-  const el = await render(<BarangayLikelihood />);
-  const row = el.querySelector('tbody tr');
-  expect([...row.children].map((td) => td.textContent))
-    .toEqual(['B0', 'Unavailable right now', '-', '-', 'Flood unavailable · Landslide unavailable']);
-  expect(el.textContent).not.toContain('None on record');
-  // the None styling is kept
-  expect(row.querySelector('.fc-dot').style.background).toBe('rgb(154, 163, 178)');
-  expect(el.textContent).toContain('Unavailable right now in some or all barangays, and left out of their All hazards chance: Flood and Landslide.');
-});
-
-// A past period: fire is on counting, so a barangay with no fire on record has Fire in `missing`, and nothing is unavailable
-test('no fire on record is left out of the breakdown, never called unavailable', async () => {
-  historyApi.forecast.mockResolvedValue({
-    ...allHazards(), unavailable_hazards: [],
-    combined: [combinedRow(0, {
-      probability: 0.32, missing: ['Fire'],
-      hazards: [{ hazard_type: 'Fire', probability: null, level: 'None' }, { hazard_type: 'Flood', probability: 0.031, level: 'Low' },
-        { hazard_type: 'Landslide', probability: 0.3, level: 'High' }],
-    }), combinedRow(1)],
-  });
-  const el = await render(<BarangayLikelihood />);
-  const [first] = [...el.querySelectorAll('tbody tr')].map((tr) => [...tr.children].map((td) => td.textContent));
-  expect(first).toEqual(['B0', 'High', '32%', 'Landslide', 'Flood 3% · Landslide 30%']);
-  expect(el.textContent).not.toContain('Fire unavailable');
-  expect(el.textContent).not.toContain('Unavailable right now');
-});
-
-test('a combined row with no chance and no fire on record reads None on record', async () => {
-  historyApi.forecast.mockResolvedValue({
-    ...allHazards(), hazards_included: ['Fire'], unavailable_hazards: [],
-    combined: [combinedRow(0, {
-      probability: null, expected_events: null, level: 'None', top_hazard: null, missing: ['Fire'],
-      hazards: [{ hazard_type: 'Fire', probability: null, level: 'None' }],
-    })],
-  });
-  const el = await render(<BarangayLikelihood />);
-  expect([...el.querySelector('tbody tr').children].map((td) => td.textContent))
-    .toEqual(['B0', 'None on record', '-', '-', '-']);
-  expect(el.textContent).not.toContain('Unavailable right now');
-  expect(el.textContent).not.toContain('Fire unavailable');
-});
-
-test('a model month in the year chart says under 1% for a tiny chance, never 0%', async () => {
-  historyApi.forecast.mockResolvedValue({
-    ...allHazards(),
-    profile: [
-      { month: 11, month_name: 'November', level: 'Moderate', probability: 0.234 },
-      { month: 12, month_name: 'December', level: 'Low', probability: 0.004 },
-      { month: 1, month_name: 'January', level: 'Low', probability: 0 },
-      { month: 2, month_name: 'February', level: 'Low', probability: 0.004, years_hit: 1, years_considered: 4 },
-    ],
-  });
-  const el = await render(<BarangayLikelihood />);
-  expect([...el.querySelectorAll('.fc-months li')].map((li) => li.getAttribute('title'))).toEqual([
-    // a month's counting fields, if any were ever sent, are never shown: the chance is
-    'November: Moderate (23%)', 'December: Low (under 1%)', 'January: Low (0%)', 'February: Low (under 1%)',
-  ]);
-});
-
-test('the combined table says under 1% for a tiny chance', async () => {
-  historyApi.forecast.mockResolvedValue({ ...allHazards(), combined: [combinedRow(0, { probability: 0.004 })] });
-  const el = await render(<BarangayLikelihood />);
-  const cells = [...el.querySelector('tbody tr').children].map((td) => td.textContent);
-  expect(cells[2]).toBe('under 1%');
-});
-
-test('the rain attribution sits under the card with both links', async () => {
-  historyApi.forecast.mockResolvedValue(allHazards());
-  const el = await render(<BarangayLikelihood />);
-  const note = el.querySelector('.fc-attribution');
-  expect(note.textContent).toBe('Rain data from NASA POWER (CC BY 4.0), processed into hazard chances by GeoAlert');
-  expect([...note.querySelectorAll('a')].map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
-    ['NASA POWER', 'https://power.larc.nasa.gov/'], ['CC BY 4.0', 'https://creativecommons.org/licenses/by/4.0/'],
-  ]);
-});
-
-test('fire alone carries no rain attribution', async () => {
-  historyApi.forecast.mockResolvedValue(modelled());
-  const el = await render(<BarangayLikelihood hazard="Fire" />);
-  expect(el.querySelector('.fc-attribution')).toBeNull();
-});
-
-test('the dashboard card shows the top 5 combined rows', async () => {
-  historyApi.forecast.mockResolvedValue(allHazards(7));
-  const el = await render(<BarangayLikelihood compact limit={5} />);
-  expect(el.querySelectorAll('tbody tr')).toHaveLength(5);
-  const more = [...el.querySelectorAll('a')].find((a) => a.textContent.includes('2 more'));
-  expect(more.textContent).toBe('2 more in Reports › Analytics');
 });
 
 test('the outlook is titled as history, not prediction', async () => {

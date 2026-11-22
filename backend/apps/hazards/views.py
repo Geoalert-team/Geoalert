@@ -5,8 +5,6 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.gis.geos import Polygon
-from django.conf import settings
-from django.core.cache import cache
 from django.db import DatabaseError, transaction
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -48,12 +46,6 @@ from apps.hazards.alerts import (
 )
 
 logger = logging.getLogger(__name__)
-
-# Whether the flood and landslide models need warming is asked at most once a
-# minute: the map polls the hazard list, and each check reads the model's data
-# files and its records.
-WARM_CHECK_KEY = 'geoalert:hazard-model-warm-check'
-WARM_CHECK_EVERY = 60  # seconds
 
 
 def parse_bbox(value):
@@ -122,39 +114,6 @@ class HazardZoneListView(APIView):
         # The public map is the busiest caller, so it is one of the places
         # an unanswered Extreme alert gets sent once its window is up.
         release_overdue_quietly()
-        # The uptime ping lands here too, so it starts fitting the flood and
-        # landslide models in the background when a restart emptied the cache,
-        # and runs the warm-up's daily jobs once a day.
-        # A warm-up problem must never break the hazard list.
-        try:
-            from apps.history import hazard_forecast
-            # cache.add only succeeds for the first caller in each window, across
-            # every worker sharing the cache. If the cache itself fails, check
-            # anyway, as release_overdue_quietly does.
-            try:
-                due = cache.add(WARM_CHECK_KEY, 1, timeout=WARM_CHECK_EVERY)
-            except Exception:
-                logger.warning('Cache unavailable; checking whether the hazard models need warming without a limit')
-                due = True
-            if due:
-                hazard_forecast.warm_in_background()
-        except Exception:
-            logger.exception('Could not start warming the flood and landslide models.')
-
-        # On the one machine that reads PAGASA's alert feed, the same ping starts
-        # the hourly check in the background. It must never break the hazard list.
-        try:
-            if settings.PAGASA_FEED_WRITER:
-                from apps.rainwatch import pagasa
-                try:
-                    pagasa_due = cache.add(pagasa.CHECK_KEY, 1, timeout=pagasa.CHECK_EVERY)
-                except Exception:
-                    logger.warning('Cache unavailable; checking the PAGASA feed without a limit')
-                    pagasa_due = True
-                if pagasa_due:
-                    pagasa.check_in_background()
-        except Exception:
-            logger.exception('Could not start the PAGASA feed check.')
 
         # Nothing changed since this browser last asked: no queries at all
         etag = map_version.etag_for(request)

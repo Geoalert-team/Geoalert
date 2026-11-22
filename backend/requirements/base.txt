@@ -18,7 +18,7 @@ scipy==1.17.1
 tifffile==2026.3.3
 imagecodecs==2026.3.6
 
-# The likelihood model (apps/history/model_forecast.py)
+# Offline fire-model training and analysis (apps/history; plan docs/design/plans/2026-11-22-fire-purok-model.md)
 scikit-learn==1.9.1
 
 # Reading the BFP fire log (manage.py import_bfp_fires)

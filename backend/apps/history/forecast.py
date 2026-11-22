@@ -31,8 +31,8 @@ Too little history makes a share meaningless (one year out of one is
 "100%"), so a result based on fewer than MIN_YEARS years is marked
 `limited`, and the page says so instead of hiding it.
 
-This counting is also what the trained model in model_forecast.py has to
-beat: a hazard type stays on it until a model does.
+This counting is never a prediction: it gives the forecast rows their history
+columns and is the comparison baseline in the fire model's report.
 """
 
 from calendar import monthrange
@@ -267,9 +267,8 @@ def summarize_by_barangay(rows):
 def empty_profile():
     """
     The 12-month chart before any model fills it, January first: no figures.
-    The models write each month's chance (model_forecast.apply_profile,
-    hazard_forecast); a chart they cannot fill stays empty and is called
-    unavailable, never counted.
+    The fire model writes each month's chance; a chart it cannot fill stays
+    empty and is called unavailable, never counted.
     """
     return [{'month': m, 'month_name': MONTH_NAMES[m - 1], 'probability': None, 'expected_events': None,
              'level': 'None'} for m in range(1, 13)]

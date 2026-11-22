@@ -156,65 +156,20 @@ On [cron-job.org](https://cron-job.org), create a job that calls
 Render's 750 free hours cover one service running all month, so keep it as the
 only free web service in that Render account.
 
-## Rain watch: GitHub job
+## Removed: the Rain watch (2026-11-22)
 
-The map's "Next 3 days" view needs a rain forecast. A small GitHub job fetches it
-from NOAA every 6 hours and sends it to Render. Render itself stays light: it
-only stores the forecast and works out the colours. Do these in order.
+The "Next 3 days" rain watch and its GitHub job were removed from the code on
+2026-11-22 (flood and landslide prediction is being rebuilt). Nothing in the
+database was dropped: the `rainwatch` tables and their rows are still there,
+unused. Outside the repository, tidy these up yourself:
 
-1. **Back up, then migrate.** This changes the team's shared Supabase database,
-   so do it only after a backup. From a laptop pointed at the live database, run
-   `python manage.py showmigrations rainwatch` to check that `0001` is not yet
-   applied, then `python manage.py migrate rainwatch`. Name the app: a plain
-   `migrate` would apply every pending migration in the project, not only
-   `rainwatch 0001`.
-2. **Put the code on the deploy branch.** The new code has to be live before
-   the first run: the site deploys from `feature/geoalert-updates`. You commit
-   and push it yourself (the assistant never does). Then wait until both
-   deploys have finished: **Render** (the backend, Dashboard > your service >
-   **Events**) and **Vercel** (the website, Project > **Deployments**). Only go
-   on when both say they are live.
-3. **Render settings** (Environment):
-   - `RAIN_WATCH_INGEST_TOKEN`: a long random value. Make one with
-     `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
-   - `PAGASA_FEED_WRITER=true`: only this server reads PAGASA's alert feed.
-   - `HAZARD_LOG_WRITER=true`: check it is set too.
-
-   `deploy\make_render_env.py` already writes all three; only the token needs
-   filling in.
-4. **GitHub secrets** (repository **Settings > Secrets and variables >
-   Actions**):
-   - `RAIN_WATCH_INGEST_TOKEN`: the same value as on Render.
-   - `RAIN_WATCH_API_URL`: `https://geoalert-rvqc.onrender.com`
-5. **Spending limit.** In GitHub **Billing > Budgets and alerts** (or Spending
-   limits), set the Actions limit to $0, so the job can never be charged.
-6. **Public or private?** Check the repository's visibility. Each run installs
-   the forecast libraries (eccodes, xarray, pandas, zarr, icechunk) and then
-   fetches the forecast, which takes roughly 4 to 6 minutes. At 4 runs a day
-   that is about 500 to 700 minutes a month. It is free on a public repository.
-   On a private one it counts against the 2,000 free minutes a month.
-7. **Put the job on `main`.** GitHub runs timers only from the default branch, so
-   `.github/workflows/rain-forecast.yml` and `tools/rain_forecast/` must be on
-   `main`.
-8. **Run it once by hand.** Actions tab > **Rain forecast** > **Run workflow**.
-   Tick **dry run** first: it fetches the forecast and checks it without sending
-   anything. Then run it again with dry run off. Open the map and the DRRMO
-   dashboard. A correct result: the line says "Updated ... ago" and does not
-   say "Out of date". On a dry day residents see no colours on the map, because
-   the public map shows only Orange and Red; that is right. Staff see Green
-   (and Yellow when it applies) on the DRRMO dashboard card.
-
-If the job fails, GitHub emails the person who last changed the workflow's
-schedule (the `cron` line) or who last re-enabled the workflow. That email is
-the only alarm, so make sure that person reads it.
-
-**"Out of date" on the map.** The newest full forecast is more than 12 hours old
-(two missed runs in a row), or none has arrived yet. The forecast colours go
-grey; PAGASA and DRRMO raises still show. Look at the latest run in the Actions
-tab for the reason, fix it, and run it by hand.
-
-**A paused timer.** On a public repository, GitHub pauses timers after 60 days
-with no activity. Open Actions > **Rain forecast** > **Enable workflow**.
+- **Render > Environment:** delete `RAIN_WATCH_INGEST_TOKEN` and
+  `PAGASA_FEED_WRITER`. Keep `HAZARD_LOG_WRITER=true`: the prediction log still
+  uses it.
+- **GitHub > Settings > Secrets and variables > Actions:** delete
+  `RAIN_WATCH_INGEST_TOKEN` and `RAIN_WATCH_API_URL`.
+- **GitHub > Actions:** once the removal is pushed to `main`, the "Rain
+  forecast" workflow stops running; disable it there if it is still listed.
 
 ## 6. Check that it works
 
