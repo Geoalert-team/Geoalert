@@ -2,7 +2,7 @@
 
 Every purok, sitio, zone and subdivision name on file for the 22 barangays, from
 `backend/apps/barangays/data/puroks/purok_points.csv` (where each came from: `SOURCES.md` beside it).
-Generated 2026-11-19, updated 2026-11-21. Talisay has no official purok list, so these names come from the BFP fire log,
+Generated 2026-11-19, updated 2026-11-22. Talisay has no official purok list, so these names come from the BFP fire log,
 news, Visayan Electric outage notices, maps and listings, and the areas on the map are estimates.
 
 - **Pin**: where the name sits on the map. *No pin* means a source names it but none says where.
@@ -12,7 +12,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 - **Unnamed areas**: places the map gives an area to but no source has named yet. They carry a
   landmark label ("Near Tanke National High School") until the Barangay Hall names them.
 
-**738 names** (656 pinned, 82 without a pin); **15 unnamed areas** left in 8 barangays.
+**739 names** (657 pinned, 82 without a pin); **15 unnamed areas** left in 8 barangays.
 
 | Barangay | Names | Pinned | No pin | Unnamed areas | Sitios in the 2010 city profile |
 |---|---:|---:|---:|---:|---:|
@@ -23,7 +23,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | [Cansojong](#cansojong) | 45 | 40 | 5 | 4 | 26 |
 | [Dumlog](#dumlog) | 62 | 58 | 4 | — | — |
 | [Jaclupan](#jaclupan) | 29 | 23 | 6 | — | 9 |
-| [Lagtang](#lagtang) | 53 | 45 | 8 | 2 | — |
+| [Lagtang](#lagtang) | 54 | 46 | 8 | 2 | — |
 | [Lawaan I](#lawaan-i) | 18 | 17 | 1 | 1 | — |
 | [Lawaan II](#lawaan-ii) | 27 | 27 | 0 | — | 14 |
 | [Lawaan III](#lawaan-iii) | 33 | 29 | 4 | — | — |
@@ -351,7 +351,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Purok Seneguelas | purok |  | **no pin** | — |  | Talisay City Police Station post 2026 (seen only as a search snippet); one source; check with the Barangay Hall |
 
 ## Lagtang
-53 names · 8 without a pin · 3071 households (2015 census)
+54 names · 8 without a pin · 3071 households (2015 census)
 
 **Unnamed areas, still to be named:** Along Bulacao River; Near Iba Elementary School
 
@@ -410,6 +410,7 @@ news, Visayan Electric outage notices, maps and listings, and the areas on the m
 | Purok Caimito | purok |  | **no pin** | — |  | Bombo Radyo Cebu 2024; spelled "Purol Caimito" there; no location |
 | Sitio Lasco | sitio |  | **no pin** | — |  | SunStar Superbalita 2026; on the road from Tabunok up to Campo 4; no exact spot |
 | Sitio Bahala | sitio |  | **no pin** | — |  | SunStar 2025; a Sitio Bahala is also on file in Dumlog |
+| Sitio SDA | sitio |  | yes | low |  | SunStar Superbalita 2017; an arrest in "Sitio SDA, Barangay Lagtang" (Jan 2017); placed at the Seventh-day Adventist church it is likely named after |
 
 ## Lawaan I
 18 names · 1 without a pin · 2052 households (2015 census)
