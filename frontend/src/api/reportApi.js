@@ -19,6 +19,13 @@ export const reportsApi = {
   list: (status) =>
     client.get('/api/reports/incidents/', { params: status ? { status } : {} }).then((r) => r.data),
 
+  // BFP, DRRMO and Admin: fire reports sent in the last `hours` that DRRMO
+  // has not decided yet, for the staff-only pins on the map
+  pendingFires: (hours) =>
+    client.get('/api/reports/incidents/', {
+      params: { status: 'Pending', hazard_type_name: 'Fire', since_hours: hours },
+    }).then((r) => r.data),
+
   // DRRMO/Admin: the barangay reports a zone was published from or joined,
   // shown in the resolve form
   forZone: (zoneId) =>

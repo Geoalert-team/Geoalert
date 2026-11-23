@@ -69,6 +69,8 @@
 .drm-report-meta span + span::before { content: "·"; margin: 0 8px; color: #b7c0cd; }
 .drm-report-meta span:first-child { font-weight: 700; color: var(--db-body); }
 .drm-report-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+/* BFP: a fire report DRRMO hasn't decided, so no resident has been alerted */
+.drm-report-waiting { color: var(--warn); font-weight: 700; }
 
 .drm-btn-reject { color: var(--bad) !important; }
 .drm-btn-reject:hover:not(:disabled) { background: var(--bad-tint) !important; border-color: #f6c9c4 !important; }

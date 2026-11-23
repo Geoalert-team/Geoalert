@@ -431,7 +431,7 @@ class HistoryExportView(APIView):
     newest first. DRRMO staff only, and BFP personnel for fires: the log has
     the exact address and the damage. Takes the list's barangay, purok and
     date filters; ?types are hazard type names, every type when left out
-    (only Fire for BFP, whatever is asked). Sample records stay out of a
+    (only Fire for BFP, whatever is asked). Logged, as the report prints are.
     file that leaves the system. Logged, as the report prints are.
     """
     permission_classes = [IsAuthenticated, IsBFPPersonnel]

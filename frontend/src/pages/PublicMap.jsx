@@ -22,6 +22,8 @@ import {
 } from '../components/Forecast/forecastLevels';
 import ForecastPeriodPicker from '../components/Forecast/ForecastPeriodPicker';
 import { hazardAreas, hazardAt, hazardPuroks, markerSpots } from '../components/Map/hazardPins';
+import ReportedFiresLayer from '../components/Map/ReportedFiresLayer';
+import { useAuth } from '../context/AuthContext';
 import './css/PublicMap.css';
 import './css/PublicMapGis.css';
 import './css/PublicMapLayers.css';
@@ -220,6 +222,11 @@ function NorthArrow() {
 
 export default function PublicMap() {
   const [map, setMap] = useState(null);
+  // Staff (BFP, DRRMO, Admin) also see the fire reports DRRMO hasn't decided
+  // yet (ReportedFiresLayer); residents only ever see approved hazards
+  const { canCloseFires } = useAuth();
+  const [reportedCount, setReportedCount] = useState(0);
+  const [reportNote, setReportNote] = useState('');
   const [liveHazards, setLiveHazards] = useState([]);
   const [barangayGeo, setBarangayGeo] = useState(null);
   const [purokGeo, setPurokGeo] = useState(null);
@@ -307,6 +314,8 @@ export default function PublicMap() {
   }), []);
   const susceptibility = useSusceptibility();
   const [searchParams, setSearchParams] = useSearchParams();
+  // /map?report=<id>, from the BFP dashboard's Show on map (staff only)
+  const focusReportId = canCloseFires ? searchParams.get('report') : null;
 
   // Load hazards. Pulled out of the effect so the timed refresh and
   // resolving can re-run it.
@@ -521,11 +530,12 @@ export default function PublicMap() {
   // Zoom the map to fit all pins once, after they first load
   const hasFitted = useRef(false);
   useEffect(() => {
-    if (!map || loading || hasFitted.current || hazards.length === 0) return;
+    // A report link zooms to that report instead (onReportFocused)
+    if (!map || loading || hasFitted.current || focusReportId || hazards.length === 0) return;
     hasFitted.current = true;
     const bounds = L.latLngBounds(hazards.map((h) => h.position));
     map.fitBounds(bounds, { padding: [120, 120], maxZoom: 15 });
-  }, [map, loading, hazards]);
+  }, [map, loading, hazards, focusReportId]);
 
   // Open a hazard straight from a link, e.g. tapping a notification, which
   // points at /map?zone=<id>. Strips the parameter once used, so a later
@@ -544,6 +554,15 @@ export default function PublicMap() {
     searchParams.delete('zone');
     setSearchParams(searchParams, { replace: true });
   }, [loading, hazards, searchParams, setSearchParams]);   // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The report link has been followed: the layer zoomed to it, or it is no
+  // longer waiting. Strip the parameter, as for ?zone, and don't fit all pins.
+  const onReportFocused = useCallback((found) => {
+    hasFitted.current = true;
+    if (!found) setReportNote('That fire report is no longer waiting for DRRMO. It may have been approved or rejected.');
+    searchParams.delete('report');
+    setSearchParams(searchParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // Paddings that keep a zoomed area clear of the details panel and search bar
   function panelPadding() {
@@ -891,6 +910,15 @@ export default function PublicMap() {
               }}
             />
           )))}
+
+          {canCloseFires && (
+            <ReportedFiresLayer
+              focusId={focusReportId}
+              onFocused={onReportFocused}
+              onCount={setReportedCount}
+              refreshMs={MAP_REFRESH_MS}
+            />
+          )}
         </MapContainer>
 
         {/* ============ SEARCH + FILTERS ============ */}
@@ -1015,6 +1043,17 @@ export default function PublicMap() {
           )}
           {!loading && hazards.length === 0 && !loadFailed && (
             <span className="pm-pill">No active hazards right now</span>
+          )}
+          {canCloseFires && reportedCount > 0 && (
+            <span className="pm-pill pm-pill-reported">
+              {reportedCount} fire report{reportedCount === 1 ? '' : 's'} waiting for DRRMO
+            </span>
+          )}
+          {canCloseFires && reportNote && (
+            <span className="pm-pill">
+              {reportNote}{' '}
+              <button type="button" className="pm-pill-close" onClick={() => setReportNote('')} aria-label="Dismiss">×</button>
+            </span>
           )}
           {susceptibility.status === 'missing' && (
             <span className="pm-pill pm-pill-error">Hazard layer data not built yet</span>

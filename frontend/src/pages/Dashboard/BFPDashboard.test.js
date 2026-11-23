@@ -2,6 +2,7 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import BFPDashboard from './BFPDashboard';
+import { reportsApi } from '../../api/reportApi';
 
 jest.mock('../../components/Navbar/PublicNavbar', () => () => null);
 jest.mock('../../components/Resolve/ActiveZonesCard', () => () => null);
@@ -19,18 +20,18 @@ jest.mock('../../api/hazardsApi', () => ({
 jest.mock('../../api/historyApi', () => ({
   historyApi: { page: () => Promise.resolve({ count: 0, results: [] }) },
 }));
-jest.mock('../../api/reportApi', () => ({
-  reportsApi: {
-    list: () => Promise.resolve([
-      { id: 'r1', status: 'Validated', hazard_zone: 'z1', description: 'House on fire',
-        barangay_details: { name: 'Zone 12' }, created_at: '2026-10-29T08:00:00Z', puroks: [], photos: [] },
-      { id: 'r2', status: 'Pending', hazard_zone: null, description: 'Smoke behind the market',
-        barangay_details: { name: 'Tabunok' }, created_at: '2026-10-29T09:00:00Z', puroks: [], photos: [] },
-    ]),
-  },
-}));
+jest.mock('../../api/reportApi', () => ({ reportsApi: { list: jest.fn() } }));
+
+const REPORTS = [
+  { id: 'r1', status: 'Validated', hazard_zone: 'z1', description: 'House on fire',
+    barangay_details: { name: 'Zone 12' }, created_at: '2026-10-29T08:00:00Z', puroks: [], photos: [] },
+  { id: 'r2', status: 'Pending', hazard_zone: null, description: 'Smoke behind the market',
+    barangay_details: { name: 'Tabunok' }, created_at: '2026-10-29T09:00:00Z', puroks: [], photos: [] },
+];
 
 beforeAll(() => { global.IS_REACT_ACT_ENVIRONMENT = true; });
+// The test setup resets mocks before every test, so the default list is set here
+beforeEach(() => { reportsApi.list.mockImplementation(() => Promise.resolve(REPORTS)); });
 
 async function render() {
   const el = document.createElement('div');
@@ -63,4 +64,17 @@ test('every fire report, newest first, with the map for one that is on it', asyn
     .toEqual(['Smoke behind the market', 'House on fire']);
   expect(rows[1].querySelector('a').getAttribute('href')).toBe('/map?zone=z1');
   expect(rows[0].querySelector('a')).toBeNull();
+});
+
+test('a report waiting for DRRMO with a place opens on the map', async () => {
+  reportsApi.list.mockResolvedValueOnce([
+    { id: 'r3', status: 'Pending', hazard_zone: null, description: 'Fire near the chapel',
+      barangay_details: { name: 'Linao' }, created_at: '2026-10-29T10:00:00Z', photos: [],
+      puroks: [{ id: 7, name: 'Purok Mahogany', lat: 10.24, lng: 123.85 }] },
+  ]);
+  const el = await render();
+  const links = [...el.querySelector('.drm-report').querySelectorAll('a')];
+  expect(links.map((a) => a.textContent)).toEqual(['Show on map']);
+  expect(links[0].getAttribute('href')).toBe('/map?report=r3');
+  expect(el.querySelector('.drm-report').textContent).toContain('Not on the public map yet');
 });
