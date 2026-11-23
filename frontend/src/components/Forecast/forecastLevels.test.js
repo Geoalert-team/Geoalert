@@ -76,3 +76,40 @@ test('the flood, landslide and rain helpers are gone', () => {
   ['combinedByBarangay', 'combinedText', 'combinedUnavailable', 'rangeText', 'rainYearsText', 'RAIN_ATTRIBUTION',
     'FLOOD_LANDSLIDE_MONTHLY_NOTE', 'MODEL_LABELS'].forEach((name) => expect(levels[name]).toBeUndefined());
 });
+
+// Purok fills and tooltips in "Likely by month" (plan Task B7)
+const purokRows = {
+  purok_results: [
+    { purok_id: 12, barangay_id: 3, probability: 0.06, level: 'Red', interval: [0.04, 0.09], limited_data: false },
+    { purok_id: 15, barangay_id: 3, probability: 0.004, level: 'Green', interval: [0.002, 0.01], limited_data: true },
+  ],
+};
+
+test('purokLikelyLevels maps rows by purok id', () => {
+  const map = levels.purokLikelyLevels(purokRows);
+  expect(map.size).toBe(2);
+  expect(map.get('12').Fire.level).toBe('Red');
+  expect(map.get('12').Fire.probability).toBe(0.06);
+  expect(map.get('15').Fire.limited_data).toBe(true);
+  expect(levels.purokLikelyLevels(null).size).toBe(0);
+  expect(levels.purokLikelyLevels({ error: true }).size).toBe(0);
+});
+
+test('purokLikelyTip shows limited data', () => {
+  expect(levels.purokLikelyTip({ level: 'Red', probability: 0.02, limited_data: true }, 'Purok Sambag'))
+    .toBe('Purok Sambag: Extreme, about 2% this month · Limited data');
+  expect(levels.purokLikelyTip({ level: 'Green', probability: 0.003, limited_data: false }, 'Fire', 'in June'))
+    .toBe('Fire: Low, under 1% in June');
+});
+
+test('likelyKey changes when the purok figures change', () => {
+  const other = { purok_results: [{ ...purokRows.purok_results[0], level: 'Orange' }] };
+  expect(likelyKey(purokRows)).not.toBe(likelyKey(other));
+});
+
+test('the fire model is credited to Pittsburgh', () => {
+  expect(levels.FIRE_CREDIT).toContain('City of Pittsburgh');
+  expect(levels.FIRE_CREDIT).toContain('MIT');
+  expect(levels.FIRE_MODEL_LABEL).toContain('Pittsburgh');
+  expect(levels.PUROK_CAVEAT).toMatch(/estimate/i);
+});

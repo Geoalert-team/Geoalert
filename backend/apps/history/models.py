@@ -131,3 +131,46 @@ class HazardPredictionLog(models.Model):
 
     def __str__(self):
         return f'{self.hazard} {self.kind} {self.period_start} — {self.barangay_id} — {self.probability}'
+
+
+FIRE_LOG_LEVELS = ['Red', 'Orange', 'Green']
+
+
+class FirePurokPredictionLog(models.Model):
+    """
+    A purok's fire chance and level for a month as the map showed it, kept so
+    the fire model can be scored on fires that came after (spec 8.3; written
+    by apps/history/prediction_log.py, one snapshot per Manila day). Rows are
+    only ever added: a trigger (migration 0010) refuses any UPDATE or DELETE.
+
+    The purok is kept as a plain id and its name, not a foreign key: a purok
+    reload deletes and recreates rows, and must never touch the log.
+    """
+    id            = models.BigAutoField(primary_key=True, db_column='fppl_id')
+    purok_id      = models.BigIntegerField(db_column='fppl_prk_id')
+    purok_name    = models.TextField(db_column='fppl_prk_name')
+    barangay      = models.ForeignKey(Barangay, on_delete=models.PROTECT, db_column='fppl_brgy_id')
+    # the month's first day
+    period_start  = models.DateField(db_column='fppl_period_start')
+    # the Asia/Manila date the row was written
+    issued_on     = models.DateField(db_column='fppl_issued_on')
+    # '<model family>@<sha1 of features, fires and settings, 12 characters>' (train_fire_model)
+    model_version = models.TextField(db_column='fppl_model_version')
+    probability   = models.FloatField(db_column='fppl_probability')
+    level         = models.TextField(db_column='fppl_level')
+    limited_data  = models.BooleanField(db_column='fppl_limited_data')
+    created_at    = models.DateTimeField(auto_now_add=True, db_column='fppl_created_at')
+
+    class Meta:
+        db_table = 'fire_purok_prediction_log'
+        constraints = [
+            models.UniqueConstraint(fields=['purok_id', 'period_start', 'issued_on', 'model_version'],
+                                    name='fire_purok_prediction_log_unique'),
+            models.CheckConstraint(check=models.Q(probability__gte=0) & models.Q(probability__lte=1),
+                                   name='fire_purok_prediction_log_probability'),
+            models.CheckConstraint(check=models.Q(level__in=FIRE_LOG_LEVELS), name='fire_purok_prediction_log_level'),
+        ]
+        indexes = [models.Index(fields=['period_start', 'issued_on'])]
+
+    def __str__(self):
+        return f'{self.purok_name} {self.period_start} — {self.probability} {self.level}'

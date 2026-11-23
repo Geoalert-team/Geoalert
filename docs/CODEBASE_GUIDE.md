@@ -63,8 +63,10 @@ Example: a barangay officer reports a flood, and the DRRMO turns it into an aler
    ([DRRMODashboard.jsx](../frontend/src/pages/Dashboard/DRRMODashboard.jsx)) calls
    `POST /api/reports/incidents/<id>/decide/`
    ([decide_views.py](../backend/apps/reports/decide_views.py)). Approving creates the
-   hazard zone at the level its puroks' history gives
-   ([history/purok_levels.py](../backend/apps/history/purok_levels.py)).
+   hazard zone at its level: for a fire, the highest level the fire risk model gives its
+   puroks this month ([history/fire_purok.py](../backend/apps/history/fire_purok.py)), or
+   Moderate with the reason when the model has none; for a flood or landslide, the level its
+   puroks' history gives ([history/purok_levels.py](../backend/apps/history/purok_levels.py)).
 5. **The alert.** `issue_alert` in [hazards/alerts.py](../backend/apps/hazards/alerts.py)
    finds the affected barangays with a PostGIS query, picks the recipients
    (`alert_recipients`) and creates their notifications. An Extreme alert waits for a
@@ -173,24 +175,58 @@ There are four staff roles. Residents use the public pages without an account.
 
 ## The predictive feature
 
-**Rebuild in progress (2026-11-22).** Flood and landslide prediction, the old barangay fire
-model and the Rain watch were removed. Fire is being rebuilt as a per-purok model adapted
-from the City of Pittsburgh Bureau of Fire's fire risk model; until it is trained, fire
-shows "unavailable" with the reason. Design:
-[2026-11-22-fire-purok-model-design.md](design/specs/2026-11-22-fire-purok-model-design.md);
+"Likely by month" gives **each purok a chance of a fire and a Red / Orange / Green level**
+for each month, from a fire risk model adapted from the City of Pittsburgh Bureau of Fire /
+Carnegie Mellon Metro21 model (github.com/CityofPittsburgh/fire_risk_analysis, MIT License,
+© 2017 mmadaio). Flood and landslide prediction and the Rain watch were removed on
+2026-11-22 to be rebuilt later.
+
+How it works, in three steps:
+
+1. **Features (offline).** `build_fire_features` describes every purok area from open map
+   data only: buildings (Microsoft footprints), roads and the road distance to a fire station
+   (OpenStreetMap), land cover (ESA WorldCover) and population (WorldPop). No fire record is
+   an input; a test fails the build if the feature code reads one.
+2. **Training (offline).** `train_fire_model` labels each purok-month 1 if a fire was
+   linked to it, else 0, and tries logistic regression, Pittsburgh's random forest, AdaBoost
+   and XGBoost, and a small neural network. A rule fixed in advance picks one. It scores the
+   choice once on 2026 fires, sets the level cut-offs, and writes the model and report files.
+   Fires whose BFP address names no purok are left out and listed.
+3. **Serving (the website).** The site only reads those two files. It never fits a model,
+   and it needs neither scikit-learn's models nor xgboost at request time. If the purok map
+   has changed since training, fire shows "unavailable" with the reason.
+
+Each day's purok figures are kept in an insert-only log, so the model can later be scored
+honestly on fires that came after them.
+
+Design: [2026-11-22-fire-purok-model-design.md](design/specs/2026-11-22-fire-purok-model-design.md);
 plan: [2026-11-22-fire-purok-model.md](design/plans/2026-11-22-fire-purok-model.md);
 research: [2026-11-22-fire-purok-prediction-audit.md](research/2026-11-22-fire-purok-prediction-audit.md).
 Everything is in [backend/apps/history/](../backend/apps/history/).
 
 | File | Role |
 |---|---|
-| [views.py](../backend/apps/history/views.py) | The API: `HistoricalForecastView` (`/api/history/forecast/`, fire only; any other hazard is a 400) and `ForecastAccuracyView` (`/api/history/forecast/accuracy/`) |
+| [fire_features.py](../backend/apps/history/fire_features.py), [fire_sources.py](../backend/apps/history/fire_sources.py) | The purok features and their downloads (offline) |
+| [fire_training.py](../backend/apps/history/fire_training.py) | The yes/no label, the candidate models and the choice rule (offline) |
+| [fire_evaluation.py](../backend/apps/history/fire_evaluation.py) | Level cut-offs, scores with intervals, comparison baselines (offline) |
+| [fire_purok.py](../backend/apps/history/fire_purok.py) | Reads `data/fire_purok_model.json` for the forecast, the accuracy card and a fire report's level |
+| [views.py](../backend/apps/history/views.py) | The API: `HistoricalForecastView` (`/api/history/forecast/`, fire only, with `purok_results`; any other hazard is a 400) and `ForecastAccuracyView` (`/api/history/forecast/accuracy/`) |
 | [forecast_rows.py](../backend/apps/history/forecast_rows.py) | The forecast's barangay rows, and marking a hazard unavailable with its reason |
-| [prediction_log.py](../backend/apps/history/prediction_log.py) | Will keep the fire model's purok figures (plan Task B6); writes nothing until then. The old `hazard_prediction_log` rows stay, unchanged |
+| [prediction_log.py](../backend/apps/history/prediction_log.py) | The daily purok log (`fire_purok_prediction_log`, insert-only) and its score on later fires. The old `hazard_prediction_log` rows stay, unchanged |
 | [forecast.py](../backend/apps/history/forecast.py) | Counting (the share of past years with an event): the rows' history columns and a comparison baseline only, never shown as a forecast |
 
-The screens are in [components/Forecast/](../frontend/src/components/Forecast/) and the
-map's "Likely by month" view in [PublicMap.jsx](../frontend/src/pages/PublicMap.jsx).
+The "Past hazards" view, the History page and the purok history levels
+([purok_levels.py](../backend/apps/history/purok_levels.py)) are unchanged: they count
+past events, and that is history, not prediction.
+
+The screens are in [components/Forecast/](../frontend/src/components/Forecast/) (the
+accuracy card is `FireModelReport` in `ForecastAccuracy.jsx`) and the map's "Likely by
+month" view in [PublicMap.jsx](../frontend/src/pages/PublicMap.jsx), with the barangay
+panel's purok list in [LikelyPuroks.jsx](../frontend/src/components/Map/LikelyPuroks.jsx).
+
+**After a BFP import or a purok reload**, rerun `build_fire_features`, then
+`train_fire_model`, on a developer machine, and commit the files they write in
+`backend/apps/history/data/`.
 
 ## Shared building blocks
 
@@ -219,7 +255,9 @@ map's "Likely by month" view in [PublicMap.jsx](../frontend/src/pages/PublicMap.
 | `import_bfp_fires`, `import_flood_landslide` | Imports the official fire log and the flood and landslide log |
 | `release_pending_alerts` | The timed alert jobs (held Extreme alerts, reminders) |
 | `build_hazard_index` | Builds the susceptibility maps for the public map |
-| `log_hazard_predictions` | The daily prediction log (writes nothing until the fire purok log is built) |
+| `build_fire_features` | Describes every purok area for the fire model (offline; downloads open map data once) |
+| `train_fire_model` | Trains and tests the fire model; writes `fire_purok_model.json` and `fire_purok_report.json` (offline) |
+| `log_hazard_predictions` | Adds today's purok fire figures to the insert-only log (only where `HAZARD_LOG_WRITER` is on) |
 
 ## Tests
 
@@ -239,7 +277,8 @@ map's "Likely by month" view in [PublicMap.jsx](../frontend/src/pages/PublicMap.
 | Session timeout | [utils/session_limits.py](../backend/utils/session_limits.py) |
 | Who receives an alert | `alert_recipients` in [hazards/alerts.py](../backend/apps/hazards/alerts.py) |
 | The second-officer approval for Extreme | `needs_second_approval` and `release_overdue_approvals` in [hazards/alerts.py](../backend/apps/hazards/alerts.py) |
-| How a purok's hazard level is set | [history/purok_levels.py](../backend/apps/history/purok_levels.py) |
+| How a purok's past-hazard level is set | [history/purok_levels.py](../backend/apps/history/purok_levels.py) |
+| How a purok's likely fire level is set | the cut-offs in `fire_evaluation.cutoffs`, read by [history/fire_purok.py](../backend/apps/history/fire_purok.py) |
 | Finding the affected barangays (PostGIS) | `affected_barangays` in [hazards/alerts.py](../backend/apps/hazards/alerts.py) |
 | The activity log | `AuditLog` in [admin_dashboard/models.py](../backend/apps/admin_dashboard/models.py) |
 | Settings the administrator can change | [utils/system_settings.py](../backend/utils/system_settings.py) |

@@ -11,6 +11,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.history.models import HistoricalRecord
+from tests.fire_model_file import model_files
 from tests.fire_setup import FireSetupMixin
 
 NOT_TRAINED = 'The fire model has not been trained yet.'
@@ -44,7 +45,8 @@ class ForecastApiTests(FireSetupMixin, TestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_fire_is_unavailable_before_training(self):
-        r = self.client.get('/api/history/forecast/?hazards=Fire')
+        with model_files(None):  # no model file, whatever the repo holds
+            r = self.client.get('/api/history/forecast/?hazards=Fire')
         self.assertEqual(r.status_code, 200)
         rows = [row for row in r.data['results'] if row['hazard_type'] == 'Fire']
         self.assertTrue(rows)
@@ -52,9 +54,11 @@ class ForecastApiTests(FireSetupMixin, TestCase):
             self.assertEqual(row['method'], 'unavailable')
             self.assertEqual(row['reason'], NOT_TRAINED)
         self.assertEqual(r.data['unavailable_hazards'], ['Fire'])
+        self.assertEqual(r.data['purok_results'], [])
 
     def test_accuracy_has_fire_only(self):
-        r = self.client.get('/api/history/forecast/accuracy/')
+        with model_files(None):
+            r = self.client.get('/api/history/forecast/accuracy/')
         self.assertEqual(r.status_code, 200)
         hazards = r.data['hazards']
         self.assertEqual([h['hazard'] for h in hazards], ['Fire'])

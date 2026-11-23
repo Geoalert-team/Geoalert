@@ -38,8 +38,38 @@ export const likelyKey = (likely) => {
   const r = (likely.results || [])
     .map((x) => `${x.barangay_id}:${x.hazard_type}:${x.method}:${x.level}:${x.probability}:${x.actual ?? ''}`)
     .join(',');
-  return `${likely.error ? 'err' : 'ok'}|${r}`;
+  const p = (likely.purok_results || []).map((x) => `${x.purok_id}:${x.level}:${x.probability}`).join(',');
+  return `${likely.error ? 'err' : 'ok'}|${r}|${p}`;
 };
+
+// The fire model (backend apps/history/fire_purok.py), named and credited wherever its figures show
+export const FIRE_MODEL_LABEL = "Fire risk model adapted from the City of Pittsburgh Bureau of Fire's";
+export const FIRE_CREDIT = 'Adapted from the City of Pittsburgh Bureau of Fire / Carnegie Mellon Metro21 fire risk '
+  + 'model (github.com/CityofPittsburgh/fire_risk_analysis, MIT License, © 2017 mmadaio).';
+export const PUROK_CAVEAT = 'Purok chances are estimates: most purok outlines are estimated, and a purok marked '
+  + '"Limited data" has a wide range. Check the model accuracy page for how it did on fires it never saw.';
+
+/**
+ * The fire model's purok rows (`purok_results`) as purok id (string) → { Fire: { level, probability,
+ * limited_data } }: the shape filledPuroks (Map/purokLevels.js) reads, so the past-hazards fill layer
+ * draws them. Empty for no answer or an error.
+ */
+export function purokLikelyLevels(likely) {
+  const map = new Map();
+  (likely?.purok_results || []).forEach((r) => {
+    map.set(String(r.purok_id), { Fire: { level: r.level, probability: r.probability, limited_data: r.limited_data } });
+  });
+  return map;
+}
+
+/**
+ * A purok's likely-fire line: "Purok Sambag: Extreme, about 2% this month · Limited data".
+ * `span` says when: "this month" by default, "in June", "in the week of Jun 15".
+ */
+export function purokLikelyTip(row, name, span = 'this month') {
+  const text = `${name}: ${SEVERITY_WORD[row.level] || row.level}, ${aboutChanceText(row.probability)} ${span}`;
+  return row.limited_data ? `${text} · Limited data` : text;
+}
 
 /** A model's chance as text; a positive chance under 0.5% reads "under 1%", never "0%"; '' for no probability */
 export const smallChanceText = (p) => {

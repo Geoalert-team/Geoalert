@@ -114,6 +114,14 @@ class HazardZoneListView(APIView):
         # The public map is the busiest caller, so it is one of the places
         # an unanswered Extreme alert gets sent once its window is up.
         release_overdue_quietly()
+        # ...and where the day's fire purok log starts, once a Manila day, in
+        # the background, on the one machine that writes it. It must never
+        # break the hazard list.
+        try:
+            from apps.history import prediction_log
+            prediction_log.log_in_background(timezone.localdate())
+        except Exception:
+            logger.exception('Could not start the daily fire purok log.')
 
         # Nothing changed since this browser last asked: no queries at all
         etag = map_version.etag_for(request)

@@ -20,8 +20,9 @@ from apps.hazards.alerts import (
 )
 from apps.hazards.models import HazardZone
 from apps.hazards.serializers import HazardZoneSerializer
+from apps.history import fire_purok
 from apps.history.purok_levels import RANK, highest, purok_levels, thresholds
-from apps.reports.decide import decision_error, fire_geometry, is_nearby, report_pins
+from apps.reports.decide import decision_error, fire_geometry, fire_level, is_nearby, report_pins
 from apps.reports.models import IncidentReport
 from apps.reports.serializers import IncidentReportSerializer
 from apps.accounts.models import User
@@ -37,6 +38,23 @@ def _history(report):
     levels = purok_levels([p.id for p in puroks], report.hazard_type, timezone.now())
     rows = [{'id': p.id, 'name': p.name, **levels[p.id]} for p in puroks]
     return rows, highest(r['level'] for r in rows)
+
+
+def _is_fire(report):
+    return (getattr(report.hazard_type, 'name', '') or '').lower() == 'fire'
+
+
+def _level(report, history_level):
+    """
+    (level, basis, reason) the report goes on the map at. A fire: the highest
+    fire model level among its puroks this Manila month, or Moderate with the
+    reason (fire_level). Any other type: its puroks' history level.
+    """
+    if not _is_fire(report):
+        return history_level, 'history', None
+    today = timezone.localdate()
+    level, reason = fire_level(fire_purok.purok_level(p.id, today) for p in report.puroks.all())
+    return level, 'model', reason
 
 
 def _noun(report):
@@ -79,7 +97,8 @@ class IncidentReportDecideView(APIView):
         report = self._report(pk)
         if report is None:
             return Response({'error': 'Report not found'}, status=status.HTTP_404_NOT_FOUND)
-        rows, level = _history(report)
+        rows, history_level = _history(report)
+        level, basis, reason = _level(report, history_level)
         pins = report_pins(report)
         # Who approving it would alert, routed as the real alert will be
         barangays = affected_barangays(fire_geometry(pins)) if pins else []
@@ -87,6 +106,8 @@ class IncidentReportDecideView(APIView):
             'error': decision_error(report),
             'puroks': rows,
             'level': level,
+            'level_basis': basis,
+            'level_reason': reason,
             'thresholds': thresholds(),
             'affected_barangays': [b.name for b in barangays],
             'recipients': (alert_recipients(request.user, barangays, report.hazard_type).count()
@@ -131,8 +152,8 @@ class IncidentReportDecideView(APIView):
         return Response({'report': IncidentReportSerializer(report, context={'request': request}).data})
 
     def _approve(self, request, report, note):
-        # The level is the puroks' history of this type; the officer doesn't choose one
-        _, level = _history(report)
+        # The level is the fire model's for a fire, else the puroks' history of its type; the officer doesn't choose one
+        level, _, _ = _level(report, _history(report)[1])
         pins = report_pins(report)
         if not pins:
             return Response({'error': 'This report has no purok or location to put on the map.'},
@@ -203,16 +224,16 @@ class IncidentReportDecideView(APIView):
                 zone,
             )
 
-        _, history_level = _history(report)
+        report_level, _, _ = _level(report, _history(report)[1])
         raised = ''
         # A raise to Red already waiting keeps its request and its clock
-        raise_waiting = zone.pending_severity == 'Red' and history_level == 'Red'
-        if RANK[history_level] > RANK.get(zone.severity, 0) and not raise_waiting:
-            if history_level == 'Red' and approvers_for(user).exists():
+        raise_waiting = zone.pending_severity == 'Red' and report_level == 'Red'
+        if RANK[report_level] > RANK.get(zone.severity, 0) and not raise_waiting:
+            if report_level == 'Red' and approvers_for(user).exists():
                 request_raise(zone, user)
                 zone.save()
                 raised = ' Raise to Red held for a second officer.'
-            elif history_level == 'Red':
+            elif report_level == 'Red':
                 # Nobody else to approve: raise now and send the Extreme
                 # alert, as the zone PATCH does in the same case
                 zone.severity = 'Red'
@@ -221,9 +242,9 @@ class IncidentReportDecideView(APIView):
                 issue_alert(zone, user, suffix=' Raised to Extreme.')
                 raised = ' Raised to Red (no second officer).'
             else:
-                zone.severity = history_level
+                zone.severity = report_level
                 zone.save()
-                raised = f' Raised to {history_level}.'
+                raised = f' Raised to {report_level}.'
 
         log_event(request, 'ATTACH_FIRE_REPORT', 'hazard_zone', zone.id,
                   f'Report {report.id} joined the {_noun(report)}'

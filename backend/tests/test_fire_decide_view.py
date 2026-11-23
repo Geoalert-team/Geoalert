@@ -1,10 +1,11 @@
 """
 The fire decision against a real database: approving puts the fire on the
-map at its puroks' history level, Extreme waits for a second officer, a
-report is decided once, and attaching never alerts early, never restarts a
-waiting raise and never joins a sample fire. Floods and landslides are
-pushed the same way, at their own type's history level. A zone's map pins
-come from its reports, whatever its type.
+map at its puroks' fire model level for this month (Moderate, with the
+reason, when the model has none), Extreme waits for a second officer, a
+report is decided once, and attaching never alerts early and never restarts
+a waiting raise. Floods and landslides are pushed the same way, at their own
+type's history level. A zone's map pins come from its reports, whatever its
+type.
 """
 from datetime import timedelta
 
@@ -18,7 +19,10 @@ from apps.history.models import HistoricalRecord
 from apps.notifications.models import Notification
 from apps.reports.decide_views import IncidentReportDecideView
 from apps.reports.views import IncidentReportReviewView
+from tests.fire_model_file import model_files
 from tests.fire_setup import FireSetupMixin
+
+NO_MODEL_LEVEL = 'The fire model has no level for these puroks right now, so the level is Moderate.'
 
 
 class FireDecideViewTests(FireSetupMixin, TestCase):
@@ -66,26 +70,54 @@ class FireDecideViewTests(FireSetupMixin, TestCase):
     def test_attach_keeps_a_waiting_raise_on_its_clock(self):
         asked_at = timezone.now() - timedelta(minutes=4)
         waiting = self.zone(self.near, pending_severity='Red', pending_by=self.officer, pending_at=asked_at)
-        self.history(self.far, 5)  # Extreme history: would ask for the raise again
-        self.decide(self.report(self.far), {'action': 'attach', 'zone': str(waiting.id)}, user=self.second)
+        with model_files({self.near: 0.01, self.far: 0.08}):  # far is Red: would ask for the raise again
+            self.decide(self.report(self.far), {'action': 'attach', 'zone': str(waiting.id)}, user=self.second)
         waiting.refresh_from_db()
         self.assertEqual((waiting.pending_at, waiting.pending_by_id), (asked_at, self.officer.id))
 
     # the decision as the spec lists it
 
-    def test_approve_uses_the_history_level_and_ignores_a_sent_one(self):
-        self.history(self.near, 3)
-        response = self.decide(self.report(self.near), {'action': 'approve', 'severity': 'Green'})
+    def test_approve_uses_the_model_level_and_ignores_a_sent_one(self):
+        self.history(self.near, 5)  # Extreme by its history, which no longer sets a fire's level
+        with model_files({self.near: 0.03, self.far: 0.004}):
+            response = self.decide(self.report(self.near), {'action': 'approve', 'severity': 'Green'})
         self.assertEqual(response.status_code, 201)
         zone = HazardZone.objects.get(pk=response.data['zone']['id'])
         self.assertEqual((zone.severity, zone.status), ('Orange', 'Active'))
         self.assertTrue(Notification.objects.filter(recipient=self.reporter, hazard_alert__hazard_zone=zone).exists())
 
     def test_extreme_waits_for_a_second_officer(self):
-        self.history(self.near, 5)
-        response = self.decide(self.report(self.near), {'action': 'approve'})
+        with model_files({self.near: 0.08, self.far: 0.004}):
+            response = self.decide(self.report(self.near), {'action': 'approve'})
         self.assertTrue(response.data['held'])
         self.assertEqual(HazardZone.objects.get(pk=response.data['zone']['id']).status, 'Awaiting_Approval')
+
+    def test_decide_uses_model_level(self):
+        with model_files({self.near: 0.08, self.far: 0.004}):
+            check = self.decide(self.report(self.near, self.far)).data
+        self.assertEqual((check['level'], check['level_basis'], check['level_reason']), ('Red', 'model', None))
+        self.assertEqual({p['id'] for p in check['puroks']}, {self.near.id, self.far.id})  # their history, as before
+
+    def test_decide_falls_back_to_orange(self):
+        with model_files({self.far: 0.004}):  # near is not in the model
+            check = self.decide(self.report(self.near, self.far)).data
+            response = self.decide(self.report(self.near), {'action': 'approve'})
+        self.assertEqual((check['level'], check['level_reason']), ('Orange', NO_MODEL_LEVEL))
+        self.assertEqual(HazardZone.objects.get(pk=response.data['zone']['id']).severity, 'Orange')
+
+    def test_decide_falls_back_to_orange_before_training(self):
+        self.history(self.near, 5)
+        with model_files(None):
+            check = self.decide(self.report(self.near)).data
+        self.assertEqual((check['level'], check['level_reason']), ('Orange', NO_MODEL_LEVEL))
+
+    def test_flood_report_still_uses_history(self):
+        past = HistoricalRecord.objects.create(barangay=self.home, hazard_type=self.flood, severity_level='Green',
+                                               occurred_at=timezone.now() - timedelta(days=40))
+        past.puroks.add(self.near)
+        with model_files({self.near: 0.08}):  # a fire level never sets a flood's
+            check = self.decide(self.report(self.near, hazard=self.flood)).data
+        self.assertEqual((check['level'], check['level_basis'], check['level_reason']), ('Green', 'history', None))
 
     def test_a_report_is_decided_once(self):
         report = self.report(self.near)

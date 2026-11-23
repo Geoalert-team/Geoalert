@@ -262,7 +262,6 @@ PUBLIC_CACHE = 'public, max-age=600'
 FORECAST_HAZARDS = ('Fire',)
 FIRE_ONLY = 'Only fire has a prediction model for now.'
 BOTH_PARAMETERS = 'Use hazards or hazard_type_name, not both.'
-NOT_TRAINED = 'The fire model has not been trained yet.'
 BASIS_REBUILDING = ("Fire's prediction model is being rebuilt, so no chances are shown until it is trained. "
                     'Flood and landslide predictions are being rebuilt too.')
 
@@ -273,9 +272,11 @@ def _public(response):
     return response
 
 
-def basis_method() -> str:
-    """The forecast's basis line: what its chances come from."""
-    return BASIS_REBUILDING
+def basis_method(model=None) -> str:
+    """The forecast's basis line: what its chances come from (the fire model, once it can be used)."""
+    from apps.history import fire_purok
+
+    return fire_purok.BASIS if isinstance(model, fire_purok.FireModel) else BASIS_REBUILDING
 
 
 def parse_hazards(params):
@@ -299,11 +300,12 @@ def forecast_result(*, month, day, year, barangay, years, now) -> dict:
     The fire forecast for a period, as GET /api/history/forecast/ serves it
     (HistoricalForecastView, which parses the request into these); `now` is
     the local time it is read at. The rows' history (years hit, what
-    happened) comes from the records; every figure from the fire model, and
-    until it is trained every row is unavailable with NOT_TRAINED, never a
-    counted figure.
+    happened) comes from the records; every figure from the fire model
+    (fire_purok), with `purok_results` per purok. When the model can't be
+    used (not trained yet, or trained on another purok map) every row is
+    unavailable with the reason, never a counted figure.
     """
-    from apps.history import forecast_rows
+    from apps.history import fire_purok, forecast_rows
     from apps.history.forecast import empty_profile, seasonal_forecast
 
     fires = [e for e in _forecast_events() if (e['hazard'] or '').lower() == 'fire']
@@ -311,15 +313,20 @@ def forecast_result(*, month, day, year, barangay, years, now) -> dict:
     result['profile'] = empty_profile()
     result['profile_barangay'] = barangay
     result['hazard_type'] = 'Fire'
+    model = fire_purok.load()
     result['basis'] = {
         'records': len(fires),
-        'method': basis_method(),
+        'method': basis_method(model),
     }
     result['model_hazards'] = []
     result['unavailable_hazards'] = []
     result['profile_method'] = 'unavailable'
-    forecast_rows.mark_unavailable(result, 'Fire', forecast_rows.places(), NOT_TRAINED)
-    forecast_rows.mark_profile_unavailable(result)
+    if isinstance(model, str):
+        forecast_rows.mark_unavailable(result, 'Fire', forecast_rows.places(), model)
+        forecast_rows.mark_profile_unavailable(result)
+        result['purok_results'] = []
+    else:
+        fire_purok.apply(result, model, month, day, year, now.date())
     return result
 
 
@@ -335,6 +342,11 @@ class HistoricalForecastView(APIView):
     `method: unavailable` has a `reason`, and fire is then named in
     `unavailable_hazards`. Flood and landslide have no prediction model for
     now (removed 2026-11-22): asking for them is a 400.
+
+    `purok_results` has one row per purok from the fire risk model
+    (fire_purok): {purok_id, barangay_id, probability, level (Red, Orange or
+    Green, the month's), interval (80%), limited_data}; empty when fire has
+    no figures. A barangay row's chance is 1 − e^(−Σ −ln(1 − p)) over its puroks.
 
       ?month=1-12            defaults to next month
       ?year=2024             with month: that month in that year; once it has
@@ -394,13 +406,28 @@ class HistoricalForecastView(APIView):
                                                 now=now)))
 
 
+REPORT_MISSING = "The fire model's report is missing; rerun train_fire_model."
+
+
 def fire_accuracy_entry() -> dict:
     """
-    Fire's entry on the accuracy card. One shape whether or not the model is
-    trained: {'hazard': 'Fire', 'kind': 'fire_purok', 'status', ...}; until
-    train_fire_model has run, status is 'unavailable' with the reason.
+    Fire's entry on the accuracy card. One shape whether or not the model can
+    be used: {'hazard': 'Fire', 'kind': 'fire_purok', 'status', ...}; 'in_use'
+    with the model's report (train_fire_model) and `logged`, the purok log's
+    prospective score (prediction_log.prospective_summary), else 'unavailable'
+    with the reason.
     """
-    return {'hazard': 'Fire', 'kind': 'fire_purok', 'status': 'unavailable', 'reason': NOT_TRAINED}
+    from apps.history import fire_purok
+
+    base = {'hazard': 'Fire', 'kind': 'fire_purok'}
+    model = fire_purok.load()
+    if isinstance(model, str):
+        return {**base, 'status': 'unavailable', 'reason': model}
+    if model.report is None:
+        return {**base, 'status': 'unavailable', 'reason': REPORT_MISSING}
+    from apps.history.prediction_log import prospective_summary
+    # The honest purok test: logged chances scored on fires that came after them (None until a month is over)
+    return {**base, **model.report, 'status': 'in_use', 'logged': prospective_summary(timezone.localdate())}
 
 
 class ForecastAccuracyView(APIView):

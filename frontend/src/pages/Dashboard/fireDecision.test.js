@@ -1,4 +1,10 @@
-import { canPush, hazardNoun, historyLine, levelLabel, reportPins, reportPurokShapes } from './fireDecision';
+import { canPush, hazardNoun, historyLine, levelLabel, levelSource, reportPins, reportPurokShapes } from './fireDecision';
+
+test('where the level comes from', () => {
+  expect(levelSource({ level_basis: 'model' }, 'fire')).toBe('from the fire risk model for its puroks this month');
+  expect(levelSource({ level_basis: 'history' }, 'flood')).toBe("from its puroks' flood history");
+  expect(levelSource({}, 'landslide')).toBe("from its puroks' landslide history");
+});
 
 test('which reports can be pushed to the map, whatever their type', () => {
   for (const name of ['Fire', 'Flood', 'Landslide']) {

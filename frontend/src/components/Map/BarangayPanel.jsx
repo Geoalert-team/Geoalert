@@ -3,6 +3,8 @@ import { barangaysApi } from '../../api/barangaysApi';
 import { severityInfo, hazardIconPath, hazardColor, SEVERITY_RANK } from './hazardInfo';
 import SpotReading from './SpotReading';
 import AreaHistory from './AreaHistory';
+import LikelyPuroks from './LikelyPuroks';
+import { FIRE_MODEL_LABEL } from '../Forecast/forecastLevels';
 
 const PIN_PATH = 'M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7z';
 
@@ -47,10 +49,18 @@ function HazardList({ items, onSelectHazard }) {
 //               the records that name no purok); null for the whole barangay
 // onPickPurok   (id | 'none' | null) from the past hazards section
 // historyTypes  the hazard types ticked in Layers, for the past hazards
+//
+// In the map's "Likely by month" view (view 'likely') it also lists the
+// barangay's puroks by their chance of a fire (LikelyPuroks):
+// likelyPuroks       this barangay's purok rows from the fire risk model
+// purokNames         purok id (string) → name
+// likelyLabel        the period, "June 2027"
+// likelyUnavailable  why there are no figures, '' when there are
 export default function BarangayPanel({
   barangay, hazards, allHazards = [], open, onClose, onSelectHazard,
   spot = null, susceptibilityIndex = null, rivers = null,
   purokId = null, onPickPurok = () => {}, historyTypes = [],
+  view = 'past', likelyPuroks = [], purokNames = null, likelyLabel = '', likelyUnavailable = '',
 }) {
   const closeRef = useRef(null);
   const [split, setSplit] = useState(null); // { inside: [ids], crossing: [ids] } or null
@@ -143,6 +153,20 @@ export default function BarangayPanel({
               <HazardList items={sorted} onSelectHazard={onSelectHazard} />
             )}
           </div>
+
+          {view === 'likely' && (
+            <div className="pm-tabpanel">
+              <h3>Likely fire{likelyLabel ? `, ${likelyLabel}` : ''}</h3>
+              {likelyUnavailable
+                ? <p className="pm-muted">{likelyUnavailable}</p>
+                : (
+                  <>
+                    <p className="pm-muted">{FIRE_MODEL_LABEL}. A heads-up for preparing, not an alert.</p>
+                    <LikelyPuroks rows={likelyPuroks} purokNames={purokNames} />
+                  </>
+                )}
+            </div>
+          )}
 
           <div className="pm-tabpanel">
             <h3>Past hazards</h3>

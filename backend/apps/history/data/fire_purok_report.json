@@ -1,0 +1,1080 @@
+{
+ "version": "logistic_regression@497afa513dd2",
+ "credit": "Adapted from the City of Pittsburgh Bureau of Fire / Carnegie Mellon Metro21 fire risk model (github.com/CityofPittsburgh/fire_risk_analysis, MIT License, © 2017 mmadaio)",
+ "model": {
+  "family": "logistic_regression",
+  "settings": {
+   "label": "C=0.01",
+   "C": 0.01
+  }
+ },
+ "candidates": [
+  {
+   "family": "logistic_regression",
+   "label": "C=0.01",
+   "log_loss": 0.038768996353260005,
+   "brier": 0.006411258515258109
+  },
+  {
+   "family": "logistic_regression",
+   "label": "C=0.1",
+   "log_loss": 0.0388761979204492,
+   "brier": 0.006412664890362294
+  },
+  {
+   "family": "logistic_regression",
+   "label": "C=1",
+   "log_loss": 0.03898627706093509,
+   "brier": 0.006412836312806218
+  },
+  {
+   "family": "random_forest",
+   "label": "pittsburgh",
+   "log_loss": 0.04110250202195386,
+   "brier": 0.006737863536582126
+  },
+  {
+   "family": "random_forest",
+   "label": "depth 3, leaf 20",
+   "log_loss": 0.03864382846557856,
+   "brier": 0.006413066270578355
+  },
+  {
+   "family": "random_forest",
+   "label": "depth 3, leaf 100",
+   "log_loss": 0.038584845199085706,
+   "brier": 0.006409363092022129
+  },
+  {
+   "family": "random_forest",
+   "label": "depth 5, leaf 20",
+   "log_loss": 0.03843319521658206,
+   "brier": 0.006412555474920102
+  },
+  {
+   "family": "random_forest",
+   "label": "depth 5, leaf 100",
+   "log_loss": 0.03843050551852601,
+   "brier": 0.006406520446498435
+  },
+  {
+   "family": "adaboost",
+   "label": "pittsburgh",
+   "log_loss": 0.543385444314827,
+   "brier": 0.17589644225096204
+  },
+  {
+   "family": "adaboost",
+   "label": "100 trees, rate 0.1",
+   "log_loss": 0.16092452855706357,
+   "brier": 0.023912413303561007
+  },
+  {
+   "family": "adaboost",
+   "label": "100 trees, rate 1",
+   "log_loss": 0.35351248980112066,
+   "brier": 0.08942822998461758
+  },
+  {
+   "family": "xgboost",
+   "label": "pittsburgh",
+   "log_loss": 0.039746165376450426,
+   "brier": 0.006457374667493166
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.03, 100 trees, depth 2, min child 5",
+   "log_loss": 0.038625828847922546,
+   "brier": 0.0064090306020590055
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.03, 100 trees, depth 2, min child 20",
+   "log_loss": 0.03848264035792597,
+   "brier": 0.0064077975440288044
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.03, 100 trees, depth 3, min child 5",
+   "log_loss": 0.03856273752249809,
+   "brier": 0.006408035309730806
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.03, 100 trees, depth 3, min child 20",
+   "log_loss": 0.0383377966859357,
+   "brier": 0.006405499151029141
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.03, 300 trees, depth 2, min child 5",
+   "log_loss": 0.03873924050209984,
+   "brier": 0.006412624672589227
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.03, 300 trees, depth 2, min child 20",
+   "log_loss": 0.03850044984119249,
+   "brier": 0.0064093945753253305
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.03, 300 trees, depth 3, min child 5",
+   "log_loss": 0.03912452905758466,
+   "brier": 0.006429062978414176
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.03, 300 trees, depth 3, min child 20",
+   "log_loss": 0.03844967215050566,
+   "brier": 0.006411951552406133
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.1, 100 trees, depth 2, min child 5",
+   "log_loss": 0.03879654757414285,
+   "brier": 0.006415478884592733
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.1, 100 trees, depth 2, min child 20",
+   "log_loss": 0.03847766622302466,
+   "brier": 0.006409503756532661
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.1, 100 trees, depth 3, min child 5",
+   "log_loss": 0.03937397786791758,
+   "brier": 0.0064365714544076386
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.1, 100 trees, depth 3, min child 20",
+   "log_loss": 0.03849720122050288,
+   "brier": 0.006414783667494923
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.1, 300 trees, depth 2, min child 5",
+   "log_loss": 0.039921052607694484,
+   "brier": 0.006459379606373491
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.1, 300 trees, depth 2, min child 20",
+   "log_loss": 0.03895085276642579,
+   "brier": 0.006429925335265665
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.1, 300 trees, depth 3, min child 5",
+   "log_loss": 0.04148009629486845,
+   "brier": 0.006531643383361539
+  },
+  {
+   "family": "xgboost",
+   "label": "rate 0.1, 300 trees, depth 3, min child 20",
+   "log_loss": 0.039595982066547214,
+   "brier": 0.006462215514057372
+  },
+  {
+   "family": "neural_network",
+   "label": "8 hidden, decay 1",
+   "log_loss": 0.03880344445086461,
+   "brier": 0.006411984599367269
+  },
+  {
+   "family": "neural_network",
+   "label": "8 hidden, decay 10",
+   "log_loss": 0.039260210128656686,
+   "brier": 0.006419294189797653
+  },
+  {
+   "family": "neural_network",
+   "label": "32 hidden, decay 1",
+   "log_loss": 0.03880114686622954,
+   "brier": 0.006412094213456423
+  },
+  {
+   "family": "neural_network",
+   "label": "32 hidden, decay 10",
+   "log_loss": 0.039124210612609664,
+   "brier": 0.0064170465873374044
+  }
+ ],
+ "verdict": {
+  "adopted": false,
+  "mean": -0.00043119966732430227,
+  "low": -0.0008869349753339255,
+  "high": 1.6428986031443845e-06,
+  "reasons": [
+   "XGBoost (rate 0.03, 100 trees, depth 3, min child 20) scored -0.00043 log loss per area-month against logistic regression (95% interval -0.00089 to +0.00000, resampling barangays): the interval reaches zero or above, so the simpler logistic regression is kept."
+  ]
+ },
+ "cutoffs": {
+  "orange": 0.005109109260683114,
+  "red": null,
+  "red_reason": "No cut-off at or above Orange has at least 2 times the city-average fire rate with 10 or more fires, so nothing is Red."
+ },
+ "trained": {
+  "start": "2023-01",
+  "end": "2026-10",
+  "fires": 195,
+  "unplaced": [
+   {
+    "date": "2023-06-01",
+    "barangay": "Dumlog"
+   },
+   {
+    "date": "2023-06-11",
+    "barangay": "Dumlog"
+   },
+   {
+    "date": "2023-07-16",
+    "barangay": "Bulacao"
+   },
+   {
+    "date": "2023-07-25",
+    "barangay": "Lawaan I"
+   },
+   {
+    "date": "2023-07-31",
+    "barangay": "San Isidro"
+   },
+   {
+    "date": "2023-08-19",
+    "barangay": "Lagtang"
+   },
+   {
+    "date": "2024-03-22",
+    "barangay": "San Isidro"
+   },
+   {
+    "date": "2024-03-29",
+    "barangay": "Mohon"
+   },
+   {
+    "date": "2024-03-31",
+    "barangay": "Mohon"
+   },
+   {
+    "date": "2024-05-16",
+    "barangay": "Linao"
+   },
+   {
+    "date": "2024-05-17",
+    "barangay": "Poblacion"
+   },
+   {
+    "date": "2024-05-28",
+    "barangay": "Lawaan III"
+   },
+   {
+    "date": "2024-08-22",
+    "barangay": "Lawaan II"
+   },
+   {
+    "date": "2025-01-06",
+    "barangay": "Pooc"
+   },
+   {
+    "date": "2025-04-11",
+    "barangay": "Pooc"
+   },
+   {
+    "date": "2025-04-12",
+    "barangay": "San Roque"
+   },
+   {
+    "date": "2025-04-23",
+    "barangay": "Lawaan I"
+   },
+   {
+    "date": "2025-06-27",
+    "barangay": "Tabunok"
+   },
+   {
+    "date": "2025-08-01",
+    "barangay": "Lawaan I"
+   },
+   {
+    "date": "2025-11-02",
+    "barangay": "Jaclupan"
+   },
+   {
+    "date": "2025-11-13",
+    "barangay": "San Roque"
+   },
+   {
+    "date": "2026-05-17",
+    "barangay": "Dumlog"
+   },
+   {
+    "date": "2026-09-10",
+    "barangay": "Cansojong"
+   }
+  ]
+ },
+ "test": {
+  "window": {
+   "start": "2026-01",
+   "end": "2026-10"
+  },
+  "rows": 6700,
+  "fires": 46,
+  "chosen": {
+   "family": "logistic_regression",
+   "label": "C=0.01",
+   "verdict": {
+    "adopted": false,
+    "mean": -0.00017786176993284152,
+    "low": -0.0009246705833426099,
+    "high": 0.0005918859046830932,
+    "reasons": [
+     "random forest (depth 5, leaf 100) scored -0.00018 log loss per area-month against logistic regression (95% interval -0.00092 to +0.00059, resampling barangays): the interval reaches zero or above, so the simpler logistic regression is kept."
+    ]
+   }
+  },
+  "cutoffs": {
+   "orange": 0.004966305916762962,
+   "red": null,
+   "red_reason": "No cut-off at or above Orange has at least 2 times the city-average fire rate with 10 or more fires, so nothing is Red."
+  },
+  "scores": {
+   "log_loss": {
+    "value": 0.04081187821067278,
+    "low": 0.03117731008873928,
+    "high": 0.04968725867057591
+   },
+   "brier": {
+    "value": 0.006815262167362818,
+    "low": 0.004968707262331808,
+    "high": 0.008601229891344127
+   },
+   "roc_auc": {
+    "value": 0.5757112426654122,
+    "low": 0.4814115551525848,
+    "high": 0.6565065547091594
+   },
+   "pr_auc": {
+    "value": 0.009898233938943013,
+    "low": 0.005841818695262757,
+    "high": 0.023939885164111118
+   },
+   "calibration_intercept": {
+    "value": -0.18723078649348762,
+    "low": -5.6965310333802295,
+    "high": -0.17253239544740295
+   },
+   "calibration_slope": {
+    "value": 0.9505529830641151,
+    "low": -0.12934522642236992,
+    "high": 1.041021336429376
+   },
+   "top10_share": {
+    "value": 0.10869565217391304,
+    "low": 0.02939075630252101,
+    "high": 0.19446138211382114
+   },
+   "top20_share": {
+    "value": 0.2391304347826087,
+    "low": 0.08692546583850931,
+    "high": 0.3404255319148936
+   },
+   "kappa_at_orange": {
+    "value": 0.0019356758310654643,
+    "low": -0.00010763203946015929,
+    "high": 0.0036793753385757134
+   }
+  },
+  "levels": [
+   {
+    "level": "Red",
+    "rows": 0,
+    "share": 0.0,
+    "fires": 0,
+    "recall": 0.0,
+    "precision": 0.0,
+    "f1": 0.0,
+    "kappa": 0.0
+   },
+   {
+    "level": "Orange",
+    "rows": 5365,
+    "share": 0.8007462686567164,
+    "fires": 42,
+    "recall": 0.9130434782608695,
+    "precision": 0.00782851817334576,
+    "f1": 0.015523932729624837,
+    "kappa": 0.0019356758310654643
+   },
+   {
+    "level": "Green",
+    "rows": 1335,
+    "share": 0.19925373134328359,
+    "fires": 4,
+    "recall": 1.0,
+    "precision": 0.006865671641791045,
+    "f1": 0.013637711236288172,
+    "kappa": 0.0
+   }
+  ],
+  "green_fires": 4,
+  "reliability": [
+   {
+    "rows": 670,
+    "mean_chance": 0.003419151452501012,
+    "fire_share": 0.004477611940298508
+   },
+   {
+    "rows": 670,
+    "mean_chance": 0.004664189453296911,
+    "fire_share": 0.0014925373134328358
+   },
+   {
+    "rows": 670,
+    "mean_chance": 0.0052073676985835045,
+    "fire_share": 0.004477611940298508
+   },
+   {
+    "rows": 670,
+    "mean_chance": 0.00565138123824989,
+    "fire_share": 0.008955223880597015
+   },
+   {
+    "rows": 670,
+    "mean_chance": 0.006062897646313001,
+    "fire_share": 0.008955223880597015
+   },
+   {
+    "rows": 670,
+    "mean_chance": 0.006469043580323759,
+    "fire_share": 0.0029850746268656717
+   },
+   {
+    "rows": 670,
+    "mean_chance": 0.006898609436927809,
+    "fire_share": 0.010447761194029851
+   },
+   {
+    "rows": 670,
+    "mean_chance": 0.0074191212451719234,
+    "fire_share": 0.010447761194029851
+   },
+   {
+    "rows": 670,
+    "mean_chance": 0.008116604060488492,
+    "fire_share": 0.008955223880597015
+   },
+   {
+    "rows": 670,
+    "mean_chance": 0.011005079988164251,
+    "fire_share": 0.007462686567164179
+   }
+  ],
+  "comparison": {
+   "comparison_same_everywhere": {
+    "log_loss": {
+     "value": 0.04106255950005296,
+     "low": 0.03157715824866962,
+     "high": 0.050251259670683876
+    },
+    "brier": {
+     "value": 0.006818807083983071,
+     "low": 0.004965804929578306,
+     "high": 0.008613847774525854
+    },
+    "roc_auc": {
+     "value": 0.5,
+     "low": 0.5,
+     "high": 0.5
+    },
+    "pr_auc": {
+     "value": 0.006865671641791045,
+     "low": 0.004988859180035651,
+     "high": 0.008683777858969675
+    },
+    "calibration_intercept": {
+     "value": null,
+     "low": null,
+     "high": null
+    },
+    "calibration_slope": {
+     "value": null,
+     "low": null,
+     "high": null
+    },
+    "top10_share": {
+     "value": 0.0,
+     "low": 0.02,
+     "high": 0.19446138211382114
+    },
+    "top20_share": {
+     "value": 0.15217391304347827,
+     "low": 0.08571428571428572,
+     "high": 0.31377708978328167
+    },
+    "kappa_at_orange": {
+     "value": null,
+     "low": null,
+     "high": null
+    }
+   },
+   "comparison_buildings": {
+    "log_loss": {
+     "value": 0.04164551406039731,
+     "low": 0.03192166394434972,
+     "high": 0.051078278296347784
+    },
+    "brier": {
+     "value": 0.00683892461058868,
+     "low": 0.004984767039103106,
+     "high": 0.008626902191104699
+    },
+    "roc_auc": {
+     "value": 0.5920498948001203,
+     "low": 0.5069264173500015,
+     "high": 0.6794369132959771
+    },
+    "pr_auc": {
+     "value": 0.010109851714485274,
+     "low": 0.006636302369775921,
+     "high": 0.01695775786289131
+    },
+    "calibration_intercept": {
+     "value": -3.1590796657291853,
+     "low": -4.904634365753404,
+     "high": -0.9836823135411511
+    },
+    "calibration_slope": {
+     "value": 0.34494888020489617,
+     "low": 0.018712911907665417,
+     "high": 0.7716838368320604
+    },
+    "top10_share": {
+     "value": 0.1956521739130435,
+     "low": 0.07497685185185185,
+     "high": 0.3077380952380952
+    },
+    "top20_share": {
+     "value": 0.34782608695652173,
+     "low": 0.20930232558139536,
+     "high": 0.4667021276595744
+    },
+    "kappa_at_orange": {
+     "value": null,
+     "low": null,
+     "high": null
+    }
+   },
+   "comparison_historical_frequency": {
+    "log_loss": {
+     "value": 0.05178276628336559,
+     "low": 0.03827822455433805,
+     "high": 0.06612471153373234
+    },
+    "brier": {
+     "value": 0.006925208235666083,
+     "low": 0.005043439372322364,
+     "high": 0.008700407575976963
+    },
+    "roc_auc": {
+     "value": 0.6067844121221625,
+     "low": 0.5147635621347673,
+     "high": 0.694855577302239
+    },
+    "pr_auc": {
+     "value": 0.010644437729639503,
+     "low": 0.006361827527355767,
+     "high": 0.017577457056952836
+    },
+    "calibration_intercept": {
+     "value": -3.5278108418886847,
+     "low": -4.759540493298784,
+     "high": -2.7256720688613787
+    },
+    "calibration_slope": {
+     "value": 0.20098922547486245,
+     "low": 0.03571632416174206,
+     "high": 0.33111834418075625
+    },
+    "top10_share": {
+     "value": 0.2391304347826087,
+     "low": 0.10868096357226792,
+     "high": 0.3673737916219119
+    },
+    "top20_share": {
+     "value": 0.391304347826087,
+     "low": 0.20927810077519382,
+     "high": 0.5769736842105262
+    },
+    "kappa_at_orange": {
+     "value": null,
+     "low": null,
+     "high": null
+    }
+   }
+  }
+ },
+ "barangay_check": {
+  "rows": 220,
+  "fires": 36,
+  "scores": {
+   "log_loss": {
+    "value": 0.42098479951765183,
+    "low": 0.33223644523021273,
+    "high": 0.5030164089827973
+   },
+   "brier": {
+    "value": 0.12842910735134727,
+    "low": 0.09272734790015162,
+    "high": 0.16196880170020594
+   },
+   "roc_auc": {
+    "value": 0.6834239130434783,
+    "low": 0.5676413883847039,
+    "high": 0.7814867245939352
+   },
+   "pr_auc": {
+    "value": 0.33956193192818956,
+    "low": 0.209194690685181,
+    "high": 0.5121810269358928
+   },
+   "calibration_intercept": {
+    "value": 0.018182910574653214,
+    "low": -1.13697651299076,
+    "high": 1.5322875112988295
+   },
+   "calibration_slope": {
+    "value": 1.0764237923872084,
+    "low": 0.41525627078759997,
+    "high": 2.3051967612791393
+   },
+   "top10_share": {
+    "value": 0.25,
+    "low": 0.1372019077901431,
+    "high": 0.36
+   },
+   "top20_share": {
+    "value": 0.3888888888888889,
+    "low": 0.2563725490196078,
+    "high": 0.5556372549019607
+   },
+   "kappa_at_orange": {
+    "value": null,
+    "low": null,
+    "high": null
+   }
+  },
+  "comparison": {
+   "comparison_same_everywhere": {
+    "log_loss": {
+     "value": 0.4466430892557475,
+     "low": 0.3572628841476823,
+     "high": 0.5360232943638128
+    },
+    "brier": {
+     "value": 0.13714576318742983,
+     "low": 0.0993932379349046,
+     "high": 0.17489828843995509
+    },
+    "roc_auc": {
+     "value": 0.5,
+     "low": 0.5,
+     "high": 0.5
+    },
+    "pr_auc": {
+     "value": 0.16363636363636364,
+     "low": 0.10454545454545454,
+     "high": 0.22272727272727272
+    },
+    "calibration_intercept": {
+     "value": null,
+     "low": null,
+     "high": null
+    },
+    "calibration_slope": {
+     "value": null,
+     "low": null,
+     "high": null
+    },
+    "top10_share": {
+     "value": 0.1388888888888889,
+     "low": 0.0,
+     "high": 0.21621621621621623
+    },
+    "top20_share": {
+     "value": 0.3333333333333333,
+     "low": 0.06060606060606061,
+     "high": 0.36117424242424234
+    },
+    "kappa_at_orange": {
+     "value": null,
+     "low": null,
+     "high": null
+    }
+   },
+   "comparison_buildings": {
+    "log_loss": {
+     "value": 0.42018095500578234,
+     "low": 0.33185095416744825,
+     "high": 0.5018339237764429
+    },
+    "brier": {
+     "value": 0.12864166290630472,
+     "low": 0.09400229935011027,
+     "high": 0.1617843595357736
+    },
+    "roc_auc": {
+     "value": 0.6917270531400966,
+     "low": 0.5730642263904442,
+     "high": 0.7819642857142857
+    },
+    "pr_auc": {
+     "value": 0.31546556148529836,
+     "low": 0.1719647852024189,
+     "high": 0.40339086056944007
+    },
+    "calibration_intercept": {
+     "value": -0.22833061353332798,
+     "low": -1.2701609404853884,
+     "high": 0.9582596511078123
+    },
+    "calibration_slope": {
+     "value": 0.9248185684199309,
+     "low": 0.3141336710906411,
+     "high": 1.9478982393202873
+    },
+    "top10_share": {
+     "value": 0.25,
+     "low": 0.10336206896551725,
+     "high": 0.33359374999999974
+    },
+    "top20_share": {
+     "value": 0.3888888888888889,
+     "low": 0.22215447154471543,
+     "high": 0.5313020833333333
+    },
+    "kappa_at_orange": {
+     "value": null,
+     "low": null,
+     "high": null
+    }
+   },
+   "comparison_historical_frequency": {
+    "log_loss": {
+     "value": 0.43286770679291314,
+     "low": 0.342110828171714,
+     "high": 0.5199997741333837
+    },
+    "brier": {
+     "value": 0.13286593052921883,
+     "low": 0.09747347419081653,
+     "high": 0.16690686719684467
+    },
+    "roc_auc": {
+     "value": 0.6283212560386474,
+     "low": 0.49547471861759745,
+     "high": 0.7407934216485508
+    },
+    "pr_auc": {
+     "value": 0.2835080143168378,
+     "low": 0.14616690476190475,
+     "high": 0.37574723851023806
+    },
+    "calibration_intercept": {
+     "value": -0.607817663705051,
+     "low": -1.6416662941866893,
+     "high": 0.2537898608262518
+    },
+    "calibration_slope": {
+     "value": 0.6506977745153415,
+     "low": 0.08600848255392704,
+     "high": 1.4282857913834275
+    },
+    "top10_share": {
+     "value": 0.2777777777777778,
+     "low": 0.0967741935483871,
+     "high": 0.35714285714285715
+    },
+    "top20_share": {
+     "value": 0.3611111111111111,
+     "low": 0.1944220430107527,
+     "high": 0.5278186274509804
+    },
+    "kappa_at_orange": {
+     "value": null,
+     "low": null,
+     "high": null
+    }
+   }
+  }
+ },
+ "sensitivity": {
+  "fire_log_named": {
+   "log_loss": {
+    "value": 0.13926684510806214,
+    "low": 0.09812108564295109,
+    "high": 0.18821532197302124
+   },
+   "brier": {
+    "value": 0.026171764995041084,
+    "low": 0.017791786782670335,
+    "high": 0.035853868491785186
+   },
+   "roc_auc": {
+    "value": 0.4855952380952381,
+    "low": 0.4029791771740285,
+    "high": 0.5467880883648748
+   },
+   "pr_auc": {
+    "value": 0.026325320960004173,
+    "low": 0.0163262387102224,
+    "high": 0.04472652580159329
+   },
+   "calibration_intercept": {
+    "value": -3.813876024627075,
+    "low": -8.515674685569907,
+    "high": -0.15159903713511513
+   },
+   "calibration_slope": {
+    "value": -0.042288499611374465,
+    "low": -0.942487777678046,
+    "high": 0.6530077785091344
+   },
+   "top10_share": {
+    "value": 0.1,
+    "low": 0.0,
+    "high": 0.175
+   },
+   "top20_share": {
+    "value": 0.125,
+    "low": 0.03125,
+    "high": 0.21875
+   },
+   "kappa_at_orange": {
+    "value": 0.004664680053491188,
+    "low": -0.0018122431377587678,
+    "high": 0.01049023249462261
+   }
+  },
+  "others": {
+   "log_loss": {
+    "value": 0.012166984180796491,
+    "low": 0.007877704854811617,
+    "high": 0.017326234724312356
+   },
+   "brier": {
+    "value": 0.0011836014217377353,
+    "low": 0.00038080568580995414,
+    "high": 0.0021955659679311207
+   },
+   "roc_auc": {
+    "value": 0.5622106481481481,
+    "low": 0.27146509485202563,
+    "high": 0.7706701823559325
+   },
+   "pr_auc": {
+    "value": 0.0016554426009008911,
+    "low": 0.0005743624155726392,
+    "high": 0.004224176885707903
+   },
+   "calibration_intercept": {
+    "value": -0.25366832999007116,
+    "low": -0.3200157497164149,
+    "high": -0.23046688423055292
+   },
+   "calibration_slope": {
+    "value": 1.278689527937012,
+    "low": 1.149759486935603,
+    "high": 1.5053336723186626
+   },
+   "top10_share": {
+    "value": 0.0,
+    "low": 0.0,
+    "high": 0.1111111111111111
+   },
+   "top20_share": {
+    "value": 0.16666666666666666,
+    "low": 0.0,
+    "high": 0.6
+   },
+   "kappa_at_orange": {
+    "value": 0.0001395599380148438,
+    "low": -0.0007896457354863328,
+    "high": 0.000843226639619468
+   }
+  },
+  "named_areas": 151,
+  "other_areas": 519
+ },
+ "leave_one_barangay_out": {
+  "log_loss": {
+   "value": 0.03879769095494906,
+   "low": 0.03347177015358828,
+   "high": 0.04402637638469178
+  },
+  "brier": {
+   "value": 0.0064108587917341975,
+   "low": 0.005339694900389039,
+   "high": 0.0074261210460376415
+  },
+  "roc_auc": {
+   "value": 0.5816522605188182,
+   "low": 0.5223215879810092,
+   "high": 0.6465512418825072
+  },
+  "pr_auc": {
+   "value": 0.010924473707956465,
+   "low": 0.0071523756212728004,
+   "high": 0.016252760606785543
+  },
+  "calibration_intercept": {
+   "value": -0.18994196289591828,
+   "low": -3.9419439223397297,
+   "high": -0.1827768702303888
+  },
+  "calibration_slope": {
+   "value": 0.9632607806099794,
+   "low": 0.21692763173318735,
+   "high": 0.9995774374250792
+  },
+  "top10_share": {
+   "value": 0.17587939698492464,
+   "low": 0.10054469273743018,
+   "high": 0.2228130856575901
+  },
+  "top20_share": {
+   "value": 0.3165829145728643,
+   "low": 0.23075916230366494,
+   "high": 0.41774856648274367
+  },
+  "kappa_at_orange": {
+   "value": 0.00038623094863721175,
+   "low": -0.0005256910411650884,
+   "high": 0.001253998755799304
+  }
+ },
+ "caveat": "Purok-level scores from past fires are probably optimistic: 151 of the 670 areas were drawn because a fire address named them. Honest purok scores come from fires after the map was frozen (the prediction log).",
+ "unplaced": [
+  {
+   "date": "2023-06-01",
+   "barangay": "Dumlog"
+  },
+  {
+   "date": "2023-06-11",
+   "barangay": "Dumlog"
+  },
+  {
+   "date": "2023-07-16",
+   "barangay": "Bulacao"
+  },
+  {
+   "date": "2023-07-25",
+   "barangay": "Lawaan I"
+  },
+  {
+   "date": "2023-07-31",
+   "barangay": "San Isidro"
+  },
+  {
+   "date": "2023-08-19",
+   "barangay": "Lagtang"
+  },
+  {
+   "date": "2024-03-22",
+   "barangay": "San Isidro"
+  },
+  {
+   "date": "2024-03-29",
+   "barangay": "Mohon"
+  },
+  {
+   "date": "2024-03-31",
+   "barangay": "Mohon"
+  },
+  {
+   "date": "2024-05-16",
+   "barangay": "Linao"
+  },
+  {
+   "date": "2024-05-17",
+   "barangay": "Poblacion"
+  },
+  {
+   "date": "2024-05-28",
+   "barangay": "Lawaan III"
+  },
+  {
+   "date": "2024-08-22",
+   "barangay": "Lawaan II"
+  },
+  {
+   "date": "2025-01-06",
+   "barangay": "Pooc"
+  },
+  {
+   "date": "2025-04-11",
+   "barangay": "Pooc"
+  },
+  {
+   "date": "2025-04-12",
+   "barangay": "San Roque"
+  },
+  {
+   "date": "2025-04-23",
+   "barangay": "Lawaan I"
+  },
+  {
+   "date": "2025-06-27",
+   "barangay": "Tabunok"
+  },
+  {
+   "date": "2025-08-01",
+   "barangay": "Lawaan I"
+  },
+  {
+   "date": "2025-11-02",
+   "barangay": "Jaclupan"
+  },
+  {
+   "date": "2025-11-13",
+   "barangay": "San Roque"
+  },
+  {
+   "date": "2026-05-17",
+   "barangay": "Dumlog"
+  },
+  {
+   "date": "2026-09-10",
+   "barangay": "Cansojong"
+  }
+ ],
+ "features": {
+  "built_at": "2026-11-23T23:40:14+08:00",
+  "sources": {
+   "buildings": {
+    "name": "Microsoft Global ML Building Footprints",
+    "licence": "ODbL",
+    "url": "https://minedbuildings.z5.web.core.windows.net/global-buildings/dataset-links.csv",
+    "tile": "132330002"
+   },
+   "roads_stations_water": {
+    "name": "OpenStreetMap (roads, fire stations, coastline, waterways)",
+    "licence": "ODbL",
+    "note": "saved by build_purok_estimates"
+   },
+   "landcover": {
+    "name": "ESA WorldCover 2021 v200",
+    "licence": "CC BY 4.0",
+    "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N09E123_Map.tif"
+   },
+   "population": {
+    "used": true,
+    "licence": "CC BY 4.0",
+    "name": "WorldPop 2025 constrained 100 m (Global2 R2025A v1)"
+   }
+  },
+  "dropped": []
+ }
+}

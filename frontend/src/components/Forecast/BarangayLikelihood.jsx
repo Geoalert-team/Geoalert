@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { historyApi } from '../../api/historyApi';
 import ForecastPeriodPicker from './ForecastPeriodPicker';
 import {
-  FIRE_ONLY_NOTE, FORECAST_DISCLAIMER, IN_TRAINING_NOTE, SEVERITY_WORD, chanceText, defaultPeriod, isFireOnly, levelLabel,
+  FIRE_CREDIT, FIRE_MODEL_LABEL, FIRE_ONLY_NOTE, FORECAST_DISCLAIMER, IN_TRAINING_NOTE, PUROK_CAVEAT, SEVERITY_WORD, chanceText, defaultPeriod, isFireOnly, levelLabel,
   likelihoodInfo, periodLabel, periodMonth, periodParams, periodPastHeader, periodYearsText, smallChanceText,
   unavailableNote, withMonth,
 } from './forecastLevels';
@@ -197,12 +197,16 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
           <summary>How this is calculated</summary>
           <p>{data?.basis?.method || "Fire's prediction model is being rebuilt."}</p>
           <p>
-            Levels follow the chance in the month: 25% or more is High, 15% or more is Moderate, and
-            anything less is Low. For an exact date the chance shown is for that week and the level
-            stays the month&rsquo;s. A model that cannot run is shown as unavailable, never guessed or
-            counted. The past events on record can be checked against the archived records on the
-            History page.
+            The {FIRE_MODEL_LABEL.charAt(0).toLowerCase() + FIRE_MODEL_LABEL.slice(1)} gives each purok a chance
+            of a fire from its buildings, roads, land cover and distance to a fire station, never from how many
+            fires it had. A barangay&rsquo;s chance combines its puroks&rsquo;. Levels follow the chance in the
+            month: 25% or more is High, 15% or more is Moderate, and anything less is Low. For an exact date the
+            chance shown is for that week and the level stays the month&rsquo;s. A model that cannot run is shown
+            as unavailable, never guessed or counted. The past events on record can be checked against the
+            archived records on the History page.
           </p>
+          <p>{PUROK_CAVEAT}</p>
+          <p>{FIRE_CREDIT}</p>
         </details>
       )}
     </div>
