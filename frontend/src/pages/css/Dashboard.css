@@ -319,7 +319,7 @@
 .db-report-filters .db-field input, .db-report-filters .db-field select { width: 100%; min-height: 42px; font-weight: 400; }
 
 .db-report-actions {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap;
   padding-top: 16px; border-top: 1px solid var(--db-line);
 }
 .db-report-actions .db-btn-row { margin: 0; }

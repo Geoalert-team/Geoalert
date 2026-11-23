@@ -51,7 +51,6 @@ function reportCsv(type, r, f) {
     ['Barangay', f.barangay || 'All barangays'],
   ];
   if (f.hazardType !== null) meta.push(['Hazard type', f.hazardType || 'All hazard types']);
-  if (r.includes_samples) meta.push(['Note', 'Includes sample data. Not an official record.']);
   const table = (title, rows, key, head, label = (x) => x[key] || 'Unspecified') => ({
     title, header: [head, 'Count'], rows: (rows || []).map((x) => [label(x), x.count]),
   });
@@ -100,9 +99,6 @@ export default function ReportsPanel() {
   const [dateTo, setDateTo] = useState('');
   const [barangay, setBarangay] = useState('');
   const [hazardType, setHazardType] = useState('');
-  // Seeded events are left out by default. A report gets printed and handed
-  // over as an official figure, and Faker incidents are not one.
-  const [includeSamples, setIncludeSamples] = useState(false);
 
   const [report, setReport] = useState(null);
   const [notEnough, setNotEnough] = useState('');
@@ -129,7 +125,6 @@ export default function ReportsPanel() {
 
   function clearFilters() {
     setDateFrom(''); setDateTo(''); setBarangay(''); setHazardType('');
-    setIncludeSamples(false);
   }
 
   async function generate(e) {
@@ -148,7 +143,6 @@ export default function ReportsPanel() {
     if (dateTo) params.date_to = `${dateTo}T23:59:59`;
     if (barangay) params.barangay = barangay;
     if (hazardType && current.usesHazardType) params.hazard_type = hazardType;
-    if (includeSamples) params.include_samples = 'true';
 
     try {
       const data = type === 'hazard-summary'
@@ -172,7 +166,7 @@ export default function ReportsPanel() {
     }
   }
 
-  const filtersOn = dateFrom || dateTo || barangay || hazardType || includeSamples;
+  const filtersOn = dateFrom || dateTo || barangay || hazardType;
 
   const brgyName = barangays.find((b) => String(b.id) === String(barangay))?.name;
   const kindName = hazardTypes.find((t) => String(t.id) === String(hazardType))?.name;
@@ -181,7 +175,6 @@ export default function ReportsPanel() {
     `date_to=${dateTo || '-'}`,
     `barangay=${brgyName || 'all'}`,
     current.usesHazardType ? `hazard_type=${kindName || 'all'}` : '',
-    includeSamples ? 'samples=included' : '',
   ].filter(Boolean).join(' ');
 
   // F7: log the print or export before it happens. A failed log never
@@ -266,10 +259,6 @@ export default function ReportsPanel() {
             )}
 
             <div className="db-report-actions">
-              <label className="db-report-check">
-                <input type="checkbox" checked={includeSamples} onChange={(e) => setIncludeSamples(e.target.checked)} />
-                Include sample data
-              </label>
               <div className="db-btn-row">
                 {filtersOn && (
                   <button type="button" className="db-btn db-btn-outline" onClick={clearFilters} disabled={busy}>
@@ -307,13 +296,6 @@ export default function ReportsPanel() {
         {notEnough && (
           <div className="db-card">
             <p className="db-empty">{notEnough}</p>
-            {!includeSamples && (
-              <p className="db-note">
-                Sample data is excluded from reports. If the archive is mostly
-                seeded test events, tick <strong>Include sample data</strong> to
-                see them — the report will be labelled as not official.
-              </p>
-            )}
           </div>
         )}
 
@@ -348,14 +330,6 @@ export default function ReportsPanel() {
                 </button>
               </div>
             </div>
-
-            {report.includes_samples && (
-              <p className="db-error" role="status" style={{ marginTop: 14 }}>
-                <strong>This report includes sample data.</strong> Figures below count
-                events generated for testing alongside real ones, so it is not
-                suitable as an official record.
-              </p>
-            )}
 
             {type === 'hazard-summary' ? (
               <>
