@@ -370,7 +370,6 @@ class AlertMonitorView(APIView):
                 'notes':        alert.notes,
                 'zone_id':      str(zone.id) if zone else None,
                 'zone_status':  zone.status if zone else None,
-                'is_sample':    bool(zone.is_sample) if zone else False,
                 'recipients':   recipients,
                 'read':         alert.read_count,
                 'unread':       recipients - alert.read_count,

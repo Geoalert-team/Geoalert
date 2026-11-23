@@ -21,13 +21,11 @@ import './forecast.css';
  * model is trained, every row says it is unavailable. Not a weather forecast.
  *
  * Props:
- *   compact         dashboard card: top rows only, no month profile
- *   limit           rows shown when compact (default 5)
- *   hazard          the page's hazard filter (Reports › Analytics), '' for all
- *   excludeSamples  leave seeded sample records out (Analytics does unless
- *                   asked; the dashboard card labels them instead)
+ *   compact  dashboard card: top rows only, no month profile
+ *   limit    rows shown when compact (default 5)
+ *   hazard   the page's hazard filter (Reports › Analytics), '' for all
  */
-export default function BarangayLikelihood({ compact = false, limit = 5, hazard = '', excludeSamples = false }) {
+export default function BarangayLikelihood({ compact = false, limit = 5, hazard = '' }) {
   const [period, setPeriod] = useState(defaultPeriod);
   const [barangay, setBarangay] = useState(null); // { id, name } for the profile
   const [data, setData] = useState(null);
@@ -42,12 +40,11 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
       ...periodParams(period),
       hazard_type_name: 'Fire',
       ...(barangay ? { barangay: barangay.id } : {}),
-      ...(excludeSamples ? { exclude_samples: 'true' } : {}),
     })
       .then((d) => { if (!cancelled) setData(d); })
       .catch(() => { if (!cancelled) setError('Could not load the seasonal likelihood.'); });
     return () => { cancelled = true; };
-  }, [period, fireShown, barangay, excludeSamples]);
+  }, [period, fireShown, barangay]);
 
   if (!fireShown) {
     return (
@@ -194,12 +191,6 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
       )}
 
       <p className="fc-note">{FORECAST_DISCLAIMER}</p>
-      {data?.basis?.sample_records > 0 && (
-        <p className="fc-note">
-          {data.basis.sample_records} of the {data.basis.records} records behind this are sample data
-          made for testing.
-        </p>
-      )}
 
       {!compact && (
         <details className="db-method">

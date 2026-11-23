@@ -96,7 +96,6 @@ class FireCloseView(APIView):
                                         f'{fields["property_subcategory"]}, {fields["alarm_level"]}'),
                 location_text=exact_location([p.name for p in puroks], zone.barangay.name if zone.barangay else None),
                 total_displaced=None,  # not in the BFP log
-                is_sample=zone.is_sample,
                 **fields,
             )
             record.puroks.set(puroks)

@@ -262,7 +262,6 @@ def plan_import(events, splits, existing_refs, barangays, puroks_by_barangay, va
                 # Every barangay's record of the event says where it was read
                 'source': ' '.join(event['source'].split())[:SOURCE_MAX],
                 'source_ref': ref,
-                'is_sample': False,
             })
 
     for key, groups in by_event.items():

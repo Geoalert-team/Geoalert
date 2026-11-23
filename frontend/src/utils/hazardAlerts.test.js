@@ -30,11 +30,11 @@ test('skips zones that are not Active, and reads the id from properties too', ()
   const alerts = activeAlerts({
     features: [
       zone('a', { severity: 'Red', status: 'Resolved' }),
-      { type: 'Feature', properties: { id: 'b', status: 'Active', severity: 'Green', is_sample: true } },
+      { type: 'Feature', properties: { id: 'b', status: 'Active', severity: 'Green' } },
     ],
   });
   expect(alerts).toHaveLength(1);
-  expect(alerts[0]).toMatchObject({ id: 'b', type: 'Hazard', sample: true });
+  expect(alerts[0]).toMatchObject({ id: 'b', type: 'Hazard' });
 });
 
 test('no feed, no alerts', () => {

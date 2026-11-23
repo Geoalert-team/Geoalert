@@ -146,7 +146,6 @@ export default function HistoricalData() {
     return () => { cancelled = true; };
   }, [hazardId, filters, fireOnly, reloaded]);
 
-  const sampleCount = records.filter((r) => r.is_sample).length;
   const pageCount = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
   const pageRecords = records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -211,13 +210,6 @@ export default function HistoricalData() {
 
         {error && <p className="db-empty">{error}</p>}
 
-        {!error && sampleCount > 0 && (
-          <p className="db-note">
-            {sampleCount === records.length ? 'All' : `${sampleCount} of ${records.length}`} records shown are
-            sample data generated for testing, not real events.
-          </p>
-        )}
-
         {!error && (
           <div className="db-card">
             <div className="db-history-head">
@@ -265,7 +257,6 @@ export default function HistoricalData() {
                         {nestedName(r.hazard_type_detail) || 'Hazard'}
                         {' - '}
                         {nestedName(r.barangay_detail) || 'Unspecified barangay'}
-                        {r.is_sample && <span className="db-badge" style={{ marginLeft: 8 }}>Sample</span>}
                       </span>
                       <span className="db-record-open" aria-hidden="true">View details ›</span>
                     </span>
@@ -305,7 +296,6 @@ export default function HistoricalData() {
           hazardTypes={hazardTypes}
           initialTypes={hazardTypes.filter((t) => !hazardId || String(t.id) === String(hazardId)).map((t) => t.name)}
           filters={filters}
-          hasSamples={sampleCount > 0}
           onClose={closeExport}
         />
       )}

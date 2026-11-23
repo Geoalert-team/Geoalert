@@ -14,7 +14,7 @@ jest.mock('../api/hazardsApi', () => ({ hazardsApi: { types: () => Promise.resol
 jest.mock('../api/historyApi', () => ({
   historyApi: {
     list: () => Promise.resolve([]),
-    forecast: () => Promise.resolve({ results: [], years: [], basis: { records: 0, sample_records: 0 } }),
+    forecast: () => Promise.resolve({ results: [], years: [], basis: { records: 0 } }),
     forecastAccuracy: () => Promise.resolve({ hazards: [] }),
   },
 }));

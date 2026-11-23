@@ -76,7 +76,6 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
             'id', 'barangay', 'barangay_name', 'hazard_type_name',
             'severity', 'status', 'description',
             'activated_at', 'resolved_at', 'started_at',
-            'is_sample',
             # Second approval for Extreme alerts
             'approved_by_name', 'approved_at', 'auto_released',
             'outline',
@@ -110,7 +109,6 @@ class HazardZoneSerializer(serializers.ModelSerializer):
             'id', 'barangay', 'barangay_name', 'published_by', 'hazard_type',
             'severity', 'status', 'description',
             'activated_at', 'resolved_at',
-            'is_sample',
             # Withdrawal, so the DRRMO list can say who withdrew it and why
             'retracted_at', 'retracted_by_name', 'retraction_reason',
             'published_by_name',

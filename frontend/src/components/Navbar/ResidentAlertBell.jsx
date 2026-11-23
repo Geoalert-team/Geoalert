@@ -176,7 +176,7 @@ export default function ResidentAlertBell() {
                           <span className="nb-item-content">In {placesText(alert.barangays)}. {sev.advice}</span>
                           {alert.activatedAt && (
                             <span className="nb-item-meta" title={new Date(alert.activatedAt).toLocaleString()}>
-                              Issued {timeAgo(alert.activatedAt)}{alert.sample ? " · Sample data" : ""}
+                              Issued {timeAgo(alert.activatedAt)}
                             </span>
                           )}
                         </span>

@@ -21,9 +21,9 @@ from rest_framework.views import APIView
 from apps.history.importing import FIRE, ImportProblem, import_fires, import_floods, kind_of, summary
 from utils.audit import log_event
 from utils.permissions import IsDRRMOOfficer
-from utils.sampling import TRUTHY
 
 MAX_BYTES = 10 * 1024 * 1024
+TRUTHY = ('1', 'true', 'yes', 'on')
 
 
 class HistoryImportView(APIView):

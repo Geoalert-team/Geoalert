@@ -23,7 +23,6 @@ export function activeAlerts(featureCollection) {
       severity: p.severity,
       barangays: [p.barangay_name].filter(Boolean),
       activatedAt: p.activated_at || null,
-      sample: !!p.is_sample,
     }))
     .sort((a, b) => rank(a.severity) - rank(b.severity)
       || new Date(b.activatedAt || 0) - new Date(a.activatedAt || 0));

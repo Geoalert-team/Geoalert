@@ -376,7 +376,6 @@ class HazardZoneDetailView(APIView):
                 description      = summary or zone.description or '',
                 occurred_at      = zone.activated_at or zone.resolved_at or timezone.now(),
                 total_displaced  = None,  # the log counts families and persons affected
-                is_sample        = zone.is_sample,
                 **figures,
             )
             # It counts once in every purok its reports named, or for a zone

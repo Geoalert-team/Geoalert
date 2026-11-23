@@ -11,7 +11,7 @@ beforeAll(() => { global.IS_REACT_ACT_ENVIRONMENT = true; });
 beforeEach(() => { jest.clearAllMocks(); reportsApi.forZone.mockResolvedValue([]); });
 
 const FIRE = {
-  id: 'h1', hazard_zone: 'z1', severity_level: 'Red', is_sample: false,
+  id: 'h1', hazard_zone: 'z1', severity_level: 'Red',
   hazard_type_detail: { name: 'Fire' },
   barangay_detail: { name: 'Lawaan I', municipality: 'Talisay City', province: 'Cebu' },
   description: 'BFP: RESIDENTIAL – SINGLE AND TWO FAMILY DWELLING, 2ND ALARM',

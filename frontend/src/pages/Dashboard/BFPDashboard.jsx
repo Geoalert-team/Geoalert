@@ -270,7 +270,6 @@ export default function BFPDashboard() {
                     <span className="db-item-head">
                       <span className="db-item-title">
                         Fire - {r.barangay_detail?.name || r.barangay_detail?.properties?.name || 'Unspecified barangay'}
-                        {r.is_sample && <span className="db-badge" style={{ marginLeft: 8 }}>Sample</span>}
                       </span>
                       <span className="db-record-open" aria-hidden="true">View details ›</span>
                     </span>

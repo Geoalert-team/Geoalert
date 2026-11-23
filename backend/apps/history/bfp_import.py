@@ -75,7 +75,6 @@ def _record(row, when, ref, barangay, purok_name):
         'total_displaced': None,  # not in the BFP log
         'location_text': row['location'],
         'source_ref': ref,
-        'is_sample': False,
     }
     rec.update({k: row[k] for k in bfp.CASUALTY_FIELDS})
     return rec

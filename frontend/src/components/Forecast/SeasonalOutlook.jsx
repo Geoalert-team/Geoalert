@@ -8,16 +8,13 @@ import { buildRiskOutlook } from '../../utils/riskOutlook';
  * History page, which is now the archive only.
  *
  * It follows the Analytics hazard filter but not its period: a seasonal
- * pattern needs every past year, so the sub line says so. Sample records
- * are left out unless the officer asked for them, like every other figure
- * on the tab.
+ * pattern needs every past year, so the sub line says so.
  *
  * Props:
- *   hazardTypeId    hazard type id as a string, '' for all types
- *   hazardName      that type's name for the sub line, or null
- *   includeSamples  keep seeded sample records
+ *   hazardTypeId  hazard type id as a string, '' for all types
+ *   hazardName    that type's name for the sub line, or null
  */
-export default function SeasonalOutlook({ hazardTypeId = '', hazardName = null, includeSamples = false }) {
+export default function SeasonalOutlook({ hazardTypeId = '', hazardName = null }) {
   const [records, setRecords] = useState(null);
   const [error, setError] = useState('');
 
@@ -35,8 +32,8 @@ export default function SeasonalOutlook({ hazardTypeId = '', hazardName = null, 
 
   const outlook = useMemo(() => {
     if (!records) return null;
-    return buildRiskOutlook(includeSamples ? records : records.filter((r) => !r.is_sample));
-  }, [records, includeSamples]);
+    return buildRiskOutlook(records);
+  }, [records]);
 
   return (
     <>

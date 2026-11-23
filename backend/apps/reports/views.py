@@ -9,7 +9,6 @@ from apps.hazards.models import HazardZone, HazardAlert
 from apps.history.models import HistoricalRecord
 from utils.permissions import IsDRRMOOfficer
 from utils.audit import log_event
-from utils.sampling import include_samples, without_samples
 
 from django.utils import timezone
 from apps.reports.models import IncidentReport
@@ -37,9 +36,7 @@ class HazardSummaryReportView(APIView):
     permission_classes = [IsAuthenticated, IsDRRMOOfficer]
 
     def get(self, request):
-        # Seeded sample events are excluded unless asked for: a report is
-        # read as an official figure, and Faker incidents are not one.
-        records = without_samples(HistoricalRecord.objects.all(), request)
+        records = HistoricalRecord.objects.all()
 
         date_from = request.query_params.get('date_from')
         if date_from:
@@ -104,7 +101,6 @@ class HazardSummaryReportView(APIView):
 
         return Response({
             'report_type':            'Hazard Summary Report',
-            'includes_samples':       include_samples(request),
             'generated_by':           request.user.full_name,
             'generated_at':           timezone.now(),
             'total_occurrences':      records.count(),
@@ -171,12 +167,8 @@ class ResponseStatusReportView(APIView):
     permission_classes = [IsAuthenticated, IsDRRMOOfficer]
 
     def get(self, request):
-        zones = without_samples(HazardZone.objects.all(), request)
-        # HazardAlert has no flag of its own; a sample alert is one raised
-        # over a sample zone.
-        alerts = without_samples(
-            HazardAlert.objects.all(), request, 'hazard_zone__is_sample',
-        )
+        zones = HazardZone.objects.all()
+        alerts = HazardAlert.objects.all()
 
         date_from = request.query_params.get('date_from')
         if date_from:
@@ -231,7 +223,6 @@ class ResponseStatusReportView(APIView):
 
         return Response({
             'report_type':          'Response Status Report',
-            'includes_samples':     include_samples(request),
             'generated_by':         request.user.full_name,
             'generated_at':         timezone.now(),
             'active_hazards':       active_count,

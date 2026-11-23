@@ -199,7 +199,7 @@
 .pm-mode button.is-active { background: var(--pm-navy); color: var(--pm-white); }
 .pm-mode button:focus-visible { outline: 3px solid #7aa7ff; outline-offset: 2px; }
 
-/* ---------- Status pills (loading, sample data, errors) ---------- */
+/* ---------- Status pills (loading, notices, errors) ---------- */
 .pm-status {
   position: absolute;
   top: 20px;
@@ -321,15 +321,6 @@
   font-size: .9rem;
 }
 .pm-badge-dot { width: 10px; height: 10px; border-radius: 50%; }
-
-.pm-sample-note {
-  margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: #fdf5de;
-  color: #7a5700;
-  font-size: .88rem;
-}
 
 /* Tabs */
 .pm-tabs {
@@ -466,17 +457,6 @@
 .pm-history-list li + li { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--pm-line); }
 .pm-history-desc { margin: 4px 0; color: var(--pm-body); font-size: .9rem; line-height: 1.45; }
 .pm-history-counts { display: block; color: var(--pm-soft); font-size: .84rem; }
-.pm-history-sample {
-  margin-left: 8px;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: var(--pm-mist);
-  color: var(--pm-soft);
-  font-style: normal;
-  font-size: .72rem;
-  font-weight: 700;
-  vertical-align: middle;
-}
 
 /* Past hazards in the barangay panel: its puroks, then one purok */
 .pm-area-swatch { flex: none; width: 12px; height: 12px; border-radius: 3px; }

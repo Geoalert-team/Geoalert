@@ -3,7 +3,7 @@ import { inSeverityOrder } from './severity';
 
 const base = {
   months: 12, since: '2025-11-01', generated_at: '2026-10-20T08:00:00Z', generated_by: 'Officer',
-  includes_samples: false, hazard_type: { id: 1, name: 'Flood' },
+  hazard_type: { id: 1, name: 'Flood' },
   kpis: {}, monthly: [{ month: '2026-10', zones: 1, alerts: 2, incidents: 3, events: 4 }],
   zones_by_type: [], zones_by_severity: [{ severity: 'Green', count: 2 }, { severity: 'Red', count: 1 }],
   barangays: [{ barangay: 'Tabunok', zones: 14, incidents: 28 }, { barangay: 'Pooc', zones: 0, incidents: 3 }],
@@ -33,6 +33,6 @@ test('inSeverityOrder keeps unknown codes at the end', () => {
 });
 
 test('audit criteria describe the figures being exported, not the controls', () => {
-  expect(analyticsCriteria({ ...base, months: 6, includes_samples: true })).toBe('months=6 hazard_type=Flood samples=included');
+  expect(analyticsCriteria({ ...base, months: 6 })).toBe('months=6 hazard_type=Flood');
   expect(analyticsCriteria({ ...base, hazard_type: null })).toBe('months=12');
 });

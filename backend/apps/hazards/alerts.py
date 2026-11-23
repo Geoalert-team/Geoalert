@@ -444,10 +444,10 @@ def nudge_stale_zones(now=None):
     A zone nobody resolves stays on the public map, alarming people about a
     flood that drained yesterday. The publisher is asked to resolve it or
     bring it up to date; if they no longer have an active account, every
-    officer is asked instead. Sample zones are left alone.
+    officer is asked instead.
     """
     now = now or timezone.now()
-    due = HazardZone.objects.filter(status='Active', is_sample=False, next_nudge_at__lte=now)
+    due = HazardZone.objects.filter(status='Active', next_nudge_at__lte=now)
     if not due.exists():
         return 0
 
@@ -458,7 +458,7 @@ def nudge_stale_zones(now=None):
                 HazardZone.objects
                 .select_for_update(skip_locked=True, of=('self',))
                 .select_related('hazard_type', 'published_by')
-                .filter(status='Active', is_sample=False, next_nudge_at__lte=now)
+                .filter(status='Active', next_nudge_at__lte=now)
                 .order_by('next_nudge_at')
                 .first()
             )

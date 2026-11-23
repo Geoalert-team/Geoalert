@@ -223,7 +223,6 @@ export default function AlertsTab() {
                         </span>
                         <span className="adm-person-sub">
                           {a.issued_by ? `by ${a.issued_by}` : 'issuer not recorded'}
-                          {a.is_sample && ' · sample'}
                         </span>
                       </div>
                     </td>

@@ -10,8 +10,7 @@ import { MEASURES } from '../components/Analytics/measures';
  */
 export function analyticsCriteria(d) {
   return `months=${d.months}`
-    + `${d.hazard_type ? ` hazard_type=${d.hazard_type.name}` : ''}`
-    + `${d.includes_samples ? ' samples=included' : ''}`;
+    + `${d.hazard_type ? ` hazard_type=${d.hazard_type.name}` : ''}`;
 }
 
 /**
@@ -29,7 +28,6 @@ export function analyticsCsv(d) {
     ['Period', `Last ${d.months} months, from ${d.since}`],
     ['Hazard type', d.hazard_type?.name || 'All types'],
   ];
-  if (d.includes_samples) meta.push(['Note', 'Includes sample data. Not an official record.']);
   const table = (title, rows, key, head, label = (r) => r[key] || 'Unspecified') => ({
     title, header: [head, 'Count'], rows: (rows || []).map((r) => [label(r), r.count]),
   });

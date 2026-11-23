@@ -14,7 +14,7 @@ jest.mock('../../utils/riskOutlook', () => ({ buildRiskOutlook: jest.fn(() => nu
 beforeAll(() => { global.IS_REACT_ACT_ENVIRONMENT = true; });
 beforeEach(() => { jest.clearAllMocks(); });
 
-const records = [{ id: 1, is_sample: true }, { id: 2, is_sample: false }];
+const records = [{ id: 1 }, { id: 2 }];
 
 const FUTURE = { v7_startTransition: true, v7_relativeSplatPath: true };
 
@@ -33,7 +33,7 @@ const row = (i) => ({
 });
 const forecast = (n = 2) => ({
   results: Array.from({ length: n }, (_, i) => row(i)), years: [2023, 2024, 2025, 2026],
-  basis: { records: 10, sample_records: 0 }, hazard_type: 'Fire',
+  basis: { records: 10 }, hazard_type: 'Fire',
   profile: [{ month: 11, month_name: 'November', level: 'Moderate', probability: 0.4, years_hit: 1, years_considered: 4 }],
 });
 const modelled = (extra = {}) => ({
@@ -43,22 +43,22 @@ const modelled = (extra = {}) => ({
 const NOT_TRAINED = 'The fire model has not been trained yet.';
 const untrained = (n = 2) => ({
   ...forecast(n), unavailable_hazards: ['Fire'], profile_method: 'unavailable',
-  basis: { records: 10, sample_records: 0, method: "Fire's prediction model is being rebuilt, so no chances are shown until it is trained. Flood and landslide predictions are being rebuilt too." },
+  basis: { records: 10, method: "Fire's prediction model is being rebuilt, so no chances are shown until it is trained. Flood and landslide predictions are being rebuilt too." },
   results: Array.from({ length: n }, (_, i) => ({
     ...row(i), method: 'unavailable', probability: null, expected_events: null, level: 'None', reason: NOT_TRAINED,
   })),
 });
 
-test('outlook reads one hazard type and leaves sample records out', async () => {
+test('outlook reads one hazard type', async () => {
   historyApi.list.mockResolvedValue(records);
-  await render(<SeasonalOutlook hazardTypeId="2" hazardName="Flood" includeSamples={false} />);
+  await render(<SeasonalOutlook hazardTypeId="2" hazardName="Flood" />);
   expect(historyApi.list).toHaveBeenCalledWith({ hazard_type: '2' });
-  expect(buildRiskOutlook).toHaveBeenLastCalledWith([{ id: 2, is_sample: false }]);
+  expect(buildRiskOutlook).toHaveBeenLastCalledWith(records);
 });
 
-test('outlook keeps sample records when asked, and names the scope', async () => {
+test('outlook reads every type and names the scope', async () => {
   historyApi.list.mockResolvedValue(records);
-  const el = await render(<SeasonalOutlook hazardTypeId="" hazardName={null} includeSamples />);
+  const el = await render(<SeasonalOutlook hazardTypeId="" hazardName={null} />);
   expect(historyApi.list).toHaveBeenCalledWith({});
   expect(buildRiskOutlook).toHaveBeenLastCalledWith(records);
   expect(el.textContent).toContain('What past years brought, counted from the archive. Not a prediction: the likelihood below comes from the models.');
@@ -66,15 +66,15 @@ test('outlook keeps sample records when asked, and names the scope', async () =>
 
 test('outlook says so when it cannot load', async () => {
   historyApi.list.mockRejectedValue(new Error('down'));
-  const el = await render(<SeasonalOutlook hazardTypeId="" hazardName={null} includeSamples={false} />);
+  const el = await render(<SeasonalOutlook hazardTypeId="" hazardName={null} />);
   expect(el.textContent).toContain('The seasonal outlook could not be loaded right now.');
 });
 
-test('likelihood asks for fire only and can leave samples out', async () => {
-  historyApi.forecast.mockResolvedValue({ results: [], years: [], basis: { records: 0, sample_records: 0 } });
-  const el = await render(<BarangayLikelihood excludeSamples />);
+test('likelihood asks for fire only', async () => {
+  historyApi.forecast.mockResolvedValue({ results: [], years: [], basis: { records: 0 } });
+  const el = await render(<BarangayLikelihood />);
   expect(historyApi.forecast).toHaveBeenCalledWith(expect.objectContaining({
-    hazard_type_name: 'Fire', exclude_samples: 'true',
+    hazard_type_name: 'Fire',
   }));
   // The period picker only: what kind of period, and the month
   expect([...el.querySelectorAll('select')].map((s) => s.closest('label').querySelector('span').textContent))
@@ -184,9 +184,9 @@ test('the year chart says what its bars are', async () => {
   const el = await render(<BarangayLikelihood hazard="Fire" />);
   expect(el.querySelector('.fc-profile').textContent).toContain("average barangay's chance");
   historyApi.forecast.mockResolvedValue({ ...forecast(), profile_method: 'unavailable' });
-  await el.rerender(<BarangayLikelihood hazard="Fire" excludeSamples />);
-  expect(el.querySelector('.fc-profile').textContent).toContain('The model gives no chart for this period.');
-  expect(el.querySelector('.fc-profile').textContent).not.toContain('share of past years');
+  const none = await render(<BarangayLikelihood hazard="Fire" />);
+  expect(none.querySelector('.fc-profile').textContent).toContain('The model gives no chart for this period.');
+  expect(none.querySelector('.fc-profile').textContent).not.toContain('share of past years');
 });
 
 test('a month on the chart is described by its chance, never a count of years', async () => {
@@ -232,17 +232,17 @@ test('no rain attribution or combined table any more', async () => {
 
 test('the outlook shows loading, not the last type\'s figures, while a new type loads', async () => {
   historyApi.list.mockResolvedValueOnce(records);
-  const el = await render(<SeasonalOutlook hazardTypeId="1" hazardName="Flood" includeSamples={false} />);
+  const el = await render(<SeasonalOutlook hazardTypeId="1" hazardName="Flood" />);
   expect(el.textContent).toContain('No archived events match');
   historyApi.list.mockReturnValueOnce(new Promise(() => {}));
-  await el.rerender(<SeasonalOutlook hazardTypeId="2" hazardName="Fire" includeSamples={false} />);
+  await el.rerender(<SeasonalOutlook hazardTypeId="2" hazardName="Fire" />);
   expect(el.textContent).toContain('Loading the outlook…');
   expect(el.textContent).not.toContain('No archived events match');
 });
 
 test('the outlook is titled as history, not prediction', async () => {
   historyApi.list.mockResolvedValue(records);
-  const el = await render(<SeasonalOutlook hazardTypeId="" hazardName={null} includeSamples={false} />);
+  const el = await render(<SeasonalOutlook hazardTypeId="" hazardName={null} />);
   expect(el.querySelector('h2').textContent).toBe('Seasons on record');
   expect(el.querySelector('.db-card-sub').textContent)
     .toBe('What past years brought, counted from the archive. Not a prediction: the likelihood below comes from the models.');

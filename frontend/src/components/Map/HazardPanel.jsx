@@ -150,7 +150,6 @@ function PastIncidents({ item }) {
                 <div>
                   <strong>
                     {formatDate(r.occurred_at)}
-                    {r.is_sample && <em className="pm-history-sample">Sample</em>}
                   </strong>
                   <span>{!type && rtype ? `${rtype}, ` : ''}{rsev.label}</span>
                   {r.description && <p className="pm-history-desc">{r.description}</p>}
@@ -299,9 +298,6 @@ export default function HazardPanel({
 
   // Only DRRMO/Admin can close out a hazard, and only one that's still live;
   // BFP personnel can close a fire, by resolving it and nothing else.
-  // Sample hazards are resolvable on purpose: they are real rows in the
-  // database, and walking a seeded hazard through to a historical record is
-  // how the resolve flow gets demonstrated without waiting for a real one.
   const isFire = (item?.type || '').toLowerCase() === 'fire';
   const canResolve = (canPublish || (canCloseFires && isFire)) && item && (item.status || 'Active') === 'Active';
 
@@ -330,10 +326,6 @@ export default function HazardPanel({
             <span className="pm-badge-dot" style={{ background: sev.color }} />
             {sev.label}
           </span>
-
-          {item.sample && (
-            <p className="pm-sample-note">Sample data generated for testing. This is not a real hazard.</p>
-          )}
 
           {/* ---------- Tabs ---------- */}
           <div className="pm-tabs" role="tablist" aria-label="Hazard information">

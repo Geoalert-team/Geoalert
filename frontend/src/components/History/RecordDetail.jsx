@@ -112,7 +112,6 @@ export default function RecordDetail({ recordId, onClose }) {
         <div className="db-modal-head">
           <h2 id="db-record-title">
             {record ? `${type} · ${b.name || 'Unspecified barangay'}` : 'Historical record'}
-            {record?.is_sample && <span className="db-badge" style={{ marginLeft: 8 }}>Sample</span>}
           </h2>
           <button ref={closeRef} type="button" className="db-modal-close" onClick={onClose} aria-label="Close">×</button>
         </div>

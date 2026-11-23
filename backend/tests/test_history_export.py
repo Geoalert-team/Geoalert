@@ -121,7 +121,6 @@ class HistoryExportViewTests(FireSetupMixin, TestCase):
         self.old_fire = make(self.fire, 30, location_text='OLD FIRE')
         self.new_fire = make(self.fire, 1, location_text='NEW FIRE')
         self.flood_rec = make(self.flood, 10, location_text='THE FLOOD')
-        make(self.fire, 2, location_text='SAMPLE FIRE', is_sample=True)
 
     def get(self, user=None, **params):
         request = APIRequestFactory().get('/api/history/export/', params)
@@ -133,7 +132,7 @@ class HistoryExportViewTests(FireSetupMixin, TestCase):
         ws = load_workbook(io.BytesIO(response.content)).active
         return [r[5] for r in ws.iter_rows(min_row=4, values_only=True)]
 
-    def test_newest_first_with_no_sample_records(self):
+    def test_newest_first(self):
         response = self.get(self.officer)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.locations(response), ['NEW FIRE', 'THE FLOOD', 'OLD FIRE'])

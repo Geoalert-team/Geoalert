@@ -10,8 +10,7 @@ export const reportsApi = {
 
   // F7 analytics dashboard: { kpis, monthly, zones_by_type, zones_by_severity,
   // barangays, hazard_type, ... } for the last `months` months (3, 6, 12 or
-  // 24). Optional hazard_type (id) counts one type only; include_samples=true
-  // counts seeded test rows.
+  // 24). Optional hazard_type (id) counts one type only.
   analytics: (params) =>
     client.get('/api/reports/analytics/', { params }).then((r) => r.data),
 

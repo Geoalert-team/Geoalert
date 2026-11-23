@@ -4,7 +4,7 @@ from datetime import date, datetime, timezone
 from django.test import SimpleTestCase
 
 from apps.history.forecast import (
-    drop_samples, level_for, likelihood, period_window, seasonal_forecast, year_weights,
+    level_for, likelihood, period_window, seasonal_forecast, year_weights,
     years_for_month, years_for_period,
 )
 
@@ -92,16 +92,6 @@ class ForecastTests(SimpleTestCase):
     def test_short_history_is_flagged(self):
         out = seasonal_forecast([ev(2025, 3), ev(2025, 11)], 11, NOW)
         self.assertTrue(out['limited'])
-
-
-class DropSamplesTests(SimpleTestCase):
-    events = [{'barangay': 'A', 'is_sample': True}, {'barangay': 'B', 'is_sample': False}]
-
-    def test_keeps_everything_unless_asked(self):
-        self.assertEqual(drop_samples(self.events, False), self.events)
-
-    def test_drops_sample_rows_when_asked(self):
-        self.assertEqual(drop_samples(self.events, True), [{'barangay': 'B', 'is_sample': False}])
 
 
 class PeriodWindowTests(SimpleTestCase):

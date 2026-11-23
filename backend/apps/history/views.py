@@ -13,7 +13,6 @@ from apps.history.models import HistoricalRecord
 from apps.history.serializers import STAFF_ONLY_FIELDS, HistoricalRecordDetailSerializer, HistoricalRecordSerializer
 from utils.audit import log_event
 from utils.permissions import IsBFPPersonnel, IsDRRMOOfficer, is_bfp
-from utils.sampling import TRUTHY
 
 logger = logging.getLogger(__name__)
 
@@ -242,7 +241,7 @@ def _forecast_events():
 
     records = HistoricalRecord.objects.values(
         'barangay_id', 'barangay__name', 'hazard_type__name',
-        'occurred_at', 'severity_level', 'is_sample',
+        'occurred_at', 'severity_level',
     )
     tz = timezone.get_current_timezone()
     return [
@@ -252,7 +251,6 @@ def _forecast_events():
             'hazard': r['hazard_type__name'],
             'when': as_local(r['occurred_at'], tz),
             'severity': r['severity_level'],
-            'is_sample': r['is_sample'],
         }
         for r in records
     ]
@@ -296,7 +294,7 @@ def parse_hazards(params):
     return list(FORECAST_HAZARDS)
 
 
-def forecast_result(*, month, day, year, barangay, years, exclude_samples, now) -> dict:
+def forecast_result(*, month, day, year, barangay, years, now) -> dict:
     """
     The fire forecast for a period, as GET /api/history/forecast/ serves it
     (HistoricalForecastView, which parses the request into these); `now` is
@@ -306,17 +304,15 @@ def forecast_result(*, month, day, year, barangay, years, exclude_samples, now) 
     counted figure.
     """
     from apps.history import forecast_rows
-    from apps.history.forecast import drop_samples, empty_profile, seasonal_forecast
+    from apps.history.forecast import empty_profile, seasonal_forecast
 
-    events = drop_samples(_forecast_events(), exclude_samples)
-    fires = [e for e in events if (e['hazard'] or '').lower() == 'fire']
+    fires = [e for e in _forecast_events() if (e['hazard'] or '').lower() == 'fire']
     result = seasonal_forecast(fires, month, now, max_years=years, day=day, year=year)
     result['profile'] = empty_profile()
     result['profile_barangay'] = barangay
     result['hazard_type'] = 'Fire'
     result['basis'] = {
         'records': len(fires),
-        'sample_records': sum(1 for e in fires if e['is_sample']),
         'method': basis_method(),
     }
     result['model_hazards'] = []
@@ -348,7 +344,6 @@ class HistoricalForecastView(APIView):
       ?hazards=Fire          or ?hazard_type_name=Fire; any other name is a 400
       ?barangay=7            the 12-month profile is that barangay's
       ?years=10              how many past years the history reads (1-10)
-      ?exclude_samples=true  leave seeded sample records out
 
     Sent with Cache-Control public, max-age=600.
     """
@@ -395,10 +390,8 @@ class HistoricalForecastView(APIView):
             barangay = int(barangay) if barangay else None
         except ValueError:
             return Response({'error': 'barangay must be an id.'}, status=400)
-        exclude_samples = (request.query_params.get('exclude_samples') or '').strip().lower() in TRUTHY
-
         return _public(Response(forecast_result(month=month, day=day, year=year, barangay=barangay, years=years,
-                                                exclude_samples=exclude_samples, now=now)))
+                                                now=now)))
 
 
 def fire_accuracy_entry() -> dict:
@@ -463,7 +456,7 @@ class HistoryExportView(APIView):
             for name in types:
                 match |= Q(hazard_type__name__iexact=name)
             records = records.filter(match)
-        records = records.filter(is_sample=False).prefetch_related('puroks').order_by('-occurred_at', 'id')
+        records = records.prefetch_related('puroks').order_by('-occurred_at', 'id')
 
         rows = [log_row(r) for r in records]
         content_type, label = self.FILES[kind]

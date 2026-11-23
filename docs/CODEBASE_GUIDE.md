@@ -202,7 +202,6 @@ map's "Likely by month" view in [PublicMap.jsx](../frontend/src/pages/PublicMap.
 - [sessions.py](../backend/utils/sessions.py), [session_limits.py](../backend/utils/session_limits.py): sign-in sessions and their time limits.
 - [map_version.py](../backend/utils/map_version.py): lets the map skip downloading data that hasn't changed.
 - [db_backend/](../backend/utils/db_backend/): the database connection, retried once if it fails.
-- [sampling.py](../backend/utils/sampling.py): keeps sample data out of reports.
 
 **Frontend:**
 
@@ -221,7 +220,6 @@ map's "Likely by month" view in [PublicMap.jsx](../frontend/src/pages/PublicMap.
 | `release_pending_alerts` | The timed alert jobs (held Extreme alerts, reminders) |
 | `build_hazard_index` | Builds the susceptibility maps for the public map |
 | `log_hazard_predictions` | The daily prediction log (writes nothing until the fire purok log is built) |
-| `seed_fake_hazards` | Adds or removes sample hazards for demos |
 
 ## Tests
 

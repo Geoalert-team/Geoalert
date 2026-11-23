@@ -71,12 +71,6 @@ class FireDecideViewTests(FireSetupMixin, TestCase):
         waiting.refresh_from_db()
         self.assertEqual((waiting.pending_at, waiting.pending_by_id), (asked_at, self.officer.id))
 
-    def test_sample_fires_are_neither_offered_nor_attachable(self):
-        sample = self.zone(self.near, is_sample=True)
-        report = self.report(self.near)
-        self.assertEqual(self.decide(report).data['nearby'], [])
-        self.assertEqual(self.decide(report, {'action': 'attach', 'zone': str(sample.id)}).status_code, 409)
-
     # the decision as the spec lists it
 
     def test_approve_uses_the_history_level_and_ignores_a_sent_one(self):

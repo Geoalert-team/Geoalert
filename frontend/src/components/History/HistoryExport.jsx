@@ -5,12 +5,11 @@ import { datedFilename, downloadBlob } from '../../utils/csv';
 /**
  * Download the history in the BFP fire log's columns A-W, as Excel or CSV,
  * newest first. DRRMO staff, and BFP for fires; the server builds the file (backend
- * apps/history/export.py), leaves sample records out and logs the download.
+ * apps/history/export.py) and logs the download.
  *
  *   hazardTypes   [{ id, name }], one checkbox each
  *   initialTypes  names ticked when it opens: the page's tab, or every type
  *   filters       the page's barangay, purok and date params, applied as-is
- *   hasSamples    whether the page shows sample records, which stay out
  *
  * Styled with db- classes from Dashboard.css, like RecordDetail.
  */
@@ -26,7 +25,7 @@ export function exportFilename(names, all, file, when = new Date()) {
   return datedFilename(['history', ...words.filter(Boolean)].join('-'), file, when);
 }
 
-export default function HistoryExport({ hazardTypes, initialTypes, filters, hasSamples = false, onClose }) {
+export default function HistoryExport({ hazardTypes, initialTypes, filters, onClose }) {
   const [picked, setPicked] = useState(() => new Set(initialTypes));
   const [file, setFile] = useState('xlsx');
   const [busy, setBusy] = useState(false);
@@ -80,7 +79,6 @@ export default function HistoryExport({ hazardTypes, initialTypes, filters, hasS
         <p className="db-hint">
           One row per record, newest first, in the BFP fire log&apos;s columns A to W. The Barangay, Purok
           and date filters on the page apply.
-          {hasSamples && ' Sample records are left out.'}
         </p>
 
         <fieldset className="db-fieldset">

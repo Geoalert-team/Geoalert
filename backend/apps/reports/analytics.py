@@ -25,7 +25,6 @@ from apps.notifications.models import Notification
 from apps.reports.models import IncidentReport
 from utils.audit import log_event
 from utils.permissions import IsDRRMOOfficer
-from utils.sampling import include_samples, without_samples
 
 WINDOWS = (3, 6, 12, 24)
 DEFAULT_WINDOW = 12
@@ -92,7 +91,6 @@ class AnalyticsView(APIView):
     hazard_type: a hazard type id; every figure then counts that type only.
                  Anything else counts all types, and the response's
                  hazard_type is null so the screen labels itself correctly.
-    include_samples=true counts seeded test rows too.
     """
     permission_classes = [IsAuthenticated, IsDRRMOOfficer]
 
@@ -108,14 +106,13 @@ class AnalyticsView(APIView):
         starts = month_starts(timezone.localdate(), months)
         since = timezone.make_aware(datetime.combine(starts[0], time.min))
 
-        zones_all = without_samples(HazardZone.objects.all(), request)
+        zones_all = HazardZone.objects.all()
         zones = zones_all.filter(activated_at__gte=since)
         published = zones.exclude(status='Retracted')
-        alerts = without_samples(HazardAlert.objects.filter(created_at__gte=since), request,
-                                 'hazard_zone__is_sample')
+        alerts = HazardAlert.objects.filter(created_at__gte=since)
         notices = Notification.objects.filter(hazard_alert__in=alerts)
         incidents = IncidentReport.objects.filter(submitted_at__gte=since)
-        events = without_samples(HistoricalRecord.objects.filter(occurred_at__gte=since), request)
+        events = HistoricalRecord.objects.filter(occurred_at__gte=since)
 
         type_id = hazard_type_param(request.query_params.get('hazard_type'))
         htype = HazardType.objects.filter(pk=type_id).first() if type_id else None
@@ -159,7 +156,6 @@ class AnalyticsView(APIView):
             'since': starts[0].isoformat(),
             'generated_at': now,
             'generated_by': request.user.full_name,
-            'includes_samples': include_samples(request),
             'hazard_type': {'id': htype.id, 'name': htype.name} if htype else None,
             'kpis': {
                 'active_zones_now': zones_all.filter(status='Active').count(),
@@ -192,6 +188,5 @@ class AnalyticsView(APIView):
         }
 
         log_event(request, 'GENERATE_REPORT', 'hazard_zone', '',
-                  f'Analytics — last {months} month(s){f", {htype.name}" if htype else ""}.'
-                  f'{" Samples included." if data["includes_samples"] else ""}')
+                  f'Analytics — last {months} month(s){f", {htype.name}" if htype else ""}.')
         return Response(data)

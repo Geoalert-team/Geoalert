@@ -44,10 +44,8 @@ def _noun(report):
 
 
 def _live_near(report, pins):
-    # Sample hazards (seed_fake_hazards) are never offered: a real report
-    # joined to one would vanish with it
     zones = (HazardZone.objects
-             .filter(status__in=LIVE, hazard_type=report.hazard_type, is_sample=False)
+             .filter(status__in=LIVE, hazard_type=report.hazard_type)
              .prefetch_related('incidentreport_set__puroks'))
     near = []
     for zone in zones:
@@ -177,8 +175,7 @@ class IncidentReportDecideView(APIView):
 
     def _attach(self, request, report, note):
         zone = (HazardZone.objects.select_for_update()
-                .filter(pk=request.data.get('zone'), status__in=LIVE, hazard_type=report.hazard_type,
-                        is_sample=False).first())
+                .filter(pk=request.data.get('zone'), status__in=LIVE, hazard_type=report.hazard_type).first())
         if zone is None:
             return Response({'error': f'That {_noun(report)} is no longer active.'}, status=status.HTTP_409_CONFLICT)
         pins = report_pins(report)
