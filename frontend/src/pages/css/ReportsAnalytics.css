@@ -1,0 +1,438 @@
+/* F7 Reports & Analytics. Builds on Dashboard.css (db-* and --db-* tokens).
+   Prefixes: ra- (this page), an- and ba- (the response components it reuses:
+   StatTile, Meter, ResponseBand, ExportMenu, BarangayActivity, and the
+   seasonal outlook's summary line). */
+
+.ra-page {
+  background:
+    radial-gradient(ellipse at 90% 0%, rgba(219, 234, 254, .55), transparent 34rem),
+    #f3f6fa;
+}
+.ra-page .db-wrap { max-width: 1200px; padding-top: 34px; }
+
+/* ---------- Header and the view switch ---------- */
+.ra-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.ra-head h1 {
+  margin: 0;
+  color: var(--db-heading);
+  font-size: clamp(1.8rem, 3vw, 2.35rem);
+  letter-spacing: -.035em;
+}
+.ra-head p { margin: 6px 0 0; color: var(--db-soft); font-size: .98rem; }
+
+.ra-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--db-line);
+  border-radius: 12px;
+  background: var(--db-white);
+  box-shadow: 0 3px 10px rgba(28, 46, 74, .04);
+}
+.ra-switch-btn {
+  min-width: 128px;
+  padding: 9px 18px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  font: inherit;
+  font-size: .93rem;
+  font-weight: 700;
+  color: var(--db-soft);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.ra-switch-btn:hover { background: #f3f6fa; color: var(--db-heading); }
+.ra-switch-btn.is-active { background: var(--db-navy); color: #fff; }
+.ra-switch-btn:focus-visible,
+.ra-chip:focus-visible,
+.ra-seg button:focus-visible { outline: 3px solid rgba(30, 136, 229, .45); outline-offset: 2px; }
+
+/* ---------- Filter bar ---------- */
+.ra-filters {
+  position: sticky;
+  /* Just under the sticky navbar (PublicNavbar.css, about 72 px tall) */
+  top: 80px;
+  z-index: 5;
+  margin-bottom: 22px;
+  padding: 14px 16px 12px;
+  border: 1px solid var(--db-line);
+  border-radius: var(--db-radius);
+  background: rgba(255, 255, 255, .97);
+  box-shadow: 0 6px 18px rgba(28, 46, 74, .06);
+}
+.ra-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 18px;
+}
+.ra-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.ra-chip {
+  padding: 7px 13px;
+  border: 1px solid var(--db-line);
+  border-radius: 999px;
+  background: var(--db-white);
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 600;
+  color: var(--db-body);
+  cursor: pointer;
+}
+.ra-chip:hover { border-color: #b9c4d4; }
+.ra-chip.is-active { border-color: var(--db-navy); background: var(--db-navy); color: #fff; }
+
+.ra-selects, .ra-custom { display: flex; flex-wrap: wrap; gap: 10px; }
+.ra-selects .db-field, .ra-custom .db-field { min-width: 170px; margin: 0; }
+.ra-custom { margin-top: 10px; }
+.ra-filter-error { margin: 8px 0 0; }
+
+.ra-showing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--db-line);
+}
+.ra-showing p { margin: 0; font-size: .88rem; color: var(--db-soft); }
+.ra-showing strong { color: var(--db-heading); }
+
+/* ---------- Shared bits ---------- */
+.ra-num,
+.db-table th.ra-num,
+.db-table td.ra-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ra-table-scroll { overflow-x: auto; }
+.ra-sr {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.ra-figures { margin-top: 12px; }
+.ra-figures summary { cursor: pointer; font-size: .84rem; font-weight: 600; color: var(--db-soft); }
+.ra-figures table { margin-top: 8px; }
+.ra-state {
+  padding: 28px 20px;
+  border: 1px dashed var(--db-line);
+  border-radius: var(--db-radius);
+  background: rgba(255, 255, 255, .7);
+  text-align: center;
+  color: var(--db-soft);
+}
+.ra-empty { border: 1px dashed var(--db-line); border-radius: var(--db-radius); background: rgba(255, 255, 255, .7); }
+.ra-refreshing { opacity: .55; transition: opacity .15s; }
+.ra-print-only { display: none; }
+
+/* ---------- Reports & Analytics sections ---------- */
+.ra-panel { padding: 24px; border-radius: var(--db-radius); }
+.ra-doc .ra-doc-head { margin-bottom: 18px; }
+.ra-block { margin-top: 26px; }
+.ra-block h3 { margin: 0 0 4px; font-size: 1.1rem; color: var(--db-heading); }
+.ra-block h4 { margin: 14px 0 6px; font-size: .95rem; color: var(--db-heading); }
+.ra-block-sub { margin: 0 0 12px; font-size: .86rem; color: var(--db-soft); }
+.ra-two { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 12px; }
+.ra-two > * { min-width: 0; }
+.ra-complete { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ra-complete li {
+  display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(80px, 1fr) auto; align-items: center; gap: 12px;
+  font-size: .9rem; color: var(--db-body);
+}
+.ra-bar { display: block; height: 8px; overflow: hidden; border-radius: 999px; background: var(--db-mist); }
+.ra-bar > span { display: block; height: 100%; border-radius: 999px; background: var(--db-navy); }
+.ra-pending { color: var(--db-high); font-weight: 700; }
+.ra-filter-actions { display: flex; gap: 8px; }
+.ra-doc-figures dd.ra-kpi-note { margin-top: 4px; font-family: inherit; font-size: .78rem; font-weight: 400; color: var(--db-soft); }
+
+/* Prediction models: the three model cards, the explanation, the retraining flow */
+.ra-pm-models { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.ra-pm-card { padding: 16px 18px; border: 1px solid var(--db-line); border-radius: 12px; background: var(--db-white); }
+.ra-pm-card h4 { margin: 0 0 6px; font-size: 1.05rem; color: var(--db-heading); }
+.ra-pm-tag {
+  display: inline-block; padding: 3px 10px; border-radius: var(--db-pill);
+  font-size: .76rem; font-weight: 700; background: var(--db-mist); color: var(--db-body);
+}
+.ra-pm-tag.is-own { background: var(--db-low-tint); color: #17703d; }
+.ra-pm-tag.is-outside { background: var(--db-medium-tint); color: #8a6200; }
+.ra-pm-card dl { display: grid; gap: 4px; margin: 12px 0 0; }
+.ra-pm-card dt { margin-top: 6px; font-size: .76rem; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--db-soft); }
+.ra-pm-card dd { margin: 0; font-size: .9rem; line-height: 1.5; color: var(--db-body); }
+.ra-pm-card dd.ra-pm-live { font-weight: 700; color: var(--db-heading); }
+.ra-pm-text > p, .ra-pm-text > ul, .ra-pm-text > .ra-pm-steps { max-width: 80ch; }
+.ra-pm-text p, .ra-pm-text li { font-size: .93rem; line-height: 1.6; color: var(--db-body); }
+.ra-pm-text p { margin: 0 0 10px; }
+.ra-pm-text ul, .ra-pm-steps { margin: 0 0 12px; padding-left: 1.3rem; }
+.ra-pm-text li + li { margin-top: 6px; }
+.ra-pm-text strong { color: var(--db-heading); }
+.ra-pm-progress {
+  padding: 10px 14px; border-left: 4px solid var(--db-navy); border-radius: 0 10px 10px 0;
+  background: var(--db-mist); font-weight: 700;
+}
+.ra-pm-text .ra-pm-flow { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 0 0 14px; padding: 0; list-style: none; counter-reset: ra-pm-flow; }
+.ra-pm-text .ra-pm-flow li {
+  margin: 0; padding: 12px 14px; border: 1px solid var(--db-line); border-radius: 12px; background: var(--db-white);
+  font-size: .86rem; line-height: 1.45; counter-increment: ra-pm-flow;
+}
+.ra-pm-flow li::before {
+  content: counter(ra-pm-flow); display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 6px;
+  border-radius: 50%; background: var(--db-navy); color: #fff; font-size: .75rem; font-weight: 700;
+}
+.ra-pm-flow li strong { display: inline; }
+.ra-pm-flow li strong::after { content: ''; display: block; margin-bottom: 4px; }
+
+@media (min-width: 960px) {
+  .ra-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ra-pm-models { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ra-pm-text .ra-pm-flow { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media print {
+  .ra-pm-card, .ra-pm-flow li { break-inside: avoid; }
+  .ra-pm-tag, .ra-pm-flow li::before { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}
+@media (max-width: 760px) {
+  .ra-panel { padding: 16px; }
+  .ra-complete li { grid-template-columns: minmax(0, 1fr) auto; }
+  .ra-complete li .ra-bar { grid-column: 1 / -1; grid-row: 2; }
+}
+@media print {
+  .ra-panel { padding: 0; }
+  .ra-bar > span { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}
+
+/* ---------- Reports view ---------- */
+
+.ra-doc-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--db-navy);
+}
+.ra-doc-office {
+  margin: 0;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--db-soft);
+}
+.ra-doc-head h2 { margin: 4px 0 6px; font-size: 1.5rem; color: var(--db-heading); }
+.ra-doc-criteria { margin: 0; font-weight: 700; color: var(--db-body); }
+.ra-doc-meta { margin: 4px 0 0; font-size: .86rem; color: var(--db-soft); }
+
+.ra-doc-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+.ra-doc-figures > div { padding: 14px 16px; border: 1px solid var(--db-line); border-radius: 12px; }
+.ra-doc-figures dt { font-size: .82rem; color: var(--db-soft); }
+.ra-doc-figures dd {
+  margin: 4px 0 0;
+  font-family: var(--db-font-head);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--db-heading);
+}
+.ra-doc-figures .is-missing dd:not(.ra-kpi-note) { font-family: inherit; font-size: 1rem; font-weight: 600; color: var(--db-soft); }
+.ra-doc-foot {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--db-line);
+  font-size: .8rem;
+  color: var(--db-soft);
+}
+
+/* ---------- Trend Analysis ---------- */
+
+.ra-band { margin-bottom: 34px; }
+.ra-band-head { margin-bottom: 14px; }
+.ra-band-head h2 {
+  position: relative;
+  margin: 0;
+  padding-left: 13px;
+  font-size: 1.3rem;
+  letter-spacing: -.015em;
+  color: var(--db-heading);
+}
+.ra-band-head h2::before {
+  position: absolute;
+  inset: 3px auto 3px 0;
+  width: 4px;
+  border-radius: 4px;
+  background: #3f6c9f;
+  content: '';
+}
+.ra-band-head p { margin: 4px 0 0 13px; font-size: .9rem; color: var(--db-soft); }
+
+
+.ra-chart {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--db-line);
+  border-radius: var(--db-radius);
+  background: var(--db-white);
+  box-shadow: 0 6px 18px rgba(28, 46, 74, .04);
+}
+.ra-chart + .ra-chart { margin-top: 0; }
+.ra-chart h3 { margin: 0; font-size: 1.05rem; color: var(--db-heading); }
+.ra-chart > p, .ra-chart-head p { margin: 4px 0 12px; font-size: .86rem; color: var(--db-soft); }
+.ra-chart-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.ra-chart-note { margin: -4px 0 10px; font-size: .8rem; color: var(--db-soft); }
+.ra-chart .ra-table-scroll { margin-top: 14px; }
+
+.ra-seg {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--db-line);
+  border-radius: 10px;
+  background: #f4f7fb;
+}
+.ra-seg button {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--db-body);
+  cursor: pointer;
+}
+.ra-seg button.is-active { background: var(--db-navy); color: #fff; }
+
+.ra-coverage, .ra-thin {
+  margin: 0;
+  padding: 10px 14px;
+  border-left: 3px solid #3f6c9f;
+  border-radius: 0 10px 10px 0;
+  background: rgba(255, 255, 255, .75);
+  font-size: .86rem;
+  color: var(--db-body);
+}
+.ra-thin { margin-bottom: 14px; }
+
+.ra-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+.ra-tiles > * { min-width: 0; }
+
+
+@media (min-width: 960px) {
+}
+
+/* ---------- The response components (StatTile, Meter, ResponseBand, ExportMenu, BarangayActivity) ---------- */
+.an-band { margin: 0 0 20px; }
+.an-band > h2, .an-band > h3 { margin: 0 0 4px; font-size: 1.05rem; color: var(--db-heading); }
+.an-band .db-card-sub { margin-bottom: 12px; }
+.an-stat { display: flex; flex-direction: column; padding: 16px 18px; border-radius: 14px; }
+.an-stat .db-stat-value { font-size: 1.75rem; letter-spacing: -.02em; }
+.an-stat .db-stat-label { margin-top: 4px; font-size: .84rem; font-weight: 700; color: var(--db-body); text-transform: none; }
+.an-stat-hint { margin-top: 4px; font-size: .78rem; line-height: 1.4; color: var(--db-soft); }
+.an-big { font-family: var(--db-font-head); font-size: 1.8rem; font-weight: 800; line-height: 1.1; color: var(--db-heading); }
+.an-meters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.an-meter { padding: 18px; border: 1px solid var(--db-line); border-radius: 14px; background: var(--db-white); }
+.an-meter-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+.an-meter-label { font-size: .92rem; font-weight: 700; color: var(--db-body); }
+.an-meter-track { height: 9px; margin: 12px 0 8px; overflow: hidden; border-radius: 999px; background: var(--db-mist); }
+.an-meter-fill { height: 100%; border-radius: 999px; background: var(--db-navy); }
+.an-meter small { font-size: .8rem; color: var(--db-soft); }
+.an-medians { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.an-meters > *, .an-medians > * { min-width: 0; }
+.an-outlook-summary { margin: 0 0 12px; line-height: 1.55; color: var(--db-body); }
+
+.an-export { position: relative; }
+.an-export-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid var(--db-line);
+  border-radius: 12px;
+  background: var(--db-white);
+  box-shadow: 0 8px 24px rgba(28, 46, 74, .14);
+}
+.an-export-menu button {
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  font-size: .88rem;
+  text-align: left;
+  color: var(--db-body);
+  cursor: pointer;
+}
+.an-export-menu button:hover, .an-export-menu button:focus-visible { background: var(--db-mist); outline: none; }
+
+.ba-wrap { overflow-x: auto; }
+.ba-table th { white-space: nowrap; }
+.ba-sort { padding: 0; border: 0; background: none; font: inherit; font-weight: 700; color: inherit; cursor: pointer; }
+.ba-sort:hover { color: var(--db-heading); }
+.ba-sort:focus-visible { outline: 2px solid var(--db-navy); outline-offset: 2px; border-radius: 4px; }
+.ba-count { white-space: nowrap; }
+.ba-num { display: inline-block; min-width: 2.5em; text-align: right; font-weight: 700; color: var(--db-heading); }
+.ba-track { display: inline-block; width: 120px; margin-left: 10px; vertical-align: middle; }
+.ba-bar { display: block; height: 6px; border-radius: 3px; background: var(--db-navy); opacity: .7; }
+.ba-table:not(.is-expanded) .ba-more { display: none; }
+.ba-toggle { margin-top: 12px; }
+
+/* ---------- Narrow screens ---------- */
+@media (max-width: 900px) {
+  .ra-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .ra-page .db-wrap { padding: 24px 16px 48px; }
+  .ra-filters { position: static; }
+  .ra-head { align-items: stretch; }
+  .ra-switch { display: flex; width: 100%; }
+  .ra-switch-btn { flex: 1; min-width: 0; }
+  .ra-selects, .ra-selects .db-field { width: 100%; }
+  /* Key figures two across, the comparison on a row of its own */
+  .ra-chart { padding: 16px; }
+  /* Six period steps share the width instead of running off a phone screen */
+  .ra-seg { display: flex; width: 100%; }
+  .ra-seg button { flex: 1; min-width: 0; padding: 6px 2px; }
+  .an-meters, .an-medians { grid-template-columns: minmax(0, 1fr); }
+  .ba-track { width: 56px; margin-left: 6px; }
+}
+
+@media (max-width: 420px) {
+  .ra-tiles { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ra-refreshing, .ra-switch-btn { transition: none; }
+}
+
+/* ---------- Print: only the active view (the other is hidden) ---------- */
+@media print {
+  .ra-page { background: #fff; }
+  .ra-head, .ra-switch, .ra-filters, .ra-seg { display: none !important; }
+  .ra-print-only { display: block; margin: 0 0 12px; font-weight: 700; color: #000; }
+  .ra-refreshing { opacity: 1; }
+  .ra-chart, .ra-doc-figures > div, .an-meter, .an-stat { box-shadow: none; }
+  .ra-chart, .an-band, .an-meter { break-inside: avoid; }
+  .ra-figures > summary { display: none; }
+  .ba-table:not(.is-expanded) .ba-more { display: table-row; }
+  .ba-bar, .an-meter-fill, .ra-switch-btn.is-active { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  /* Chrome lays out the print page after beforeprint, so a chart keeps its
+     screen-width bitmap; scaling the canvas to its box keeps it inside */
+  .ta-body canvas, .ra-doc canvas { max-width: 100% !important; height: auto !important; }
+}

@@ -14,7 +14,9 @@ import WhatToDo from "./pages/WhatToDo";
 import Dashboard from "./pages/Dashboard";
 import HistoricalData from "./pages/HistoricalData";
 import Security from "./pages/Security";
-import ReportingAnalytics from "./pages/ReportingAnalytics";
+import ReportsAnalytics from "./pages/ReportsAnalytics";
+import TrendAnalysis from "./pages/TrendAnalysis";
+import { TRENDS_PATH } from "./pages/paths";
 
 function AppRoutes() {
   const { pathname } = useLocation();
@@ -56,23 +58,34 @@ function AppRoutes() {
           </Gate>
         }
       />
-      {/* F7 is one module, Reporting and Analytics, on one page with a tab
-          each. DRRMO and Admin only, matching the spec's permission check. */}
+      {/* F7 Reports & Analytics: holdings, operations and the report figures,
+          in three sections. DRRMO and Admin only, matching the
+          spec's permission check. */}
       <Route
         path="/app/reports"
         element={
           <Gate roles={["System_Admin", "DRRMO_Officer"]}>
-            <ReportingAnalytics />
+            <ReportsAnalytics />
           </Gate>
         }
       />
 
-      {/* Analytics used to be its own page. Bookmarks, the notification
-          links and the module navigation all still point here, so it keeps
-          working and lands on that tab. */}
+      {/* F7's second module: patterns in the hazard archive over time and
+          place. Same roles as Reports & Analytics. */}
+      <Route
+        path="/app/trends"
+        element={
+          <Gate roles={["System_Admin", "DRRMO_Officer"]}>
+            <TrendAnalysis />
+          </Gate>
+        }
+      />
+
+      {/* Analytics used to be its own page. Bookmarks and older links still
+          point here, so it keeps working and lands on Trend Analysis. */}
       <Route
         path="/app/analytics"
-        element={<Navigate to="/app/reports?tab=analytics" replace />}
+        element={<Navigate to={TRENDS_PATH} replace />}
       />
 
       <Route path="*" element={<Navigate to="/" replace />} />

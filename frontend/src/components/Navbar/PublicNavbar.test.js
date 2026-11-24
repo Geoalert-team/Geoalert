@@ -61,14 +61,14 @@ function accountItems(el) {
 test('DRRMO Officer: the same public links, staff pages in the account menu, no Log in', () => {
   const el = render(staff('DRRMO_Officer'));
   expect(texts(el, '.pn-public-links a')).toEqual(PUBLIC);
-  expect(accountItems(el)).toEqual(['Dashboard', 'History', 'Reports', 'Security']);
+  expect(accountItems(el)).toEqual(['Dashboard', 'History', 'Reports & Analytics', 'Trend Analysis', 'Security']);
   expect(el.querySelector('.pn-acct-links a[href="/app/security"]')).not.toBeNull();
   expect(el.querySelector('.pn-login')).toBeNull();
   expect(el.querySelector('.pn-brand').getAttribute('href')).toBe('/');
 });
 
 test('System Admin gets the same staff pages as an officer', () => {
-  expect(accountItems(render(staff('System_Admin')))).toEqual(['Dashboard', 'History', 'Reports', 'Security']);
+  expect(accountItems(render(staff('System_Admin')))).toEqual(['Dashboard', 'History', 'Reports & Analytics', 'Trend Analysis', 'Security']);
 });
 
 test('Barangay Personnel get Dashboard and Security only', () => {
@@ -96,7 +96,7 @@ test('narrow screen: the bar folds into the menu, the bell stays beside it, and 
   expect(el.querySelector('.pn-menu [data-testid="bell"]')).toBeNull();
   expect(el.querySelector('.pn-acct-btn')).toBeNull(); // nothing more to press inside the folded menu
   expect(el.querySelector('.pn-menu .pn-acct-name').textContent).toBe('Juan Dela Cruz');
-  expect(texts(el, '.pn-menu .pn-acct-links a')).toEqual(['Dashboard', 'History', 'Reports', 'Security']);
+  expect(texts(el, '.pn-menu .pn-acct-links a')).toEqual(['Dashboard', 'History', 'Reports & Analytics', 'Trend Analysis', 'Security']);
 });
 
 test('both bars fold below 1100 px: signed in, the bar needs about 1060 px', () => {

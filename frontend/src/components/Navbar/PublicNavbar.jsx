@@ -29,15 +29,17 @@ const PUBLIC_LINKS = [
 ];
 
 // Barangay Personnel don't get History or Reports, and BFP Personnel get
-// History (their fires) but not Reports (matches the route gates in App.jsx). Analytics is a tab of Reports, not its own entry; the old
-// /app/analytics link still resolves. The icons are the dashboards' own.
+// History (their fires) but not Reports (matches the route gates in App.jsx).
+// Reports & Analytics and Trend Analysis are two modules with an entry each; the old
+// /app/analytics link lands on Trend Analysis. The icons are the dashboards' own.
 const DASHBOARD = { to: "/app/dashboard", label: "Dashboard", icon: "grid" };
 const HISTORY = { to: "/app/history", label: "History", icon: "clock" };
-const REPORTS = { to: "/app/reports", label: "Reports", icon: "list" };
+const REPORTS = { to: "/app/reports", label: "Reports & Analytics", icon: "list" };
+const TRENDS = { to: "/app/trends", label: "Trend Analysis", icon: "trend" };
 const SECURITY = { to: "/app/security", label: "Security", icon: "shield" };
 const STAFF_LINKS = {
-  System_Admin: [DASHBOARD, HISTORY, REPORTS, SECURITY],
-  DRRMO_Officer: [DASHBOARD, HISTORY, REPORTS, SECURITY],
+  System_Admin: [DASHBOARD, HISTORY, REPORTS, TRENDS, SECURITY],
+  DRRMO_Officer: [DASHBOARD, HISTORY, REPORTS, TRENDS, SECURITY],
   Barangay_Personnel: [DASHBOARD, SECURITY],
   BFP_Personnel: [DASHBOARD, HISTORY, SECURITY],
 };

@@ -1,0 +1,53 @@
+/* F7 Trend Analysis. Prefix: ta-; shares the ra- layout of ReportsAnalytics.css and the --db-* tokens. */
+
+/* At a glance */
+.ta-hazards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.ta-hazard { padding: 18px; border: 1px solid var(--db-line); border-radius: var(--db-radius); background: var(--db-white); }
+.ta-hazard header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.ta-hazard h3 { margin: 0; font-size: 1.15rem; color: var(--db-heading); }
+.ta-hazard p { margin: 4px 0; font-size: .9rem; line-height: 1.5; color: var(--db-body); }
+.ta-big { font-family: var(--db-font-head); font-size: 1.45rem !important; font-weight: 800; color: var(--db-heading) !important; }
+.ta-change { font-weight: 700; color: var(--db-body); }
+.ta-verdict {
+  padding: 4px 11px; border-radius: 999px; font-size: .8rem; font-weight: 700; white-space: nowrap;
+  background: var(--db-mist); color: var(--db-body);
+}
+.ta-verdict.is-increasing { background: var(--db-high-tint); color: var(--db-high); }
+.ta-verdict.is-decreasing { background: var(--db-low-tint); color: var(--db-low); }
+.ta-years { display: flex; align-items: flex-end; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; overflow-x: auto; }
+.ta-years li { display: flex; flex-direction: column; align-items: center; min-width: 34px; font-size: .75rem; }
+.ta-year-bar { display: block; width: 18px; border-radius: 4px 4px 0 0; }
+.ta-years b { margin-top: 3px; color: var(--db-heading); }
+.ta-years small { color: var(--db-soft); }
+
+.ta-sub { margin: 4px 0 8px; font-size: 1.05rem; color: var(--db-heading); }
+.ta-stood-out, .ta-peaks { display: grid; gap: 6px; margin: 0 0 14px; padding-left: 20px; color: var(--db-body); font-size: .92rem; }
+.ta-peaks { font-weight: 700; }
+.ta-method { margin-top: 10px; font-size: .84rem; color: var(--db-soft); }
+.ta-method summary { cursor: pointer; font-weight: 600; }
+.ta-method p { margin: 8px 0 0; line-height: 1.55; }
+
+/* Where it happens */
+.ta-places { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.ta-map { position: relative; height: 380px; overflow: hidden; border: 1px solid var(--db-line); border-radius: var(--db-radius); }
+.ta-legend {
+  position: absolute; right: 10px; bottom: 10px; z-index: 500;
+  display: flex; align-items: center; gap: 4px; padding: 6px 8px;
+  border-radius: 8px; background: rgba(255, 255, 255, .92); font-size: .72rem; color: var(--db-body);
+}
+.ta-legend i { display: inline-block; width: 16px; height: 10px; }
+.ta-more { margin-top: 10px; }
+tr.is-picked td { background: #fdf0e3; }
+
+@media (min-width: 960px) {
+  .ta-places { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: start; }
+  /* The map stays in view, below the sticky filter bar, while the table is read */
+  .ta-places .ta-map { position: sticky; top: 240px; }
+}
+
+@media print {
+  .ta-more { display: none !important; }
+  .ta-map { height: 300px; break-inside: avoid; position: static; }
+  .ta-hazard { break-inside: avoid; }
+  .ta-year-bar { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}

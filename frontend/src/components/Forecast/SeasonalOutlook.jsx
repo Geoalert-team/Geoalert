@@ -7,7 +7,7 @@ import { buildRiskOutlook } from '../../utils/riskOutlook';
  * archive of resolved hazards (utils/riskOutlook.js). Moved here from the
  * History page, which is now the archive only.
  *
- * It follows the Analytics hazard filter but not its period: a seasonal
+ * It follows the hazard filter it is given but no period: a seasonal
  * pattern needs every past year, so the sub line says so.
  *
  * Props:

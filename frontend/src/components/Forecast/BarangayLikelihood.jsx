@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { historyApi } from '../../api/historyApi';
 import ForecastPeriodPicker from './ForecastPeriodPicker';
 import {
@@ -23,7 +22,7 @@ import './forecast.css';
  * Props:
  *   compact  dashboard card: top rows only, no month profile
  *   limit    rows shown when compact (default 5)
- *   hazard   the page's hazard filter (Reports › Analytics), '' for all
+ *   hazard   the page's hazard filter, '' for all
  */
 export default function BarangayLikelihood({ compact = false, limit = 5, hazard = '' }) {
   const [period, setPeriod] = useState(defaultPeriod);
@@ -150,9 +149,7 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
       )}
 
       {compact && rows.length > shown.length && (
-        <p className="fc-more">
-          <Link to="/app/reports?tab=analytics">{rows.length - shown.length} more in Reports › Analytics</Link>
-        </p>
+        <p className="fc-more">The top {shown.length} of {rows.length} barangays.</p>
       )}
 
       {!compact && data?.profile && (

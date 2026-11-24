@@ -15,7 +15,8 @@ const CHOICES = [
   { via: 'print', label: 'Print' },
 ];
 
-export default function ExportMenu({ onExport, disabled = false }) {
+// vias: which of the three to offer (a page with no table to download leaves out 'csv')
+export default function ExportMenu({ onExport, disabled = false, vias = ['csv', 'pdf', 'print'] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const buttonRef = useRef(null);
@@ -71,7 +72,7 @@ export default function ExportMenu({ onExport, disabled = false }) {
       </button>
       {shown && (
         <div className="an-export-menu">
-          {CHOICES.map((c) => (
+          {CHOICES.filter((c) => vias.includes(c.via)).map((c) => (
             <button key={c.via} type="button" title={c.title} onClick={() => choose(c.via)}>
               {c.label}
             </button>

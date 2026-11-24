@@ -133,13 +133,12 @@ test('a period with nothing before it never says there is nothing to estimate fr
   expect(el.textContent).toContain('The model learned from this period');
 });
 
-test('the dashboard card sends the rest to Analytics, not History', async () => {
+test('the dashboard card shows its top rows and says how many there are, with no link to a list', async () => {
   historyApi.forecast.mockResolvedValue(forecast(7));
   const el = await render(<BarangayLikelihood compact limit={5} />);
   expect(el.querySelectorAll('tbody tr')).toHaveLength(5);
-  const more = [...el.querySelectorAll('a')].find((a) => a.textContent.includes('2 more'));
-  expect(more.textContent).toBe('2 more in Reports › Analytics');
-  expect(more.getAttribute('href')).toBe('/app/reports?tab=analytics');
+  expect(el.querySelector('.fc-more').textContent).toBe('The top 5 of 7 barangays.');
+  expect(el.querySelectorAll('a')).toHaveLength(0);
   expect(el.textContent).not.toContain('Historical Data');
 });
 

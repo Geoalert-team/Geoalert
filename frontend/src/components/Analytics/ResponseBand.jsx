@@ -11,10 +11,10 @@ import { duration } from './measures';
 
 const num = (n) => (n ?? 0).toLocaleString();
 
-export default function ResponseBand({ kpis: k }) {
+export default function ResponseBand({ kpis: k, heading = 'Response', as: Heading = 'h2' }) {
   return (
     <section className="an-band" aria-labelledby="an-response">
-      <h2 id="an-response">Response</h2>
+      <Heading id="an-response">{heading}</Heading>
       <p className="db-card-sub">
         How quickly alerts were read and reports were reviewed. Medians, so one slow case does not skew them.
       </p>

@@ -149,13 +149,13 @@ There are four staff roles. Residents use the public pages without an account.
 | Backend | the hazard layers list (`HazardLayerListView` in [hazards/views.py](../backend/apps/hazards/views.py), `/api/hazards/layers/`), the susceptibility maps ([susceptibility.py](../backend/apps/hazards/susceptibility.py), built by `manage.py build_hazard_index` into [frontend/public/hazard-index/](../frontend/public/hazard-index/)) |
 | Screens | the layer checkboxes [LayerControl.jsx](../frontend/src/components/Map/LayerControl.jsx), past hazards per purok [PurokHistoryLayer.jsx](../frontend/src/components/Map/PurokHistoryLayer.jsx), reading the susceptibility maps [hazardLevels.js](../frontend/src/components/Map/hazardLevels.js) |
 
-### F7 Reporting and Analytics
+### F7 Reports & Analytics and Trend Analysis
 
 | | Where |
 |---|---|
-| Backend | [reports/views.py](../backend/apps/reports/views.py) (Hazard Summary, Response Status, printing), [reports/analytics.py](../backend/apps/reports/analytics.py) |
-| API | `/api/reports/hazard-summary/`, `/api/reports/response-status/`, `/api/reports/analytics/` |
-| Screens | [ReportingAnalytics.jsx](../frontend/src/pages/ReportingAnalytics.jsx) with its two tabs [Reports.jsx](../frontend/src/pages/Reports.jsx) and [Analytics.jsx](../frontend/src/pages/Analytics.jsx); charts in [components/Charts/](../frontend/src/components/Charts/) and [components/Analytics/](../frontend/src/components/Analytics/); CSV files from [utils/csv.js](../frontend/src/utils/csv.js) |
+| Backend | [reports/summary.py](../backend/apps/reports/summary.py) (Summary), [reports/analytics.py](../backend/apps/reports/analytics.py) (Operations), [reports/trends.py](../backend/apps/reports/trends.py) and [reports/trend_patterns.py](../backend/apps/reports/trend_patterns.py) (Trend Analysis, statistics in [reports/stats.py](../backend/apps/reports/stats.py)), shared filters [reports/filters.py](../backend/apps/reports/filters.py), [reports/views.py](../backend/apps/reports/views.py) (older Hazard Summary and Response Status endpoints, export logging) |
+| API | `/api/reports/summary/`, `/api/reports/analytics/`, `/api/reports/trends/`, `/api/reports/trends/patterns/`, `/api/reports/trends/places/`, `/api/reports/printed/` (and the older `/api/reports/hazard-summary/`, `/api/reports/response-status/`) |
+| Screens | [ReportsAnalytics.jsx](../frontend/src/pages/ReportsAnalytics.jsx) (Summary, Operations, Prediction models; sections in [pages/reportsAnalytics/](../frontend/src/pages/reportsAnalytics/)) and [TrendAnalysis.jsx](../frontend/src/pages/TrendAnalysis.jsx) (sections in [pages/trendAnalysis/](../frontend/src/pages/trendAnalysis/)); charts in [components/Charts/](../frontend/src/components/Charts/) and [components/Analytics/](../frontend/src/components/Analytics/); CSV files from [utils/csv.js](../frontend/src/utils/csv.js) |
 
 ### F8 Administrative Dashboard
 

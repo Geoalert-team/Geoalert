@@ -3,10 +3,13 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Sum
 
 from apps.hazards.models import HazardZone, HazardAlert
 from apps.history.models import HistoricalRecord
+from apps.reports.filters import (
+    FilterError, criteria_text, day_end, day_start, filter_records, parse_report_filters,
+)
 from utils.permissions import IsDRRMOOfficer
 from utils.audit import log_event
 
@@ -28,38 +31,24 @@ class HazardSummaryReportView(APIView):
     severity distribution, and affected barangays.
     DRRMO Officer / System Admin only.
 
-    Filters:
-      ?date_from=2026-01-01&date_to=2026-12-31
-      ?barangay=1
+    Filters (apps.reports.filters, shared with Trend Analysis):
+      ?date_from=2026-01-01&date_to=2026-12-31   calendar days, Manila time
+      ?barangay=1     filed under it or in one of its puroks
       ?hazard_type=1
+    A filter value that can't be used is a 400 with a sentence.
     """
     permission_classes = [IsAuthenticated, IsDRRMOOfficer]
 
     def get(self, request):
-        records = HistoricalRecord.objects.all()
+        try:
+            f = parse_report_filters(request.query_params)
+        except FilterError as exc:
+            return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        records = filter_records(HistoricalRecord.objects.all(), f)
+        criteria = criteria_text(f)
+        total = records.count()
 
-        date_from = request.query_params.get('date_from')
-        if date_from:
-            records = records.filter(occurred_at__gte=date_from)
-
-        date_to = request.query_params.get('date_to')
-        if date_to:
-            records = records.filter(occurred_at__lte=date_to)
-
-        barangay = request.query_params.get('barangay')
-        if barangay:
-            records = records.filter(barangay_id=barangay)
-
-        hazard_type = request.query_params.get('hazard_type')
-        if hazard_type:
-            records = records.filter(hazard_type_id=hazard_type)
-
-        criteria = (
-            f"date_from={date_from or '-'} date_to={date_to or '-'} "
-            f"barangay={barangay or 'all'} hazard_type={hazard_type or 'all'}"
-        )
-
-        if not records.exists():
+        if not total:
             log_event(
                 request, 'GENERATE_REPORT', 'historical_record', '',
                 f'Hazard Summary — no data. {criteria}',
@@ -87,23 +76,21 @@ class HazardSummaryReportView(APIView):
             .order_by('-count')
         )
 
-        total_casualties = sum(
-            r.total_casualties or 0 for r in records
-        )
-        total_displaced = sum(
-            r.total_displaced or 0 for r in records
-        )
+        sums = records.aggregate(casualties=Sum('total_casualties'), displaced=Sum('total_displaced'))
+        total_casualties = sums['casualties'] or 0
+        # Displaced is left blank on the records; null says "not recorded", not "nobody"
+        total_displaced = sums['displaced']
 
         log_event(
             request, 'GENERATE_REPORT', 'historical_record', '',
-            f'Hazard Summary — {records.count()} record(s). {criteria}',
+            f'Hazard Summary — {total} record(s). {criteria}',
         )
 
         return Response({
             'report_type':            'Hazard Summary Report',
             'generated_by':           request.user.full_name,
             'generated_at':           timezone.now(),
-            'total_occurrences':      records.count(),
+            'total_occurrences':      total,
             'breakdown_by_type':      breakdown_by_type,
             'severity_distribution':  severity_distribution,
             'affected_barangays':     affected_barangays,
@@ -130,7 +117,8 @@ class ReportPrintedView(APIView):
     REPORTS = {
         'hazard-summary': 'Hazard Summary',
         'response-status': 'Response Status',
-        'analytics': 'Analytics',
+        'analytics': 'Trend Analysis',  # the key the page has always sent
+        'models': 'Prediction models',
     }
     VIA = {'print': ('PRINT_REPORT', 'printed'),
            'pdf': ('EXPORT_REPORT', 'saved as PDF'),
@@ -148,7 +136,7 @@ class ReportPrintedView(APIView):
         action, verb = self.VIA[via]
         criteria = str(request.data.get('criteria') or '')[:300]
         log_event(
-            request, action, 'historical_record' if kind == 'hazard-summary' else 'hazard_zone', '',
+            request, action, 'historical_record' if kind in ('hazard-summary', 'analytics', 'models') else 'hazard_zone', '',
             f'{self.REPORTS[kind]} {verb}. {criteria}'.strip(),
         )
         return Response({'logged': True})
@@ -160,34 +148,34 @@ class ResponseStatusReportView(APIView):
     Returns active hazards, resolved hazards, and alert
     delivery statistics. DRRMO Officer / System Admin only.
 
-    Filters:
-      ?date_from=2026-01-01&date_to=2026-12-31
-      ?barangay=1
+    Filters (apps.reports.filters, shared with Trend Analysis):
+      ?date_from=2026-01-01&date_to=2026-12-31   calendar days, Manila time
+      ?barangay=1     zones in it, and the alerts those zones issued
+      ?hazard_type=1
+    A filter value that can't be used is a 400 with a sentence.
     """
     permission_classes = [IsAuthenticated, IsDRRMOOfficer]
 
     def get(self, request):
+        try:
+            f = parse_report_filters(request.query_params)
+        except FilterError as exc:
+            return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         zones = HazardZone.objects.all()
         alerts = HazardAlert.objects.all()
-
-        date_from = request.query_params.get('date_from')
-        if date_from:
-            zones = zones.filter(activated_at__gte=date_from)
-            alerts = alerts.filter(created_at__gte=date_from)
-
-        date_to = request.query_params.get('date_to')
-        if date_to:
-            zones = zones.filter(activated_at__lte=date_to)
-            alerts = alerts.filter(created_at__lte=date_to)
-
-        barangay = request.query_params.get('barangay')
-        if barangay:
-            zones = zones.filter(barangay_id=barangay)
-
-        criteria = (
-            f"date_from={date_from or '-'} date_to={date_to or '-'} "
-            f"barangay={barangay or 'all'}"
-        )
+        if f.date_from:
+            zones = zones.filter(activated_at__gte=day_start(f.date_from))
+            alerts = alerts.filter(created_at__gte=day_start(f.date_from))
+        if f.date_to:
+            zones = zones.filter(activated_at__lte=day_end(f.date_to))
+            alerts = alerts.filter(created_at__lte=day_end(f.date_to))
+        if f.barangay:
+            zones = zones.filter(barangay=f.barangay)
+            alerts = alerts.filter(hazard_zone__barangay=f.barangay)
+        if f.hazard_type:
+            zones = zones.filter(hazard_type=f.hazard_type)
+            alerts = alerts.filter(hazard_zone__hazard_type=f.hazard_type)
+        criteria = criteria_text(f)
 
         active_count    = zones.filter(status='Active').count()
         resolved_count  = zones.filter(status='Resolved').count()

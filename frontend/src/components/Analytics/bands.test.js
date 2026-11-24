@@ -1,6 +1,5 @@
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
-import ActivityBand from './ActivityBand';
 import ResponseBand from './ResponseBand';
 
 beforeAll(() => { global.IS_REACT_ACT_ENVIRONMENT = true; });
@@ -17,25 +16,6 @@ const kpis = {
   recorded_events: 34, notices_sent: 1914, notices_read: 1225, read_rate: 0.64, review_rate: 0.91,
   median_minutes_to_read: 47, median_minutes_to_review: 185, median_minutes_zone_active: 3260,
 };
-const monthly = [
-  { month: '2026-08', zones: 2, alerts: 3, incidents: 5, events: 1 },
-  { month: '2026-09', zones: 9, alerts: 12, incidents: 19, events: 5 },
-];
-
-test('activity: five tiles, a trend on the four period counts, hints as before', () => {
-  const el = render(<ActivityBand kpis={kpis} monthly={monthly} />);
-  expect(el.querySelectorAll('.db-stat')).toHaveLength(5);
-  expect(el.querySelectorAll('svg.an-spark')).toHaveLength(4);
-  expect(el.textContent).toContain('Active zones now');
-  expect(el.textContent).toContain('2 more withdrawn as errors');
-  expect(el.textContent).toContain('16 Extreme');
-  expect(el.textContent).toContain('6 still pending');
-});
-
-test('activity: no pending reports reads "none pending"', () => {
-  const el = render(<ActivityBand kpis={{ ...kpis, incidents_pending: 0 }} monthly={monthly} />);
-  expect(el.textContent).toContain('none pending');
-});
 
 test('response: two meters with their counts', () => {
   const el = render(<ResponseBand kpis={kpis} />);
@@ -55,7 +35,9 @@ test('response: nothing sent or submitted shows dashes and says why', () => {
   expect(el.textContent).not.toContain('NaN');
 });
 
-test('the zones trend is named like its tile and chart: "Zones published"', () => {
-  const el = render(<ActivityBand kpis={kpis} monthly={monthly} />);
-  expect(el.querySelector('svg.an-spark title').textContent).toMatch(/^Zones published: /);
+test('response: the heading can sit under a section of its own', () => {
+  expect(render(<ResponseBand kpis={kpis} />).querySelector('h2').textContent).toBe('Response');
+  const nested = render(<ResponseBand kpis={kpis} heading="Speed of response" as="h3" />);
+  expect(nested.querySelector('h2')).toBeNull();
+  expect(nested.querySelector('h3').textContent).toBe('Speed of response');
 });

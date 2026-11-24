@@ -14,6 +14,24 @@ export const reportsApi = {
   analytics: (params) =>
     client.get('/api/reports/analytics/', { params }).then((r) => r.data),
 
+  // Trend Analysis' hazard history: the archive counted by period, calendar
+  // month, severity and barangay. params: date_from, date_to, hazard_type,
+  // barangay, granularity (month | quarter | year).
+  trends: (params) =>
+    client.get('/api/reports/trends/', { params }).then((r) => r.data),
+
+  // Trend Analysis' key changes (yearly series, trend verdicts, unusual
+  // months) and places (every barangay: events, per km², recurrence)
+  trendPatterns: (params) =>
+    client.get('/api/reports/trends/patterns/', { params }).then((r) => r.data),
+  trendPlaces: (params) =>
+    client.get('/api/reports/trends/places/', { params }).then((r) => r.data),
+
+  // Reports & Analytics' Summary: holdings, impact with how many records
+  // carry each figure, breakdowns, completeness
+  summary: (params) =>
+    client.get('/api/reports/summary/', { params }).then((r) => r.data),
+
   // Barangay Personnel: list their own reports
   // DRRMO/Admin: list all reports (optional ?status= filter)
   list: (status) =>

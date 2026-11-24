@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { TRENDS_PATH } from './paths';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import RecordDetail from '../components/History/RecordDetail';
 import HistoryExport from '../components/History/HistoryExport';
@@ -40,7 +41,7 @@ const PAGE_SIZE = 10;
  * the BFP figures for a fire, and what the barangay reported. The list shows
  * no severity: a record is what happened, not how its alert was graded.
  * The trends, seasonal outlook and barangay likelihood that used to sit here
- * are in Reports › Analytics, which reads the same records.
+ * are in Trend Analysis, which reads the same records.
  * DRRMO staff can export the filtered records in the BFP fire log's columns
  * (HistoryExport), picking the hazard types to include. BFP personnel see
  * and export the fires only; the server holds their export to fires too.
@@ -163,7 +164,7 @@ export default function HistoricalData() {
           ) : (
             <p>
               Archived hazard events in Talisay City.{' '}
-              <Link to="/app/reports?tab=analytics">Trends and the seasonal outlook are in Reports › Analytics</Link>
+              <Link to={TRENDS_PATH}>Trends, places and the seasonal outlook are in Trend Analysis</Link>
             </p>
           )}
         </div>

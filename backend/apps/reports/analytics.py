@@ -9,19 +9,23 @@ they are reviewed, all month by month. Every figure is counted straight
 from the database; nothing is estimated.
 """
 
-from datetime import date, datetime, time
+from datetime import date
 from statistics import median
 
-from django.db.models import Count
+from django.db.models import Count, Min
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.hazards.models import HazardAlert, HazardType, HazardZone
+from apps.hazards.models import HazardAlert, HazardZone
+from apps.history.area import barangay_records
 from apps.history.models import HistoricalRecord
 from apps.notifications.models import Notification
+from apps.reports.filters import (
+    MANILA, FilterError, ReportFilters, criteria_text, day_end, day_start, parse_report_filters,
+)
 from apps.reports.models import IncidentReport
 from utils.audit import log_event
 from utils.permissions import IsDRRMOOfficer
@@ -42,6 +46,16 @@ def month_starts(today, months):
     return out[::-1]
 
 
+def months_between(start, end):
+    """The first day of every month from start's to end's, oldest first."""
+    out = []
+    y, m = start.year, start.month
+    while (y, m) <= (end.year, end.month):
+        out.append(date(y, m, 1))
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    return out
+
+
 def monthly_counts(queryset, field):
     """{'YYYY-MM': count} of rows per month of a date field."""
     rows = (queryset.annotate(_m=TruncMonth(field)).values('_m')
@@ -57,14 +71,6 @@ def median_minutes(pairs):
 
 def share(part, whole):
     return round(part / whole, 3) if whole else None
-
-
-def hazard_type_param(raw):
-    """A hazard type id from the query string, or None for all types."""
-    # isascii: isdigit() alone accepts '²', which int() then rejects
-    if isinstance(raw, str) and raw.isascii() and raw.isdigit() and int(raw) > 0:
-        return int(raw)
-    return None
 
 
 def barangay_activity(zone_rows, incident_rows):
@@ -83,47 +89,86 @@ def barangay_activity(zone_rows, incident_rows):
     return sorted(rows.values(), key=lambda r: (-r['zones'], -r['incidents'], r['barangay']))
 
 
+def first_record():
+    """The day GeoAlert's own records begin (first zone, alert or incident report), or None."""
+    firsts = [
+        HazardZone.objects.aggregate(t=Min('activated_at'))['t'],
+        HazardAlert.objects.aggregate(t=Min('created_at'))['t'],
+        IncidentReport.objects.aggregate(t=Min('submitted_at'))['t'],
+    ]
+    firsts = [t for t in firsts if t]
+    return timezone.localtime(min(firsts), MANILA).date() if firsts else None
+
+
 class AnalyticsView(APIView):
     """
     GET /api/reports/analytics/?months=12
 
     months: 3, 6, 12 or 24 (default 12), counted back from this month.
+    date_from, date_to: calendar days (Manila); either one replaces months.
+                 With no date_from the range starts at first_record.
     hazard_type: a hazard type id; every figure then counts that type only.
-                 Anything else counts all types, and the response's
-                 hazard_type is null so the screen labels itself correctly.
+    barangay:    a barangay id; zones, alerts (by their zone), incident
+                 reports and recorded events (with the History page's
+                 barangay rule) of that barangay only.
+    "Active zones now" follows hazard_type and barangay, never the dates.
+    A filter value that can't be used is a 400 with a sentence.
     """
     permission_classes = [IsAuthenticated, IsDRRMOOfficer]
 
     def get(self, request):
         try:
-            months = int(request.query_params.get('months', DEFAULT_WINDOW))
-        except ValueError:
-            months = DEFAULT_WINDOW
-        if months not in WINDOWS:
-            months = DEFAULT_WINDOW
+            f = parse_report_filters(request.query_params)
+        except FilterError as exc:
+            return Response({'error': str(exc)}, status=400)
+
+        today = timezone.localdate()
+        began = first_record()
+        until = None
+        if f.date_from or f.date_to:
+            end = f.date_to or today
+            start = min(f.date_from or began or today.replace(day=1), end)
+            starts = months_between(start, end)
+            months = len(starts)
+            until = day_end(end)
+        else:
+            try:
+                months = int(request.query_params.get('months', DEFAULT_WINDOW))
+            except ValueError:
+                months = DEFAULT_WINDOW
+            if months not in WINDOWS:
+                months = DEFAULT_WINDOW
+            starts = month_starts(today, months)
+            start, end = starts[0], today
+        since = day_start(start)
 
         now = timezone.now()
-        starts = month_starts(timezone.localdate(), months)
-        since = timezone.make_aware(datetime.combine(starts[0], time.min))
-
         zones_all = HazardZone.objects.all()
         zones = zones_all.filter(activated_at__gte=since)
-        published = zones.exclude(status='Retracted')
         alerts = HazardAlert.objects.filter(created_at__gte=since)
-        notices = Notification.objects.filter(hazard_alert__in=alerts)
         incidents = IncidentReport.objects.filter(submitted_at__gte=since)
         events = HistoricalRecord.objects.filter(occurred_at__gte=since)
+        if until:
+            zones = zones.filter(activated_at__lte=until)
+            alerts = alerts.filter(created_at__lte=until)
+            incidents = incidents.filter(submitted_at__lte=until)
+            events = events.filter(occurred_at__lte=until)
 
-        type_id = hazard_type_param(request.query_params.get('hazard_type'))
-        htype = HazardType.objects.filter(pk=type_id).first() if type_id else None
+        htype = f.hazard_type
         if htype:
             zones_all = zones_all.filter(hazard_type=htype)
             zones = zones.filter(hazard_type=htype)
-            published = published.filter(hazard_type=htype)
             alerts = alerts.filter(hazard_zone__hazard_type=htype)
-            notices = Notification.objects.filter(hazard_alert__in=alerts)
             incidents = incidents.filter(hazard_type=htype)
             events = events.filter(hazard_type=htype)
+        if f.barangay:
+            zones_all = zones_all.filter(barangay=f.barangay)
+            zones = zones.filter(barangay=f.barangay)
+            alerts = alerts.filter(hazard_zone__barangay=f.barangay)
+            incidents = incidents.filter(barangay=f.barangay)
+            events = events.filter(id__in=barangay_records(f.barangay))
+        published = zones.exclude(status='Retracted')
+        notices = Notification.objects.filter(hazard_alert__in=alerts)
 
         # Month by month, every month present even when nothing happened
         series = {
@@ -157,6 +202,14 @@ class AnalyticsView(APIView):
             'generated_at': now,
             'generated_by': request.user.full_name,
             'hazard_type': {'id': htype.id, 'name': htype.name} if htype else None,
+            'barangay': {'id': f.barangay.id, 'name': f.barangay.name} if f.barangay else None,
+            # The same shape as the other report answers, which exports read their criteria from
+            'filters': {
+                'hazard_type': {'id': htype.id, 'name': htype.name} if htype else None,
+                'barangay': {'id': f.barangay.id, 'name': f.barangay.name} if f.barangay else None,
+            },
+            'range': {'from': start.isoformat(), 'to': end.isoformat()},
+            'first_record': began.isoformat() if began else None,
             'kpis': {
                 'active_zones_now': zones_all.filter(status='Active').count(),
                 'zones_published': published.count(),
@@ -177,6 +230,9 @@ class AnalyticsView(APIView):
                 'recorded_events': events.count(),
             },
             'monthly': monthly,
+            # Every zone of the period by where it stands now; withdrawn ones included, as their own count
+            'zones_by_status': {'Active': 0, 'Resolved': 0, 'Archived': 0, 'Retracted': 0} | {
+                r['status']: r['n'] for r in zones.values('status').annotate(n=Count('pk')).order_by()},
             'zones_by_type': list(published.values('hazard_type__name').annotate(count=Count('pk')).order_by('-count')),
             'zones_by_severity': list(published.values('severity').annotate(count=Count('pk')).order_by('-count')),
             # Every barangay with any activity, both counts in one row, so a
@@ -187,6 +243,10 @@ class AnalyticsView(APIView):
             ),
         }
 
-        log_event(request, 'GENERATE_REPORT', 'hazard_zone', '',
-                  f'Analytics — last {months} month(s){f", {htype.name}" if htype else ""}.')
+        if until:
+            what = criteria_text(ReportFilters(start, end, htype, f.barangay))
+        else:
+            what = (f'last {months} month(s){f", {htype.name}" if htype else ""}'
+                    f'{f", {f.barangay.name}" if f.barangay else ""}.')
+        log_event(request, 'GENERATE_REPORT', 'hazard_zone', '', f'Analytics — {what}')
         return Response(data)

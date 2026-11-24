@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { MODELS_PATH } from '../paths';
 import PublicNavbar from '../../components/Navbar/PublicNavbar';
 import { barangaysApi } from '../../api/barangaysApi';
 import { hazardsApi } from '../../api/hazardsApi';
@@ -755,7 +756,7 @@ export default function DRRMODashboard() {
               <p>
                 Barangays the fire model rates most likely to have a fire: next month to start, or pick a
                 month, a month and year, or a date. Flood and landslide predictions are being rebuilt.{' '}
-                <Link to="/app/reports?tab=analytics">See every barangay and month</Link>
+                <Link to={MODELS_PATH}>How the prediction models work</Link>
               </p>
             </div>
           </div>
