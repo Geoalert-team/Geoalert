@@ -20,4 +20,10 @@ export const authApi = {
     client.post('/api/auth/password-reset/check/', { uid, token }).then((r) => r.data),
   confirmPasswordReset: (uid, token, newPassword) =>
     client.post('/api/auth/password-reset/confirm/', { uid, token, new_password: newPassword }).then((r) => r.data),
+
+  // Account invite: a new account's owner sets the first password from an emailed 3-day link
+  checkInvite: (uid, token) =>
+    client.post('/api/auth/invite/check/', { uid, token }).then((r) => r.data),
+  acceptInvite: (uid, token, newPassword) =>
+    client.post('/api/auth/invite/accept/', { uid, token, new_password: newPassword }).then((r) => r.data),
 };

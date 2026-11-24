@@ -289,6 +289,9 @@ EMAIL_TIMEOUT = env.int('EMAIL_TIMEOUT', default=10)
 # stops working when the password changes). FRONTEND_URL is where the
 # emailed link points: the React app's /reset-password page.
 PASSWORD_RESET_TIMEOUT = 3600
+# A new account's emailed "set your password" link (apps/accounts/invite.py).
+# Longer than a reset link: new staff may not read their email the same day.
+ACCOUNT_INVITE_TIMEOUT = 3 * 24 * 3600
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
 
 

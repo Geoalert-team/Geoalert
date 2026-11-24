@@ -54,6 +54,62 @@ function CredentialsDialog({ info, onClose }) {
   );
 }
 
+// After Add a user: the account has no password until its owner sets one
+// from the emailed link. If the email didn't go, offer another try or a
+// temporary password the admin passes on, as before invites existed.
+function InviteDialog({ info, busy, onClose, onResend, onTemporary }) {
+  const { sent } = info;
+  return (
+    <Modal
+      title={sent ? 'Invite sent' : 'Account created, invite not sent'}
+      subtitle={[info.name, info.employeeId, info.email].filter(Boolean).join(' · ')}
+      onClose={busy ? () => {} : onClose}
+      width={480}
+      labelId="adm-invite-title"
+      footer={sent ? (
+        <button type="button" className="adm-btn adm-btn-primary" onClick={onClose}>Done</button>
+      ) : (
+        <>
+          <button type="button" className="adm-btn adm-btn-ghost" onClick={onTemporary} disabled={Boolean(busy)}>
+            <Icon name="key" size={16} />
+            {busy === 'temporary' ? 'Working…' : 'Give a temporary password'}
+          </button>
+          <button type="button" className="adm-btn adm-btn-primary" onClick={onResend} disabled={Boolean(busy)}>
+            {busy === 'resend' ? 'Sending…' : 'Try sending again'}
+          </button>
+        </>
+      )}
+    >
+      <div className="adm-cred">
+        <span className={`adm-cred-badge ${sent ? '' : 'is-warn'}`}><Icon name={sent ? 'mail' : 'alert'} size={22} /></span>
+        {sent ? (
+          <>
+            <p className="adm-invite-text">
+              We emailed <strong>{info.email}</strong> a link to set their own password. It works once, for 3 days.
+            </p>
+            <p className="adm-invite-text is-soft">
+              Until they use it, the account shows as Invite pending and can't sign in. If the email doesn't arrive,
+              check the address, then use Resend invite in the list.
+            </p>
+          </>
+        ) : (
+          <div className="adm-alert adm-alert-warn">
+            <Icon name="info" size={16} />
+            The account was created, but the invite email to {info.email} couldn't be sent. Try again, or give
+            them a temporary password to sign in with instead.
+          </div>
+        )}
+        {info.error && (
+          <div className="adm-alert" role="alert">
+            <Icon name="info" size={16} />
+            {info.error}
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
 export default function UsersTab({ users, roles, currentUser, loading, onChanged, notify, formRequest, clearFormRequest }) {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
@@ -64,6 +120,8 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
   const [confirm, setConfirm] = useState(null); // { kind, user }
   const [busy, setBusy] = useState(false);
   const [credentials, setCredentials] = useState(null);
+  const [invite, setInvite] = useState(null); // { id, name, employeeId, email, sent, error }
+  const [inviteBusy, setInviteBusy] = useState(''); // '' | 'resend' | 'temporary'
 
   // The Overview tab's "Add a user" button opens the form here
   const formOpen = editing !== null || formRequest;
@@ -78,7 +136,8 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
     const q = search.trim().toLowerCase();
     return users.filter((u) => {
       if (roleFilter && roleName(u.role) !== roleFilter) return false;
-      if (statusFilter === 'active' && !u.is_active) return false;
+      if (statusFilter === 'active' && !(u.is_active && !u.invite_pending)) return false;
+      if (statusFilter === 'pending' && !(u.is_active && u.invite_pending)) return false;
       if (statusFilter === 'inactive' && u.is_active) return false;
       if (!q) return true;
       return [u.full_name, u.email, u.position, u.employee_id, u.phone, u.assigned_barangay?.name]
@@ -93,21 +152,59 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
 
   async function save(payload) {
     if (formUser) {
-      await adminApi.users.update(formUser.id, payload);
+      const result = await adminApi.users.update(formUser.id, payload);
       closeForm();
-      notify(`Saved changes to ${payload.first_name} ${payload.last_name}'s account.`);
+      const name = `${payload.first_name} ${payload.last_name}`;
+      // A corrected email on an account still waiting for its invite gets a new one there
+      if (result?.invite_sent === true) {
+        notify(`Saved changes to ${name}'s account and sent a new invite to ${result.email}.`);
+      } else if (result?.invite_sent === false) {
+        notify(`Saved changes, but the invite to ${result.email} couldn't be sent. Use Resend invite to try again.`, 'bad');
+      } else {
+        notify(`Saved changes to ${name}'s account.`);
+      }
     } else {
       const result = await adminApi.users.create(payload);
       closeForm();
-      setCredentials({
-        created: true,
+      setInvite({
+        id: result.user?.id,
         name: result.user?.full_name,
         employeeId: result.user?.employee_id,
         email: result.user?.email || payload.email,
-        password: result.temporary_password,
+        sent: Boolean(result.invite_sent),
       });
     }
     onChanged();
+  }
+
+  async function resendFromDialog() {
+    setInviteBusy('resend');
+    try {
+      await adminApi.users.resendInvite(invite.id);
+      setInvite((i) => ({ ...i, sent: true, error: '' }));
+      onChanged();
+    } catch (err) {
+      setInvite((i) => ({ ...i, error: fieldErrors(err).form || "The invite still couldn't be sent." }));
+    } finally {
+      setInviteBusy('');
+    }
+  }
+
+  async function temporaryFromDialog() {
+    setInviteBusy('temporary');
+    try {
+      const result = await adminApi.users.resetPassword(invite.id);
+      setCredentials({
+        created: true, name: invite.name, employeeId: invite.employeeId,
+        email: invite.email, password: result.temporary_password,
+      });
+      setInvite(null);
+      onChanged();
+    } catch (err) {
+      setInvite((i) => ({ ...i, error: fieldErrors(err).form || 'That action failed. Please try again.' }));
+    } finally {
+      setInviteBusy('');
+    }
   }
 
   async function runConfirm() {
@@ -120,6 +217,9 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
           created: false, name: user.full_name, employeeId: user.employee_id,
           email: user.email, password: result.temporary_password,
         });
+      } else if (kind === 'resend') {
+        await adminApi.users.resendInvite(user.id);
+        notify(`Sent a new invite to ${user.email}.`);
       } else if (kind === 'deactivate') {
         await adminApi.users.deactivate(user.id);
         notify(`${user.full_name} can no longer sign in.`);
@@ -162,6 +262,7 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="Filter by status" className="adm-select">
             <option value="">All statuses</option>
             <option value="active">Active</option>
+            <option value="pending">Invite pending</option>
             <option value="inactive">Inactive</option>
           </select>
           <button type="button" className="adm-btn adm-btn-primary adm-toolbar-cta" onClick={() => setEditing({})}>
@@ -239,7 +340,7 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
                     </td>
                     <td><RoleBadge role={u.role} /></td>
                     <td className="adm-nowrap">{u.assigned_barangay?.name || <span className="adm-muted">—</span>}</td>
-                    <td><StatusBadge active={u.is_active} /></td>
+                    <td><StatusBadge active={u.is_active} pending={u.invite_pending} /></td>
                     <td className="adm-nowrap adm-muted" title={u.last_login ? new Date(u.last_login).toLocaleString() : undefined}>
                       {timeAgo(u.last_login)}
                     </td>
@@ -248,6 +349,11 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
                         <button type="button" className="adm-icon-btn" title="Edit account" aria-label={`Edit ${u.full_name}`} onClick={() => setEditing(u)}>
                           <Icon name="edit" size={16} />
                         </button>
+                        {u.is_active && u.invite_pending && (
+                          <button type="button" className="adm-icon-btn" title="Resend invite" aria-label={`Resend invite to ${u.full_name}`} onClick={() => setConfirm({ kind: 'resend', user: u })}>
+                            <Icon name="mail" size={16} />
+                          </button>
+                        )}
                         <button type="button" className="adm-icon-btn" title="Reset password" aria-label={`Reset password for ${u.full_name}`} onClick={() => setConfirm({ kind: 'reset', user: u })}>
                           <Icon name="key" size={16} />
                         </button>
@@ -306,9 +412,16 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
           onConfirm={runConfirm}
           {...{
             reset: {
-              title: 'Reset password?',
-              message: `${confirm.user.full_name}'s current password will stop working right away. You'll get a new temporary password to give them.`,
-              confirmLabel: 'Reset password',
+              title: confirm.user.invite_pending ? 'Give a temporary password?' : 'Reset password?',
+              message: confirm.user.invite_pending
+                ? `${confirm.user.full_name} hasn't set a password yet. You'll get a temporary password to give them, and their invite link will stop working.`
+                : `${confirm.user.full_name}'s current password will stop working right away. You'll get a new temporary password to give them.`,
+              confirmLabel: confirm.user.invite_pending ? 'Give temporary password' : 'Reset password',
+            },
+            resend: {
+              title: 'Resend invite?',
+              message: `We'll email ${confirm.user.email} a new link to set their password. Any earlier invite link stops working.`,
+              confirmLabel: 'Resend invite',
             },
             deactivate: {
               title: 'Deactivate account?',
@@ -322,6 +435,16 @@ export default function UsersTab({ users, roles, currentUser, loading, onChanged
               confirmLabel: 'Activate',
             },
           }[confirm.kind]}
+        />
+      )}
+
+      {invite && (
+        <InviteDialog
+          info={invite}
+          busy={inviteBusy}
+          onClose={() => setInvite(null)}
+          onResend={resendFromDialog}
+          onTemporary={temporaryFromDialog}
         />
       )}
 

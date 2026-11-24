@@ -183,7 +183,7 @@ export default function UserFormModal({ user, roles, onClose, onSave }) {
       subtitle={
         editing
           ? `Update ${user.full_name || user.email}'s profile, contact details and access.`
-          : 'Create an account for DRRMO, barangay or BFP personnel. A temporary password is generated when you save.'
+          : 'Create an account for DRRMO, barangay or BFP personnel. When you save, they get an email with a link to set their own password.'
       }
       onClose={saving ? () => {} : onClose}
       width={760}
@@ -192,7 +192,7 @@ export default function UserFormModal({ user, roles, onClose, onSave }) {
         <>
           <p className="adm-foot-note">
             <Icon name="info" size={16} />
-            {editing ? 'Changes are recorded in the activity log.' : 'The temporary password is shown only once.'}
+            {editing ? 'Changes are recorded in the activity log.' : 'Check the email address: the invite link goes there and works for 3 days.'}
           </p>
           <div className="adm-foot-actions">
             <button type="button" className="adm-btn adm-btn-ghost" onClick={onClose} disabled={saving}>
@@ -266,7 +266,12 @@ export default function UserFormModal({ user, roles, onClose, onSave }) {
             </div>
           </div>
           <div className="adm-form-grid adm-grid-2">
-            <Field label="Email address" required error={err('email')} hint="This is their username.">
+            <Field
+              label="Email address"
+              required
+              error={err('email')}
+              hint={editing ? 'This is their username.' : 'This is their username. The invite to set a password is sent here.'}
+            >
               <div className="adm-input-icon">
                 <Icon name="mail" size={16} />
                 <input

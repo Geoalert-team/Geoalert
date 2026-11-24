@@ -14,10 +14,10 @@ import uuid
 
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
+from apps.accounts import emails
 from apps.accounts.models import User
 
 GENERIC_REPLY = ("If an account with that email exists, we've sent a link to reset its "
@@ -65,11 +65,24 @@ def reset_link(user):
 
 
 def reset_email(user, link):
-    """(subject, body) of the reset email."""
+    """(subject, body) of the reset email's plain-text version."""
     return SUBJECT, BODY.format(name=user.full_name or user.email, link=link)
+
+
+def reset_context(user, link):
+    """What the designed HTML version (templates/accounts/email/reset.html) shows."""
+    return {
+        'heading': 'Reset your password',
+        'preheader': 'Choose a new password for your GeoAlert Talisay account. The link works for 1 hour.',
+        'name': user.full_name or user.email,
+        'link': link,
+        'button': 'Choose a new password',
+        'expiry': 'This link works once and expires in 1 hour.',
+    }
 
 
 def send_reset_email(user):
     """Send the reset email; a sending failure is raised for the caller to log."""
-    subject, body = reset_email(user, reset_link(user))
-    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email])
+    link = reset_link(user)
+    subject, body = reset_email(user, link)
+    emails.send(user.email, subject, body, 'accounts/email/reset.html', reset_context(user, link))

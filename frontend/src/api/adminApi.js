@@ -35,6 +35,10 @@ export const adminApi = {
 
     resetPassword: (id) =>
       client.post(`/api/admin-dashboard/users/${id}/reset-password/`).then((r) => r.data),
+
+    // Email a new set-your-password link to an account still waiting for one
+    resendInvite: (id) =>
+      client.post(`/api/admin-dashboard/users/${id}/resend-invite/`).then((r) => r.data),
   },
 
   logs: (params) =>

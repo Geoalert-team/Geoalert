@@ -4,6 +4,7 @@ from apps.accounts.views import (
     TwoFactorSetupView, TwoFactorConfirmView, TwoFactorVerifyView, TwoFactorDisableView,
     ChangePasswordView,
     PasswordResetRequestView, PasswordResetCheckView, PasswordResetConfirmView,
+    InviteCheckView, InviteAcceptView,
 )
 
 urlpatterns = [
@@ -19,4 +20,6 @@ urlpatterns = [
     path('password-reset/',          PasswordResetRequestView.as_view(), name='password-reset'),
     path('password-reset/check/',    PasswordResetCheckView.as_view(),   name='password-reset-check'),
     path('password-reset/confirm/',  PasswordResetConfirmView.as_view(), name='password-reset-confirm'),
+    path('invite/check/',            InviteCheckView.as_view(),          name='invite-check'),
+    path('invite/accept/',           InviteAcceptView.as_view(),         name='invite-accept'),
 ]
