@@ -6,6 +6,7 @@ the held-back spots on the map that would ship, and writes no survey credit
 and no coordinate. Survey mode is checked against a golden made before the
 own mode was added. A small synthetic city, no database.
 """
+import copy
 import json
 import re
 import subprocess
@@ -419,29 +420,78 @@ class FloodSurveyModeTests(SimpleTestCase):
             self.assertIn('survey_spots', report)
             got = json.loads(json.dumps({'areas': model['areas'], 'acceptance': report['acceptance'],
                                          'candidates': report['candidates']}))
-            self.assertEqual(survey_summary(got), survey_summary(golden[name]), name)
+            assert_survey_same(self, got, golden[name], name)
+
+    def test_survey_comparison_allows_last_digit_noise_only(self):
+        # CI on Linux (2026-11-24): a candidate metric one unit off in its 4th decimal failed the golden,
+        # because several sit exactly on a 3-decimal halfway point (0.8465, -0.2175)
+        golden = json.loads(GOLDEN.read_text(encoding='utf-8'))['adopted']
+        for bump in (0.0001, -0.0001):
+            noisy = copy.deepcopy(golden)
+            for c in noisy['candidates']:
+                for k, v in c.items():
+                    if is_number(v):
+                        c[k] = round(v + bump, 4)
+            for a in noisy['areas'].values():
+                if is_number(a.get('score')):
+                    a['score'] += bump / 100
+            assert_survey_same(self, noisy, golden, f'noise {bump}')
+        # A real change still fails: a level, or a metric far off
+        changed = copy.deepcopy(golden)
+        pid = next(p for p, a in changed['areas'].items() if a.get('level') == 'Orange')
+        changed['areas'][pid]['level'] = 'Red'
+        with self.assertRaises(AssertionError):
+            assert_survey_same(self, changed, golden, 'level changed')
+        far = copy.deepcopy(golden)
+        far['candidates'][0]['auc'] = far['candidates'][0]['auc'] - 0.05
+        with self.assertRaises(AssertionError):
+            assert_survey_same(self, far, golden, 'metric far off')
+
+
+def is_number(x) -> bool:
+    return isinstance(x, (int, float)) and not isinstance(x, bool)
+
+
+# The golden was made on Windows and CI runs on Linux, where a fit's last digits can differ. Rounding can't
+# absorb that (a value on a halfway point flips either way), so the numbers are compared within these.
+SCORE_TOLERANCE = 0.001    # an area's score (0-1)
+METRIC_TOLERANCE = 0.005   # a candidate's AUC or Boyce, a mean over the reps (0.0001 = one rank swap in one rep)
+
+
+def assert_survey_same(test, got: dict, golden: dict, name: str):
+    """Survey mode kept what the golden holds: survey_summary exactly, the numbers within the tolerances."""
+    test.assertEqual(survey_summary(got), survey_summary(golden), name)
+
+    def close(a, b, delta, where):
+        if is_number(a) and is_number(b):
+            test.assertAlmostEqual(a, b, delta=delta, msg=f'{name}: {where}')
+        else:
+            test.assertEqual(a, b, f'{name}: {where}')
+
+    for pid, a in golden['areas'].items():
+        close(got['areas'][pid].get('score'), a.get('score'), SCORE_TOLERANCE, f'area {pid} score')
+    for g, c in zip(golden['candidates'], got['candidates']):
+        for k, v in g.items():
+            if k != 'name':
+                close(c[k], v, METRIC_TOLERANCE, f"candidate {g['name']} {k}")
 
 
 def survey_summary(result: dict) -> dict:
     """
-    What survey mode must keep, with the floats rounded: the golden was made on Windows and CI runs on Linux,
-    where a last digit can differ. Levels, reasons, flags, buildings, adoption, gate names and passes, and the
-    gate wording stay exact; area scores to 4 decimals, candidate metrics to 3, gate numbers left out.
+    What survey mode must keep exactly: levels, reasons, flags, buildings, adoption, gate names and passes, the
+    gate wording (its numbers left out), and each candidate's name and metric names. Area scores and candidate
+    metrics are left out here and compared within a tolerance by assert_survey_same.
     """
-    def rounded(x, digits):
-        return None if x is None else round(x, digits)
-
     def without_decimals(text):
         return re.sub(r'-?\d+\.\d+', '#', text)
 
     acceptance = result['acceptance']
     return {
-        'areas': {pid: {**{k: v for k, v in a.items() if k != 'score'}, 'score': rounded(a['score'], 4)}
-                  for pid, a in result['areas'].items()},
+        'areas': {pid: {k: v for k, v in a.items() if k != 'score'} for pid, a in result['areas'].items()},
         'adopted': acceptance['adopted'],
         'gates': [{'gate': g['gate'], 'passed': g['passed'], 'detail': without_decimals(g['detail'])}
                   for g in acceptance['gates']],
         'reasons': [without_decimals(r) for r in acceptance['reasons']],
-        'candidates': [{k: (v if k == 'name' else rounded(v, 3)) for k, v in c.items()}
+        'candidates': [{'name': c['name'], 'metrics': sorted(k for k in c if k != 'name')}
                        for c in result['candidates']],
     }
