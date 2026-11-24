@@ -24,6 +24,7 @@ const ready = {
     trained_on: '2017 UP Mananga flood survey', survey_spots: 105,
   },
   since_publishing: { n: 0, review_after: 10, under_review: false },
+  own_spots: { n: 7, barangays: 3, needed: 100, barangays_needed: 5, enough: false },
 };
 
 test('shows the counts against the thresholds', async () => {
@@ -88,4 +89,33 @@ test('says so when it cannot load', async () => {
   historyApi.forecastReadiness.mockRejectedValue(new Error('down'));
   const el = await render();
   expect(el.textContent).toContain('The readiness check could not be loaded right now.');
+});
+
+test('the spots line', async () => {
+  historyApi.forecastReadiness.mockResolvedValue(ready);
+  const el = await render();
+  expect(el.textContent).toContain('Located flood spots with a map point: 7 of 100, in 3 of 5 barangays.');
+});
+
+test('no spots line without own_spots', async () => {
+  const old = { ...ready };
+  delete old.own_spots;
+  historyApi.forecastReadiness.mockResolvedValue(old);
+  const el = await render();
+  expect(el.textContent).not.toContain('Located flood spots with a map point');
+});
+
+test('the own-data training line', async () => {
+  historyApi.forecastReadiness.mockResolvedValue({
+    ...ready,
+    flood_map: {
+      ...ready.flood_map, source: 'geoalert', trained_on: "GeoAlert's located flood records",
+      survey_spots: undefined, own_spots: 120, built_at: '2027-01-05T03:00:00+08:00',
+    },
+  });
+  const el = await render();
+  expect(el.textContent).toContain(
+    "The flood map comes from GeoAlert's located flood records (120 flood spots). Built 2027-01-05.",
+  );
+  expect(el.textContent).not.toContain('not from these records');
 });

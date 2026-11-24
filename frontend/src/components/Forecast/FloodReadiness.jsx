@@ -17,7 +17,17 @@ const ENOUGH = 'There are enough located flood days to consider building a flood
   + 'a developer.';
 const NO_MAP = 'No flood map has been published yet.';
 
+function spotsLine(own) {
+  return `Located flood spots with a map point: ${own.n} of ${own.needed}, in ${own.barangays} of `
+    + `${own.barangays_needed} barangays.`;
+}
+
 function trainingLine(map) {
+  if (map.source === 'geoalert') {
+    const n = map.own_spots != null ? ` (${map.own_spots} flood spots)` : '';
+    const when = map.built_at ? ` Built ${map.built_at.slice(0, 10)}.` : '';
+    return `The flood map comes from ${map.trained_on}${n}.${when}`;
+  }
   const spots = map.survey_spots != null ? ` (${map.survey_spots} flood spots)` : '';
   const built = map.built_at ? ` Built ${map.built_at.slice(0, 10)}.` : '';
   return `The flood map comes from the ${map.trained_on}${spots}, not from these records.${built}`;
@@ -53,6 +63,7 @@ export default function FloodReadiness() {
             {`Located flood days on record: ${data.located_flood_days}. Flood forecasting needs about `
               + `${need.min}–${need.max}.`}
           </p>
+          {data.own_spots && <p className="fc-note">{spotsLine(data.own_spots)}</p>}
           <p className="fc-note"><strong>{data.enough_for_forecasting ? ENOUGH : NOT_ENOUGH}</strong></p>
           {map?.available && since ? (
             <>

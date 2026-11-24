@@ -1,0 +1,100 @@
+# Automatic retraining (docs/design/specs/2026-11-24-automatic-retraining-design.md):
+# fire at 03:17 Manila on the 2nd of each month, flood at 03:17 Manila on 5 January
+# (not on the hour: GitHub may delay or drop runs scheduled at :00).
+# The job reads its training data from GeoAlert with the MODEL_JOB_TOKEN secret,
+# trains on this throw-away runner with a PostGIS database of its own (never the
+# shared one, whose password is not given to GitHub), and posts the attempt back.
+# GeoAlert makes a new model live only when it does at least as well as the one in
+# use. "Run workflow" runs it by hand; tick dry run to train and print the result
+# without posting anything. Scheduled runs happen only from main.
+name: Model retraining
+
+on:
+  schedule:
+    - cron: '17 19 1 * *'   # fire: 03:17 Manila (UTC+8) on the 2nd of each month
+    - cron: '17 19 4 1 *'   # flood: 03:17 Manila on 5 January
+  workflow_dispatch:
+    inputs:
+      hazard:
+        description: Which model to retrain
+        type: choice
+        options:
+          - fire
+          - flood
+        default: fire
+      dry_run:
+        description: Dry run (train and print the result, post nothing)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# One retraining at a time; a second waits for the first
+concurrency: model-retrain
+
+jobs:
+  retrain:
+    name: Retrain a model
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: geoalert
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      SECRET_KEY: ci-only-not-a-secret
+      # The runner's own service database, thrown away with the runner
+      DB_NAME: geoalert
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      # The service database has no SSL; Supabase's default (require) would refuse it
+      DB_SSLMODE: disable
+      # The settings default to the Windows venv's GDAL; here it is the system's
+      GDAL_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/libgdal.so
+      GEOS_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/libgeos_c.so
+      # Lets the flood run load the purok outlines into this empty database (and nowhere else)
+      MODEL_JOB_SCRATCH_DB: 'true'
+      HAZARD: ${{ inputs.hazard || (github.event.schedule == '17 19 4 1 *' && 'flood' || 'fire') }}
+      DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install GDAL and GEOS
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gdal-bin libgdal-dev libgeos-dev
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements/*.txt
+      - name: Install requirements
+        run: pip install -r requirements/development.txt
+      # The public map downloads (terrain, OpenStreetMap, UP NOAH, buildings), kept between runs
+      - uses: actions/cache@v4
+        with:
+          path: backend/.hazard_cache
+          key: model-job-cache-v1
+      - name: Set up the runner's own database
+        run: python manage.py migrate --noinput
+      - name: Retrain
+        run: python manage.py run_model_job --hazard "$HAZARD" $DRY_RUN
+        # The job's secrets, given only to the step that runs the job
+        env:
+          MODEL_JOB_API_URL: ${{ secrets.MODEL_JOB_API_URL }}
+          MODEL_JOB_TOKEN: ${{ secrets.MODEL_JOB_TOKEN }}

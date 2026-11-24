@@ -46,6 +46,7 @@ class FireModel:
     cutoffs: dict
     trained: dict    # {start: 'YYYY-MM', end: 'YYYY-MM', fires, unplaced}
     report: object   # the report file's contents, or None
+    model: dict | None = None  # {family, settings} the fit was chosen with
 
 
 _lock = threading.Lock()
@@ -65,28 +66,18 @@ def _mtime(path):
         return None
 
 
-def _read(model_path, report_path, outlines):
+def parse(data, report, outlines):
     """
-    The FireModel, or the reason there is none. A file that can't be read
-    (cut short, or not the shape train_fire_model writes) makes fire
-    unavailable with UNREADABLE, never an error: the forecast, the accuracy
-    card and a fire report's approval all read it.
+    The FireModel from a model document (a file's or a saved fit's) and its
+    report, or the reason there is none. A document that isn't the shape
+    train_fire_model writes makes fire unavailable with UNREADABLE, never an
+    error: the forecast, the accuracy card and a fire report's approval all
+    read it.
     """
-    try:
-        data = json.loads(model_path.read_text(encoding='utf-8'))
-    except FileNotFoundError:
-        return NOT_TRAINED
-    except (OSError, ValueError):
-        return UNREADABLE
     if not isinstance(data, dict):
         return UNREADABLE
     if data.get('outlines_version') != outlines:
         return STALE
-    report = None
-    try:
-        report = json.loads(report_path.read_text(encoding='utf-8'))
-    except (OSError, ValueError):
-        pass  # missing or unreadable: the accuracy card says the report is missing
     try:
         if not isinstance(report, dict) or report.get('version') != data['version']:
             report = None  # from another training run
@@ -95,33 +86,73 @@ def _read(model_path, report_path, outlines):
             if len(area['months']) != 12 or not all(0 < m['p'] < 1 for m in area['months']):
                 return UNREADABLE
         return FireModel(version=data['version'], areas=areas, cutoffs=data['cutoffs'], trained=data['trained'],
-                         report=report)
+                         report=report, model=data.get('model'))
     except (KeyError, TypeError, ValueError, AttributeError):
         return UNREADABLE
+
+
+def _read_json(path):
+    """(contents, None), or (None, the reason): a missing file is NOT_TRAINED, an unreadable one UNREADABLE."""
+    try:
+        return json.loads(path.read_text(encoding='utf-8')), None
+    except FileNotFoundError:
+        return None, NOT_TRAINED
+    except (OSError, ValueError):
+        return None, UNREADABLE
+
+
+def _read(model_path, report_path, outlines):
+    """The FireModel from the files, or the reason there is none."""
+    data, reason = _read_json(model_path)
+    if reason:
+        return reason
+    report, _ = _read_json(report_path)  # missing or unreadable: the report is reported missing
+    return parse(data, report, outlines)
 
 
 def load():
     """
     The FireModel, or the sentence saying why fire has no figures
-    (NOT_TRAINED or STALE). Kept per process, keyed by the files' times and
-    the purok map's version, which are checked at most every RECHECK_SECONDS.
+    (NOT_TRAINED or STALE). The newer of the live fit in the database and the
+    committed file is used; when the live fit can't be read (the model_fit
+    table not migrated yet, say), the file. Kept per process, keyed by the
+    files' times, the live fit's id and built_at and the purok map's version,
+    which are checked at most every RECHECK_SECONDS; the fit's model is read
+    only when that key changes.
     """
     from apps.barangays.models import Purok
+    from apps.history.model_fits import fit_body, live_fit_head, newer_is_fit
 
     now = time.monotonic()
     with _lock:
         if _cache['at'] is not None and now - _cache['at'] < RECHECK_SECONDS:
             return _cache['value']
     model_path, report_path = MODEL_FILE, REPORT_FILE
+    fit = live_fit_head('fire')
     mtime = _mtime(model_path)
-    if mtime is None:
+    if mtime is None and fit is None:
         value, key = NOT_TRAINED, None
     else:
         outlines = Purok.outlines_version()
-        key = (str(model_path), mtime, _mtime(report_path), outlines)
+        key = (str(model_path), mtime, _mtime(report_path), outlines, (fit.pk, fit.built_at) if fit else None)
         with _lock:
             cached = _cache['value'] if _cache['key'] == key else None
-        value = cached if cached is not None else _read(model_path, report_path, outlines)
+        if cached is not None:
+            value = cached
+        else:
+            data, reason = _read_json(model_path)
+            body = None
+            if fit is not None and newer_is_fit(data if isinstance(data, dict) else None, fit):
+                body = fit_body(fit)
+                if body is None:
+                    key = None  # not read: try again at the next recheck
+            if body is not None:
+                value = parse(*body, outlines)
+            elif reason:
+                value = reason
+            else:
+                report, _ = _read_json(report_path)
+                value = parse(data, report, outlines)
     with _lock:
         _cache.update(at=now, key=key, value=value)
     return value

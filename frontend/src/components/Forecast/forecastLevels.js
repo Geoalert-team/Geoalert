@@ -2,6 +2,8 @@
 // flood susceptibility (since 2026-11-24, the same in every month); landslide is being rebuilt.
 // Shown as a heads-up, never as an alert.
 
+import { escape } from '../Map/purokStyle';
+
 export const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
@@ -74,7 +76,7 @@ export function purokLikelyLevels(likely) {
       ...(map.get(key) || {}),
       Flood: {
         level: r.level, uncertain: r.uncertain, not_assessed_reason: r.not_assessed_reason,
-        estimated_outline: r.estimated_outline,
+        estimated_outline: r.estimated_outline, note: r.note,
       },
     });
   });
@@ -94,11 +96,16 @@ export const floodLegend = (source) => (source === 'noah'
   ? "Flood: where floods tend to reach (from UP NOAH's 25-year flood model; the same in every month, not a forecast of a flood)"
   : 'Flood: where floods tend to reach (from a machine-learning model; the same in every month, not a forecast of a flood)');
 
-/** A purok's flood line: "Purok A: High flood susceptibility · Uncertain", or "Not assessed yet (reason)" */
+/**
+ * A purok's flood line: "Purok A: High flood susceptibility · Uncertain", or "Not assessed yet (reason)";
+ * a row's note (an own-data fit's purok copied from UP NOAH's map) follows as describeFloodAtSpot puts it.
+ * The result goes into hover HTML, so the fit's free text (note, reason) is escaped.
+ */
 export function floodTip(row, name) {
-  if (!row.level) return `${name}: ${NOT_ASSESSED} (${row.not_assessed_reason})`;
+  const note = row.note ? `. ${escape(row.note)}.` : '';
+  if (!row.level) return `${name}: ${NOT_ASSESSED} (${escape(row.not_assessed_reason)})${note}`;
   return [`${name}: ${FLOOD_WORD[row.level]}`, row.uncertain && 'Uncertain', row.estimated_outline && 'Estimated outline']
-    .filter(Boolean).join(' · ');
+    .filter(Boolean).join(' · ') + note;
 }
 
 /**
@@ -240,7 +247,7 @@ export const SEVERITY_WORD = { Red: 'Extreme', Orange: 'Moderate', Green: 'Low' 
 
 export const FORECAST_DISCLAIMER =
   'Fire chances come from a model trained on past fires. Flood levels show where floods tend to reach, from UP '
-  + "NOAH's flood maps and the 2017 UP Mananga flood survey, and are the same in every month. Landslide "
+  + "NOAH's flood maps and recorded floods, and are the same in every month. Landslide "
   + 'predictions are being rebuilt. '
   + 'It is a heads-up for preparing, not a warning that a hazard is coming. '
   + 'Live alerts come only from the DRRMO.';

@@ -31,6 +31,11 @@ export const historyApi = {
   forecastReadiness: () =>
     client.get('/api/history/forecast/readiness/').then((r) => r.data),
 
+  // Each automatic retraining attempt, newest first: { updates: [{ hazard: 'fire'|'flood', result, reason,
+  // version, created_at, is_live }] }
+  forecastUpdates: () =>
+    client.get('/api/history/forecast/updates/').then((r) => r.data),
+
   // How the fire model did on fires it never saw: { hazards: [{ hazard: 'Fire', kind, status, reason?, ... }] }
   forecastAccuracy: () =>
     client.get('/api/history/forecast/accuracy/').then((r) => r.data),

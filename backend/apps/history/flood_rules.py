@@ -218,8 +218,11 @@ def test_gate_passed(test_levels: list) -> bool:
     return sum(1 for lv in test_levels if lv in FLAGGED) >= test_hits_needed(len(test_levels))
 
 
-def acceptance(gain_low: float, test_levels: list, flagged_share: float):
-    """(adopted, reasons) for gates 1-3 (spec 4.4); each failed gate is one plain sentence."""
+def acceptance(gain_low: float, test_levels: list, flagged_share: float, *, own: bool = False):
+    """
+    (adopted, reasons) for gates 1-3 (spec 4.4); each failed gate is one plain sentence. `own`: the test spots
+    are GeoAlert's held-back wet season and the area is the one its records cover (automatic retraining).
+    """
     reasons = []
     if not (gain_low is not None and not math.isnan(gain_low) and gain_low > 0):
         reasons.append('It did not clearly beat UP NOAH\'s map on its own: the lower end of its AUC gain was '
@@ -228,12 +231,18 @@ def acceptance(gain_low: float, test_levels: list, flagged_share: float):
     hits = sum(1 for lv in test_levels if lv in FLAGGED)
     needed = test_hits_needed(len(test_levels))
     if not test_levels:
-        reasons.append('No GeoAlert Mananga flood point was available to test it on.')
+        reasons.append('No held-back wet season spot was available to test it on.' if own
+                       else 'No GeoAlert Mananga flood point was available to test it on.')
     elif hits < needed:
-        reasons.append(f'Only {hits} of the {len(test_levels)} GeoAlert Mananga flood points fell in a Red or Orange '
-                       f'area ({needed} needed).')
+        reasons.append(f'Only {hits} of the {len(test_levels)} held-back wet season spots fell in a Red or Orange '
+                       f'area ({needed} needed).' if own
+                       else f'Only {hits} of the {len(test_levels)} GeoAlert Mananga flood points fell in a Red or '
+                            f'Orange area ({needed} needed).')
     if flagged_share > FLAGGED_MAX:
-        reasons.append(f'Red and Orange would cover {flagged_share:.0%} of the floodplain\'s buildings, more than half.')
+        reasons.append(f"Red and Orange would cover {flagged_share:.0%} of the buildings in the area GeoAlert's "
+                       'records cover, more than half.' if own
+                       else f'Red and Orange would cover {flagged_share:.0%} of the floodplain\'s buildings, more '
+                            'than half.')
     return not reasons, reasons
 
 

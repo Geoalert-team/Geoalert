@@ -737,7 +737,7 @@ export default function PublicMap() {
     const area = purokAt(purokGeo, tappedSpot[1], tappedSpot[0]);
     const row = area && (spotFloodData.flood_results || []).find((r) => String(r.purok_id) === String(area.id ?? area.properties?.id));
     return { available: true, level: row?.level ?? null, not_assessed_reason: row?.not_assessed_reason ?? null,
-      name: area?.properties?.name ?? null };
+      note: row?.note ?? null, name: area?.properties?.name ?? null };
   }, [tappedSpot, spotFloodData, purokGeo]);
 
   // Thin dark boundaries, like sub-catchment lines on a GIS map. Transparent fill keeps them clickable.

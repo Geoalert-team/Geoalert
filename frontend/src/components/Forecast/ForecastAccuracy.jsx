@@ -249,6 +249,7 @@ function FloodSincePublishing({ since }) {
  */
 export function FloodModelReport({ report }) {
   const fallback = report.source === 'noah';
+  const own = report.source === 'geoalert';
   const chosen = FLOOD_FAMILY[report.choice?.chosen] || report.choice?.chosen;
   const acceptance = report.acceptance || {};
   const test = report.temporal_test || {};
@@ -271,9 +272,14 @@ export function FloodModelReport({ report }) {
 
       <h4>The candidates and the rule</h4>
       <p className="fc-note">
-        Trained on {count(report.survey_spots)} flooded survey spots and {count(report.dry_spots)} that stayed dry,
-        against {count(report.domain_buildings)} buildings in the surveyed floodplain ({count(report.valid_buildings)}
-        {' '}on ground like the survey&apos;s). Each candidate was scored on barangays it never saw. The Boyce index
+        {own
+          ? `Trained on ${count(report.own_spots)} flooded spots from GeoAlert's located flood records, against `
+            + `${count(report.domain_buildings)} buildings in the area they cover (${count(report.valid_buildings)} `
+            + 'on ground like theirs).'
+          : `Trained on ${count(report.survey_spots)} flooded survey spots and ${count(report.dry_spots)} that stayed `
+            + `dry, against ${count(report.domain_buildings)} buildings in the surveyed floodplain `
+            + `(${count(report.valid_buildings)} on ground like the survey's).`}
+        {' '}Each candidate was scored on barangays it never saw. The Boyce index
         (−1 to 1) checks that more flood spots fall where the scores are higher; AUC 0.5 is chance. A more complex model
         replaces a simpler one only if it is better with 95% confidence.
       </p>
@@ -315,6 +321,26 @@ export function FloodModelReport({ report }) {
           flood&apos;s level on the map in use.
         </p>
       )}
+      {own && test.held_back?.length > 0 && (
+        <div className="fc-table-wrap">
+          <table className="fc-table fc-table-whole">
+            <caption className="fc-sub">{`The ${test.season} wet season's flood spots, held back`}</caption>
+            <thead>
+              <tr><th scope="col">Day</th><th scope="col">Barangay</th><th scope="col">Level of its area</th></tr>
+            </thead>
+            <tbody>
+              {test.held_back.map((p, i) => (
+                // eslint-disable-next-line react/no-array-index-key -- two spots can share a day and a purok
+                <tr key={i}>
+                  <td>{p.day}</td>
+                  <td>{p.barangay}</td>
+                  <td>{floodLevelWord(p.level)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {test.mananga_points?.length > 0 && (
         <div className="fc-table-wrap">
           <table className="fc-table fc-table-whole">
@@ -348,7 +374,7 @@ export function FloodModelReport({ report }) {
             + `buildings it marks flooded: Boyce ${fmt(eosrs.boyce, 2)}, AUC ${fmt(eosrs.auc, 2)}. ${eosrs.note}`}
         </p>
       )}
-      {test.dry_spots?.length > 0 && (
+      {!own && test.dry_spots?.length > 0 && (
         <p className="fc-note">
           {`Survey spots that stayed dry: ${test.dry_spots.map((d) => fmt(d.share_of_flood_spots_scoring_lower, 0, true))
             .join(' and ')} of the flooded spots scored lower than them.`}
@@ -388,7 +414,7 @@ export function FloodModelReport({ report }) {
           <thead>
             <tr>
               <th scope="col">Level</th><th scope="col">Areas</th><th scope="col">Buildings</th>
-              <th scope="col">Survey flood spots</th>
+              <th scope="col">{own ? 'Flood spots' : 'Survey flood spots'}</th>
             </tr>
           </thead>
           <tbody>

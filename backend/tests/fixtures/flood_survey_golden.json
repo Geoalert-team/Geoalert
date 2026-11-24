@@ -1,0 +1,498 @@
+{
+ "adopted": {
+  "acceptance": {
+   "adopted": true,
+   "gates": [
+    {
+     "detail": "AUC gain 0.383 (95% interval 0.279 to 0.519); Boyce gain 0.659 (-0.795 to 1.208), shown only. Judged on AUC: UP NOAH's map has only four levels, which a continuous Boyce index cannot compare fairly with a continuous score.",
+     "gate": "Better than UP NOAH's map on its own",
+     "passed": true
+    },
+    {
+     "detail": "4 of 4",
+     "gate": "GeoAlert Mananga flood points in Red or Orange",
+     "passed": true
+    },
+    {
+     "detail": "33% of the floodplain buildings",
+     "gate": "Red and Orange cover at most half the buildings",
+     "passed": true
+    },
+    {
+     "detail": "The choice and the cut-offs were fixed before any test point was loaded.",
+     "gate": "Test data seen last",
+     "passed": true
+    }
+   ],
+   "reasons": []
+  },
+  "areas": {
+   "100": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Orange",
+    "not_assessed_reason": null,
+    "score": 0.698943,
+    "uncertain": true
+   },
+   "101": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Orange",
+    "not_assessed_reason": null,
+    "score": 0.727505,
+    "uncertain": true
+   },
+   "102": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Green",
+    "not_assessed_reason": null,
+    "score": 0.009976,
+    "uncertain": false
+   },
+   "103": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": null,
+    "not_assessed_reason": "Outside the surveyed floodplain",
+    "score": null,
+    "uncertain": false
+   },
+   "104": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": null,
+    "not_assessed_reason": "Outside the surveyed floodplain",
+    "score": null,
+    "uncertain": false
+   },
+   "105": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Green",
+    "not_assessed_reason": null,
+    "score": 0.012488,
+    "uncertain": false
+   },
+   "106": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Green",
+    "not_assessed_reason": null,
+    "score": 0.017637,
+    "uncertain": false
+   },
+   "107": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Green",
+    "not_assessed_reason": null,
+    "score": 0.017631,
+    "uncertain": false
+   },
+   "108": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": null,
+    "not_assessed_reason": "Outside the surveyed floodplain",
+    "score": null,
+    "uncertain": false
+   },
+   "109": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": null,
+    "not_assessed_reason": "Outside the surveyed floodplain",
+    "score": null,
+    "uncertain": false
+   },
+   "110": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Red",
+    "not_assessed_reason": null,
+    "score": 0.740857,
+    "uncertain": true
+   },
+   "111": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Orange",
+    "not_assessed_reason": null,
+    "score": 0.719704,
+    "uncertain": true
+   },
+   "112": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Green",
+    "not_assessed_reason": null,
+    "score": 0.018012,
+    "uncertain": false
+   },
+   "113": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": null,
+    "not_assessed_reason": "Outside the surveyed floodplain",
+    "score": null,
+    "uncertain": false
+   },
+   "114": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": null,
+    "not_assessed_reason": "Outside the surveyed floodplain",
+    "score": null,
+    "uncertain": false
+   },
+   "115": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Green",
+    "not_assessed_reason": null,
+    "score": 0.015868,
+    "uncertain": false
+   },
+   "116": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Green",
+    "not_assessed_reason": null,
+    "score": 0.019108,
+    "uncertain": false
+   },
+   "117": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Green",
+    "not_assessed_reason": null,
+    "score": 0.017708,
+    "uncertain": false
+   },
+   "118": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": null,
+    "not_assessed_reason": "Outside the surveyed floodplain",
+    "score": null,
+    "uncertain": false
+   },
+   "119": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": true,
+    "level": null,
+    "not_assessed_reason": "Outside the surveyed floodplain",
+    "score": null,
+    "uncertain": false
+   }
+  },
+  "candidates": [
+   {
+    "auc": 0.8278,
+    "boyce": -0.1412,
+    "boyce_high": 0.4567,
+    "boyce_low": -0.5602,
+    "name": "logistic_regression"
+   },
+   {
+    "auc": 0.8465,
+    "boyce": 0.4451,
+    "boyce_high": 0.7355,
+    "boyce_low": -0.2503,
+    "name": "maxent_hinge"
+   },
+   {
+    "auc": 0.8526,
+    "boyce": 0.2866,
+    "boyce_high": 0.5608,
+    "boyce_low": -0.1362,
+    "name": "xgboost"
+   },
+   {
+    "auc": 0.8546,
+    "boyce": 0.3992,
+    "boyce_high": 0.7005,
+    "boyce_low": -0.2175,
+    "name": "neural_network"
+   },
+   {
+    "auc": 0.4449,
+    "boyce": -0.8,
+    "boyce_high": 0.205,
+    "boyce_low": -0.805,
+    "name": "noah_only"
+   }
+  ]
+ },
+ "fallback": {
+  "acceptance": {
+   "adopted": false,
+   "gates": [
+    {
+     "detail": "AUC gain 0.383 (95% interval 0.279 to 0.519); Boyce gain 0.659 (-0.795 to 1.208), shown only. Judged on AUC: UP NOAH's map has only four levels, which a continuous Boyce index cannot compare fairly with a continuous score.",
+     "gate": "Better than UP NOAH's map on its own",
+     "passed": true
+    },
+    {
+     "detail": "0 of 4",
+     "gate": "GeoAlert Mananga flood points in Red or Orange",
+     "passed": false
+    },
+    {
+     "detail": "33% of the floodplain buildings",
+     "gate": "Red and Orange cover at most half the buildings",
+     "passed": true
+    },
+    {
+     "detail": "The choice and the cut-offs were fixed before any test point was loaded.",
+     "gate": "Test data seen last",
+     "passed": true
+    }
+   ],
+   "reasons": [
+    "Only 0 of the 4 GeoAlert Mananga flood points fell in a Red or Orange area (3 needed)."
+   ]
+  },
+  "areas": {
+   "100": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Red",
+    "not_assessed_reason": null,
+    "score": 0.633333,
+    "uncertain": false
+   },
+   "101": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Orange",
+    "not_assessed_reason": null,
+    "score": 0.411111,
+    "uncertain": false
+   },
+   "102": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Orange",
+    "not_assessed_reason": null,
+    "score": 0.577778,
+    "uncertain": false
+   },
+   "103": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Red",
+    "not_assessed_reason": null,
+    "score": 0.6,
+    "uncertain": false
+   },
+   "104": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Red",
+    "not_assessed_reason": null,
+    "score": 0.6,
+    "uncertain": false
+   },
+   "105": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Red",
+    "not_assessed_reason": null,
+    "score": 0.588889,
+    "uncertain": false
+   },
+   "106": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Orange",
+    "not_assessed_reason": null,
+    "score": 0.544444,
+    "uncertain": false
+   },
+   "107": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Red",
+    "not_assessed_reason": null,
+    "score": 0.622222,
+    "uncertain": false
+   },
+   "108": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Orange",
+    "not_assessed_reason": null,
+    "score": 0.444444,
+    "uncertain": false
+   },
+   "109": {
+    "barangay_id": 1,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Orange",
+    "not_assessed_reason": null,
+    "score": 0.433333,
+    "uncertain": false
+   },
+   "110": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Red",
+    "not_assessed_reason": null,
+    "score": 0.588889,
+    "uncertain": false
+   },
+   "111": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Orange",
+    "not_assessed_reason": null,
+    "score": 0.5,
+    "uncertain": false
+   },
+   "112": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Red",
+    "not_assessed_reason": null,
+    "score": 0.6,
+    "uncertain": false
+   },
+   "113": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Orange",
+    "not_assessed_reason": null,
+    "score": 0.555556,
+    "uncertain": false
+   },
+   "114": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Orange",
+    "not_assessed_reason": null,
+    "score": 0.5,
+    "uncertain": false
+   },
+   "115": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Orange",
+    "not_assessed_reason": null,
+    "score": 0.488889,
+    "uncertain": false
+   },
+   "116": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Green",
+    "not_assessed_reason": null,
+    "score": 0.388889,
+    "uncertain": false
+   },
+   "117": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Orange",
+    "not_assessed_reason": null,
+    "score": 0.544444,
+    "uncertain": false
+   },
+   "118": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": false,
+    "level": "Orange",
+    "not_assessed_reason": null,
+    "score": 0.555556,
+    "uncertain": false
+   },
+   "119": {
+    "barangay_id": 2,
+    "buildings": 30,
+    "estimated_outline": true,
+    "level": "Green",
+    "not_assessed_reason": null,
+    "score": 0.388889,
+    "uncertain": false
+   }
+  },
+  "candidates": [
+   {
+    "auc": 0.8278,
+    "boyce": -0.1412,
+    "boyce_high": 0.4567,
+    "boyce_low": -0.5602,
+    "name": "logistic_regression"
+   },
+   {
+    "auc": 0.8465,
+    "boyce": 0.4451,
+    "boyce_high": 0.7355,
+    "boyce_low": -0.2503,
+    "name": "maxent_hinge"
+   },
+   {
+    "auc": 0.8526,
+    "boyce": 0.2866,
+    "boyce_high": 0.5608,
+    "boyce_low": -0.1362,
+    "name": "xgboost"
+   },
+   {
+    "auc": 0.8546,
+    "boyce": 0.3992,
+    "boyce_high": 0.7005,
+    "boyce_low": -0.2175,
+    "name": "neural_network"
+   },
+   {
+    "auc": 0.4449,
+    "boyce": -0.8,
+    "boyce_high": 0.205,
+    "boyce_low": -0.805,
+    "name": "noah_only"
+   }
+  ]
+ }
+}

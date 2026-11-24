@@ -94,6 +94,7 @@ class Panel:
     barangay: np.ndarray
     month: np.ndarray    # month index
     columns: list
+    fold: np.ndarray | None = None  # the leave-one-out group of each row; None means the calendar year
 
 
 def month_waves(months):
@@ -116,8 +117,9 @@ def feature_matrix(table):
     return columns, A
 
 
-def build_panel(table, label_map, months):
-    """One row per area per month in `months` (month indexes), month by month."""
+def build_panel(table, label_map, months, fold_end=None):
+    """One row per area per month in `months` (month indexes), month by month.
+    With fold_end, the folds count back from it in blocks of 12 months (0 = the 12 months before fold_end)."""
     columns, A = feature_matrix(table)
     months = list(months)
     n = len(table.rows)
@@ -127,8 +129,9 @@ def build_panel(table, label_map, months):
     purok = np.tile(ids, len(months))
     X = np.hstack([np.tile(A, (len(months), 1)), month_waves(month)])
     y = np.array([label_map.get((int(p), int(m)), 0) for p, m in zip(purok, month)], int)
+    fold = None if fold_end is None else (fold_end - 1 - month) // 12
     return Panel(X=X, y=y, purok=purok, barangay=np.tile(brgy, len(months)), month=month,
-                 columns=columns + list(MONTH_COLUMNS))
+                 columns=columns + list(MONTH_COLUMNS), fold=fold)
 
 
 def _grid(**axes):
@@ -230,8 +233,8 @@ def fit_predict(family, settings, X_train, y_train, X_test):
 
 
 def oof(panel, family, settings):
-    """Leave-one-calendar-year-out predictions over the panel's years, clipped to [1e-6, 1 − 1e-6]."""
-    years = panel.month // 12
+    """Leave-one-fold-out predictions (calendar years unless the panel has folds), clipped to [1e-6, 1 − 1e-6]."""
+    years = panel.month // 12 if panel.fold is None else panel.fold
     p = np.zeros(len(panel.y))
     for year in np.unique(years):
         held = years == year

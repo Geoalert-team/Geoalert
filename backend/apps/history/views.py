@@ -9,6 +9,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.db.models import Count, Q
 
 from apps.history.flood_landslide import SUBCATEGORIES
+from apps.history.job_auth import ModelJobTokenPermission
 from apps.history.models import HistoricalRecord
 from apps.history.serializers import STAFF_ONLY_FIELDS, HistoricalRecordDetailSerializer, HistoricalRecordSerializer
 from utils.audit import log_event
@@ -495,6 +496,68 @@ class FloodReadinessView(APIView):
         from apps.history import flood_purok
 
         return _public(Response(flood_purok.readiness()))
+
+
+class ModelUpdatesView(APIView):
+    """
+    GET /api/history/forecast/updates/
+    The latest automatic retraining attempts: when, what was decided and why.
+    No model, report or location. Sent with Cache-Control public, max-age=600.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from apps.history import model_fits
+
+        return _public(Response({'updates': model_fits.attempts()}))
+
+
+class ModelJobDataView(APIView):
+    """
+    GET /api/history/model-job/data/?hazard=fire|flood&outlines=1
+    The retraining job's training data. Token only, never cached. Fire has
+    purok ids only; flood spots carry their purok and their lon/lat (the job
+    needs the point), in this token-only response only; outlines come only
+    with outlines=1.
+    """
+    authentication_classes = []
+    permission_classes = [ModelJobTokenPermission]
+
+    def get(self, request):
+        from apps.history import model_fits
+
+        hazard = request.query_params.get('hazard')
+        if hazard not in ('fire', 'flood'):
+            response = Response({'detail': 'hazard must be fire or flood.'}, status=400)
+        else:
+            try:
+                data = model_fits.training_data(hazard, outlines=request.query_params.get('outlines') == '1')
+                response = Response(data)
+            except model_fits.OutlinesChanged:
+                response = Response({'detail': 'The purok map changed while the data was read; try again.'},
+                                    status=409)
+        response['Cache-Control'] = 'no-store'
+        return response
+
+
+class ModelJobAttemptView(APIView):
+    """
+    POST /api/history/model-job/attempts/
+    The retraining job reports one attempt. Token only. A fit the site cannot
+    read, or a bad payload, is refused with 400 and nothing changes.
+    """
+    authentication_classes = []
+    permission_classes = [ModelJobTokenPermission]
+
+    def post(self, request):
+        from apps.barangays.models import Purok
+        from apps.history import model_fits
+
+        try:
+            fit = model_fits.record_attempt(request.data, Purok.outlines_version(), check=model_fits.site_check)
+        except ValueError as exc:
+            return Response({'detail': str(exc)}, status=400)
+        return Response({'id': fit.pk, 'result': fit.result, 'is_live': fit.is_live}, status=201)
 
 
 class EventOptionsView(APIView):

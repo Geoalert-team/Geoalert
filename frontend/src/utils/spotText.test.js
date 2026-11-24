@@ -55,6 +55,14 @@ test('flood at the spot, from the flood model', () => {
   expect(describeFloodAtSpot(null)).toBeNull();
 });
 
+test('flood at a spot carries the note', () => {
+  const note = "From UP NOAH's map; outside the area GeoAlert's records cover";
+  expect(describeFloodAtSpot({ available: true, level: 'Red', name: 'Purok 1', note }))
+    .toBe("Flood: High flood susceptibility (Purok 1). From UP NOAH's map; outside the area GeoAlert's records cover.");
+  expect(describeFloodAtSpot({ available: true, level: 'Red', name: 'Purok 1', note: null }))
+    .toBe('Flood: High flood susceptibility (Purok 1)');
+});
+
 test('nearest named river', () => {
   expect(nearestNamedRiver(RIVERS, 10.001, 123.005).name).toBe('A');
   expect(nearestNamedRiver(RIVERS, 10.001, 123.005).distanceM).toBeCloseTo(111.3, 0);

@@ -161,6 +161,43 @@ it: docs/research/2026-11-22-fire-purok-prediction-audit.md. Data credits:
 backend/apps/history/data/ATTRIBUTION.md.
 
 --------------------------------------------------------------------------------
+Automatic retraining
+
+GitHub retrains the models by itself (.github/workflows/model-retrain.yml): fire at
+03:17 Manila on the 2nd of each month, flood at 03:17 Manila on 5 January (not on the
+hour: GitHub may delay or drop runs scheduled at :00). The job runs
+on GitHub's throw-away runner with a database of its own, never the shared one. It reads
+its training data from the backend with a token, trains, and posts the attempt back. The
+backend keeps every attempt (Predictive models tab, "Model updates") and puts a new model
+live only when it does at least as well as the one in use. It needs the model_fit table
+(migration history 0012) on the server. Scheduled runs happen only from main. In a public
+repository, GitHub turns scheduled workflows off after 60 days without repository
+activity; if the runs stop, turn the workflow back on in the Actions tab.
+
+Set up once, with one long random token (never write it in a file):
+
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+- Render > Environment:  MODEL_JOB_TOKEN = the token. Without it the job's two
+  endpoints refuse everything.
+- GitHub > Settings > Secrets and variables > Actions, two repository secrets:
+  MODEL_JOB_API_URL = the backend's address, no trailing slash
+                      (https://geoalert-rvqc.onrender.com)
+  MODEL_JOB_TOKEN   = the same token
+
+To run it by hand: Actions > Model retraining > Run workflow, then pick fire or flood.
+Tick "Dry run" to train and print the result without posting anything. A dry run on a
+laptop (set MODEL_JOB_API_URL and MODEL_JOB_TOKEN in the terminal first):
+
+python manage.py run_model_job --hazard fire --dry-run
+
+The flood run loads the purok outlines only into an empty database with
+MODEL_JOB_SCRATCH_DB=true, which only the workflow sets. On a laptop, once there are
+enough spots to try, it stops with an error before training rather than write to the
+shared database. A run that fails posts a "Failed"
+attempt with its reason and turns the workflow red; the next scheduled run tries again.
+
+--------------------------------------------------------------------------------
 Deploying
 
 See deploy/README.md.

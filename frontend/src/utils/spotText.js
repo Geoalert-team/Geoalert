@@ -108,5 +108,6 @@ export function describeFloodAtSpot(flood) {
   if (!flood) return null;
   if (!flood.available) return `Flood: unavailable (${flood.reason})`;
   if (!flood.level) return `Flood: Not assessed yet (${flood.not_assessed_reason || 'outside every purok area'})`;
-  return `Flood: ${FLOOD_AT_SPOT[flood.level]} (${flood.name})`;
+  const note = flood.note ? `. ${flood.note}.` : '';
+  return `Flood: ${FLOOD_AT_SPOT[flood.level]} (${flood.name})${note}`;
 }

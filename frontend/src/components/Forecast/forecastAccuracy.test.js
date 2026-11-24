@@ -304,3 +304,58 @@ test('the page shows the fire and the flood entries', async () => {
   expect(el.textContent).toContain('NOAH fallback');
   expect(el.querySelectorAll('table.fc-candidates tbody tr')).toHaveLength(5);
 });
+
+// A flood report built on GeoAlert's own located flood records (train_flood_model --own)
+const geoReport = {
+  ...floodReport,
+  source: 'geoalert',
+  version: 'own@abc123',
+  basis: "From a machine-learning model of where floods reached in GeoAlert's own located flood records, with UP NOAH "
+    + 'flood depths and terrain. It shows how flood-prone an area is, not whether a flood is coming, and it is the same '
+    + 'in every month.',
+  survey_spots: undefined,
+  own_spots: 120,
+  fallback: undefined,
+  acceptance: {
+    adopted: true,
+    gates: [{ gate: 'Held-back wet season spots in Red or Orange', passed: true, detail: '2 of 2' }],
+    reasons: [],
+  },
+  credits: ['UP NOAH flood hazard maps (ODbL), via the bettergovph mirror'],
+  temporal_test: {
+    season: 2026,
+    held_back: [
+      { day: '2026-07-04', barangay: 'Dumlog', purok_id: 820, level: 'Red' },
+      { day: '2026-09-18', barangay: 'San Isidro', purok_id: 558, level: 'Orange' },
+    ],
+    eosrs: floodReport.temporal_test.eosrs,
+  },
+};
+
+test('a geoalert report holds back the wet season and names no survey', async () => {
+  const el = await renderNode(<FloodModelReport report={geoReport} />);
+  expect(el.textContent).toContain("The 2026 wet season's flood spots, held back");
+  const rows = el.querySelectorAll('table:not(.fc-candidates) caption + thead + tbody tr');
+  expect(rows).toHaveLength(2);
+  expect(rows[0].textContent).toContain('2026-07-04');
+  expect(rows[0].textContent).toContain('Dumlog');
+  expect(rows[1].textContent).toContain('San Isidro');
+  expect(rows[1].textContent).toContain('Moderate flood susceptibility');
+  expect(el.textContent).toContain('120 flooded');
+  expect(el.textContent).not.toContain('Mananga');
+  expect(el.textContent).not.toMatch(/survey/i);
+});
+
+// Final review P7: two held-back spots can share a day and a purok
+test('held-back spots on the same day in the same purok both show, with no key warning', async () => {
+  const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  const spot = { day: '2026-07-04', barangay: 'Dumlog', purok_id: 820, level: 'Red' };
+  const twice = { ...geoReport, temporal_test: { ...geoReport.temporal_test, held_back: [spot, { ...spot }] } };
+  try {
+    const el = await renderNode(<FloodModelReport report={twice} />);
+    expect(el.querySelectorAll('table:not(.fc-candidates) caption + thead + tbody tr')).toHaveLength(2);
+    expect(spy.mock.calls.flat().join(' ')).not.toMatch(/same key/);
+  } finally {
+    spy.mockRestore();
+  }
+});

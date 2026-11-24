@@ -176,7 +176,7 @@ class FirePurokPredictionLog(models.Model):
         return f'{self.purok_name} {self.period_start} — {self.probability} {self.level}'
 
 
-FLOOD_LOG_SOURCES = ['model', 'noah']
+FLOOD_LOG_SOURCES = ['model', 'noah', 'geoalert']  # 'geoalert': an own-data fit (migration 0012)
 
 
 class FloodPurokSusceptibilityLog(models.Model):
@@ -218,3 +218,43 @@ class FloodPurokSusceptibilityLog(models.Model):
 
     def __str__(self):
         return f'{self.purok_name} {self.model_version} — {self.level or "not assessed"}'
+
+
+MODEL_FIT_HAZARDS = ['fire', 'flood']
+MODEL_FIT_RESULTS = ['switched', 'kept', 'not_tried', 'skipped', 'failed']
+
+
+class ModelFit(models.Model):
+    """
+    One automatic retraining attempt (the GitHub Actions job posts each one;
+    apps/history/model_fits.py stores it). A fit goes live only on a pass:
+    at most one live row per hazard, enforced below. Fits that did not go
+    live are kept with their model so an admin can undo to an earlier one.
+    """
+    HAZARDS = tuple((h, h) for h in MODEL_FIT_HAZARDS)
+    RESULTS = tuple((r, r) for r in MODEL_FIT_RESULTS)
+
+    id               = models.BigAutoField(primary_key=True, db_column='mfit_id')
+    hazard           = models.TextField(choices=HAZARDS, db_column='mfit_hazard')
+    result           = models.TextField(choices=RESULTS, db_column='mfit_result')
+    reason           = models.TextField(db_column='mfit_reason')
+    version          = models.TextField(blank=True, default='', db_column='mfit_version')
+    outlines_version = models.TextField(blank=True, default='', db_column='mfit_outlines_version')
+    built_at         = models.DateTimeField(null=True, db_column='mfit_built_at')
+    model            = models.JSONField(null=True, db_column='mfit_model')
+    report           = models.JSONField(null=True, db_column='mfit_report')
+    is_live          = models.BooleanField(default=False, db_column='mfit_is_live')
+    created_at       = models.DateTimeField(auto_now_add=True, db_column='mfit_created_at')
+
+    class Meta:
+        db_table = 'model_fit'
+        ordering = ['-created_at', '-id']
+        constraints = [
+            models.CheckConstraint(check=models.Q(hazard__in=MODEL_FIT_HAZARDS), name='model_fit_hazard'),
+            models.CheckConstraint(check=models.Q(result__in=MODEL_FIT_RESULTS), name='model_fit_result'),
+            models.UniqueConstraint(fields=['hazard'], condition=models.Q(is_live=True),
+                                    name='model_fit_one_live_per_hazard'),
+        ]
+
+    def __str__(self):
+        return f'{self.hazard} {self.result} {self.version or "-"}'

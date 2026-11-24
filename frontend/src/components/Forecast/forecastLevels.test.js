@@ -55,11 +55,16 @@ test('an unavailable row says so instead of None on record', () => {
   expect(levelLabel({ level: 'None' })).toBe('None on record');
 });
 
+test('the disclaimer names recorded floods, not the survey', () => {
+  expect(FORECAST_DISCLAIMER).toContain("from UP NOAH's flood maps and recorded floods");
+  expect(FORECAST_DISCLAIMER).not.toContain('Mananga');
+});
+
 test('the exact copy', () => {
   expect(FORECAST_DISCLAIMER).toBe(
     // Flood's source is named without claiming a trained model: the NOAH fallback may be what ships
     'Fire chances come from a model trained on past fires. Flood levels show where floods tend to reach, from UP '
-    + "NOAH's flood maps and the 2017 UP Mananga flood survey, and are the same in every month. Landslide "
+    + "NOAH's flood maps and recorded floods, and are the same in every month. Landslide "
     + 'predictions are being rebuilt. '
     + 'It is a heads-up for preparing, not a warning that a hazard is coming. Live alerts come only from the DRRMO.',
   );
@@ -135,6 +140,33 @@ test('combined fill keeps the fire level when flood is not assessed', () => {
   expect(purokLevel(map.get('9'), ['Fire'])).toBeNull();
   expect(floodTip(map.get('4').Flood, 'Purok A')).toBe('Purok A: Not assessed yet (Outside the surveyed floodplain)');
   expect(floodTip(map.get('9').Flood, 'Purok B')).toBe('Purok B: High flood susceptibility · Uncertain · Estimated outline');
+});
+
+// Final review P6: an own-data fit marks the puroks it copied from UP NOAH's map (spec 6.3)
+test('a flood row with a note shows it in the hover; one without is unchanged', () => {
+  const NOTE = "From UP NOAH's map; outside the area GeoAlert's records cover";
+  const map = levels.purokLikelyLevels({
+    flood_results: [
+      { purok_id: 5, barangay_id: 3, level: 'Red', uncertain: true, not_assessed_reason: null, estimated_outline: false, note: NOTE },
+      { purok_id: 6, barangay_id: 3, level: 'Orange', uncertain: false, not_assessed_reason: null, estimated_outline: false, note: null },
+    ],
+  });
+  expect(map.get('5').Flood.note).toBe(NOTE);
+  expect(floodTip(map.get('5').Flood, 'Flood')).toBe(`Flood: High flood susceptibility · Uncertain. ${NOTE}.`);
+  expect(floodTip(map.get('6').Flood, 'Flood')).toBe('Flood: Moderate flood susceptibility');
+});
+
+// Fix-wave re-review: the hover is HTML (Leaflet setContent), and a posted fit's note and
+// not-assessed reason are free text, so both are escaped before they reach it
+test('a flood row note or not-assessed reason with markup is escaped in the hover', () => {
+  const map = levels.purokLikelyLevels({
+    flood_results: [
+      { purok_id: 7, barangay_id: 3, level: 'Red', uncertain: false, not_assessed_reason: null, estimated_outline: false, note: '<img src=x onerror=alert(1)>' },
+      { purok_id: 8, barangay_id: 3, level: null, uncertain: false, not_assessed_reason: '<b>x</b>', estimated_outline: false, note: null },
+    ],
+  });
+  expect(floodTip(map.get('7').Flood, 'Flood')).toBe('Flood: High flood susceptibility. &lt;img src=x onerror=alert(1)&gt;.');
+  expect(floodTip(map.get('8').Flood, 'Flood')).toBe('Flood: Not assessed yet (&lt;b&gt;x&lt;/b&gt;)');
 });
 
 test('flood words, legend and the not-assessed label', () => {
