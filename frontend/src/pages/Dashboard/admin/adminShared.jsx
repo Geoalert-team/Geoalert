@@ -62,6 +62,10 @@ export const ACTION_META = {
   PASSWORD_RESET_EMAIL_FAILED: { label: 'Reset email failed', tone: 'bad', icon: 'alert' },
   PASSWORD_RESET_DONE: { label: 'Reset own password', tone: 'warn', icon: 'key' },
   PASSWORD_RESET_FAILED: { label: 'Password reset failed', tone: 'bad', icon: 'key' },
+  INVITE_SENT: { label: 'Sent account invite', tone: 'info', icon: 'mail' },
+  INVITE_EMAIL_FAILED: { label: 'Invite email failed', tone: 'bad', icon: 'alert' },
+  INVITE_ACCEPTED: { label: 'Set up account', tone: 'good', icon: 'userCheck' },
+  INVITE_ACCEPT_FAILED: { label: 'Account setup failed', tone: 'bad', icon: 'key' },
   PUBLISH_HAZARD_ALERT: { label: 'Published hazard alert', tone: 'warn', icon: 'alert' },
   RETRACT_HAZARD: { label: 'Withdrew hazard alert', tone: 'bad', icon: 'userX' },
   VERIFY_HAZARD: { label: 'Ground confirmation', tone: 'info', icon: 'check' },
@@ -206,11 +210,13 @@ export function RoleBadge({ role }) {
   return <span className={`adm-role adm-tone-${meta.tone}`}>{meta.short}</span>;
 }
 
-export function StatusBadge({ active }) {
+// A deactivated account reads Inactive even if its invite was never used
+export function StatusBadge({ active, pending = false }) {
+  const [cls, label] = !active ? ['is-inactive', 'Inactive'] : pending ? ['is-pending', 'Invite pending'] : ['is-active', 'Active'];
   return (
-    <span className={`adm-status ${active ? 'is-active' : 'is-inactive'}`}>
+    <span className={`adm-status ${cls}`}>
       <span className="adm-status-dot" />
-      {active ? 'Active' : 'Inactive'}
+      {label}
     </span>
   );
 }

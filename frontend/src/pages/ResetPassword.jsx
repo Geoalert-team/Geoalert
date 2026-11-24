@@ -4,21 +4,47 @@ import { authApi } from '../api/authApi';
 import logo from '../assets/images/logo1.png';
 import './css/Login.css';
 
-const BAD_LINK = 'This link has expired or was already used.';
-const DONE = 'Password changed. Log in with your new password.';
+// The two emailed links this page serves. The bad-link and done texts match
+// the server's replies (apps/accounts/password_reset.py, invite.py).
+const MODES = {
+  reset: {
+    path: '/reset-password',
+    title: 'Choose a new password',
+    lead: "Pick a password you don't use anywhere else.",
+    badLink: 'This link has expired or was already used.',
+    done: 'Password changed. Log in with your new password.',
+    submit: 'Save new password',
+    check: (uid, token) => authApi.checkResetLink(uid, token),
+    save: (uid, token, password) => authApi.confirmPasswordReset(uid, token, password),
+  },
+  invite: {
+    path: '/set-password',
+    title: 'Set up your account',
+    lead: "Choose the password you'll use to sign in to GeoAlert Talisay. Pick one you don't use anywhere else.",
+    badLink: 'This invite link has expired or was already used.',
+    badHelp: "Already set your password? Log in. If not, ask your system administrator to send you a new invite.",
+    done: 'Your password is set. Log in with your email and new password.',
+    submit: 'Set password',
+    check: (uid, token) => authApi.checkInvite(uid, token),
+    save: (uid, token, password) => authApi.acceptInvite(uid, token, password),
+  },
+};
 
 /**
- * Choose a new password from an emailed reset link
- * (/reset-password/:uid/:token). The link is checked first, so an expired
- * or used one says so before anything is typed. Saving does not sign the
- * person in: they log in next, 2FA included.
+ * Choose a password from an emailed link: a reset link
+ * (/reset-password/:uid/:token) or, with `invite`, a new account's invite
+ * (/set-password/:uid/:token), where the owner picks their first password.
+ * The link is checked first, so an expired or used one says so before
+ * anything is typed. Saving does not sign the person in: they log in next,
+ * 2FA included.
  *
  * As soon as the page has read the uid and token it moves them out of the
- * address into the history entry's state (/reset-password), as Django's own
- * reset view does: a reset abandoned on a shared office computer then
+ * address into the history entry's state (/reset-password or /set-password),
+ * as Django's own reset view does: a reset abandoned on a shared office computer then
  * leaves no working link in the address bar or the browser history.
  */
-export default function ResetPassword() {
+export default function ResetPassword({ invite = false }) {
+  const mode = invite ? MODES.invite : MODES.reset;
   const params = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -37,7 +63,7 @@ export default function ResetPassword() {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (fromUrl) navigate('/reset-password', { replace: true, state: fromUrl });
+    if (fromUrl) navigate(mode.path, { replace: true, state: fromUrl });
   }, [fromUrl?.uid, fromUrl?.token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -48,7 +74,7 @@ export default function ResetPassword() {
     }
     let cancelled = false;
     setStage('checking');
-    authApi.checkResetLink(uid, token)
+    mode.check(uid, token)
       .then((d) => { if (!cancelled) setStage(d?.valid ? 'form' : 'invalid'); })
       .catch((err) => {
         if (cancelled) return;
@@ -70,10 +96,10 @@ export default function ResetPassword() {
     setBusy(true);
     setError('');
     try {
-      await authApi.confirmPasswordReset(uid, token, password);
+      await mode.save(uid, token, password);
       setStage('done');
     } catch (err) {
-      if (err?.message === BAD_LINK) setStage('invalid'); // expired while the form was open
+      if (err?.message === mode.badLink) setStage('invalid'); // expired while the form was open
       else setError(err?.message || 'Something went wrong. Please try again.');
     } finally {
       setBusy(false);
@@ -94,8 +120,8 @@ export default function ResetPassword() {
         </div>
 
         <div className="lg-head">
-          <h1>Choose a new password</h1>
-          {stage === 'form' && <p>Pick a password you don't use anywhere else.</p>}
+          <h1>{mode.title}</h1>
+          {stage === 'form' && <p>{mode.lead}</p>}
         </div>
 
         {stage === 'checking' && <p className="lg-note">Checking your link…</p>}
@@ -114,14 +140,21 @@ export default function ResetPassword() {
 
         {stage === 'invalid' && (
           <>
-            <p className="lg-error" role="alert">{BAD_LINK}</p>
-            <Link to="/forgot-password" className="lg-submit lg-submit-link">Send a new link</Link>
+            <p className="lg-error" role="alert">{mode.badLink}</p>
+            {invite ? (
+              <>
+                <p className="lg-note">{mode.badHelp}</p>
+                <Link to="/login" className="lg-submit lg-submit-link">Go to log in</Link>
+              </>
+            ) : (
+              <Link to="/forgot-password" className="lg-submit lg-submit-link">Send a new link</Link>
+            )}
           </>
         )}
 
         {stage === 'done' && (
           <>
-            <p className="lg-done" role="status">{DONE}</p>
+            <p className="lg-done" role="status">{mode.done}</p>
             <Link to="/login" className="lg-submit lg-submit-link">Log in</Link>
           </>
         )}
@@ -160,7 +193,7 @@ export default function ResetPassword() {
             {error && <p className="lg-error" role="alert">{error}</p>}
 
             <button type="submit" className="lg-submit" disabled={busy}>
-              {busy ? 'Saving…' : 'Save new password'}
+              {busy ? 'Saving…' : mode.submit}
             </button>
           </form>
         )}

@@ -40,6 +40,9 @@ function AppRoutes() {
       <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
       {/* Where the page moves itself once it has read the link, so the token leaves the address bar */}
       <Route path="/reset-password" element={<ResetPassword />} />
+      {/* A new account's emailed invite: the owner chooses their first password */}
+      <Route path="/set-password/:uid/:token" element={<ResetPassword invite />} />
+      <Route path="/set-password" element={<ResetPassword invite />} />
       <Route path="/app/security" element={<Gate><Security /></Gate>} />
 
       {/* Logged-in staff */}

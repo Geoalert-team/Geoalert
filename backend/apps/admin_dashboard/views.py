@@ -12,6 +12,7 @@ from apps.hazards.models import HazardZone, HazardAlert
 from apps.notifications.models import Notification
 from apps.guidance.models import GuidanceContent
 from apps.admin_dashboard.models import AuditLog
+from apps.accounts.invite import is_pending, send_invite_email
 from apps.accounts.models import User, Role, next_employee_id
 from apps.admin_dashboard.serializers import (
     UserListSerializer,
@@ -39,6 +40,22 @@ def log_action(user, action, target_table='', target_id='', details='', request=
         details=details,
         ip_address=ip,
     )
+
+
+def send_invite(request, user):
+    """
+    Email `user` their set-your-password link, logged either way. True if it
+    went. Sent while the admin waits (EMAIL_TIMEOUT caps it), so the screen
+    can say whether it reached the mail server.
+    """
+    try:
+        send_invite_email(user)
+    except Exception as exc:  # SMTP down, wrong app password, timed out, ...
+        log_action(request.user, 'INVITE_EMAIL_FAILED', 'user', user.id,
+                   f'Invite to {user.email} not sent: {type(exc).__name__}', request)
+        return False
+    log_action(request.user, 'INVITE_SENT', 'user', user.id, f'Sent account invite to {user.email}', request)
+    return True
 
 
 # Fields compared before/after an edit so the audit log says what changed
@@ -121,11 +138,15 @@ class UserListCreateView(APIView):
             f'Created user {user.email} ({user.full_name}) as {user.role.get_name_display()}',
             request
         )
+        # The account has no password until its owner sets one from this
+        # email. If it can't be sent, the account still exists: the admin can
+        # resend the invite, or give a temporary password with Reset password.
+        sent = send_invite(request, user)
 
         return Response({
             'message': 'User created successfully',
             'user': UserListSerializer(user).data,
-            'temporary_password': user._temp_password,
+            'invite_sent': sent,
         }, status=status.HTTP_201_CREATED)
 
 
@@ -186,7 +207,12 @@ class UserDetailView(APIView):
 
         log_action(request.user, action, 'user', user.id, details, request)
 
-        return Response(UserListSerializer(user).data)
+        data = UserListSerializer(user).data
+        # The email is part of the invite link's signature, so a new address
+        # kills the old link (likely sent to a typo). Send a fresh one there.
+        if 'email' in changed and user.is_active and is_pending(user):
+            data['invite_sent'] = send_invite(request, user)
+        return Response(data)
 
     def delete(self, request, pk):
         if str(request.user.id) == str(pk):
@@ -240,6 +266,45 @@ class ResetPasswordView(APIView):
             'message': 'Password reset successfully',
             'temporary_password': temp_password,
         })
+
+
+class ResendInviteView(APIView):
+    """
+    POST /api/admin-dashboard/users/<id>/resend-invite/
+    Emails a new set-your-password link to an account that hasn't chosen a
+    password yet. Earlier invite links stop working once the new one is
+    sent. System Admin only.
+    """
+    permission_classes = [IsAuthenticated, IsSystemAdmin]
+
+    def post(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not is_pending(user):
+            return Response(
+                {'error': f'{user.full_name or user.email} has already set a password. '
+                          "Use Reset password if they can't sign in."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not user.is_active:
+            return Response({'error': 'Activate the account before sending an invite.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # A fresh unusable hash changes the token's signature, so only the
+        # newest link works. Saved after sending: if the email fails, the
+        # last link that did go out keeps working.
+        user.set_unusable_password()
+        if not send_invite(request, user):
+            return Response(
+                {'error': "The invite email couldn't be sent. Try again in a few minutes, "
+                          'or use Reset password to give a temporary password instead.'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        user.save(update_fields=['password'])
+        return Response({'message': f'Invite sent to {user.email}.'})
 
 
 class AuditLogPagination(PageNumberPagination):

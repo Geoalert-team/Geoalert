@@ -27,6 +27,7 @@ from datetime import timedelta
 from django.contrib.auth.tokens import default_token_generator
 from django.db import connection
 
+from apps.accounts import invite
 from apps.accounts.models import User
 from apps.accounts.password_reset import (
     ATTEMPTS_REPLY, BAD_LINK, DONE_REPLY, GENERIC_REPLY, LIMIT_REPLY, SAME_PASSWORD,
@@ -163,6 +164,11 @@ class LoginView(APIView):
         auth_user = authenticate(request, username=email, password=password)
 
         if auth_user is None:
+            # An account still waiting for its invite has no password, and
+            # Django answers that without hashing anything; take a real
+            # check's time so the reply's speed doesn't single it out.
+            if invite.is_pending(user):
+                _spend_a_password_check(password)
             _count_ip_failure(request, email)
             user.failed_login_count += 1
             locked_now = user.failed_login_count >= max_failed_logins()
@@ -490,11 +496,11 @@ def run_in_background(job):
     threading.Thread(target=job, daemon=True).start()
 
 
-def _link_user(request):
-    """The account a reset link is for, if its uid and token are both good."""
+def _link_user(request, tokens=default_token_generator):
+    """The account a reset (or invite) link is for, if its uid and token are both good."""
     user = user_from_uid(request.data.get('uid'))
     token = request.data.get('token')
-    ok = bool(user and isinstance(token, str) and default_token_generator.check_token(user, token))
+    ok = bool(user and isinstance(token, str) and tokens.check_token(user, token))
     return user, ok
 
 
@@ -633,3 +639,68 @@ class PasswordResetConfirmView(APIView):
         user.save()
         log_event(request, 'PASSWORD_RESET_DONE', 'app_user', user.id, user.email, user=user)
         return Response({'message': DONE_REPLY})
+
+
+# ---------- Account invites ----------
+# A new account's owner chooses its first password from an emailed link
+# (apps/accounts/invite.py). Failed checks and accepts count toward the same
+# per-address limit as the reset link, so guessing through either is slowed alike.
+
+@method_decorator(csrf_exempt, name='dispatch')
+class InviteCheckView(APIView):
+    """
+    POST /api/auth/invite/check/   Body: { uid, token }
+    Whether an invite link still works, so the page can say so before the
+    person types a password.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        if _too_many_failures(request):
+            return _too_many_attempts()
+        _, ok = _link_user(request, invite.invite_token_generator)
+        if not ok:
+            _count_failure(request)
+        return Response({'valid': ok})
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class InviteAcceptView(APIView):
+    """
+    POST /api/auth/invite/accept/   Body: { uid, token, new_password }
+    Sets the account's first password under the same rules as
+    change-password. Setting it makes the link unusable and ends the
+    "pending" state. Nobody is signed in: they log in next, like after a reset.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        if _too_many_failures(request):
+            return _too_many_attempts()
+
+        user, ok = _link_user(request, invite.invite_token_generator)
+        if not ok:
+            _count_failure(request)
+            if user is not None:
+                log_event(request, 'INVITE_ACCEPT_FAILED', 'app_user', user.id,
+                          f'{user.email}: expired or already used invite link', user=user)
+            return Response({'error': invite.BAD_LINK}, status=status.HTTP_400_BAD_REQUEST)
+
+        new_password = request.data.get('new_password')
+        new_password = new_password if isinstance(new_password, str) else ''
+        try:
+            validate_password(new_password, user=user)
+        except ValidationError as exc:
+            log_event(request, 'INVITE_ACCEPT_FAILED', 'app_user', user.id,
+                      f'{user.email}: new password rejected', user=user)
+            return Response({'error': ' '.join(exc.messages)}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.must_change_password = False
+        user.failed_login_count = 0
+        user.locked_until = None
+        user.save()
+        log_event(request, 'INVITE_ACCEPTED', 'app_user', user.id, user.email, user=user)
+        return Response({'message': invite.DONE_REPLY})
