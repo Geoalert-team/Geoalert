@@ -100,7 +100,7 @@ through [Brevo](https://www.brevo.com), which is free for up to 300 emails a day
    | Field | Value |
    |---|---|
    | Name | `Geoalert` |
-   | Branch | `feature/geoalert-updates` |
+   | Branch | `main` |
    | Language | Docker |
    | Root Directory | `backend` |
    | Region | Singapore |
@@ -132,10 +132,9 @@ the cron job (step 5), then push.
 
    Add no environment variables. The built website calls its own address, and
    `vercel.json` forwards `/api/` to Render.
-3. Deploy. This first build comes from `main` and may fail; that's expected.
-4. In **Settings > Environments > Production**, set **Branch Tracking** to
-   `feature/geoalert-updates`. Push to that branch to build it. Don't press
-   **Redeploy** on a `main` deployment: Redeploy rebuilds the same branch.
+3. Deploy. The build comes from `main`.
+4. In **Settings > Environments > Production**, check that **Branch Tracking**
+   is `main`, the same branch Render deploys and the retraining job runs from.
 5. Under **Domains**, add `geoalert-talisay.vercel.app` if the project got a
    different address, and always open the site there. Sign-in works only on the
    address listed in Render's `CSRF_TRUSTED_ORIGINS`, not on the long
@@ -194,8 +193,11 @@ accounts you no longer need.
 If the release changes the database, run `python manage.py migrate` from a laptop
 pointed at the live database **first**. Render doesn't run migrations by itself.
 
-Then push to `feature/geoalert-updates`. Vercel and Render both redeploy on their
-own.
+Then push to `main` (or merge a pull request into it). Vercel redeploys on its
+own. Render's **Auto-Deploy** is set to **After CI Checks Pass**, so it deploys
+once GitHub's CI is green on that commit; a red CI deploys nothing. Because the
+deploy now follows the push by itself, run the migration before you push, never
+after.
 
 ## When something goes wrong
 
