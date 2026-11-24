@@ -82,6 +82,8 @@ const VIEWS = [
 // The 'likely' view fills puroks by fire level only
 const PREDICTED = ['Fire', 'Flood'];
 const TICK_NOTE = `${FORECAST_ONLY_NOTE} Tick the Fire or Flood layer.`;
+// The folded legend's flood words; the heading already says "Flood susceptibility"
+const FLOOD_SHORT = { Red: 'High', Orange: 'Moderate', Green: 'Low' };
 
 /* ---------- Helpers ---------- */
 
@@ -792,7 +794,9 @@ export default function PublicMap() {
       <PublicNavbar />
 
       <div
-        className="pm-stage"
+        // On a phone the open layer list takes the space under the search, so
+        // the pills, north arrow, legend and base map step aside (PublicMapLayers.css)
+        className={`pm-stage ${layersOpen ? 'has-layers-open' : ''}`}
         style={overlay ? {
           ...(overlay.chipsBottom ? { '--pm-chips-bottom': `${overlay.chipsBottom}px` } : {}),
           '--pm-status-room': `${overlay.statusRoom}px`,
@@ -1054,21 +1058,28 @@ export default function PublicMap() {
             </div>
 
             {view === 'likely' && (
-              <ForecastPeriodPicker
-                value={likelyPeriod}
-                onChange={setLikelyPeriod}
-                fieldClass="pm-chip pm-likely-month"
-                labelClass="pm-sr"
-              />
+              <div className="pm-period">
+                <ForecastPeriodPicker
+                  value={likelyPeriod}
+                  onChange={setLikelyPeriod}
+                  fieldClass="pm-chip pm-likely-month"
+                  labelClass="pm-sr"
+                />
+              </div>
             )}
 
             <button
               type="button"
-              className={`pm-chip ${layersOpen ? 'is-active' : ''}`}
+              className={`pm-chip pm-layers-chip ${layersOpen ? 'is-active' : ''}`}
               aria-expanded={layersOpen}
+              aria-label={`Layers, ${activeTypes.size} of ${layerRows.length} shown`}
               onClick={() => setLayersOpen((open) => !open)}
             >
-              Layers ({activeTypes.size}/{layerRows.length})
+              <svg className="pm-chip-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3 2 8l10 5 10-5z" /><path d="m2 12.5 10 5 10-5" /><path d="m2 17 10 5 10-5" />
+              </svg>
+              <span className="pm-chip-word">Layers</span>
+              <span className="pm-chip-count">{activeTypes.size}/{layerRows.length}</span>
             </button>
 
           </div>
@@ -1153,8 +1164,10 @@ export default function PublicMap() {
                     ? `Likely in ${periodLabel(likelyPeriod)}: each purok's fire level${showFlood ? '; flood below' : ''}`
                     : 'Each purok\'s flood susceptibility, the same in every month'}
               </p>
+              {/* Folded, each list is one short line; with both shown, each says which hazard it is */}
               {showFire && (
                 <ul>
+                  {!legendOpen && showFlood && <li className="pm-legend-key">Fire</li>}
                   {['Red', 'Orange', 'Green'].map((k) => (
                     <li key={k}>
                       <span className="pm-legend-swatch" style={{ background: SEVERITY[k].color }} />
@@ -1165,10 +1178,11 @@ export default function PublicMap() {
               )}
               {showFlood && (
                 <ul>
+                  {!legendOpen && showFire && <li className="pm-legend-key">Flood</li>}
                   {['Red', 'Orange', 'Green'].map((k) => (
                     <li key={`flood-${k}`}>
                       <span className="pm-legend-swatch" style={{ background: SEVERITY[k].color }} />
-                      {FLOOD_WORD[k]}
+                      {legendOpen ? FLOOD_WORD[k] : FLOOD_SHORT[k]}
                     </li>
                   ))}
                   <li key="flood-none">
@@ -1177,7 +1191,10 @@ export default function PublicMap() {
                   </li>
                 </ul>
               )}
-              {showFlood && floodNote && <p className="pm-legend-note">{floodNote}</p>}
+              {/* Where the flood levels come from folds away; "unavailable" stays */}
+              {showFlood && floodNote && (legendOpen || !likely?.flood?.available) && (
+                <p className="pm-legend-note">{floodNote}</p>
+              )}
               {/* The explanations fold away with the legend; the warnings stay while its colours are on the map */}
               {likely?.error && <p className="pm-legend-note">Could not load the likelihood.</p>}
               {/* Where the colours come from; a past period also says what happened */}

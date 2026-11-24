@@ -57,7 +57,7 @@ export const FIRE_MODEL_LABEL = "Fire risk model adapted from the City of Pittsb
 export const FIRE_CREDIT = 'Adapted from the City of Pittsburgh Bureau of Fire / Carnegie Mellon Metro21 fire risk '
   + 'model (github.com/CityofPittsburgh/fire_risk_analysis, MIT License, © 2017 mmadaio).';
 export const PUROK_CAVEAT = 'Purok chances are estimates: most purok outlines are estimated, and a purok marked '
-  + '"Limited data" has a wide range. Check the model accuracy page for how it did on fires it never saw.';
+  + '"Limited data" has a wide range.';
 
 /**
  * The fire model's purok rows (`purok_results`) as purok id (string) → { Fire: { level, probability,

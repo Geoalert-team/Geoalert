@@ -276,6 +276,9 @@
 }
 .pm-legend.is-collapsed .pm-legend-toggle svg { transform: rotate(-90deg); }
 
+.pm-legend-key { font-weight: 800; color: var(--pm-heading, #1c2e4a); }
+/* Fire's list, then flood's: a gap so the two don't read as one */
+.pm-legend ul + ul { margin-top: 10px; }
 .pm-legend-row { align-items: flex-start; }
 .pm-legend-row strong { display: block; color: #1c2e4a; }
 .pm-legend-row small {
@@ -286,8 +289,67 @@
 .pm-legend-symbol { display: inline-flex; width: 16px; height: 16px; flex-shrink: 0; }
 .pm-legend-symbol svg { width: 100%; height: 100%; fill: currentColor; }
 
+/* The Layers button: an icon, the word, and how many layers are on */
+.pm-layers-chip { display: inline-flex; align-items: center; gap: 8px; }
+.pm-chip-icon {
+  width: 17px; height: 17px; flex-shrink: 0;
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.pm-chip-count {
+  padding: 1px 7px; border-radius: 999px;
+  background: var(--pm-mist, #f2f5f9); color: var(--pm-heading, #1c2e4a);
+  font-size: .76rem; font-weight: 800;
+}
+.pm-chip.is-active .pm-chip-count { background: rgba(255, 255, 255, .2); color: #fff; }
+/* The period pickers of the Likely view, kept together */
+.pm-period { display: flex; flex-wrap: wrap; gap: 8px; }
+
 @media (max-width: 860px) {
-  .pm-layers { width: 100%; }
+  .pm-layers { width: 100%; max-height: min(60vh, 440px); overflow-y: auto; }
+
+  /* Search, then one row (view switch + Layers), then the period pickers:
+     two short rows instead of three or four wrapped ones */
+  .pm-topbar { top: 12px; }
+  .pm .pm-search input { height: 46px; }
+  .pm-chips { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .pm-mode { grid-column: 1; grid-row: 1; min-width: 0; }
+  .pm-mode button { flex: 1 1 0; min-width: 0; min-height: 30px; padding: 0 8px; font-size: .86rem; }
+  .pm-layers-chip { grid-column: 2; grid-row: 1; gap: 6px; padding: 0 12px; }
+  .pm-chip { min-height: 38px; font-size: .86rem; }
+  .pm-chip-word {
+    position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden;
+    clip: rect(0, 0, 0, 0); white-space: nowrap;
+  }
+
+  /* One row of pickers, each as wide as its words and sharing what is left.
+     The chip pads the left edge, so the select's own 10 px each side goes:
+     with it, three pickers needed 327 px of a 316 px row on a 360 px phone */
+  .pm-period { grid-column: 1 / -1; grid-row: 2; flex-wrap: nowrap; }
+  .pm-period .pm-likely-month { flex: 1 1 auto; min-width: 0; padding: 0 4px 0 10px; font-size: .82rem; }
+  .pm-period .pm-likely-month select,
+  .pm-period .pm-likely-month input { width: 100%; min-height: 36px; padding: 0 2px 0 0; }
+
+  /* A smaller north arrow */
+  .pm-north { width: 36px; padding: 4px 0 2px; border-radius: 10px; }
+  .pm-north svg { width: 14px; height: 20px; }
+  .pm-north span { font-size: 11px; }
+
+  /* The open layer list owns the space under the search */
+  .has-layers-open .pm-status,
+  .has-layers-open .pm-north,
+  .has-layers-open .pm-legend,
+  .has-layers-open .pm-basemap { display: none; }
+
+  /* Folded legend: one short line per list */
+  .pm-legend.is-collapsed li { font-size: .8rem; gap: 6px; }
+  .pm-legend.is-collapsed ul + ul { margin-top: 6px; }
+  /* The open legend reaches up past the base map switch; the switch waits until it folds */
+  .pm-legend:not(.is-collapsed) ~ .pm-basemap { display: none; }
+}
+/* The narrowest phones (360 px): a little less room around the pickers */
+@media (max-width: 380px) {
+  .pm-period { gap: 6px; }
+  .pm-period .pm-likely-month { padding: 0 2px 0 8px; font-size: .78rem; }
 }
 /* "Likely by month" view: month picker beside the shading switch */
 .pm-likely-month { display: inline-flex; align-items: center; padding: 0 6px 0 12px; }
