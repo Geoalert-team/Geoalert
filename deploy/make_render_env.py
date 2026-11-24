@@ -38,12 +38,15 @@ def main():
 
     env = read_env(args.env)
     lines, missing = [], []
+    proxy_secret = None
     for line in (ROOT / 'deploy' / 'render.env.example').read_text(encoding='utf-8').splitlines():
         m = re.match(r'([A-Z0-9_]+)=(.*)$', line)
         if m:
             key, value = m.groups()
             if key == 'SECRET_KEY':
                 value = secrets.token_urlsafe(64)
+            elif key == 'PROXY_SECRET':
+                value = proxy_secret = secrets.token_urlsafe(48)
             elif key in FROM_ENV and key in env:
                 value = env[key]
             if value == '__FILL_IN__':
@@ -56,6 +59,9 @@ def main():
     print(f'Written: {args.out}')
     if missing:
         print('Still to fill in:', ', '.join(missing))
+    if proxy_secret:
+        print('On Vercel, add the environment variable GEOALERT_PROXY_SECRET with the same value as '
+              'PROXY_SECRET in that file (see deploy/FREE_HOSTING.md, "The proxy secret").')
     print('It holds passwords: delete it once Render has the settings.')
 
 

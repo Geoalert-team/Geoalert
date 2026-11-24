@@ -124,8 +124,11 @@ class HazardZoneListView(APIView):
         except Exception:
             logger.exception('Could not start the daily fire purok log.')
 
+        # Signed-in staff get the approval details; the public doesn't
+        public = not request.user.is_authenticated
+
         # Nothing changed since this browser last asked: no queries at all
-        etag = map_version.etag_for(request)
+        etag = map_version.etag_for(request, 'public' if public else 'staff')
         if map_version.is_fresh(request, etag):
             return map_version.tag(Response(status=status.HTTP_304_NOT_MODIFIED), etag)
 
@@ -139,17 +142,26 @@ class HazardZoneListView(APIView):
 
         barangay = request.query_params.get('barangay')
         if barangay:
-            zones = zones.filter(barangay_id=barangay)
+            try:
+                zones = zones.filter(barangay_id=int(barangay))
+            except ValueError:
+                return Response({'error': 'barangay must be an id.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Viewport bounding box filter for map pan/zoom
         zones, within_ids, error = filter_by_bbox(zones, request)
         if error:
             return error
 
-        # The first map to refresh after a change builds this; the rest share it
         def build():
-            return dict(HazardZoneGeoSerializer(zones, many=True, context={'within_ids': within_ids}).data)
+            return dict(HazardZoneGeoSerializer(
+                zones, many=True, context={'within_ids': within_ids, 'public': public}).data)
 
+        # The first map to refresh after a change builds this; the rest share
+        # it. Only the plain list, which every map polls: a stored copy per
+        # query string let anyone fill the cache (and flush what else is in
+        # it) just by adding ?x=1, ?x=2, ... to the address.
+        if request.GET:
+            return map_version.tag(Response(build()), etag)
         return map_version.tag(Response(map_version.cached_body(etag, build)), etag)
 
 

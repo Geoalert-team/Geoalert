@@ -1,10 +1,18 @@
+import os
+
 import environ
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 env = environ.Env()
-environ.Env.read_env(BASE_DIR / '.env')
+# backend/.env, or the file GEOALERT_ENV_FILE names (relative to backend/).
+# Laptops' .env points at the development database; whoever runs migrations
+# on the live one keeps its owner login in a separate file, e.g.
+#   GEOALERT_ENV_FILE=.env.production python manage.py migrate
+# (deploy/SEPARATE_DATABASES.md). Values already in the environment win.
+ENV_FILE = BASE_DIR / os.environ.get('GEOALERT_ENV_FILE', '.env')
+environ.Env.read_env(ENV_FILE)
 
 SECRET_KEY = env('SECRET_KEY')
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost'])
@@ -43,6 +51,9 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    # With REQUIRE_PROXY_SECRET on, /api/ answers only requests that came
+    # through the website (utils/proxy.py); before any session or query work
+    'utils.proxy.ProxySecretMiddleware',
     # Django's, but a session another request just ended doesn't turn this
     # request into a 400 (utils/sessions.py)
     'utils.sessions.SessionMiddleware',
@@ -138,13 +149,24 @@ if DB_TRANSACTION_POOLER:
 # an account) takes effect in all of them at once. An in-memory cache would
 # keep a signed-out session alive in the other workers. A deployment across
 # several machines needs a shared cache such as Redis instead.
+_CACHE_DIR = env('CACHE_DIR', default=str(BASE_DIR / '.cache' / 'django'))
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': env('CACHE_DIR', default=str(BASE_DIR / '.cache' / 'django')),
+        'LOCATION': _CACHE_DIR,
         'TIMEOUT': 300,
         'OPTIONS': {'MAX_ENTRIES': 5000},
-    }
+    },
+    # Sign-in throttles, lockouts of unknown emails, reset limits and used 2FA
+    # codes (utils/security_cache.py). Kept apart from 'default' because the
+    # public map fills that one: when a file cache is full it deletes a random
+    # third of its entries, and blocked addresses must not be among them.
+    'security': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': _CACHE_DIR + '-security',
+        'TIMEOUT': 300,
+        'OPTIONS': {'MAX_ENTRIES': 50000},
+    },
 }
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 # The cookie never outlives the 12-hour cap in utils/session_limits.py
@@ -165,7 +187,8 @@ PASSWORD_HASHERS = [
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    # 12, not Django's 8: these accounts publish alerts and manage other accounts
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 12}},
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
@@ -265,6 +288,26 @@ CORS_EXPOSE_HEADERS = ['x-geoalert-session-expired', 'etag']
 # X-Forwarded-For. Off by default, because without a proxy that header is
 # whatever the client sends. See utils/login_throttle.py.
 BEHIND_PROXY = env.bool('BEHIND_PROXY', default=False)
+
+# A secret Vercel adds to every /api/ request it forwards (frontend/vercel.json,
+# from its GEOALERT_PROXY_SECRET project variable), so Django can tell the
+# website's traffic from someone calling the Render address directly. With it
+# set, the first X-Forwarded-For entry (the visitor, as Vercel wrote it) is
+# believed only on requests that carry it; any other request is counted by the
+# address Render's own proxy saw. REQUIRE_PROXY_SECRET then turns direct calls
+# away altogether, except the exact paths in PROXY_SECRET_EXEMPT: the keep-awake
+# cron job's, and the retraining job's two (guarded by its own token,
+# MODEL_JOB_TOKEN). See utils/proxy.py.
+PROXY_SECRET = env('PROXY_SECRET', default='')
+REQUIRE_PROXY_SECRET = env.bool('REQUIRE_PROXY_SECRET', default=False)
+PROXY_SECRET_EXEMPT = env.list('PROXY_SECRET_EXEMPT', default=[
+    '/api/hazards/', '/api/history/model-job/data/', '/api/history/model-job/attempts/',
+])
+
+# Django's own admin site (/django-admin/). Off unless asked for: it signs in
+# with a password alone, without the 2FA step, the lockout or the audit log
+# of /api/auth/login/, and the app has its own administration screens.
+DJANGO_ADMIN_ENABLED = env.bool('DJANGO_ADMIN_ENABLED', default=False)
 
 # The prediction log (apps/history/prediction_log.py) keeps the chances the
 # public site showed, and its rows can never be changed or removed. Exactly

@@ -55,10 +55,16 @@ def bump(**_signal_kwargs):
     transaction.on_commit(_bump_now)
 
 
-def etag_for(request):
+def etag_for(request, variant=''):
+    """
+    `variant` names a version of the answer that differs by who is asking
+    (the hazard list leaves staff-only fields out for the public), so a
+    browser that signs out isn't told its staff copy is still current.
+    """
     bucket = int(time.time() // REFRESH_EVERY)
-    raw = f'{current()}|{bucket}|{request.get_full_path()}'
-    return '"' + hashlib.sha1(raw.encode()).hexdigest()[:24] + '"'
+    raw = f'{current()}|{bucket}|{variant}|{request.get_full_path()}'
+    # A cache tag, not a signature: SHA-1 is fine here
+    return '"' + hashlib.sha1(raw.encode(), usedforsecurity=False).hexdigest()[:24] + '"'
 
 
 def is_fresh(request, etag):

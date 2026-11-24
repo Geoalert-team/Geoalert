@@ -10,7 +10,7 @@ import { useSusceptibility } from '../components/Map/susceptibility';
 import PurokLayer from '../components/Map/PurokLayer';
 import PurokHistoryLayer from '../components/Map/PurokHistoryLayer';
 import FloodOverlay from '../components/Map/FloodOverlay';
-import { PUROK_HAZARD_AREA, PUROK_OF_HAZARD, hasEstimates, purokAt, purokStyle, purokTooltip, puroksOf } from '../components/Map/purokStyle';
+import { PUROK_HAZARD_AREA, PUROK_OF_HAZARD, escape as escapeHtml, hasEstimates, purokAt, purokStyle, purokTooltip, puroksOf } from '../components/Map/purokStyle';
 import { byPurok, historyLine } from '../components/Map/purokLevels';
 import { HAZARD_TYPES, SEVERITY, severityInfo, hazardKey, hazardIconPath, hazardColor } from '../components/Map/hazardInfo';
 import { hazardsApi } from '../api/hazardsApi';
@@ -901,15 +901,16 @@ export default function PublicMap() {
               onEachFeature={(feature, layer) => {
                 // Inside the selected barangay its puroks name themselves on hover
                 if (selectedPuroks && String(featureId(feature)) === String(selectedBarangayId)) return;
-                const name = feature.properties?.name || 'Barangay';
+                // Leaflet treats tooltip text as HTML: escape what came from the server
+                const name = escapeHtml(feature.properties?.name || 'Barangay');
                 let tip = name;
                 if (view === 'likely') {
                   const r = fireRows.get(String(featureId(feature)));
                   // A past period also says what happened in it
-                  const happened = r && r.actual != null ? `; ${r.actual || 'none'} happened` : '';
+                  const happened = r && r.actual != null ? `; ${escapeHtml(r.actual || 'none')} happened` : '';
                   let line = '';
                   if (!showFire) line = '';
-                  else if (r?.method === 'unavailable') line = `Fire: ${levelLabel(r)}${r.reason ? ` (${r.reason})` : ''}`;
+                  else if (r?.method === 'unavailable') line = `Fire: ${escapeHtml(levelLabel(r))}${r.reason ? ` (${escapeHtml(r.reason)})` : ''}`;
                   else if (r?.method === 'model') line = `Fire: ${likelihoodInfo(r.level).label}, about ${chanceText(r)}${happened}`;
                   else if (r) line = `Fire: ${likelihoodInfo(r.level).label} (${periodYearsText(r, likelyPeriod)}${happened})`;
                   if (showFlood) line = [line, 'Flood: hover a purok area for its flood level'].filter(Boolean).join('<br>');

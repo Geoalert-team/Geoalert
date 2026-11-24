@@ -51,11 +51,11 @@ function PasswordInput({ id, value, onChange, autoComplete, placeholder }) {
 function strength(pw) {
   if (!pw) return 0;
   let score = 0;
-  if (pw.length >= 8) score += 1;
   if (pw.length >= 12) score += 1;
+  if (pw.length >= 16) score += 1;
   if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score += 1;
   if (/\d/.test(pw) && /[^A-Za-z0-9]/.test(pw)) score += 1;
-  return pw.length < 8 ? Math.min(score, 1) : score;
+  return pw.length < 12 ? Math.min(score, 1) : score;
 }
 const STRENGTH = [
   { label: '', tone: '' },
@@ -161,7 +161,7 @@ export default function Security() {
 
   const score = strength(newPassword);
   const checks = {
-    length: newPassword.length >= 8,
+    length: newPassword.length >= 12,
     mixed: /[A-Za-z]/.test(newPassword) && /\d/.test(newPassword),
     different: newPassword.length > 0 && newPassword !== currentPassword,
     match: confirmPassword.length > 0 && newPassword === confirmPassword,
@@ -171,7 +171,7 @@ export default function Security() {
     e.preventDefault();
     setPwError('');
     if (!currentPassword) return setPwError('Enter your current password.');
-    if (!checks.length) return setPwError('Your new password must be at least 8 characters long.');
+    if (!checks.length) return setPwError('Your new password must be at least 12 characters long.');
     if (!checks.different) return setPwError('Choose a password different from your current one.');
     if (!checks.match) return setPwError('The new passwords do not match.');
 
@@ -303,7 +303,7 @@ export default function Security() {
                   </div>
                   <div className="adm-field">
                     <label htmlFor="sec-new">New password</label>
-                    <PasswordInput id="sec-new" value={newPassword} onChange={(v) => { setNewPassword(v); setPwError(''); }} autoComplete="new-password" placeholder="At least 8 characters" />
+                    <PasswordInput id="sec-new" value={newPassword} onChange={(v) => { setNewPassword(v); setPwError(''); }} autoComplete="new-password" placeholder="At least 12 characters" />
                     <div className="sec-meter" aria-live="polite">
                       <div className="sec-meter-bars">
                         {[1, 2, 3, 4].map((i) => (
@@ -322,7 +322,7 @@ export default function Security() {
                 <div className="sec-reqs">
                   <p>Your new password needs:</p>
                   <ul>
-                    <Requirement met={checks.length}>At least 8 characters</Requirement>
+                    <Requirement met={checks.length}>At least 12 characters</Requirement>
                     <Requirement met={checks.mixed}>Letters and numbers (recommended)</Requirement>
                     <Requirement met={checks.different}>To be different from your current one</Requirement>
                     <Requirement met={checks.match}>To match in both boxes</Requirement>

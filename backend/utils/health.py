@@ -184,13 +184,43 @@ def _file_storage():
                   f'Supabase Storage, bucket "{bucket}", reachable.')
 
 
-def system_health():
+def _proxy(request):
+    """
+    Can sign-in throttling and the audit log trust the visitor's address?
+
+    Behind Vercel the first X-Forwarded-For entry is the visitor, but only on
+    requests Vercel forwarded (utils/proxy.py). Read from the request that
+    asked for this check, which came through the website: if the secret is
+    configured but didn't arrive with it, Vercel isn't adding it.
+    """
+    from django.conf import settings
+    from utils.proxy import carries_secret, secret_configured
+
+    if not (getattr(settings, 'BEHIND_PROXY', False) and getattr(settings, 'FORWARDED_FOR_TRUST_FIRST', False)):
+        return _check('proxy', 'Visitor addresses', 'ok',
+                      'Counted by the address the proxy itself saw.')
+    if not secret_configured():
+        return _check('proxy', 'Visitor addresses', 'warn',
+                      'PROXY_SECRET is not set, so anyone calling the server directly can choose '
+                      'the address sign-in throttling and the audit log record. Set the same '
+                      'secret as PROXY_SECRET on Render and GEOALERT_PROXY_SECRET on Vercel.')
+    if request is not None and not carries_secret(request):
+        return _check('proxy', 'Visitor addresses', 'warn',
+                      'This request reached the server without the proxy secret. Check that '
+                      'GEOALERT_PROXY_SECRET on Vercel matches PROXY_SECRET on Render.')
+    return _check('proxy', 'Visitor addresses', 'ok',
+                  'Requests from the website carry the proxy secret.')
+
+
+def system_health(request=None):
     """
     Run every check and fold the results into one status.
 
     Never raises. A check that blows up is reported as a failed check, not
     as a failed request — a health endpoint that 500s tells you only that
     the health endpoint is broken.
+
+    `request` is the one asking, for the check that reads its headers.
     """
     # Everything after the database needs it, so a dead connection is
     # reported once rather than as five separate failures. Built here rather
@@ -234,6 +264,11 @@ def system_health():
         checks.append(_check('storage', 'Photo storage', 'fail',
                              f'Photos cannot be stored or read: '
                              f'{type(exc).__name__}: {exc}'.strip()[:200]))
+
+    try:
+        checks.append(_proxy(request))
+    except Exception as exc:
+        checks.append(_check('proxy', 'Visitor addresses', 'fail', f'{type(exc).__name__}: {exc}'[:200]))
 
     states = {c['state'] for c in checks}
     if 'fail' in states:

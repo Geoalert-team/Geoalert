@@ -17,8 +17,17 @@ CSRF_COOKIE_SECURE = True
 # Behind Vercel and then Render, the last X-Forwarded-For entry is one of their
 # addresses, shared by every visitor, so one person's typos would block
 # everyone's sign-in (utils/login_throttle.py). Vercel overwrites the header
-# with the visitor's address, which makes the first entry the visitor.
+# with the visitor's address, which makes the first entry the visitor. But a
+# request sent straight to Render writes that entry itself, so with
+# PROXY_SECRET set it is believed only on requests Vercel forwarded.
 FORWARDED_FOR_TRUST_FIRST = env.bool('FORWARDED_FOR_TRUST_FIRST', default=False)
+
+# JSON only. The browsable HTML API is a development aid; in production it
+# hands anyone who opens an /api/ address in a browser forms for every field.
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,
+    'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
+}
 
 # Free hosting counts every byte sent, and the map's purok layer is about 1 MB
 MIDDLEWARE = ['django.middleware.gzip.GZipMiddleware', *MIDDLEWARE]

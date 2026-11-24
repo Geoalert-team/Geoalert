@@ -8,3 +8,8 @@ staticfiles/
 tests/
 __pycache__/
 *.pyc
+# Local data that must never reach an image
+backups/
+.hazard_cache/
+.pytest_cache/
+*.sqlite3

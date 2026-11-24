@@ -73,12 +73,12 @@ jobs:
       HAZARD: ${{ inputs.hazard || (github.event.schedule == '17 19 4 1 *' && 'flood' || 'fire') }}
       DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
       - name: Install GDAL and GEOS
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gdal-bin libgdal-dev libgeos-dev
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
           cache: pip
@@ -86,7 +86,7 @@ jobs:
       - name: Install requirements
         run: pip install -r requirements/development.txt
       # The public map downloads (terrain, OpenStreetMap, UP NOAH, buildings), kept between runs
-      - uses: actions/cache@v4
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: backend/.hazard_cache
           key: model-job-cache-v1

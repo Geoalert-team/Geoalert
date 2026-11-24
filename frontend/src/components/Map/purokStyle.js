@@ -79,7 +79,7 @@ export function puroksOf(geo, barangayId) {
   return features.length ? { type: 'FeatureCollection', features } : null;
 }
 
-// Text made safe to put in hover HTML (Leaflet setContent)
+// Text made safe to put in hover HTML (Leaflet setContent, bindTooltip)
 export const escape = (text) => String(text ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 

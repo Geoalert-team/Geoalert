@@ -8,6 +8,7 @@ from apps.guidance.serializers import (
     GuidanceContentSerializer,
     GuidanceContentCreateSerializer,
 )
+from utils.audit import log_event
 from utils.permissions import IsDRRMOOfficer
 
 
@@ -69,6 +70,8 @@ class GuidanceListView(APIView):
             )
 
         article = serializer.save(created_by=request.user)
+        log_event(request, 'ADD_GUIDANCE', 'guidance_content', article.id,
+                  f'"{article.title}" ({article.timeline_phase})')
         return Response(
             GuidanceContentSerializer(article).data,
             status=status.HTTP_201_CREATED
@@ -123,6 +126,8 @@ class GuidanceDetailView(APIView):
             )
 
         article = serializer.save()
+        log_event(request, 'EDIT_GUIDANCE', 'guidance_content', article.id,
+                  f'"{article.title}" ({", ".join(sorted(serializer.validated_data)) or "no fields"})')
         return Response(GuidanceContentSerializer(article).data)
 
     def delete(self, request, pk):
@@ -143,6 +148,7 @@ class GuidanceDetailView(APIView):
         # Soft delete — just unpublish, never hard delete
         article.is_published = False
         article.save()
+        log_event(request, 'UNPUBLISH_GUIDANCE', 'guidance_content', article.id, f'"{article.title}"')
         return Response(
             {'message': 'Article unpublished successfully'},
             status=status.HTTP_200_OK

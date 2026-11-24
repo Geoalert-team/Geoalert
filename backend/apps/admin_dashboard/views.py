@@ -58,6 +58,25 @@ def send_invite(request, user):
     return True
 
 
+ADMIN_ROLE = 'System_Admin'
+LAST_ADMIN = ('This is the only active System Administrator. Give another account the '
+              'System Administrator role first, or nobody will be able to manage accounts.')
+
+
+def removes_admin(user, changes):
+    """Whether these validated changes take an active System Administrator out of that role."""
+    if not (user.is_active and user.role_id and user.role.name == ADMIN_ROLE):
+        return False
+    if changes.get('is_active') is False:
+        return True
+    role_id = changes.get('role_id')
+    return bool(role_id) and Role.objects.filter(id=role_id).exclude(name=ADMIN_ROLE).exists()
+
+
+def other_active_admins(user):
+    return User.objects.filter(is_active=True, role__name=ADMIN_ROLE).exclude(pk=user.pk).exists()
+
+
 # Fields compared before/after an edit so the audit log says what changed
 TRACKED_USER_FIELDS = [
     'first_name', 'middle_initial', 'last_name', 'suffix', 'email', 'phone',
@@ -74,7 +93,7 @@ class DashboardMetricsView(APIView):
     permission_classes = [IsAuthenticated, IsSystemAdmin]
 
     def get(self, request):
-        health = system_health()
+        health = system_health(request)
 
         total_users     = User.objects.count()
         active_users    = User.objects.filter(is_active=True).count()
@@ -182,15 +201,25 @@ class UserDetailView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if str(request.user.id) == str(pk) and request.data.get('is_active') is False:
+        serializer = UserUpdateSerializer(user, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # Checked on the validated values: the raw body's "false", 0 or "no"
+        # all become False, and only a JSON false used to be caught.
+        own = str(request.user.id) == str(pk)
+        if own and serializer.validated_data.get('is_active') is False:
             return Response(
                 {'error': 'You cannot deactivate your own account.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
-        serializer = UserUpdateSerializer(user, data=request.data, partial=True)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if removes_admin(user, serializer.validated_data):
+            if own:
+                return Response({'error': 'You cannot remove your own administrator role. '
+                                          'Ask another administrator to change it.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            if not other_active_admins(user):
+                return Response({'error': LAST_ADMIN}, status=status.HTTP_400_BAD_REQUEST)
 
         before = {f: getattr(user, f) for f in TRACKED_USER_FIELDS}
         user = serializer.save()
@@ -225,6 +254,9 @@ class UserDetailView(APIView):
             user = User.objects.get(pk=pk)
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if removes_admin(user, {'is_active': False}) and not other_active_admins(user):
+            return Response({'error': LAST_ADMIN}, status=status.HTTP_400_BAD_REQUEST)
 
         user.is_active = False
         user.save()
@@ -484,7 +516,7 @@ class SystemHealthView(APIView):
     permission_classes = [IsAuthenticated, IsSystemAdmin]
 
     def get(self, request):
-        return Response(system_health())
+        return Response(system_health(request))
 
 
 class RolesListView(APIView):

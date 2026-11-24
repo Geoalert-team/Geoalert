@@ -45,6 +45,14 @@ class ProductionSettingsTests(SimpleTestCase):
         self.assertFalse(self.production().FORWARDED_FOR_TRUST_FIRST)
         self.assertTrue(self.production(FORWARDED_FOR_TRUST_FIRST='True').FORWARDED_FOR_TRUST_FIRST)
 
+    def test_production_answers_json_only(self):
+        renderers = self.production().REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES']
+        self.assertEqual(renderers, ['rest_framework.renderers.JSONRenderer'])
+
+    def test_django_admin_is_off_unless_asked_for(self):
+        self.assertFalse(self.production().DJANGO_ADMIN_ENABLED)
+        self.assertTrue(self.production(DJANGO_ADMIN_ENABLED='True').DJANGO_ADMIN_ENABLED)
+
     def test_a_server_error_reaches_the_log(self):
         """With DEBUG off, Django's own settings print nothing to the console."""
         self.assertIn('console', self.production().LOGGING['loggers']['django.request']['handlers'])
@@ -74,23 +82,46 @@ class ClientAddressTests(SimpleTestCase):
 
 
 class VercelForwardingTests(SimpleTestCase):
-    """Vercel's usual /api/:path* doesn't match an address ending in a slash, and every API address ends in one."""
+    """
+    Vercel's usual /api/:path* doesn't match an address ending in a slash, and every API address ends in one.
+    The rules are `routes` (not `rewrites`) because only a route can add the proxy secret header (utils/proxy.py).
+    """
 
     def config(self):
         return json.loads((Path(__file__).resolve().parents[2] / 'frontend' / 'vercel.json').read_text(encoding='utf-8'))
 
+    def api_route(self):
+        return next(r for r in self.config()['routes'] if r.get('src') == '/api/(.*)')
+
     def test_the_api_rule_keeps_the_final_slash(self):
-        rule = self.config()['rewrites'][0]
-        self.assertEqual(rule['source'], '/api/(.*)')
-        self.assertTrue(rule['destination'].endswith('.onrender.com/api/$1'))
+        self.assertTrue(self.api_route()['dest'].endswith('.onrender.com/api/$1'))
 
     def test_every_other_address_is_a_page_of_the_app(self):
-        self.assertEqual(self.config()['rewrites'][-1], {'source': '/(.*)', 'destination': '/index.html'})
+        routes = self.config()['routes']
+        self.assertEqual(routes[-2], {'handle': 'filesystem'})  # the built files first
+        self.assertEqual(routes[-1], {'src': '/(.*)', 'dest': '/index.html'})
 
     def test_vercel_never_keeps_a_copy_of_an_api_answer(self):
-        headers = self.config()['headers'][0]
-        self.assertEqual(headers['source'], '/api/(.*)')
-        self.assertIn({'key': 'x-vercel-enable-rewrite-caching', 'value': '0'}, headers['headers'])
+        self.assertEqual(self.api_route()['headers'], {'x-vercel-enable-rewrite-caching': '0'})
+
+    def test_the_api_route_adds_the_proxy_secret(self):
+        [transform] = self.api_route()['transforms']
+        self.assertEqual(transform['type'], 'request.headers')
+        self.assertEqual(transform['op'], 'set')  # replaces any copy a visitor sends
+        self.assertEqual(transform['target'], {'key': 'x-geoalert-proxy'})
+        self.assertEqual(transform['args'], '$GEOALERT_PROXY_SECRET')
+        self.assertEqual(transform['env'], ['GEOALERT_PROXY_SECRET'])
+
+    def test_the_api_route_comes_before_the_app_fallback(self):
+        routes = self.config()['routes']
+        self.assertLess(routes.index(self.api_route()), routes.index({'handle': 'filesystem'}))
+
+    def test_the_app_pages_cannot_be_framed(self):
+        pages = self.config()['routes'][0]
+        self.assertEqual(pages['src'], '/((?!api/).*)')
+        self.assertTrue(pages['continue'])
+        self.assertEqual(pages['headers']['X-Frame-Options'], 'DENY')
+        self.assertIn("frame-ancestors 'none'", pages['headers']['Content-Security-Policy'])
 
 
 class AdminAuditAddressTests(TestCase):

@@ -14,7 +14,10 @@ should not also be locked out of getting back in because the cache is down.
 
 import time
 
-from django.core.cache import cache
+from utils.security_cache import SecurityCacheProxy
+
+# The security cache, which the public map can't fill up and flush
+cache = SecurityCacheProxy()
 
 PREFIX = 'pwreset:'
 

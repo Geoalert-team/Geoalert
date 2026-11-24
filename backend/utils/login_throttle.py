@@ -10,10 +10,18 @@ address for 15 minutes.
 
 20 is well above what a shared office network produces from typos, so
 City Hall staff on one address don't lock each other out.
+
+Counted in the security cache (utils/security_cache.py), which the public
+map can't fill up and flush.
 """
 
+import ipaddress
+import time
+
 from django.conf import settings
-from django.core.cache import cache
+
+from utils.proxy import from_trusted_proxy
+from utils.security_cache import SecurityCacheProxy
 
 MAX_FAILS = 20
 WINDOW = 15 * 60   # seconds the failures are counted over
@@ -23,6 +31,31 @@ BLOCKED = {
     'error': 'Too many failed sign-ins from this network. Try again in 15 minutes.',
     'code': 'ip_throttled',
 }
+
+cache = SecurityCacheProxy()
+
+
+def valid_ip(value):
+    """The address in `value` written the standard way, or None when it isn't one."""
+    value = (value or '').strip()
+    if not value:
+        return None
+    try:
+        return str(ipaddress.ip_address(value))
+    except ValueError:
+        pass
+    # Some proxies add the port: "203.0.113.5:4711", "[2001:db8::1]:443"
+    if value.startswith('[') and ']' in value:
+        value = value[1:value.index(']')]
+    else:
+        host, sep, port = value.rpartition(':')
+        if not (sep and port.isdigit() and '.' in host):
+            return None
+        value = host
+    try:
+        return str(ipaddress.ip_address(value))
+    except ValueError:
+        return None
 
 
 def throttle_ip(request):
@@ -34,15 +67,22 @@ def throttle_ip(request):
     reverse proxy (settings.BEHIND_PROXY) is the last entry trusted: that
     is the one the proxy itself added. With Vercel in front of that proxy
     (settings.FORWARDED_FOR_TRUST_FIRST) it is the first entry, which Vercel
-    overwrites with the visitor's address. Otherwise REMOTE_ADDR, which the
-    client can't choose.
+    overwrites with the visitor's address, but only on requests that came
+    through Vercel (utils/proxy.py): one sent straight to Render wrote that
+    entry itself. Otherwise REMOTE_ADDR, which the client can't choose.
+
+    Never anything but a real address (or 'unknown'): a made-up entry would
+    be a fresh count per try, and the audit log's address column refuses
+    anything else.
     """
-    if getattr(settings, 'BEHIND_PROXY', False):
-        forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
-        if forwarded:
-            entry = 0 if getattr(settings, 'FORWARDED_FOR_TRUST_FIRST', False) else -1
-            return forwarded.split(',')[entry].strip()
-    return request.META.get('REMOTE_ADDR') or 'unknown'
+    remote = valid_ip(request.META.get('REMOTE_ADDR')) or 'unknown'
+    if not getattr(settings, 'BEHIND_PROXY', False):
+        return remote
+    entries = [e.strip() for e in (request.META.get('HTTP_X_FORWARDED_FOR') or '').split(',') if e.strip()]
+    if not entries:
+        return remote
+    first = getattr(settings, 'FORWARDED_FOR_TRUST_FIRST', False) and from_trusted_proxy(request)
+    return valid_ip(entries[0] if first else entries[-1]) or remote
 
 
 def _keys(request):
@@ -58,21 +98,26 @@ def is_blocked(request):
 
 
 def record_failure(request):
-    """Count one failed sign-in. Returns True when this one starts a block."""
+    """
+    Count one failed sign-in. Returns True when this one starts a block.
+
+    Each count is stored with the end of its window and kept for exactly the
+    time left in it (as utils/reset_throttle.py does). cache.incr() would be
+    wrong on a file cache: it rewrites the value with the cache's default
+    300-second timeout, so "20 in 15 minutes" became "20 with no 5-minute gap".
+    """
     fails_key, block_key = _keys(request)
     try:
-        # add() only starts the window on the first failure, so the window
-        # isn't pushed back by every new failure.
-        cache.add(fails_key, 0, WINDOW)
-        try:
-            fails = cache.incr(fails_key)
-        except ValueError:  # expired between add() and incr()
-            cache.set(fails_key, 1, WINDOW)
-            fails = 1
-        if fails >= MAX_FAILS:
+        now = time.time()
+        value = cache.get(fails_key)
+        live = isinstance(value, tuple) and len(value) == 2 and now < value[1]
+        count, end = value if live else (0, now + WINDOW)
+        count += 1
+        if count >= MAX_FAILS:
             cache.set(block_key, True, BLOCK)
             cache.delete(fails_key)
             return True
+        cache.set(fails_key, (count, end), max(1, int(end - now) + 1))
     except Exception:
         pass
     return False

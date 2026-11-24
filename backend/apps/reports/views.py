@@ -332,6 +332,11 @@ class IncidentReportListCreateView(APIView):
         # failed and can be retried.
         with transaction.atomic():
             report = serializer.save(submitted_by=request.user)
+        log_event(
+            request, 'SUBMIT_REPORT', 'incident_report', report.id,
+            f'{getattr(report.hazard_type, "name", "No type")} report for '
+            f'{getattr(report.barangay, "name", "no barangay")}, {report.photos.count()} photo(s)',
+        )
 
         # BFP hears of a fire as soon as a barangay reports it, not only once
         # DRRMO has validated it and put it on the map
@@ -372,4 +377,6 @@ class IncidentReportReviewView(APIView):
             reviewed_by=request.user,
             reviewed_at=timezone.now()
         )
+        log_event(request, 'REVIEW_REPORT', 'incident_report', report.id,
+                  f'Marked {report.status}' + (f': {report.review_note}' if report.review_note else ''))
         return Response(IncidentReportSerializer(report, context={'request': request}).data)

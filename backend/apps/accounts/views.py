@@ -1,14 +1,15 @@
 import base64
 import io
 import threading
+import time
 
 import pyotp
 import qrcode
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
-from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.utils.crypto import constant_time_compare
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import JsonResponse
 from django.utils import timezone
@@ -36,8 +37,13 @@ from apps.accounts.password_reset import (
 from apps.accounts.serializers import LoginSerializer, UserSerializer, TwoFactorCodeSerializer
 from utils import login_throttle, reset_throttle
 from utils.audit import log_event
+from utils.security_cache import SecurityCacheProxy
 from utils.session_limits import start_session_clock
 from utils.system_settings import get_setting
+
+# Unknown-email lockouts and 2FA counts live in the security cache, which the
+# public map can't fill up and flush (utils/security_cache.py)
+cache = SecurityCacheProxy()
 
 # F1 lockout: this many wrong passwords locks the account for a while. A
 # System Administrator sets both from the configuration panel
@@ -104,6 +110,64 @@ def _count_ip_failure(request, email):
             f'{login_throttle.WINDOW // 60} minutes (last tried {email}); '
             f'refused for {login_throttle.BLOCK // 60} minutes',
         )
+
+
+def _code_step(secret, code, now=None):
+    """
+    The 30-second step whose code this is, or None for a wrong code. The
+    current step and one either side are accepted, as totp.verify(valid_window=1)
+    did, so a phone clock a little off still works.
+    """
+    totp = pyotp.TOTP(secret)
+    base = int((time.time() if now is None else now) // totp.interval)
+    for step in (base, base - 1, base + 1):
+        if constant_time_compare(totp.generate_otp(step), code):
+            return step
+    return None
+
+
+def _claim_step(user, step):
+    """
+    Use up this account's code for `step`. False when it, or a later one, was
+    already used to sign in: a code someone saw over a shoulder, or caught on
+    its way, mustn't sign in a second time while it is still valid.
+    """
+    key = f'geoalert:2fa-step:{user.id}'
+    try:
+        last = cache.get(key)
+        if last is not None and step <= last:
+            return False
+        cache.set(key, step, 5 * 60)
+    except Exception:
+        pass  # a cache outage must not stop anyone signing in
+    return True
+
+
+def _count_2fa_failure(user):
+    """
+    One more wrong code for this account, whichever sign-in attempt it came
+    from. Returns the total in the current lockout window, or None when the
+    cache can't be reached.
+
+    The five-try limit used to be per attempt, so opening many attempts gave
+    four free guesses each without ever counting as a failed sign-in.
+    """
+    key = f'geoalert:2fa-fails:{user.id}'
+    try:
+        now = time.time()
+        value = cache.get(key)
+        live = isinstance(value, tuple) and len(value) == 2 and now < value[1]
+        count, end = value if live else (0, now + lock_minutes() * 60)
+        count += 1
+        cache.set(key, (count, end), max(1, int(end - now) + 1))
+        return count
+    except Exception:
+        return None
+
+
+def _end_pending(request):
+    request.session.pop('pending_2fa_user_id', None)
+    request.session.pop('pending_2fa_tries', None)
 
 
 @ensure_csrf_cookie
@@ -250,18 +314,33 @@ class TwoFactorVerifyView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        totp = pyotp.TOTP(user.two_factor_secret)
-        if not totp.verify(serializer.validated_data['code'], valid_window=1):
+        # The password was checked a moment ago, but the account may have been
+        # locked since (by wrong codes in another attempt) or deactivated. An
+        # attempt already past the password step used to go on regardless, so
+        # a correct code signed in to a locked account.
+        if not user.is_active:
+            _end_pending(request)
+            return Response({'error': 'No login in progress. Please log in again.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if user.is_locked():
+            _end_pending(request)
+            log_event(request, 'LOGIN_BLOCKED_LOCKED', 'app_user', user.id, f'{user.email} (2FA step)', user=user)
+            return Response(locked_response(), status=status.HTTP_423_LOCKED)
+
+        step = _code_step(user.two_factor_secret, serializer.validated_data['code'])
+        replayed = step is not None and not _claim_step(user, step)
+        if step is None or replayed:
             _count_ip_failure(request, user.email)
             # Six digits is only a million codes, and each accepts the ones
             # either side of it. Without a limit the code step could be
             # guessed through by script once the password was known.
             tries = request.session.get('pending_2fa_tries', 0) + 1
-            if tries >= MAX_2FA_TRIES:
-                request.session.pop('pending_2fa_user_id', None)
-                request.session.pop('pending_2fa_tries', None)
-                # Counts as a failed sign-in, so repeating this ends in the
-                # usual lockout rather than an endless stream of guesses.
+            # Every MAX_2FA_TRIES wrong codes for the account, however many
+            # attempts they are spread over, count as one failed sign-in, so
+            # guessing ends in the usual lockout rather than going on for ever.
+            wrong = _count_2fa_failure(user)
+            locked_now = False
+            if (wrong is not None and wrong % MAX_2FA_TRIES == 0) or (wrong is None and tries >= MAX_2FA_TRIES):
                 user.failed_login_count += 1
                 locked_now = user.failed_login_count >= max_failed_logins()
                 if locked_now:
@@ -269,24 +348,34 @@ class TwoFactorVerifyView(APIView):
                 user.save(update_fields=['failed_login_count', 'locked_until'])
                 log_event(
                     request, 'ACCOUNT_LOCKED' if locked_now else 'TWO_FACTOR_TOO_MANY', 'app_user', user.id,
-                    f'{user.email}: {MAX_2FA_TRIES} wrong 2FA codes; login attempt cancelled'
+                    f'{user.email}: {MAX_2FA_TRIES} wrong 2FA codes'
                     + (f'; locked for {lock_minutes()} minutes' if locked_now else ''),
                     user=user,
                 )
+            if tries >= MAX_2FA_TRIES:
+                _end_pending(request)
                 return Response(
                     {'error': 'Too many wrong codes. Sign in again with your password.'},
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
+            if locked_now:
+                _end_pending(request)
+                return Response(locked_response(), status=status.HTTP_423_LOCKED)
             request.session['pending_2fa_tries'] = tries
             log_event(request, 'TWO_FACTOR_FAILED', 'app_user', user.id,
-                      f'{user.email}: wrong 2FA code ({tries} of {MAX_2FA_TRIES})', user=user)
+                      f'{user.email}: ' + ('2FA code already used' if replayed else 'wrong 2FA code')
+                      + f' ({tries} of {MAX_2FA_TRIES})', user=user)
             return Response(
-                {'error': 'Incorrect code', 'tries_left': MAX_2FA_TRIES - tries},
+                {'error': 'That code was already used. Wait for the next one.' if replayed else 'Incorrect code',
+                 'tries_left': MAX_2FA_TRIES - tries},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        request.session.pop('pending_2fa_user_id', None)
-        request.session.pop('pending_2fa_tries', None)
+        _end_pending(request)
+        try:
+            cache.delete(f'geoalert:2fa-fails:{user.id}')
+        except Exception:
+            pass
         user.last_login = timezone.now()
         # Password and code both right: now the failed sign-ins are cleared
         user.failed_login_count = 0
@@ -303,7 +392,10 @@ class TwoFactorVerifyView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+# The signed-in account views below check the CSRF token like the rest of the
+# API (the app sends it with every POST). They used to skip it, so another site
+# could submit a form to them in a signed-in officer's browser.
+
 class TwoFactorSetupView(APIView):
     """
     POST /api/auth/2fa/setup/
@@ -312,7 +404,6 @@ class TwoFactorSetupView(APIView):
     manual entry. Must be followed by a correct code to 2fa/confirm/.
     """
     permission_classes = [IsAuthenticated]
-    authentication_classes = [CsrfExemptSessionAuthentication]
 
     def post(self, request):
         # Starting setup again while 2FA is on used to replace the working
@@ -326,6 +417,7 @@ class TwoFactorSetupView(APIView):
         secret = pyotp.random_base32()
         request.user.two_factor_secret = secret
         request.user.save(update_fields=['two_factor_secret'])
+        log_event(request, 'TWO_FACTOR_SETUP_STARTED', 'app_user', request.user.id, request.user.email)
 
         uri = pyotp.totp.TOTP(secret).provisioning_uri(
             name=request.user.email,
@@ -343,7 +435,6 @@ class TwoFactorSetupView(APIView):
         })
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class TwoFactorConfirmView(APIView):
     """
     POST /api/auth/2fa/confirm/
@@ -351,7 +442,6 @@ class TwoFactorConfirmView(APIView):
     2fa/setup/, and if correct, turns 2FA on for this account.
     """
     permission_classes = [IsAuthenticated]
-    authentication_classes = [CsrfExemptSessionAuthentication]
 
     def post(self, request):
         serializer = TwoFactorCodeSerializer(data=request.data)
@@ -378,7 +468,6 @@ class TwoFactorConfirmView(APIView):
         })
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class TwoFactorDisableView(APIView):
     """
     POST /api/auth/2fa/disable/
@@ -386,7 +475,6 @@ class TwoFactorDisableView(APIView):
     correct code (not just that they're logged in).
     """
     permission_classes = [IsAuthenticated]
-    authentication_classes = [CsrfExemptSessionAuthentication]
 
     def post(self, request):
         serializer = TwoFactorCodeSerializer(data=request.data)
@@ -414,7 +502,6 @@ class TwoFactorDisableView(APIView):
         })
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class ChangePasswordView(APIView):
     """
     POST /api/auth/change-password/
@@ -422,7 +509,6 @@ class ChangePasswordView(APIView):
     Any logged-in user (Admin, DRRMO, Barangay) can change their own password.
     """
     permission_classes = [IsAuthenticated]
-    authentication_classes = [CsrfExemptSessionAuthentication]
 
     def post(self, request):
         current_password = request.data.get('current_password', '')
@@ -465,6 +551,9 @@ class ChangePasswordView(APIView):
                          'user': UserSerializer(request.user).data})
 
 
+# Still without the CSRF check: the app treats a refused logout as already
+# signed out, so a stale token would leave the session open on the server.
+# The worst another site can do with it is sign someone out.
 @method_decorator(csrf_exempt, name='dispatch')
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]

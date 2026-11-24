@@ -12,7 +12,6 @@ def root_view(request):
 
 urlpatterns = [
     path('', root_view),
-    path('django-admin/', admin.site.urls),
     path('api/auth/',            include('apps.accounts.urls')),
     path('api/hazards/',         include('apps.hazards.urls')),
     path('api/notifications/',   include('apps.notifications.urls')),
@@ -24,3 +23,8 @@ urlpatterns = [
     path('api/news/',            include('apps.news.urls')),
     path('api/tutorials/',       include('apps.tutorials.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Django's admin signs in with a password alone: no 2FA step, no lockout, no
+# audit entry. Off unless DJANGO_ADMIN_ENABLED is set (settings/base.py).
+if settings.DJANGO_ADMIN_ENABLED:
+    urlpatterns.insert(1, path('django-admin/', admin.site.urls))

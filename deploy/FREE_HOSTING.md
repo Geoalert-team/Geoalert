@@ -130,8 +130,10 @@ the cron job (step 5), then push.
    | Framework | Create React App |
    | Root Directory | `frontend` |
 
-   Add no environment variables. The built website calls its own address, and
-   `vercel.json` forwards `/api/` to Render.
+   Add one environment variable, `GEOALERT_PROXY_SECRET`, with the value of
+   `PROXY_SECRET` from your `geoalert-render.env` (see "The proxy secret"
+   below). The built website calls its own address, and `vercel.json` forwards
+   `/api/` to Render, adding that secret to each request.
 3. Deploy. The build comes from `main`.
 4. In **Settings > Environments > Production**, check that **Branch Tracking**
    is `main`, the same branch Render deploys and the retraining job runs from.
@@ -142,6 +144,38 @@ the cron job (step 5), then push.
 
 To use a different address, put it in Render's `ALLOWED_HOSTS`,
 `CSRF_TRUSTED_ORIGINS`, `CORS_ORIGIN` and `FRONTEND_URL`.
+
+### The proxy secret
+
+The Render address is public, so anyone can send requests to it directly
+instead of through the website. Sign-in throttling and the audit log read the
+visitor's address from a header Vercel writes, and on a direct request the
+sender writes that header themselves. The proxy secret lets Django tell the two
+apart: Vercel adds it to every `/api/` request (`frontend/vercel.json`), and
+replaces any copy a visitor sends.
+
+1. Make a long random value. `python deploy\make_render_env.py` makes one as
+   `PROXY_SECRET`; or `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
+2. **Vercel first:** Settings > Environment Variables, add
+   `GEOALERT_PROXY_SECRET` with that value for Production (and Preview, to try
+   it on a preview deployment), then redeploy.
+3. **Then Render:** Environment, add `PROXY_SECRET` with the same value.
+4. Sign in as a System Administrator. On the dashboard, **Visitor addresses**
+   should say "Requests from the website carry the proxy secret." If it warns
+   that the secret didn't arrive, the two values differ or Vercel wasn't
+   redeployed.
+5. Once that check is ok, you can set `REQUIRE_PROXY_SECRET=True` on Render.
+   Direct requests to `/api/` are then refused (403), except
+   `GET /api/hazards/`, which the keep-awake job in step 5 uses. Or point that
+   job at `https://geoalert-talisay.vercel.app/api/hazards/` instead.
+
+The order matters: with the secret set on Render but not yet on Vercel, every
+visitor counts as one address, and 20 mistyped passwords across all staff in 15
+minutes would block sign-in for everyone for 15 minutes.
+
+`/django-admin/` is off. It signs in with a password alone (no 2FA, lockout or
+audit log) and the app has its own administration screens. Set
+`DJANGO_ADMIN_ENABLED=True` only for a one-off task, and remove it afterwards.
 
 ## 5. Keep the backend awake
 
@@ -190,14 +224,23 @@ accounts you no longer need.
 
 ## Releasing new code
 
-If the release changes the database, run `python manage.py migrate` from a laptop
-pointed at the live database **first**. Render doesn't run migrations by itself.
+If the release changes the database, run the migrations against the live
+database **first**. Render doesn't run migrations by itself, and laptops now use a
+development copy (see [SEPARATE_DATABASES.md](SEPARATE_DATABASES.md)), so this is
+done by whoever keeps `backend/.env.production`:
+
+```powershell
+$env:GEOALERT_ENV_FILE=".env.production"; python manage.py migrate; Remove-Item Env:GEOALERT_ENV_FILE
+```
 
 Then push to `main` (or merge a pull request into it). Vercel redeploys on its
 own. Render's **Auto-Deploy** is set to **After CI Checks Pass**, so it deploys
 once GitHub's CI is green on that commit; a red CI deploys nothing. Because the
 deploy now follows the push by itself, run the migration before you push, never
 after.
+
+When a release changes `backend/requirements/`, everyone runs
+`pip install -r requirements\development.txt` in their venv after pulling.
 
 ## When something goes wrong
 

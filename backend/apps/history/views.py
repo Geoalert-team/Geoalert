@@ -100,8 +100,18 @@ class HistoricalRecordListView(APIView):
         # Ties on the date are broken by id so pages never repeat or skip a record
         records = records.order_by('-occurred_at', 'id')
 
+        # The zone a record came from leads to its barangay reports, which only
+        # staff can open; the record's detail view already keeps it from the
+        # public (STAFF_ONLY_FIELDS), and now the list does too.
+        def rows(queryset):
+            data = HistoricalRecordSerializer(queryset, many=True).data
+            if not request.user.is_authenticated:
+                for row in data:
+                    row.pop('hazard_zone', None)
+            return data
+
         if 'limit' not in request.query_params:
-            return Response(HistoricalRecordSerializer(records, many=True).data)
+            return Response(rows(records))
 
         try:
             limit = min(max(int(request.query_params.get('limit')), 1), self.MAX_LIMIT)
@@ -121,7 +131,7 @@ class HistoricalRecordListView(APIView):
         page = records[offset:offset + limit]
         return Response({
             'count': records.count(),
-            'results': HistoricalRecordSerializer(page, many=True).data,
+            'results': rows(page),
             'type_counts': type_counts,
         })
 

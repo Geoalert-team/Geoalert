@@ -69,6 +69,19 @@ class HazardZoneGeoSerializer(GeoFeatureModelSerializer):
             return None
         return 'whole' if obj.id in within else 'partial'
 
+    # Left out of the public map's copy (context public=True): who approved an
+    # Extreme alert is a staff member's name, a raise still waiting for a
+    # second officer hasn't been decided, and the hand-drawn outline is only
+    # for staff reshaping the zone.
+    STAFF_ONLY = ('approved_by_name', 'pending_severity', 'pending_at', 'outline')
+
+    def to_representation(self, instance):
+        feature = super().to_representation(instance)
+        if self.context.get('public'):
+            for name in self.STAFF_ONLY:
+                feature['properties'].pop(name, None)
+        return feature
+
     class Meta:
         model       = HazardZone
         geo_field   = 'geometry'
