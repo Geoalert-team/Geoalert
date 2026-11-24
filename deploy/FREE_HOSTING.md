@@ -164,8 +164,10 @@ database was dropped: the `rainwatch` tables and their rows are still there,
 unused. Outside the repository, tidy these up yourself:
 
 - **Render > Environment:** delete `RAIN_WATCH_INGEST_TOKEN` and
-  `PAGASA_FEED_WRITER`. Keep `HAZARD_LOG_WRITER=true`: the prediction log still
-  uses it.
+  `PAGASA_FEED_WRITER`. Keep `HAZARD_LOG_WRITER=true`: it makes this server the
+  one machine that writes the fire purok prediction log (`fire_purok_prediction_log`,
+  migration history 0010). The every-minute `/api/hazards/` job above starts that
+  log once a Manila day, so no extra cron job is needed for it.
 - **GitHub > Settings > Secrets and variables > Actions:** delete
   `RAIN_WATCH_INGEST_TOKEN` and `RAIN_WATCH_API_URL`.
 - **GitHub > Actions:** once the removal is pushed to `main`, the "Rain

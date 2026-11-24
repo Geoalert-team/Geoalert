@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import DatabaseError
 
-from apps.history import prediction_log
+from apps.history import fire_purok, flood_purok, prediction_log
 
 MANILA = ZoneInfo('Asia/Manila')
 LOGGING_OFF = ('Prediction logging is off on this machine, so nothing was written. Only the one machine that writes '
@@ -13,16 +13,29 @@ LOGGING_OFF = ('Prediction logging is off on this machine, so nothing was writte
 
 
 class Command(BaseCommand):
-    help = ("Add this month's figures to the prediction log, once a day; rows are only added, so a rerun adds "
-            'nothing. Since 2026-11-22 nothing is logged until the fire purok log is built (plan Task B6). '
-            'Runs only where HAZARD_LOG_WRITER is on (the deployed server).')
+    help = ("Add today's snapshot of every purok's fire chance for this month to the fire purok prediction log "
+            '(fire_purok_prediction_log), and the flood model\'s classes, once per version, to the flood '
+            'susceptibility log; rows are only added, so a rerun adds nothing. Runs only where HAZARD_LOG_WRITER is '
+            'on (the deployed server).')
 
     def handle(self, *args, **options):
         if not settings.HAZARD_LOG_WRITER:
             raise CommandError(LOGGING_OFF)
         today = datetime.now(MANILA).date()
+        model = fire_purok.load()
         try:
-            months = prediction_log.write_month_rows(today)
+            if isinstance(model, str):
+                self.stdout.write(f'Fire: nothing was logged: {model}')
+            else:
+                rows = prediction_log.write_month_rows(today)
+                self.stdout.write(self.style.SUCCESS(
+                    f'Fire purok log for {today.isoformat()} ({model.version}): {rows} new rows.'))
+            flood = flood_purok.load()
+            if isinstance(flood, str):
+                self.stdout.write(f'Flood: nothing was logged: {flood}')
+            else:
+                rows = prediction_log.write_flood_rows(today)
+                self.stdout.write(self.style.SUCCESS(
+                    f'Flood susceptibility log ({flood.version}): {rows} new rows.'))
         except DatabaseError as exc:
-            raise CommandError(f'The prediction log could not be written ({exc}).') from exc
-        self.stdout.write(self.style.SUCCESS(f'Prediction log for {today.isoformat()}: {months} new rows.'))
+            raise CommandError(prediction_log.write_failure(exc)) from exc

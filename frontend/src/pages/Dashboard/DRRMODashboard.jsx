@@ -10,7 +10,7 @@ import { Icon, Modal, Toast, fieldErrors, formatDateTime, timeAgo } from './admi
 import { ReportPhotos } from './reportShared';
 import { placeLabel } from './fireReport';
 import {
-  canPush, hazardNoun, historyLine, isFireReport, levelLabel, reportPins, reportPurokShapes,
+  canPush, hazardNoun, historyLine, isFireReport, levelLabel, levelSource, reportPins, reportPurokShapes,
 } from './fireDecision';
 import PurokPreviewMap from '../../components/Map/PurokPreviewMap';
 import ActiveZonesCard from '../../components/Resolve/ActiveZonesCard';
@@ -124,8 +124,9 @@ function RejectDialog({ report, onCancel, onDone }) {
  * started, who sent it), the level it will get and who it will alert, then
  * push it (a pin at each of its puroks, nothing drawn), attach it to a live
  * hazard of its type nearby, or reject it. Fires, floods and landslides
- * alike. The officer doesn't choose a level: it is the highest among its
- * puroks' history of that type. onDone(message) after a decision is saved.
+ * alike. The officer doesn't choose a level: a fire's comes from the fire
+ * risk model for its puroks, others' from their puroks' history of that
+ * type. onDone(message) after a decision is saved.
  */
 function PushDialog({ report, purokGeo, onCancel, onDone }) {
   const [info, setInfo] = useState(null);
@@ -235,7 +236,7 @@ function PushDialog({ report, purokGeo, onCancel, onDone }) {
 
         <section className="drm-detail-section">
           <h3>On the map it will be</h3>
-          {!info && !loadError && <p className="adm-muted">Working out the level from its puroks&apos; {noun} history…</p>}
+          {!info && !loadError && <p className="adm-muted">Working out the level for its puroks…</p>}
           {loadError && (
             <div className="adm-alert" role="alert">
               <Icon name="info" size={16} />
@@ -246,11 +247,15 @@ function PushDialog({ report, purokGeo, onCancel, onDone }) {
           {info && (
             <>
               <p className="drm-detail-desc">
-                A pin at each purok, <strong>{levelLabel(info.level)}</strong>, from its puroks&apos; {noun} history.
+                A pin at each purok, <strong>{levelLabel(info.level)}</strong>, {levelSource(info, noun)}.
                 {info.level === 'Red' ? ' Extreme waits for a second officer.' : ''}
               </p>
+              {info.level_reason && <p className="adm-muted">{info.level_reason}</p>}
               {info.puroks.length > 0 && (
-                <ul className="drm-fire-history">{info.puroks.map((p) => <li key={p.id}>{historyLine(p, years, noun)}</li>)}</ul>
+                <>
+                  {info.level_basis === 'model' && <p className="adm-muted">Past {noun}s in these puroks, for reference:</p>}
+                  <ul className="drm-fire-history">{info.puroks.map((p) => <li key={p.id}>{historyLine(p, years, noun)}</li>)}</ul>
+                </>
               )}
             </>
           )}

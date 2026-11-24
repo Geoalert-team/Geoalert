@@ -14,7 +14,16 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 COPY requirements/ requirements/
-RUN pip install --no-cache-dir -r requirements/production.txt
+# A PyPI download can stall for a while on the CI and Render builders, and
+# pip's default 15 s read timeout then fails the whole build (CI run #50,
+# Pillow). Wait up to 120 s, retry each request, and run the install up to
+# three times: a second run skips whatever the first one installed.
+RUN for attempt in 1 2 3; do \
+        pip install --no-cache-dir --timeout 120 --retries 10 -r requirements/production.txt && exit 0; \
+        echo "pip install failed (attempt $attempt of 3), retrying in 15 s"; \
+        sleep 15; \
+    done; \
+    exit 1
 COPY . .
 
 RUN useradd --create-home app && chown -R app /app

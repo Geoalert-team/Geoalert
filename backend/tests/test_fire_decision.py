@@ -1,7 +1,9 @@
 """
 Deciding a fire report: where its pins go, the fire's shape for working out
 who to alert, which active fires are close enough to attach to, and whether
-it can still be decided. The level is the puroks' history (purok_levels).
+it can still be decided. A fire's level is the highest fire model level
+among its puroks, Moderate with the reason when any has none; other types
+keep their puroks' history (purok_levels).
 """
 import math
 from datetime import datetime, timezone
@@ -9,7 +11,7 @@ from datetime import datetime, timezone
 from django.contrib.gis.geos import Point, Polygon
 from django.test import SimpleTestCase
 
-from apps.reports.decide import decision_error, fire_geometry, is_nearby, report_pins
+from apps.reports.decide import NO_MODEL_LEVEL, decision_error, fire_geometry, fire_level, is_nearby, report_pins
 
 
 def square(x0, y0, x1, y1):
@@ -73,3 +75,14 @@ class FireDecisionTests(SimpleTestCase):
             'Already decided by Ana Cruz at 08:20.')
         # Floods and landslides are pushed the same way as fires
         self.assertIsNone(decision_error(Fake(hazard_type=Fake(name='Flood'), status='Pending', hazard_zone_id=None)))
+
+
+class FireLevelTests(SimpleTestCase):
+    def test_highest_model_level(self):
+        self.assertEqual(fire_level(['Green', 'Red', 'Orange']), ('Red', None))
+        self.assertEqual(fire_level(['Green']), ('Green', None))
+
+    def test_a_purok_without_a_level_gives_moderate_with_the_reason(self):
+        self.assertEqual(fire_level(['Red', None]), ('Orange', NO_MODEL_LEVEL))
+        self.assertEqual(fire_level([]), ('Orange', NO_MODEL_LEVEL))
+        self.assertEqual(NO_MODEL_LEVEL, 'The fire model has no level for these puroks right now, so the level is Moderate.')

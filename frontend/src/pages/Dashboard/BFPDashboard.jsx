@@ -9,6 +9,7 @@ import RecordDetail from '../../components/History/RecordDetail';
 import { Icon, formatDateTime, timeAgo } from './admin/adminShared';
 import { HazardIcon, ReportPhotos, StatusTag } from './reportShared';
 import { placeLabel } from './fireReport';
+import { awaitingDrrmo, reportSpots } from '../../components/Map/reportedFires';
 import '../css/Dashboard.css';
 import '../css/AdminDashboard.css';
 import '../css/DRRMODashboard.css';
@@ -32,6 +33,8 @@ function isFire(feature) {
  */
 function FireReportRow({ report }) {
   const barangay = report.barangay_details?.name;
+  const waiting = awaitingDrrmo(report);
+  const [spot] = reportSpots(report);
   return (
     <li className="drm-report">
       <div className="drm-report-static">
@@ -55,11 +58,22 @@ function FireReportRow({ report }) {
           {report.status === 'Rejected' && report.review_note && (
             <p className="drm-report-meta"><span>DRRMO: {report.review_note}</span></p>
           )}
+          {waiting && (
+            <p className="drm-report-meta drm-report-waiting">
+              <span>Not on the public map yet: residents have not been alerted.</span>
+            </p>
+          )}
         </div>
       </div>
       {report.hazard_zone && (
         <div className="drm-report-actions">
           <Link className="adm-btn adm-btn-ghost adm-btn-sm" to={`/map?zone=${report.hazard_zone}`}>View map</Link>
+        </div>
+      )}
+      {/* Waiting for DRRMO: staff see it on the map (residents don't) */}
+      {waiting && spot && (
+        <div className="drm-report-actions">
+          <Link className="adm-btn adm-btn-ghost adm-btn-sm" to={`/map?report=${report.id}`}>Show on map</Link>
         </div>
       )}
     </li>

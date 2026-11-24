@@ -1,0 +1,6064 @@
+{
+ "version": "noah_fallback@9aba6d331a4b",
+ "source": "noah",
+ "chosen": "logistic_regression",
+ "built_at": "2026-11-24T08:03:11+08:00",
+ "outlines_version": "9a81386469102f1943a969caf4b29be5",
+ "cutoffs": {
+  "red": 0.351598,
+  "orange": 0.15,
+  "red_recall": 0.552381,
+  "orange_recall": 0.904762,
+  "target_reached": true
+ },
+ "domain": {
+  "buffer_m": 300,
+  "rule": "Convex hull of the flooded survey spots, buffered 300 m, clipped to the city"
+ },
+ "inputs": {
+  "columns": [
+   "noah25_class",
+   "noah5_class",
+   "rel_height_river_m",
+   "dist_river_m",
+   "depression_m",
+   "built_share"
+  ],
+  "noah_layers_used": [
+   "noah25_class",
+   "noah5_class"
+  ]
+ },
+ "areas": {
+  "350": {
+   "barangay_id": 4,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 26
+  },
+  "409": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 64
+  },
+  "410": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 17
+  },
+  "411": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 24
+  },
+  "412": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 21
+  },
+  "413": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 21
+  },
+  "414": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 17
+  },
+  "415": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 23
+  },
+  "418": {
+   "barangay_id": 8,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "501": {
+   "barangay_id": 13,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "506": {
+   "barangay_id": 13,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "509": {
+   "barangay_id": 14,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 13
+  },
+  "510": {
+   "barangay_id": 14,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 9
+  },
+  "666": {
+   "barangay_id": 4,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 26
+  },
+  "694": {
+   "barangay_id": 23,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "761": {
+   "barangay_id": 14,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 14
+  },
+  "815": {
+   "barangay_id": 4,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 26
+  },
+  "816": {
+   "barangay_id": 4,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 59
+  },
+  "821": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 67
+  },
+  "829": {
+   "barangay_id": 14,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 74
+  },
+  "867": {
+   "barangay_id": 23,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "869": {
+   "barangay_id": 23,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "870": {
+   "barangay_id": 23,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "872": {
+   "barangay_id": 4,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 13
+  },
+  "905": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": true,
+   "buildings": 0
+  },
+  "906": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "907": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 16
+  },
+  "908": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 63
+  },
+  "909": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "910": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "911": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 5
+  },
+  "956": {
+   "barangay_id": 14,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 2
+  },
+  "968": {
+   "barangay_id": 17,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "1022": {
+   "barangay_id": 4,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 72
+  },
+  "1038": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": true,
+   "buildings": 0
+  },
+  "1039": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": true,
+   "buildings": 0
+  },
+  "1040": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 20
+  },
+  "1041": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 40
+  },
+  "1063": {
+   "barangay_id": 14,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 15
+  },
+  "1091": {
+   "barangay_id": 23,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "1102": {
+   "barangay_id": 4,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 51
+  },
+  "1128": {
+   "barangay_id": 23,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": true,
+   "buildings": 0
+  },
+  "1130": {
+   "barangay_id": 23,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 2
+  },
+  "1131": {
+   "barangay_id": 4,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 59
+  },
+  "1151": {
+   "barangay_id": 4,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 14
+  },
+  "1152": {
+   "barangay_id": 4,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 34
+  },
+  "1153": {
+   "barangay_id": 4,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 26
+  },
+  "1154": {
+   "barangay_id": 4,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 30
+  },
+  "1155": {
+   "barangay_id": 4,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 28
+  },
+  "1158": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "1159": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "1162": {
+   "barangay_id": 8,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 3
+  },
+  "1206": {
+   "barangay_id": 13,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": false,
+   "buildings": 0
+  },
+  "1210": {
+   "barangay_id": 14,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 16
+  },
+  "1211": {
+   "barangay_id": 14,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 16
+  },
+  "1218": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 23
+  },
+  "1229": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings in this area",
+   "estimated_outline": true,
+   "buildings": 0
+  },
+  "1232": {
+   "barangay_id": 8,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 7
+  },
+  "1233": {
+   "barangay_id": 8,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": false,
+   "buildings": 9
+  },
+  "1248": {
+   "barangay_id": 14,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 20
+  },
+  "1249": {
+   "barangay_id": 14,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No NOAH flood model information here",
+   "estimated_outline": true,
+   "buildings": 4
+  },
+  "306": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.453901,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 47
+  },
+  "307": {
+   "barangay_id": 1,
+   "level": "Orange",
+   "score": 0.306667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 50
+  },
+  "308": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.405797,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 92
+  },
+  "309": {
+   "barangay_id": 1,
+   "level": "Orange",
+   "score": 0.179487,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 26
+  },
+  "310": {
+   "barangay_id": 1,
+   "level": "Orange",
+   "score": 0.314815,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 36
+  },
+  "311": {
+   "barangay_id": 1,
+   "level": "Orange",
+   "score": 0.325333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 125
+  },
+  "312": {
+   "barangay_id": 1,
+   "level": "Orange",
+   "score": 0.15,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 20
+  },
+  "313": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.866667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 25
+  },
+  "320": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.24031,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 86
+  },
+  "321": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 11
+  },
+  "322": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.510417,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 32
+  },
+  "323": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.42623,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 61
+  },
+  "324": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.576577,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 37
+  },
+  "325": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.409283,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 79
+  },
+  "326": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.150235,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 71
+  },
+  "337": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.032258,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 248
+  },
+  "338": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.080808,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 33
+  },
+  "339": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.045455,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 22
+  },
+  "340": {
+   "barangay_id": 23,
+   "level": "Orange",
+   "score": 0.197531,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 27
+  },
+  "359": {
+   "barangay_id": 5,
+   "level": "Red",
+   "score": 0.368421,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 38
+  },
+  "360": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 59
+  },
+  "361": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.037037,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 9
+  },
+  "362": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.159091,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 44
+  },
+  "363": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 75
+  },
+  "364": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 51
+  },
+  "365": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 78
+  },
+  "366": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 68
+  },
+  "367": {
+   "barangay_id": 5,
+   "level": "Red",
+   "score": 0.430108,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 93
+  },
+  "385": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.775758,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 55
+  },
+  "386": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.123188,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 46
+  },
+  "387": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.065657,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 66
+  },
+  "388": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.207547,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 159
+  },
+  "389": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.294118,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 34
+  },
+  "390": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.615385,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 52
+  },
+  "391": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.262295,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 61
+  },
+  "392": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.282609,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 46
+  },
+  "393": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.26087,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 46
+  },
+  "394": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.592593,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 45
+  },
+  "395": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.162162,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 37
+  },
+  "396": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.090278,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 48
+  },
+  "397": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.093023,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 43
+  },
+  "398": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.054545,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 55
+  },
+  "399": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.147727,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 88
+  },
+  "419": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.321429,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 28
+  },
+  "420": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.326087,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 46
+  },
+  "421": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.289216,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 68
+  },
+  "422": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 0.524823,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 47
+  },
+  "423": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 0.675676,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 37
+  },
+  "424": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.054645,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 61
+  },
+  "425": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.032213,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 238
+  },
+  "426": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.325,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 40
+  },
+  "427": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.142857,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 49
+  },
+  "428": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.088889,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 15
+  },
+  "429": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 46
+  },
+  "430": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.197183,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 71
+  },
+  "431": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.148148,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 9
+  },
+  "432": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.290323,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 31
+  },
+  "433": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.016129,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 62
+  },
+  "434": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.234568,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 27
+  },
+  "435": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.161616,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 33
+  },
+  "436": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.119048,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 70
+  },
+  "437": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.151515,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 33
+  },
+  "438": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.111111,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 27
+  },
+  "439": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.009009,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 37
+  },
+  "443": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 106
+  },
+  "444": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.027261,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 269
+  },
+  "445": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.012232,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 109
+  },
+  "446": {
+   "barangay_id": 9,
+   "level": "Orange",
+   "score": 0.16092,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 116
+  },
+  "455": {
+   "barangay_id": 10,
+   "level": "Orange",
+   "score": 0.2,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 10
+  },
+  "456": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.083333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 12
+  },
+  "457": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.107527,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 31
+  },
+  "458": {
+   "barangay_id": 10,
+   "level": "Orange",
+   "score": 0.313725,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 17
+  },
+  "459": {
+   "barangay_id": 10,
+   "level": "Orange",
+   "score": 0.219048,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 35
+  },
+  "460": {
+   "barangay_id": 10,
+   "level": "Orange",
+   "score": 0.323232,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 33
+  },
+  "461": {
+   "barangay_id": 10,
+   "level": "Orange",
+   "score": 0.194444,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 24
+  },
+  "462": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.081301,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 41
+  },
+  "463": {
+   "barangay_id": 10,
+   "level": "Red",
+   "score": 0.401961,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 34
+  },
+  "464": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.147059,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 34
+  },
+  "465": {
+   "barangay_id": 10,
+   "level": "Orange",
+   "score": 0.186047,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 86
+  },
+  "466": {
+   "barangay_id": 10,
+   "level": "Orange",
+   "score": 0.338028,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 71
+  },
+  "471": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 46
+  },
+  "472": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 53
+  },
+  "473": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.133333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 5
+  },
+  "474": {
+   "barangay_id": 11,
+   "level": "Red",
+   "score": 0.396825,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 42
+  },
+  "475": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.06,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 150
+  },
+  "476": {
+   "barangay_id": 11,
+   "level": "Red",
+   "score": 0.439394,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 66
+  },
+  "477": {
+   "barangay_id": 11,
+   "level": "Red",
+   "score": 0.910053,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 63
+  },
+  "478": {
+   "barangay_id": 11,
+   "level": "Orange",
+   "score": 0.153509,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 76
+  },
+  "479": {
+   "barangay_id": 11,
+   "level": "Red",
+   "score": 0.403922,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 85
+  },
+  "480": {
+   "barangay_id": 11,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 21
+  },
+  "486": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 62
+  },
+  "487": {
+   "barangay_id": 12,
+   "level": "Orange",
+   "score": 0.204444,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 300
+  },
+  "488": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.137778,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 75
+  },
+  "489": {
+   "barangay_id": 12,
+   "level": "Orange",
+   "score": 0.30719,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 102
+  },
+  "490": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.048387,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 62
+  },
+  "499": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 2
+  },
+  "500": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.014583,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 160
+  },
+  "502": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.003968,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 84
+  },
+  "503": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.016502,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 404
+  },
+  "504": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.108772,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 95
+  },
+  "505": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.00295,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 113
+  },
+  "507": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.129477,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 121
+  },
+  "511": {
+   "barangay_id": 14,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 15
+  },
+  "515": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.103604,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 74
+  },
+  "516": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.017857,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 56
+  },
+  "517": {
+   "barangay_id": 15,
+   "level": "Red",
+   "score": 0.405797,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 23
+  },
+  "518": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.006667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 50
+  },
+  "519": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 19
+  },
+  "520": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.112994,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 59
+  },
+  "521": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 47
+  },
+  "522": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.034014,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 49
+  },
+  "523": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.007752,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 43
+  },
+  "524": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.04023,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 58
+  },
+  "525": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.135266,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 69
+  },
+  "529": {
+   "barangay_id": 16,
+   "level": "Orange",
+   "score": 0.191972,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 382
+  },
+  "530": {
+   "barangay_id": 16,
+   "level": "Orange",
+   "score": 0.1875,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 64
+  },
+  "531": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.024876,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 67
+  },
+  "532": {
+   "barangay_id": 16,
+   "level": "Orange",
+   "score": 0.305556,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 48
+  },
+  "533": {
+   "barangay_id": 16,
+   "level": "Red",
+   "score": 0.444444,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 72
+  },
+  "534": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.090909,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 44
+  },
+  "535": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.055556,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 6
+  },
+  "536": {
+   "barangay_id": 16,
+   "level": "Orange",
+   "score": 0.255892,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 99
+  },
+  "537": {
+   "barangay_id": 16,
+   "level": "Orange",
+   "score": 0.2,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 40
+  },
+  "538": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.133333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 65
+  },
+  "541": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.025641,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 52
+  },
+  "542": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.153686,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 321
+  },
+  "543": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.144928,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 46
+  },
+  "544": {
+   "barangay_id": 17,
+   "level": "Red",
+   "score": 0.372881,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 59
+  },
+  "545": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.153439,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 63
+  },
+  "546": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.087719,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 57
+  },
+  "547": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.123457,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 81
+  },
+  "548": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.281609,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 58
+  },
+  "549": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.129944,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 59
+  },
+  "550": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.161049,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 89
+  },
+  "551": {
+   "barangay_id": 17,
+   "level": "Red",
+   "score": 0.365079,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 21
+  },
+  "552": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.243781,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 67
+  },
+  "558": {
+   "barangay_id": 18,
+   "level": "Red",
+   "score": 0.730769,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 26
+  },
+  "559": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.136364,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 66
+  },
+  "560": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.091667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 40
+  },
+  "561": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.064516,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 62
+  },
+  "562": {
+   "barangay_id": 18,
+   "level": "Red",
+   "score": 0.363333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 100
+  },
+  "563": {
+   "barangay_id": 18,
+   "level": "Orange",
+   "score": 0.155556,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 60
+  },
+  "564": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.104167,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 112
+  },
+  "565": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.08,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 50
+  },
+  "566": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.115385,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 52
+  },
+  "567": {
+   "barangay_id": 18,
+   "level": "Orange",
+   "score": 0.189542,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 51
+  },
+  "568": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.027211,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 49
+  },
+  "569": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.131944,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 48
+  },
+  "570": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.098485,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 44
+  },
+  "571": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.122807,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 38
+  },
+  "572": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.063492,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 42
+  },
+  "579": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 12
+  },
+  "580": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.395062,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 54
+  },
+  "581": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.293651,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 42
+  },
+  "582": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 18
+  },
+  "583": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.257576,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 22
+  },
+  "584": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.277778,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 12
+  },
+  "585": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 4
+  },
+  "586": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.022989,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 29
+  },
+  "587": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.133333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 5
+  },
+  "588": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.22807,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 19
+  },
+  "589": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.022989,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 29
+  },
+  "590": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 47
+  },
+  "591": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.508333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 40
+  },
+  "592": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.503623,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 92
+  },
+  "593": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.57971,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 23
+  },
+  "594": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 52
+  },
+  "595": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.233333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 30
+  },
+  "596": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.402985,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 67
+  },
+  "597": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.638298,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 47
+  },
+  "598": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.644824,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 351
+  },
+  "599": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.416667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 12
+  },
+  "600": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.596491,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 38
+  },
+  "601": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.511111,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 15
+  },
+  "602": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.606667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 50
+  },
+  "603": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.291667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 16
+  },
+  "604": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.125,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 16
+  },
+  "610": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.313725,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 17
+  },
+  "611": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.189655,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 58
+  },
+  "612": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.166667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 36
+  },
+  "613": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.066667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 20
+  },
+  "614": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.203704,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 36
+  },
+  "615": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.18018,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 37
+  },
+  "616": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.316239,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 39
+  },
+  "617": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.121951,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 41
+  },
+  "618": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.145833,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 80
+  },
+  "619": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.1,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 20
+  },
+  "620": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.458333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 8
+  },
+  "622": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.470085,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 39
+  },
+  "623": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.115385,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 26
+  },
+  "624": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.275362,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 46
+  },
+  "625": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.25,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 44
+  },
+  "626": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.209302,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 43
+  },
+  "627": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.214286,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 42
+  },
+  "628": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.426471,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 68
+  },
+  "629": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.420168,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 119
+  },
+  "630": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.511111,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 45
+  },
+  "631": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.423077,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 52
+  },
+  "632": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.201389,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 48
+  },
+  "635": {
+   "barangay_id": 21,
+   "level": "Orange",
+   "score": 0.321429,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 28
+  },
+  "636": {
+   "barangay_id": 21,
+   "level": "Orange",
+   "score": 0.348348,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 111
+  },
+  "637": {
+   "barangay_id": 21,
+   "level": "Red",
+   "score": 0.543651,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 84
+  },
+  "638": {
+   "barangay_id": 21,
+   "level": "Red",
+   "score": 0.57619,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 70
+  },
+  "639": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.018868,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 53
+  },
+  "640": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.092063,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 105
+  },
+  "641": {
+   "barangay_id": 21,
+   "level": "Orange",
+   "score": 0.15748,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 127
+  },
+  "642": {
+   "barangay_id": 21,
+   "level": "Orange",
+   "score": 0.285714,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 70
+  },
+  "643": {
+   "barangay_id": 21,
+   "level": "Red",
+   "score": 0.405063,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 79
+  },
+  "653": {
+   "barangay_id": 22,
+   "level": "Green",
+   "score": 0.039216,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 17
+  },
+  "654": {
+   "barangay_id": 22,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 33
+  },
+  "655": {
+   "barangay_id": 22,
+   "level": "Green",
+   "score": 0.055556,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 96
+  },
+  "663": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.407407,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 27
+  },
+  "664": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.086806,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 96
+  },
+  "665": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.809524,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 21
+  },
+  "667": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.242165,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 117
+  },
+  "668": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 4
+  },
+  "669": {
+   "barangay_id": 12,
+   "level": "Orange",
+   "score": 0.171958,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 126
+  },
+  "670": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 3
+  },
+  "671": {
+   "barangay_id": 12,
+   "level": "Orange",
+   "score": 0.243386,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 63
+  },
+  "672": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.009524,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 35
+  },
+  "673": {
+   "barangay_id": 18,
+   "level": "Red",
+   "score": 0.47619,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 28
+  },
+  "674": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.16,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 50
+  },
+  "675": {
+   "barangay_id": 1,
+   "level": "Orange",
+   "score": 0.280303,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 44
+  },
+  "676": {
+   "barangay_id": 1,
+   "level": "Orange",
+   "score": 0.200803,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 83
+  },
+  "682": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.147287,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 86
+  },
+  "683": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.596491,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 57
+  },
+  "684": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.465909,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 88
+  },
+  "687": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.29932,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 49
+  },
+  "708": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.164103,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 65
+  },
+  "709": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.061728,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 54
+  },
+  "710": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.2,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 55
+  },
+  "711": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.138365,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 53
+  },
+  "712": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.073059,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 73
+  },
+  "713": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.141026,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 78
+  },
+  "714": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 73
+  },
+  "717": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.347222,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 24
+  },
+  "718": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.177305,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 47
+  },
+  "723": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.074074,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 72
+  },
+  "725": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.364964,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 137
+  },
+  "730": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.047619,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 49
+  },
+  "738": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.025926,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 90
+  },
+  "739": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.097561,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 41
+  },
+  "745": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.05314,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 69
+  },
+  "746": {
+   "barangay_id": 10,
+   "level": "Orange",
+   "score": 0.291429,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 175
+  },
+  "751": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.012346,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 54
+  },
+  "752": {
+   "barangay_id": 11,
+   "level": "Orange",
+   "score": 0.201149,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 58
+  },
+  "756": {
+   "barangay_id": 12,
+   "level": "Orange",
+   "score": 0.169154,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 67
+  },
+  "764": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.066667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 90
+  },
+  "769": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.225806,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 93
+  },
+  "773": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.111111,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 18
+  },
+  "775": {
+   "barangay_id": 18,
+   "level": "Orange",
+   "score": 0.166667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 52
+  },
+  "776": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.130719,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 51
+  },
+  "780": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.283019,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 53
+  },
+  "781": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.310078,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 86
+  },
+  "782": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.525,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 120
+  },
+  "783": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.356322,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 58
+  },
+  "787": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.511111,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 15
+  },
+  "802": {
+   "barangay_id": 22,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 36
+  },
+  "806": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.409182,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 167
+  },
+  "807": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.426282,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 104
+  },
+  "809": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.108974,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 104
+  },
+  "810": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.472222,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 24
+  },
+  "811": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.121212,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 44
+  },
+  "812": {
+   "barangay_id": 23,
+   "level": "Orange",
+   "score": 0.176991,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 113
+  },
+  "813": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.145299,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 39
+  },
+  "818": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.126126,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 111
+  },
+  "819": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.979592,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 49
+  },
+  "820": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 84
+  },
+  "822": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.18018,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 37
+  },
+  "823": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.241758,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 91
+  },
+  "824": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.313131,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 33
+  },
+  "825": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 38
+  },
+  "827": {
+   "barangay_id": 11,
+   "level": "Orange",
+   "score": 0.184397,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 141
+  },
+  "828": {
+   "barangay_id": 11,
+   "level": "Red",
+   "score": 0.351598,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 73
+  },
+  "831": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.004762,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 210
+  },
+  "833": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.301887,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 212
+  },
+  "834": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.472688,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 775
+  },
+  "835": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.108225,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 77
+  },
+  "836": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.144928,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 46
+  },
+  "837": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.257202,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 162
+  },
+  "838": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.338889,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 180
+  },
+  "839": {
+   "barangay_id": 21,
+   "level": "Red",
+   "score": 0.583333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 132
+  },
+  "840": {
+   "barangay_id": 1,
+   "level": "Orange",
+   "score": 0.303483,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 67
+  },
+  "841": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.101695,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 59
+  },
+  "842": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.36,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 25
+  },
+  "843": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.048611,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 48
+  },
+  "844": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.761905,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 21
+  },
+  "845": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.8125,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 32
+  },
+  "846": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.622642,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 53
+  },
+  "848": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.604938,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 27
+  },
+  "849": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 49
+  },
+  "850": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.526882,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 31
+  },
+  "851": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.538462,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 26
+  },
+  "852": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.05914,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 62
+  },
+  "853": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.118644,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 59
+  },
+  "854": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.232804,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 63
+  },
+  "855": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.038462,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 52
+  },
+  "856": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.243056,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 48
+  },
+  "857": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.488889,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 30
+  },
+  "858": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.492754,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 69
+  },
+  "859": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.210526,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 19
+  },
+  "860": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.231884,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 23
+  },
+  "861": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.565217,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 69
+  },
+  "864": {
+   "barangay_id": 23,
+   "level": "Red",
+   "score": 0.656566,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 33
+  },
+  "865": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 26
+  },
+  "866": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.076923,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 39
+  },
+  "868": {
+   "barangay_id": 23,
+   "level": "Red",
+   "score": 0.367521,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 39
+  },
+  "873": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 69
+  },
+  "874": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.004444,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 75
+  },
+  "875": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.007752,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 43
+  },
+  "876": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.114943,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 29
+  },
+  "877": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.225225,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 37
+  },
+  "878": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.279762,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 56
+  },
+  "879": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.041667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 24
+  },
+  "880": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.343284,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 67
+  },
+  "881": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.147541,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 61
+  },
+  "882": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.253165,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 79
+  },
+  "883": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.230769,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 65
+  },
+  "884": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.035897,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 65
+  },
+  "885": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.07619,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 35
+  },
+  "886": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 51
+  },
+  "889": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.6875,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 16
+  },
+  "890": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.294118,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 34
+  },
+  "891": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.222222,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 54
+  },
+  "892": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.183333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 20
+  },
+  "893": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.20915,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 51
+  },
+  "894": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.171429,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 105
+  },
+  "895": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.470588,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 85
+  },
+  "896": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.166667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 60
+  },
+  "897": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.080247,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 54
+  },
+  "898": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.055556,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 48
+  },
+  "899": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.031746,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 21
+  },
+  "900": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.12069,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 58
+  },
+  "901": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.47619,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 63
+  },
+  "902": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.348259,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 67
+  },
+  "903": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.126984,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 42
+  },
+  "904": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.125,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 64
+  },
+  "912": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.133333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 10
+  },
+  "913": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.103245,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 113
+  },
+  "914": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.006944,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 48
+  },
+  "915": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.194444,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 24
+  },
+  "916": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 1
+  },
+  "917": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.297297,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 37
+  },
+  "918": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 0.569444,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 24
+  },
+  "919": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 0.405797,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 23
+  },
+  "921": {
+   "barangay_id": 9,
+   "level": "Orange",
+   "score": 0.282828,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 66
+  },
+  "922": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.03252,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 41
+  },
+  "923": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.09375,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 32
+  },
+  "924": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.045977,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 116
+  },
+  "925": {
+   "barangay_id": 10,
+   "level": "Red",
+   "score": 0.588235,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 34
+  },
+  "926": {
+   "barangay_id": 10,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 15
+  },
+  "927": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.133333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 40
+  },
+  "928": {
+   "barangay_id": 10,
+   "level": "Red",
+   "score": 0.7,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 10
+  },
+  "929": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.070707,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 33
+  },
+  "930": {
+   "barangay_id": 11,
+   "level": "Red",
+   "score": 0.986395,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 49
+  },
+  "931": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.083333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 32
+  },
+  "932": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 31
+  },
+  "933": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.102564,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 26
+  },
+  "934": {
+   "barangay_id": 11,
+   "level": "Red",
+   "score": 0.421053,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 57
+  },
+  "935": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.04902,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 68
+  },
+  "936": {
+   "barangay_id": 11,
+   "level": "Red",
+   "score": 0.699187,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 41
+  },
+  "937": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.087719,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 133
+  },
+  "938": {
+   "barangay_id": 12,
+   "level": "Orange",
+   "score": 0.214953,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 107
+  },
+  "939": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.024242,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 55
+  },
+  "941": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 97
+  },
+  "942": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.098039,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 68
+  },
+  "943": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.006536,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 51
+  },
+  "944": {
+   "barangay_id": 13,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 1
+  },
+  "945": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.046154,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 65
+  },
+  "946": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.033333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 70
+  },
+  "947": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 15
+  },
+  "948": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.031915,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 94
+  },
+  "949": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 75
+  },
+  "950": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.169082,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 69
+  },
+  "951": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.003058,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 109
+  },
+  "952": {
+   "barangay_id": 14,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 34
+  },
+  "953": {
+   "barangay_id": 14,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 25
+  },
+  "957": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.126667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 50
+  },
+  "958": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.106838,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 78
+  },
+  "959": {
+   "barangay_id": 15,
+   "level": "Orange",
+   "score": 0.191667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 40
+  },
+  "960": {
+   "barangay_id": 15,
+   "level": "Red",
+   "score": 0.390805,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 29
+  },
+  "962": {
+   "barangay_id": 16,
+   "level": "Orange",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 18
+  },
+  "963": {
+   "barangay_id": 16,
+   "level": "Orange",
+   "score": 0.232804,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 63
+  },
+  "964": {
+   "barangay_id": 16,
+   "level": "Orange",
+   "score": 0.245098,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 34
+  },
+  "965": {
+   "barangay_id": 16,
+   "level": "Red",
+   "score": 0.544974,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 63
+  },
+  "966": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.232704,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 53
+  },
+  "967": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.295082,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 61
+  },
+  "969": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.092593,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 36
+  },
+  "970": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.181818,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 55
+  },
+  "971": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.25,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 28
+  },
+  "973": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.096045,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 59
+  },
+  "974": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.122222,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 60
+  },
+  "975": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.045455,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 22
+  },
+  "976": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.143791,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 51
+  },
+  "977": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.076389,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 48
+  },
+  "978": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.098039,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 17
+  },
+  "979": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.061905,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 70
+  },
+  "980": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.075758,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 44
+  },
+  "982": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.11828,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 31
+  },
+  "983": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.108333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 40
+  },
+  "984": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.285714,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 21
+  },
+  "985": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.634218,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 113
+  },
+  "986": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 6
+  },
+  "987": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.301075,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 31
+  },
+  "988": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 16
+  },
+  "989": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.276423,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 41
+  },
+  "990": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.34058,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 46
+  },
+  "991": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.041667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 16
+  },
+  "993": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.47541,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 61
+  },
+  "994": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.162162,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 37
+  },
+  "995": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.52381,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 42
+  },
+  "996": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.505376,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 31
+  },
+  "997": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.253968,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 21
+  },
+  "998": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.418803,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 39
+  },
+  "999": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.541667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 40
+  },
+  "1000": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.283951,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 27
+  },
+  "1001": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.446667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 50
+  },
+  "1002": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.458333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 72
+  },
+  "1003": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.096154,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 52
+  },
+  "1004": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.066667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 90
+  },
+  "1005": {
+   "barangay_id": 21,
+   "level": "Red",
+   "score": 0.416667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 76
+  },
+  "1006": {
+   "barangay_id": 21,
+   "level": "Red",
+   "score": 0.359307,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 77
+  },
+  "1007": {
+   "barangay_id": 22,
+   "level": "Green",
+   "score": 0.040404,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 33
+  },
+  "1008": {
+   "barangay_id": 22,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 1
+  },
+  "1009": {
+   "barangay_id": 22,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 50
+  },
+  "1010": {
+   "barangay_id": 1,
+   "level": "Orange",
+   "score": 0.245614,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 57
+  },
+  "1011": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.37963,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 36
+  },
+  "1012": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.051282,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 13
+  },
+  "1013": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.479167,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 16
+  },
+  "1015": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.747475,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 33
+  },
+  "1016": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.287356,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 29
+  },
+  "1017": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.154762,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 56
+  },
+  "1018": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.348485,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 44
+  },
+  "1020": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 29
+  },
+  "1025": {
+   "barangay_id": 5,
+   "level": "Red",
+   "score": 0.363636,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 22
+  },
+  "1028": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.08642,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 27
+  },
+  "1029": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 40
+  },
+  "1030": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.099502,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 67
+  },
+  "1031": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.383562,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 73
+  },
+  "1032": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.396396,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 37
+  },
+  "1033": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.565217,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 46
+  },
+  "1034": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.2,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 55
+  },
+  "1035": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.407407,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 27
+  },
+  "1036": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.451389,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 48
+  },
+  "1037": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.08,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 50
+  },
+  "1042": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.101852,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 36
+  },
+  "1043": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 5
+  },
+  "1044": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 8
+  },
+  "1045": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 27
+  },
+  "1046": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.008772,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 38
+  },
+  "1047": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.078431,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 85
+  },
+  "1048": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.117117,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 37
+  },
+  "1049": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.032258,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 31
+  },
+  "1050": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.111111,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 6
+  },
+  "1051": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.071197,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 103
+  },
+  "1052": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.094017,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 39
+  },
+  "1053": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.041667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 24
+  },
+  "1054": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 54
+  },
+  "1055": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.04902,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 34
+  },
+  "1056": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.006944,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 48
+  },
+  "1057": {
+   "barangay_id": 12,
+   "level": "Orange",
+   "score": 0.338164,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 69
+  },
+  "1058": {
+   "barangay_id": 12,
+   "level": "Orange",
+   "score": 0.172222,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 60
+  },
+  "1060": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.053922,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 68
+  },
+  "1061": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.036415,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 119
+  },
+  "1062": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.092593,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 18
+  },
+  "1065": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.039216,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 51
+  },
+  "1066": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.048611,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 48
+  },
+  "1067": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.009132,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 73
+  },
+  "1069": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.066667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 55
+  },
+  "1070": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.072917,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 32
+  },
+  "1071": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.235294,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 17
+  },
+  "1072": {
+   "barangay_id": 18,
+   "level": "Orange",
+   "score": 0.212121,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 11
+  },
+  "1073": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.056604,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 53
+  },
+  "1074": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.111111,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 54
+  },
+  "1075": {
+   "barangay_id": 18,
+   "level": "Orange",
+   "score": 0.298246,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 38
+  },
+  "1076": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.119048,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 56
+  },
+  "1077": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.088889,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 60
+  },
+  "1078": {
+   "barangay_id": 18,
+   "level": "Orange",
+   "score": 0.265432,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 54
+  },
+  "1079": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.076389,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 48
+  },
+  "1080": {
+   "barangay_id": 18,
+   "level": "Orange",
+   "score": 0.22695,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 47
+  },
+  "1082": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 41
+  },
+  "1083": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.423077,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 26
+  },
+  "1084": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.326531,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 49
+  },
+  "1085": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.226667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 50
+  },
+  "1086": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.659574,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 47
+  },
+  "1087": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 23
+  },
+  "1089": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.573333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 25
+  },
+  "1090": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 34
+  },
+  "1094": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 63
+  },
+  "1096": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.502646,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 63
+  },
+  "1097": {
+   "barangay_id": 17,
+   "level": "Red",
+   "score": 0.490196,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 17
+  },
+  "1098": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.5,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 36
+  },
+  "1099": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.325,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 80
+  },
+  "1105": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 58
+  },
+  "1106": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.210145,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 46
+  },
+  "1107": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.117371,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 71
+  },
+  "1108": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.266667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 95
+  },
+  "1109": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.032051,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 52
+  },
+  "1110": {
+   "barangay_id": 10,
+   "level": "Red",
+   "score": 0.375,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 32
+  },
+  "1111": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.111111,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 33
+  },
+  "1112": {
+   "barangay_id": 10,
+   "level": "Orange",
+   "score": 0.184211,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 38
+  },
+  "1113": {
+   "barangay_id": 11,
+   "level": "Red",
+   "score": 0.975309,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 27
+  },
+  "1114": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 29
+  },
+  "1115": {
+   "barangay_id": 16,
+   "level": "Red",
+   "score": 0.367647,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 68
+  },
+  "1116": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.614887,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 103
+  },
+  "1117": {
+   "barangay_id": 19,
+   "level": "Orange",
+   "score": 0.16092,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 29
+  },
+  "1118": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.877778,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 30
+  },
+  "1119": {
+   "barangay_id": 22,
+   "level": "Green",
+   "score": 0.025,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 40
+  },
+  "1120": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.44898,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 49
+  },
+  "1121": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 2
+  },
+  "1122": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 27
+  },
+  "1123": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.408602,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 62
+  },
+  "1124": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.548148,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 45
+  },
+  "1125": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.349206,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 42
+  },
+  "1126": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.222222,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 57
+  },
+  "1127": {
+   "barangay_id": 23,
+   "level": "Red",
+   "score": 0.589744,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 39
+  },
+  "1129": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.090909,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 33
+  },
+  "1133": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.222222,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 21
+  },
+  "1136": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.08,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 50
+  },
+  "1137": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.139394,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 55
+  },
+  "1138": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.121951,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 41
+  },
+  "1139": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.111111,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 96
+  },
+  "1140": {
+   "barangay_id": 10,
+   "level": "Orange",
+   "score": 0.291667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 16
+  },
+  "1141": {
+   "barangay_id": 12,
+   "level": "Red",
+   "score": 0.439394,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 66
+  },
+  "1144": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.051282,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 13
+  },
+  "1145": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.045455,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 22
+  },
+  "1146": {
+   "barangay_id": 20,
+   "level": "Orange",
+   "score": 0.301587,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 42
+  },
+  "1147": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.413333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 75
+  },
+  "1148": {
+   "barangay_id": 1,
+   "level": "Orange",
+   "score": 0.229437,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 77
+  },
+  "1149": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.04386,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 38
+  },
+  "1150": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 10
+  },
+  "1156": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.169935,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 51
+  },
+  "1157": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.349206,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 42
+  },
+  "1160": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.011111,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 60
+  },
+  "1161": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 0.575,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 40
+  },
+  "1163": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.022523,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 148
+  },
+  "1164": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.071429,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 14
+  },
+  "1165": {
+   "barangay_id": 10,
+   "level": "Orange",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 13
+  },
+  "1166": {
+   "barangay_id": 11,
+   "level": "Orange",
+   "score": 0.291667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 32
+  },
+  "1167": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.055556,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 36
+  },
+  "1168": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.020408,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 49
+  },
+  "1169": {
+   "barangay_id": 12,
+   "level": "Red",
+   "score": 0.353909,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 81
+  },
+  "1170": {
+   "barangay_id": 12,
+   "level": "Orange",
+   "score": 0.219048,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 35
+  },
+  "1171": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 1
+  },
+  "1172": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 6
+  },
+  "1173": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 7
+  },
+  "1174": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.02682,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 87
+  },
+  "1175": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.020833,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 48
+  },
+  "1177": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.00995,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 67
+  },
+  "1178": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.012346,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 27
+  },
+  "1179": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.143791,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 51
+  },
+  "1180": {
+   "barangay_id": 15,
+   "level": "Orange",
+   "score": 0.160714,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 56
+  },
+  "1181": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 2
+  },
+  "1182": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.095238,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 7
+  },
+  "1183": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.146119,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 73
+  },
+  "1184": {
+   "barangay_id": 16,
+   "level": "Red",
+   "score": 0.414414,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 37
+  },
+  "1185": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.189542,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 51
+  },
+  "1186": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.141975,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 54
+  },
+  "1188": {
+   "barangay_id": 18,
+   "level": "Orange",
+   "score": 0.2,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 35
+  },
+  "1189": {
+   "barangay_id": 18,
+   "level": "Orange",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 37
+  },
+  "1190": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.145833,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 64
+  },
+  "1191": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.419355,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 93
+  },
+  "1192": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.650794,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 21
+  },
+  "1193": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.102564,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 13
+  },
+  "1194": {
+   "barangay_id": 22,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 3
+  },
+  "1195": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.188172,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 62
+  },
+  "1196": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 91
+  },
+  "1197": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.1,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 10
+  },
+  "1198": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.018519,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 18
+  },
+  "1199": {
+   "barangay_id": 1,
+   "level": "Red",
+   "score": 0.622807,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 38
+  },
+  "1200": {
+   "barangay_id": 2,
+   "level": "Red",
+   "score": 0.375,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 48
+  },
+  "1201": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.170732,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 41
+  },
+  "1202": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.136752,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 39
+  },
+  "1203": {
+   "barangay_id": 12,
+   "level": "Red",
+   "score": 0.419192,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 66
+  },
+  "1204": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.406504,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 41
+  },
+  "1205": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.802721,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 49
+  },
+  "1207": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.108527,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 43
+  },
+  "1208": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.533333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 25
+  },
+  "1209": {
+   "barangay_id": 6,
+   "level": "Orange",
+   "score": 0.34188,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 39
+  },
+  "1212": {
+   "barangay_id": 18,
+   "level": "Orange",
+   "score": 0.217687,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 49
+  },
+  "1213": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 40
+  },
+  "1214": {
+   "barangay_id": 1,
+   "level": "Orange",
+   "score": 0.2,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 25
+  },
+  "1215": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.084656,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 63
+  },
+  "1216": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.313131,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 33
+  },
+  "1217": {
+   "barangay_id": 6,
+   "level": "Red",
+   "score": 0.950617,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 54
+  },
+  "1219": {
+   "barangay_id": 12,
+   "level": "Orange",
+   "score": 0.178161,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 58
+  },
+  "1220": {
+   "barangay_id": 12,
+   "level": "Orange",
+   "score": 0.195238,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 70
+  },
+  "1221": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.155556,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 60
+  },
+  "1222": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.087302,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 42
+  },
+  "1223": {
+   "barangay_id": 18,
+   "level": "Orange",
+   "score": 0.222222,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 27
+  },
+  "1224": {
+   "barangay_id": 21,
+   "level": "Red",
+   "score": 0.641975,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 27
+  },
+  "1225": {
+   "barangay_id": 21,
+   "level": "Orange",
+   "score": 0.188889,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 30
+  },
+  "1226": {
+   "barangay_id": 1,
+   "level": "Orange",
+   "score": 0.327273,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 55
+  },
+  "1227": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.271186,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 59
+  },
+  "1228": {
+   "barangay_id": 5,
+   "level": "Orange",
+   "score": 0.269504,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 47
+  },
+  "1230": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.135135,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 37
+  },
+  "1231": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.148148,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 9
+  },
+  "1234": {
+   "barangay_id": 9,
+   "level": "Orange",
+   "score": 0.257143,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 35
+  },
+  "1235": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.058065,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 155
+  },
+  "1236": {
+   "barangay_id": 10,
+   "level": "Orange",
+   "score": 0.229167,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 16
+  },
+  "1240": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.066667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 10
+  },
+  "1241": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.041667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 8
+  },
+  "1242": {
+   "barangay_id": 17,
+   "level": "Orange",
+   "score": 0.342593,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "buildings": 36
+  },
+  "1243": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.513514,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 37
+  },
+  "1244": {
+   "barangay_id": 19,
+   "level": "Red",
+   "score": 0.777778,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 30
+  },
+  "1245": {
+   "barangay_id": 20,
+   "level": "Red",
+   "score": 0.511111,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 15
+  },
+  "1246": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.04,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 25
+  },
+  "1247": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.054645,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 61
+  },
+  "1250": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.197279,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "buildings": 49
+  }
+ }
+}

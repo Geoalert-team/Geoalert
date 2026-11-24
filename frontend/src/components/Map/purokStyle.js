@@ -79,7 +79,8 @@ export function puroksOf(geo, barangayId) {
   return features.length ? { type: 'FeatureCollection', features } : null;
 }
 
-const escape = (text) => String(text ?? '')
+// Text made safe to put in hover HTML (Leaflet setContent)
+export const escape = (text) => String(text ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 // An estimate with no confidence is an area no purok name was found for: a

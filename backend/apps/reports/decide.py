@@ -6,9 +6,11 @@ floods and landslides alike; nobody draws an area.
 A report names its puroks; its pins are their centres (a point inside
 each). An approved report is a HazardZone whose geometry is a small circle
 round each pin, used only to find the barangays to alert - the public map
-shows the pins, not the circles. Its level is the highest level among the
-puroks' history of that hazard type (apps/history/purok_levels.py); the
-officer doesn't choose one.
+shows the pins, not the circles. A fire's level is the highest level the
+fire risk model gives its puroks this month (apps/history/fire_purok.py),
+Moderate with the reason when any of them has none; a flood or landslide's
+is the highest among the puroks' history of that type
+(apps/history/purok_levels.py). The officer doesn't choose one.
 
 Plain functions so they test without the database; the decide view does the
 lookups, the alerts and the one transaction.
@@ -20,6 +22,22 @@ from django.utils import timezone
 PIN_RADIUS_M = 25     # a burning block plus a little; only decides who is alerted
 NEARBY_M = 500        # a live hazard of the same type this close may be the same event
 METRIC_SRID = 32651   # UTM 51N, metres, covers Talisay
+# A live fire needs a level: when the model has none for a purok, the cautious middle
+FALLBACK_LEVEL = 'Orange'
+NO_MODEL_LEVEL = 'The fire model has no level for these puroks right now, so the level is Moderate.'
+LEVEL_RANK = {'Green': 1, 'Orange': 2, 'Red': 3}
+
+
+def fire_level(levels):
+    """
+    (level, reason) for a fire report from its puroks' model levels: the
+    highest, or FALLBACK_LEVEL with NO_MODEL_LEVEL when there are none or any
+    purok has no level (None).
+    """
+    levels = list(levels)
+    if not levels or any(lv not in LEVEL_RANK for lv in levels):
+        return FALLBACK_LEVEL, NO_MODEL_LEVEL
+    return max(levels, key=LEVEL_RANK.get), None
 
 
 def report_pins(report):

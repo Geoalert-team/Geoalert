@@ -77,10 +77,12 @@ On Linux, cron:   * * * * *  cd /path/to/backend && venv/bin/python manage.py re
 Running it on more than one machine is safe: nothing is sent twice. On your own laptop
 while developing you don't need it.
 
-Prediction log (once the hazard_prediction_log table exists, migration 0008): once a day
-the server should also write down the chances it gave, so they can be checked against
-what happened. Its rows can never be changed or removed, so exactly ONE machine writes
-it: the deployed server. Put this line in that server's backend/.env, and nowhere else:
+Fire purok prediction log (once the fire_purok_prediction_log table exists, migration
+history 0010): once a day the server writes down each purok's fire chance and level for
+the month, so the fire model can be scored on fires that come after. The hazard list
+(the map's busiest request) starts it in the background once a Manila day. Its rows can
+never be changed or removed, so exactly ONE machine writes it: the deployed server. Put
+this line in that server's backend/.env, and nowhere else:
 
 HAZARD_LOG_WRITER=true
 
@@ -94,28 +96,106 @@ schtasks /Create /TN "GeoAlert prediction log" /SC DAILY /ST 06:00 /TR "\"C:\pat
 
 On Linux, cron:   0 6 * * *  cd /path/to/backend && venv/bin/python manage.py log_hazard_predictions
 
-Running it twice on the same day adds no rows. Since 2026-11-22 it writes nothing: the
-flood, landslide and old fire models it logged were removed, and the fire purok log that
-replaces them is not built yet (plan docs/design/plans/2026-11-22-fire-purok-model.md,
-Task B6). The rows already in hazard_prediction_log stay, unchanged.
+Running it twice on the same day adds no rows, and it writes nothing until the fire model
+has been trained. The rows of the older hazard_prediction_log (the flood, landslide and
+barangay fire models removed on 2026-11-22) stay, unchanged; nothing writes to it.
 
 --------------------------------------------------------------------------------
-Hazard prediction (rebuild in progress, 2026-11-22)
+Hazard prediction: the fire risk model by purok
 
-Flood and landslide prediction, the old barangay fire model and the Rain watch ("Next 3
-days") were removed on 2026-11-22: flood and landslide will be rebuilt later, and fire is
-being rebuilt as a per-purok model adapted from the City of Pittsburgh Bureau of Fire's
-fire risk model. Design: docs/design/specs/2026-11-22-fire-purok-model-design.md. Plan:
+"Likely by month" shows each purok's chance of a fire and its level (Red, Orange or
+Green) for a chosen month, and each barangay's chance on hover. The model is adapted from
+the City of Pittsburgh Bureau of Fire / Carnegie Mellon Metro21 fire risk model
+(github.com/CityofPittsburgh/fire_risk_analysis, MIT License, (c) 2017 mmadaio) and
+trained on the BFP fire log. Its inputs describe each purok from open map data
+(buildings, roads, road distance to a fire station, land cover, population); no past fire
+count is an input. Approving a fire report puts it on the map at the model's level for its
+puroks (Moderate, with the reason, when the model has none).
+
+The model is trained on a developer machine, never on the server (xgboost is in
+requirements/development.txt only):
+
+python manage.py build_fire_features   (downloads open map data once, to backend/.hazard_cache)
+python manage.py train_fire_model      (reads the fires, read-only; writes the model and report)
+
+Both write to backend/apps/history/data/; commit those files so a deploy carries them.
+Rerun both after a BFP import or a purok reload: if the purok map changed since training,
+fire shows "unavailable" with the reason until they are rerun. Until the first training
+run, fire shows "The fire model has not been trained yet."
+
+Landslide prediction and the Rain watch ("Next 3 days") were removed on 2026-11-22 and
+will be rebuilt later; asking the forecast for landslide is a 400. Past hazards, the History
+page and every history record are unchanged. Nothing was dropped from the database (the
+rainwatch tables and hazard_prediction_log are still there, unused).
+
+--------------------------------------------------------------------------------
+Hazard prediction: flood susceptibility by purok
+
+With Flood ticked, "Likely by month" fills each purok by its flood susceptibility: Red
+(high), Orange (moderate), Green (low, within the assessed floodplain) or grey ("Not
+assessed yet", with the reason). It shows how flood-prone an area is, not whether a flood
+is coming, and it is the same in every month. A machine-learning model learns it from
+where floods reached in the 2017 UP Mananga flood survey (169 reports, typhoons of
+1990-2014), with UP NOAH flood depths and terrain as inputs; it is tested on GeoAlert's
+own flood points and the Tino satellite map, and it is used only if it beats UP NOAH's map
+on its own (otherwise the NOAH-based classes are shown, labelled as such). No person can
+set or change a flood level. History, including the level an approved flood report
+takes from its puroks' past floods, is unchanged.
+
+The model is trained on a developer machine, never on the server (pypdf and xgboost are in
+requirements/development.txt only):
+
+python manage.py build_flood_features  (open map data and UP NOAH maps, to backend/.hazard_cache)
+python manage.py train_flood_model     (reads flood records read-only; writes the model and report)
+
+Both write to backend/apps/history/data/ (commit those files so a deploy carries them).
+The survey points and the satellite map stay in the git-ignored backend/.hazard_cache and
+are never shown or redistributed. Rerun both after a purok reload, after new located
+floods, or when UP NOAH publishes new maps. Design:
+docs/design/specs/2026-11-24-flood-susceptibility-model-design.md. Evidence:
+docs/research/2026-11-24-flood-prediction-assessment.md.
+
+Design: docs/design/specs/2026-11-22-fire-purok-model-design.md. Plan:
 docs/design/plans/2026-11-22-fire-purok-model.md. Background and the data checks behind
-it: docs/research/2026-11-22-fire-purok-prediction-audit.md.
+it: docs/research/2026-11-22-fire-purok-prediction-audit.md. Data credits:
+backend/apps/history/data/ATTRIBUTION.md.
 
-Until the new fire model is built and trained, the "Likely by month" map view and the
-forecast cards show fire as "unavailable" with the reason, never a counted figure; asking
-the forecast for flood or landslide is a 400. The commands fetch_rain, fetch_storms,
-build_hazard_features and test_hazard_models are gone, with their data files. Past
-hazards, the History page and every history record are unchanged. Nothing was dropped
-from the database (the rainwatch tables and hazard_prediction_log are still there,
-unused).
+--------------------------------------------------------------------------------
+Automatic retraining
+
+GitHub retrains the models by itself (.github/workflows/model-retrain.yml): fire at
+03:17 Manila on the 2nd of each month, flood at 03:17 Manila on 5 January (not on the
+hour: GitHub may delay or drop runs scheduled at :00). The job runs
+on GitHub's throw-away runner with a database of its own, never the shared one. It reads
+its training data from the backend with a token, trains, and posts the attempt back. The
+backend keeps every attempt (Predictive models tab, "Model updates") and puts a new model
+live only when it does at least as well as the one in use. It needs the model_fit table
+(migration history 0012) on the server. Scheduled runs happen only from main. In a public
+repository, GitHub turns scheduled workflows off after 60 days without repository
+activity; if the runs stop, turn the workflow back on in the Actions tab.
+
+Set up once, with one long random token (never write it in a file):
+
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+- Render > Environment:  MODEL_JOB_TOKEN = the token. Without it the job's two
+  endpoints refuse everything.
+- GitHub > Settings > Secrets and variables > Actions, two repository secrets:
+  MODEL_JOB_API_URL = the backend's address, no trailing slash
+                      (https://geoalert-rvqc.onrender.com)
+  MODEL_JOB_TOKEN   = the same token
+
+To run it by hand: Actions > Model retraining > Run workflow, then pick fire or flood.
+Tick "Dry run" to train and print the result without posting anything. A dry run on a
+laptop (set MODEL_JOB_API_URL and MODEL_JOB_TOKEN in the terminal first):
+
+python manage.py run_model_job --hazard fire --dry-run
+
+The flood run loads the purok outlines only into an empty database with
+MODEL_JOB_SCRATCH_DB=true, which only the workflow sets. On a laptop, once there are
+enough spots to try, it stops with an error before training rather than write to the
+shared database. A run that fails posts a "Failed"
+attempt with its reason and turns the workflow red; the next scheduled run tries again.
 
 --------------------------------------------------------------------------------
 Deploying

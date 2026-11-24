@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import CategoryBars from '../components/Charts/CategoryBars';
 import BarangayLikelihood from '../components/Forecast/BarangayLikelihood';
-import ForecastAccuracy from '../components/Forecast/ForecastAccuracy';
 import SeasonalOutlook from '../components/Forecast/SeasonalOutlook';
 import ActivityBand from '../components/Analytics/ActivityBand';
 import ResponseBand from '../components/Analytics/ResponseBand';
@@ -33,11 +32,11 @@ const toRows = (rows, key, label = (r) => r[key] || 'Unspecified', color) =>
  *   Month by month the four measures as small multiples
  *   Outlook        the next three months, from the whole archive
  *   Likelihood     which barangays a month is likely to hit
- *   Model accuracy how the likelihood's trained model did on months it never saw
  *   Breakdowns     zones by type and severity, and every barangay's activity
  *
  * The outlook and likelihood used to live on the History page, which is now
- * the record archive. Download, PDF and print are each written to the audit
+ * the record archive. How the models were built and tested ("Model
+ * accuracy") is on the "Predictive models" tab. Download, PDF and print are each written to the audit
  * log before they happen.
  */
 export default function AnalyticsPanel() {
@@ -148,10 +147,6 @@ export default function AnalyticsPanel() {
           hazard&rsquo;s trained model
         </p>
         <BarangayLikelihood hazard={pickedName || ''} />
-      </div>
-
-      <div className="db-card">
-        <ForecastAccuracy />
       </div>
 
       {data && (

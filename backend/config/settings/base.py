@@ -273,6 +273,10 @@ BEHIND_PROXY = env.bool('BEHIND_PROXY', default=False)
 # database never adds rows from its own report and data files.
 HAZARD_LOG_WRITER = env.bool('HAZARD_LOG_WRITER', default=False)
 
+# The secret the automatic retraining job sends as a bearer token (apps/history/job_auth.py).
+# Empty by default, which refuses every request to the job's endpoints.
+MODEL_JOB_TOKEN = env('MODEL_JOB_TOKEN', default='').strip()  # a pasted space or line break never locks the job out
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = env.int('EMAIL_PORT', default=587)

@@ -35,17 +35,18 @@ from apps.hazards.alerts import (
     all_clear,
     apply_raise,
     approval_due_at,
-    approvers_for,
     issue_alert,
     notify,
     release_overdue_quietly,
-    request_raise,
     touch,
     type_name,
     where_text,
 )
 
 logger = logging.getLogger(__name__)
+
+
+HAND_LEVELS = "Levels come from the hazard models and can't be changed by hand."
 
 
 def parse_bbox(value):
@@ -114,6 +115,14 @@ class HazardZoneListView(APIView):
         # The public map is the busiest caller, so it is one of the places
         # an unanswered Extreme alert gets sent once its window is up.
         release_overdue_quietly()
+        # ...and where the day's fire purok log starts, once a Manila day, in
+        # the background, on the one machine that writes it. It must never
+        # break the hazard list.
+        try:
+            from apps.history import prediction_log
+            prediction_log.log_in_background(timezone.localdate())
+        except Exception:
+            logger.exception('Could not start the daily fire purok log.')
 
         # Nothing changed since this browser last asked: no queries at all
         etag = map_version.etag_for(request)
@@ -147,7 +156,11 @@ class HazardZoneListView(APIView):
 class HazardZoneDetailView(APIView):
     """
     GET   /api/hazards/<id>/  → Get single hazard zone
-    PATCH /api/hazards/<id>/  → Update severity, description, or resolve the hazard
+    PATCH /api/hazards/<id>/  → Update the description, reshape, or resolve the hazard
+
+    A hazard's level is never set here: it comes from the hazard models (a
+    body with `severity` is a 400, HAND_LEVELS). Raising a live zone happens
+    only when a higher-level report is attached to it (decide_views).
 
     Resolving (status='Resolved') also writes a HistoricalRecord so the
     event shows up in History and in the hazard summary report: one row of
@@ -188,6 +201,10 @@ class HazardZoneDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        # No person sets or changes a level: it comes from the hazard models
+        if 'severity' in request.data:
+            return Response({'error': HAND_LEVELS}, status=status.HTTP_400_BAD_REQUEST)
+
         # A withdrawn alert is final. Re-opening or resolving one would turn
         # a mistake that was publicly corrected back into a live hazard, or
         # file it as an incident that never happened.
@@ -208,17 +225,7 @@ class HazardZoneDetailView(APIView):
         # Remember where the zone stood BEFORE this request touched it, so a
         # repeated PATCH on an already-resolved zone can't archive it twice.
         was_already_resolved = zone.status in ('Resolved', 'Archived')
-        old_severity = zone.severity
-
-        new_severity = request.data.get('severity', zone.severity)
-        new_status   = request.data.get('status',   zone.status)
-
-        valid_severities = [c[0] for c in HazardZone.SEVERITY_CHOICES]
-        if new_severity not in valid_severities:
-            return Response(
-                {'error': f'severity must be one of {valid_severities}.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        new_status = request.data.get('status', zone.status)
 
         # Retracting is not a status edit: it needs a written reason and it
         # notifies everyone who got the original alert. Sending it through
@@ -294,23 +301,12 @@ class HazardZoneDetailView(APIView):
             if home is not None:
                 zone.barangay = home
 
-        # Raising a live zone to Extreme needs a second officer, the same as
-        # publishing an Extreme one; otherwise Edit was a way around the
-        # approval. The zone stays live at its current severity meanwhile.
-        raising = (
-            zone.status == 'Active' and new_status == 'Active'
-            and new_severity == 'Red' and old_severity != 'Red'
-        )
-        hold_raise = raising and approvers_for(request.user).exists()
-        if hold_raise:
-            new_severity = old_severity
-        if new_status != 'Active' or (new_severity != 'Red' and 'severity' in request.data):
-            # Resolved, or an officer chose a lower severity: any held raise is moot
+        if new_status != 'Active':
+            # Resolved: any held raise is moot
             zone.pending_severity = ''
             zone.pending_by = None
             zone.pending_at = None
 
-        zone.severity    = new_severity
         zone.status      = new_status
         zone.description = request.data.get('description', zone.description)
         touch(zone)  # an officer looked at it: no "still active?" reminder for 24 h
@@ -324,26 +320,6 @@ class HazardZoneDetailView(APIView):
             zone.resolved_at = timezone.now()
 
         zone.save()
-
-        if hold_raise:
-            request_raise(zone, request.user)
-            zone.save(update_fields=['pending_severity', 'pending_by', 'pending_at'])
-            log_event(
-                request, 'HOLD_HAZARD_RAISE', 'hazard_zone', zone.id,
-                f'{type_name(zone)} raise from {old_severity} to Red held for a second approval.',
-            )
-        elif raising:
-            # No other officer exists to approve: raise it now, and send the
-            # Extreme alert, which a severity change never used to do.
-            zone.auto_released = True
-            zone.save(update_fields=['auto_released'])
-            with transaction.atomic():
-                alert, barangays, recipients = issue_alert(zone, request.user, suffix=' Raised to Extreme.')
-            log_event(
-                request, 'RAISE_HAZARD_ALERT', 'hazard_alert', alert.id,
-                f'{type_name(zone)} raised to Red with no second officer available. '
-                f'{len(recipients)} recipient(s) notified. Zone {zone.id}.',
-            )
 
         if reshaped:
             after = affected_barangays(zone)
@@ -398,10 +374,7 @@ class HazardZoneDetailView(APIView):
                 f'All-clear sent to {len(told)} account(s).',
             )
 
-        payload = HazardZoneSerializer(zone).data
-        if hold_raise:
-            payload['approval'] = {'required': True, 'due_at': approval_due_at(zone)}
-        return Response(payload)
+        return Response(HazardZoneSerializer(zone).data)
 
 
 class HazardZoneRetractView(APIView):

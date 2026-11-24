@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import PublicNavbar from '../components/Navbar/PublicNavbar';
 import ReportsPanel from './Reports';
 import AnalyticsPanel from './Analytics';
+import PredictiveModelsPanel from './PredictiveModels';
 import './css/Dashboard.css';
 import './css/ReportingAnalytics.css';
 
@@ -14,6 +15,9 @@ import './css/ReportingAnalytics.css';
  *              log, meant to be handed over as an official figure
  *   Analytics  how we are handling it - read rates, how long an alert sits
  *              unread, how long a zone stays active
+ *   Predictive models  how the prediction models were built and tested, and
+ *              whether there is enough flood data to improve them; kept apart
+ *              from the records' analytics (History is not prediction)
  *
  * Tabs rather than one long page: flattened together, the Print button
  * stops being clear about what it prints, and an officer after one
@@ -35,7 +39,14 @@ const TABS = [
     label: 'Analytics',
     blurb: 'How hazards have been handled, month by month.',
   },
+  {
+    key: 'models',
+    label: 'Predictive models',
+    blurb: 'How the prediction models were built and tested, and whether there is enough data to improve them.',
+  },
 ];
+
+const PANELS = { reports: ReportsPanel, analytics: AnalyticsPanel, models: PredictiveModelsPanel };
 
 export default function ReportingAnalytics() {
   // The tab lives in the URL so a link can point at one, the back button
@@ -92,7 +103,9 @@ export default function ReportingAnalytics() {
           ))}
         </div>
 
-        {TABS.filter((t) => opened.includes(t.key)).map((t) => (
+        {TABS.filter((t) => opened.includes(t.key)).map((t) => {
+          const Panel = PANELS[t.key];
+          return (
           <div
             key={t.key}
             role="tabpanel"
@@ -103,9 +116,10 @@ export default function ReportingAnalytics() {
             // readers and printing both skip it while it is closed.
             hidden={active !== t.key}
           >
-            {t.key === 'analytics' ? <AnalyticsPanel /> : <ReportsPanel />}
+            <Panel />
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

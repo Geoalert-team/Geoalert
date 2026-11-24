@@ -19,6 +19,13 @@ export const reportsApi = {
   list: (status) =>
     client.get('/api/reports/incidents/', { params: status ? { status } : {} }).then((r) => r.data),
 
+  // BFP, DRRMO and Admin: fire reports sent in the last `hours` that DRRMO
+  // has not decided yet, for the staff-only pins on the map
+  pendingFires: (hours) =>
+    client.get('/api/reports/incidents/', {
+      params: { status: 'Pending', hazard_type_name: 'Fire', since_hours: hours },
+    }).then((r) => r.data),
+
   // DRRMO/Admin: the barangay reports a zone was published from or joined,
   // shown in the resolve form
   forZone: (zoneId) =>
@@ -80,7 +87,7 @@ export const reportsApi = {
   decision: (id) => client.get(`/api/reports/incidents/${id}/decide/`).then((r) => r.data),
 
   // DRRMO/Admin: decide a fire report. body is
-  //   { action: 'approve', severity?, note? }   a new fire, live on the map
+  //   { action: 'approve', note? }              a new fire, live on the map at its model level (no level is sent)
   //   { action: 'attach', zone, note? }          joins a fire nearby
   //   { action: 'reject', note }
   decide: (id, body) => client.post(`/api/reports/incidents/${id}/decide/`, body).then((r) => r.data),

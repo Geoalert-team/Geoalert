@@ -1,0 +1,45 @@
+{
+  "outlines_version": "9a81386469102f1943a969caf4b29be5",
+  "built_at": "2026-11-23T23:40:14+08:00",
+  "sources": {
+    "buildings": {
+      "name": "Microsoft Global ML Building Footprints",
+      "licence": "ODbL",
+      "url": "https://minedbuildings.z5.web.core.windows.net/global-buildings/dataset-links.csv",
+      "tile": "132330002"
+    },
+    "roads_stations_water": {
+      "name": "OpenStreetMap (roads, fire stations, coastline, waterways)",
+      "licence": "ODbL",
+      "note": "saved by build_purok_estimates"
+    },
+    "landcover": {
+      "name": "ESA WorldCover 2021 v200",
+      "licence": "CC BY 4.0",
+      "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N09E123_Map.tif"
+    },
+    "population": {
+      "used": true,
+      "licence": "CC BY 4.0",
+      "name": "WorldPop 2025 constrained 100 m (Global2 R2025A v1)"
+    }
+  },
+  "dropped": [],
+  "columns": [
+    "buildings_in_area",
+    "building_density_per_ha",
+    "median_footprint_m2",
+    "median_gap_to_nearest_building_m",
+    "share_crowded_10m",
+    "road_density_m_per_ha",
+    "main_road_m",
+    "median_building_to_road_m",
+    "road_distance_to_fire_station_m",
+    "share_built_up",
+    "share_grass_shrub_bare",
+    "share_tree_cover",
+    "population",
+    "distance_to_coast_m",
+    "distance_to_river_m"
+  ]
+}

@@ -3,3 +3,7 @@ pytest==8.2.0
 pytest-django==4.8.0
 django-debug-toolbar==4.3.0
 factory-boy==3.3.0
+
+# Offline model training only (manage.py train_fire_model, train_flood_model); the server never imports these
+xgboost==3.2.0
+pypdf==7.1.1  # offline flood model: reads the 2017 Mananga report's Annex 11 (train_flood_model)

@@ -12,16 +12,29 @@ export const historyApi = {
   detail: (id) =>
     client.get(`/api/history/${id}/`).then((r) => r.data),
 
-  // Fire's likelihood per barangay (the only hazard with a prediction model since 2026-11-22;
-  // flood and landslide are being rebuilt). Chance is 0 to 1; level (Low, Moderate, High) is on the
-  // month's chance.
-  // params: month (1-12), or month and year, or date; hazards: 'Fire' (see hazardsParam) or
-  // hazard_type_name: 'Fire' (not both; any other hazard is a 400); barangay (adds that barangay's
-  // 12-month profile)
+  // Fire's likelihood per barangay (a prediction model since 2026-11-22) and flood susceptibility
+  // per purok (since 2026-11-24, the same in every month); landslide is being rebuilt. Fire's
+  // chance is 0 to 1; level (Low, Moderate, High) is on the month's chance.
+  // params: month (1-12), or month and year, or date; hazards: 'Fire', 'Flood' or 'Fire,Flood'
+  // (see hazardsParam) or hazard_type_name: 'Fire' or 'Flood' (not both; any other hazard is a
+  // 400); barangay (adds that barangay's 12-month fire profile)
   // response: results (one row per barangay: method 'model' with probability, level, in_training;
-  // or method 'unavailable' with reason), model_hazards, unavailable_hazards, by_barangay, profile
+  // or method 'unavailable' with reason), model_hazards, unavailable_hazards, by_barangay, profile;
+  // with Flood asked: flood ({ available, reason, source 'model' or 'noah', basis,
+  // varies_by_month: false }) and flood_results (one row per purok: level or null,
+  // not_assessed_reason, uncertain, estimated_outline)
   forecast: (params) =>
     client.get('/api/history/forecast/', { params }).then((r) => r.data),
+
+  // Whether there is enough located flood data to improve the flood predictions: { located_flood_days,
+  // forecast_days_needed: { min, max }, enough_for_forecasting, flood_map, since_publishing } (counts only)
+  forecastReadiness: () =>
+    client.get('/api/history/forecast/readiness/').then((r) => r.data),
+
+  // Each automatic retraining attempt, newest first: { updates: [{ hazard: 'fire'|'flood', result, reason,
+  // version, created_at, is_live }] }
+  forecastUpdates: () =>
+    client.get('/api/history/forecast/updates/').then((r) => r.data),
 
   // How the fire model did on fires it never saw: { hazards: [{ hazard: 'Fire', kind, status, reason?, ... }] }
   forecastAccuracy: () =>

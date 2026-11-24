@@ -4,6 +4,10 @@ from apps.history.views import (
     HistoricalRecordDetailView,
     HistoricalForecastView,
     ForecastAccuracyView,
+    FloodReadinessView,
+    ModelUpdatesView,
+    ModelJobDataView,
+    ModelJobAttemptView,
     PurokLevelsView,
     AreaHistoryView,
     EventOptionsView,
@@ -17,6 +21,14 @@ urlpatterns = [
     path('forecast/', HistoricalForecastView.as_view(),     name='history-forecast'),
     # How each hazard type's trained model did against counting on months it never saw
     path('forecast/accuracy/', ForecastAccuracyView.as_view(), name='history-forecast-accuracy'),
+    # Whether there is enough located flood data to improve the flood predictions (counts only)
+    path('forecast/readiness/', FloodReadinessView.as_view(), name='history-forecast-readiness'),
+    # Each automatic retraining attempt: when, what was decided and why (no model, no location)
+    path('forecast/updates/', ModelUpdatesView.as_view(), name='history-forecast-updates'),
+    # Token only: the retraining job reads its training data
+    path('model-job/data/', ModelJobDataView.as_view(), name='history-model-job-data'),
+    # Token only: the retraining job posts one attempt
+    path('model-job/attempts/', ModelJobAttemptView.as_view(), name='history-model-job-attempts'),
     # Per purok and hazard type: how often it was hit and the level that gives
     path('purok-levels/', PurokLevelsView.as_view(),         name='history-purok-levels'),
     # One barangay's past hazards, or one purok's in it

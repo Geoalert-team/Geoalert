@@ -1,8 +1,10 @@
 // The DRRMO's "Validate and push" on a report: approve it as a new hazard
 // pinned at its puroks, attach it to a live one of its type nearby, or
 // reject it. Fires, floods and landslides alike. The officer doesn't choose a
-// level: it is the highest among the report's puroks' history of that type.
-// The server (apps/reports/decide.py) holds the same rules.
+// level: a fire's is the highest the fire risk model gives its puroks this
+// month (Moderate, with the reason, when the model has none); a flood's or
+// landslide's is the highest among its puroks' history of that type. The
+// server (apps/reports/decide.py) holds the same rules.
 
 export const LEVELS = [
   { code: 'Green', label: 'Low' },
@@ -27,6 +29,15 @@ export function canPush(report) {
 // "fire", "flood", "landslide": what the report is about, in words
 export function hazardNoun(report) {
   return (report?.hazard_type_details?.name || 'hazard').toLowerCase();
+}
+
+// Where the level comes from, for "A pin at each purok, Moderate, …": a
+// fire's from the fire risk model (the decide check's level_basis 'model'),
+// a flood's or landslide's from its puroks' history of that type
+export function levelSource(info, noun) {
+  return info?.level_basis === 'model'
+    ? 'from the fire risk model for its puroks this month'
+    : `from its puroks' ${noun} history`;
 }
 
 export function historyLine(purok, years, noun = 'fire') {

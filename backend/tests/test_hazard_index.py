@@ -235,3 +235,44 @@ class BuildTests(SimpleTestCase):
                        osm=self.osm, log=quiet, cache_dir=cache)
         self.assertEqual(list(cache.glob('dem_*.npy')), [])
         self.assertFalse((self.out / 'index').exists())
+
+
+def png_classes(path):
+    """Class numbers (0 outside the city, 1..5) of a susceptibility PNG, decoded from the class colours."""
+    rgba = np.asarray(Image.open(path).convert('RGBA'))
+    out = np.zeros(rgba.shape[:2], np.uint8)
+    for i, c in enumerate(susc.CLASSES, start=1):
+        v = int(c['color'][1:], 16)
+        hit = (rgba[..., 0] == (v >> 16) & 255) & (rgba[..., 1] == (v >> 8) & 255) & (rgba[..., 2] == v & 255)
+        out[hit & (rgba[..., 3] > 0)] = i
+    return out
+
+
+class FloodLayerRetiredTests(BuildTests):
+    """The hand-weighted flood layer is gone: no build makes it, and drop_layer removes a published one."""
+
+    def test_build_has_no_flood_layer(self):
+        index = self.build()
+        self.assertNotIn('flood', susc.FACTORS)
+        self.assertNotIn('flood', index['layers'])
+        self.assertFalse((self.out / 'flood.png').exists())
+        self.assertEqual(set(index['factors']), {'landslide', 'fire'})
+
+    def test_drop_layer(self):
+        index = self.build()
+        shape = png_classes(self.out / 'fire.png').shape
+        susc.write_png(self.out / 'flood.png', np.full(shape, 5, np.uint8))
+        index['layers']['flood'] = 'flood.png'
+        index['factors']['flood'] = []
+        for entry in index['barangays'].values():
+            entry['flood'] = [0, 0, 0, 0, 100]
+        susc.write_png(self.out / 'all.png', np.full(shape, 5, np.uint8))
+        (self.out / 'index.json').write_text(json.dumps(index))
+        new = susc.drop_layer(self.out, 'flood')
+        self.assertNotIn('flood', new['layers'])
+        self.assertNotIn('flood', new['factors'])
+        self.assertTrue(all('flood' not in e for e in new['barangays'].values()))
+        self.assertFalse((self.out / 'flood.png').exists())
+        expected = np.maximum(png_classes(self.out / 'landslide.png'), png_classes(self.out / 'fire.png'))
+        self.assertEqual(png_classes(self.out / 'all.png').tolist(), expected.tolist())
+        self.assertEqual(json.loads((self.out / 'index.json').read_text())['layers'], new['layers'])

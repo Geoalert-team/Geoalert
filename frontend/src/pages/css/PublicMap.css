@@ -575,3 +575,14 @@
 .hp-receipts-name { font-weight: 600; }
 .hp-receipts-ok { color: #1e7b45; }
 .hp-receipts-wait { color: #a15c00; }
+
+/* Likely by month: a barangay's puroks by their chance of a fire (LikelyPuroks) */
+.pm-likely-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+.pm-likely-list li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #e3e7ee; border-radius: 8px; }
+.pm-likely-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.pm-likely-name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.pm-likely-name strong { font-size: .92rem; overflow-wrap: anywhere; }
+.pm-likely-tag { color: #a15c00; font-size: .78rem; font-weight: 600; }
+.pm-likely-figure { font-size: .86rem; color: var(--pm-soft); white-space: nowrap; }
+.pm-likely-more { margin-top: 8px; padding: 6px 12px; border: 1px solid #c9d1dd; border-radius: 999px; background: #fff; font: inherit; font-size: .86rem; font-weight: 600; cursor: pointer; }
+.pm-likely-more:focus-visible { outline: 2px solid #1c2e4a; outline-offset: 2px; }
