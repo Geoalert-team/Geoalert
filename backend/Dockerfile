@@ -1,4 +1,5 @@
-# The backend as Render runs it. GDAL 3.6 is the newest Django 4.2 supports.
+# The backend as Render runs it: Debian 12's GDAL 3.6, which Django 5.2
+# supports. Python 3.11, since Django 6 (which needs 3.12) isn't used yet.
 FROM python:3.11-slim-bookworm
 
 RUN apt-get update \

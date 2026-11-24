@@ -6,7 +6,7 @@ against a real one.
 """
 import csv
 import io
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal
 from types import SimpleNamespace
 
@@ -61,7 +61,8 @@ class LogRowTests(SimpleTestCase):
         self.assertEqual(row[20:], [Decimal('625000'), 76, '3RD ALARM'])
 
     def test_the_date_and_time_are_manilas(self):
-        row = log_row(record(occurred_at=datetime(2026, 9, 20, 10, 51, tzinfo=timezone.utc)))
+        # Python's own UTC: django.utils.timezone.utc was removed in Django 5.0
+        row = log_row(record(occurred_at=datetime(2026, 9, 20, 10, 51, tzinfo=dt_timezone.utc)))
         self.assertEqual((col(row, 'A'), col(row, 'B')), (datetime(2026, 9, 20).date(), 1851))
 
     def test_casualties_with_no_split_go_in_t(self):
