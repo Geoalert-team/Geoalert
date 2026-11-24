@@ -1,0 +1,30 @@
+{
+ "buildings": 30702,
+ "built_at": "2026-11-24T07:15:41+08:00",
+ "grid_cell_m": 9.4,
+ "noah_check": {
+  "consistent": {
+   "100": true,
+   "25": true,
+   "5": true
+  },
+  "flooded_city_m2": {
+   "100": 10096807,
+   "25": 9165722,
+   "5": 6612598
+  },
+  "slack": 0.02
+ },
+ "noah_layers_used": [
+  "noah25_class",
+  "noah5_class"
+ ],
+ "outlines_version": "9a81386469102f1943a969caf4b29be5",
+ "sources": {
+  "buildings": "Microsoft Global ML Building Footprints (ODbL)",
+  "elevation": "produced using Copernicus WorldDEM-30 \u00a9 DLR e.V. 2010-2014 and \u00a9 Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved",
+  "landcover": "ESA WorldCover 2021 v200 (CC BY 4.0)",
+  "noah": "UP NOAH flood hazard maps, 5/25/100-year (ODbL), bettergovph mirror on Hugging Face",
+  "rivers": "OpenStreetMap waterway=river (ODbL)"
+ }
+}

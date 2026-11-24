@@ -18,7 +18,8 @@ const HALF_METRES_BELOW_M = 5;
 const MAX_STATED_M = 10;
 const M_PER_DEG_LAT = 111320;
 
-const HAZARDS = [['flood', 'Flood'], ['landslide', 'Landslide'], ['fire', 'Fire']];
+// The raster layers; flood is not one: it comes from the flood model (describeFloodAtSpot)
+const HAZARDS = [['landslide', 'Landslide'], ['fire', 'Fire']];
 
 /**
  * { ground, waterway } for a readSpot() result; either is null when there
@@ -90,4 +91,22 @@ export function nearestNamedRiver(rivers, lat, lng, maxM = 2000) {
 export function formatDistance(m) {
   const tens = Math.round(m / 10) * 10;
   return tens < 1000 ? `${tens} m` : `${(m / 1000).toFixed(1)} km`;
+}
+
+const FLOOD_AT_SPOT = {
+  Red: 'High flood susceptibility',
+  Orange: 'Moderate flood susceptibility',
+  Green: 'Low flood susceptibility (within the assessed floodplain)',
+};
+
+/**
+ * "This spot"'s flood line from the flood model: the level of the purok area
+ * holding the spot, or why there is none. flood = { available, reason, level,
+ * not_assessed_reason, name } (name: the area's), or null for no line.
+ */
+export function describeFloodAtSpot(flood) {
+  if (!flood) return null;
+  if (!flood.available) return `Flood: unavailable (${flood.reason})`;
+  if (!flood.level) return `Flood: Not assessed yet (${flood.not_assessed_reason || 'outside every purok area'})`;
+  return `Flood: ${FLOOD_AT_SPOT[flood.level]} (${flood.name})`;
 }

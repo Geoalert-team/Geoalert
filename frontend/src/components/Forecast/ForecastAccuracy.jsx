@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { historyApi } from '../../api/historyApi';
-import { FIRE_CREDIT, FIRE_MODEL_LABEL, SEVERITY_WORD } from './forecastLevels';
+import { FIRE_CREDIT, FIRE_MODEL_LABEL, FLOOD_WORD, NOT_ASSESSED, SEVERITY_WORD } from './forecastLevels';
 import './forecast.css';
 
 /**
- * How the fire model did on fires it never saw (backend
- * views.ForecastAccuracyView, which serves train_fire_model's report). Fire
- * is the only hazard with a prediction model since 2026-11-22; flood and
- * landslide are being rebuilt. An entry the backend cannot give is shown as
- * unavailable with its reason. It always reads real records, so it takes no
- * filters from the page.
+ * How the fire model did on fires it never saw, and how the flood
+ * susceptibility model did on floods it never saw (backend
+ * views.ForecastAccuracyView, which serves train_fire_model's and
+ * train_flood_model's reports). Landslide is being rebuilt. An entry the
+ * backend cannot give is shown as unavailable with its reason. It always
+ * reads real records, so it takes no filters from the page.
  */
+
+/** Shown when new located floods keep falling outside Red and Orange (backend flood_rules.monitoring) */
+export const UNDER_REVIEW = 'Under review: recent floods fall outside the flagged areas';
 
 const FAMILY = {
   logistic_regression: 'Logistic regression',
@@ -203,6 +206,235 @@ export function FireModelReport({ report }) {
   );
 }
 
+// The flood candidates (backend flood_training), simplest first, and the benchmark they must beat
+const FLOOD_FAMILY = {
+  logistic_regression: 'Logistic regression',
+  maxent_hinge: 'MaxEnt-type (hinge logistic)',
+  xgboost: 'XGBoost',
+  neural_network: 'Neural network',
+  noah_only: "UP NOAH's map on its own (the benchmark)",
+};
+
+const count = (n) => (n == null ? '—' : Number(n).toLocaleString('en-US'));
+const signed = (v) => (v == null ? '—' : `${v > 0 ? '+' : ''}${Number(v).toFixed(3)}`);
+const yesNo = (v) => (v ? 'Yes' : 'No');
+const floodLevelWord = (level) => FLOOD_WORD[level] || NOT_ASSESSED;
+
+function FloodSincePublishing({ since }) {
+  if (!since) return null;
+  return (
+    <>
+      <h4>Since publishing</h4>
+      {since.under_review && <p className="fc-note"><strong>{UNDER_REVIEW}</strong></p>}
+      <p className="fc-note">
+        {since.n
+          ? `${since.in_red_orange} of ${since.n} located ${since.n === 1 ? 'flood' : 'floods'} since the levels were `
+            + 'published fell in Red or Orange.'
+          : 'No located flood has been recorded since the levels were published.'}
+      </p>
+      {since.misses?.length > 0 && (
+        <p className="fc-note">
+          Outside Red and Orange: {since.misses.map((m) => `${m.day} (${m.purok}, ${m.level})`).join(', ')}.
+        </p>
+      )}
+    </>
+  );
+}
+
+/**
+ * The flood susceptibility model's report (train_flood_model), in order: where
+ * the levels come from, the candidates, the choice and the four checks, the
+ * test on floods it never saw, the barangay check, the classes, how it has
+ * done since publishing, its limits and the credits.
+ */
+export function FloodModelReport({ report }) {
+  const fallback = report.source === 'noah';
+  const chosen = FLOOD_FAMILY[report.choice?.chosen] || report.choice?.chosen;
+  const acceptance = report.acceptance || {};
+  const test = report.temporal_test || {};
+  const eosrs = test.eosrs;
+  const levels = report.classes?.levels || {};
+  const notAssessed = Object.entries(report.classes?.not_assessed || {});
+  return (
+    <section className="fc-accuracy">
+      <h3>Flood: susceptibility by purok</h3>
+      <p className="fc-sub">{report.basis}</p>
+      <p className="fc-sub">
+        {fallback
+          ? `In use: the NOAH fallback, version ${report.version}. The machine-learning model (${chosen}) did not `
+            + "pass every check, so the levels come from UP NOAH's 25-year flood model, classed by the survey's "
+            + 'flood spots.'
+          : `In use: the machine-learning model (${chosen}), version ${report.version}.`}
+        {report.built_at && ` Built ${report.built_at.slice(0, 10)}.`}
+      </p>
+      {fallback && report.fallback?.note && <p className="fc-note">{report.fallback.note}</p>}
+
+      <h4>The candidates and the rule</h4>
+      <p className="fc-note">
+        Trained on {count(report.survey_spots)} flooded survey spots and {count(report.dry_spots)} that stayed dry,
+        against {count(report.domain_buildings)} buildings in the surveyed floodplain ({count(report.valid_buildings)}
+        {' '}on ground like the survey&apos;s). Each candidate was scored on barangays it never saw. The Boyce index
+        (−1 to 1) checks that more flood spots fall where the scores are higher; AUC 0.5 is chance. A more complex model
+        replaces a simpler one only if it is better with 95% confidence.
+      </p>
+      <div className="fc-table-wrap">
+        <table className="fc-table fc-table-whole fc-candidates">
+          <thead>
+            <tr><th scope="col">Model</th><th scope="col">Boyce index (95% interval)</th><th scope="col">AUC</th></tr>
+          </thead>
+          <tbody>
+            {(report.candidates || []).map((c) => (
+              <tr key={c.name}>
+                <td>{FLOOD_FAMILY[c.name] || c.name}{c.name === report.choice?.chosen ? ' (chosen)' : ''}</td>
+                <td>{scoreText({ value: c.boyce, low: c.boyce_low, high: c.boyce_high }, 2, false)}</td>
+                <td>{fmt(c.auc, 2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {(report.choice?.comparisons || []).map((c) => (
+        <p key={`${c.candidate}-${c.against}`} className="fc-note">
+          {`${FLOOD_FAMILY[c.candidate] || c.candidate} against ${FLOOD_FAMILY[c.against] || c.against}: Boyce gain `
+            + `${signed(c.gain)} (${signed(c.low)} to ${signed(c.high)}), ${c.adopted ? 'adopted' : 'not adopted'}.`}
+        </p>
+      ))}
+
+      <h4>The checks (all four must pass for the model to be used)</h4>
+      <ul className="fc-note">
+        {(acceptance.gates || []).map((g) => (
+          <li key={g.gate}>{`${g.gate}: ${g.passed ? 'passed' : 'failed'}. ${g.detail}`}</li>
+        ))}
+      </ul>
+      {(acceptance.reasons || []).map((r) => <p key={r} className="fc-note">{r}</p>)}
+
+      <h4>The test: floods it never saw</h4>
+      {fallback && (
+        <p className="fc-note">
+          These checks scored the machine-learning model, which is not in use; the last column gives each
+          flood&apos;s level on the map in use.
+        </p>
+      )}
+      {test.mananga_points?.length > 0 && (
+        <div className="fc-table-wrap">
+          <table className="fc-table fc-table-whole">
+            <caption className="fc-sub">GeoAlert&apos;s own flood records on the lower Mananga</caption>
+            <thead>
+              <tr>
+                <th scope="col">Day</th><th scope="col">Barangay</th>
+                <th scope="col">{fallback ? 'Machine-learning model (not in use)' : 'Level of its area'}</th>
+                {fallback && <th scope="col">Map in use</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {test.mananga_points.map((p) => (
+                <tr key={`${p.day}-${p.purok_id}`}>
+                  <td>{p.day}</td>
+                  <td>{p.barangay}</td>
+                  <td>{floodLevelWord(p.level)}</td>
+                  {fallback && <td>{floodLevelWord(p.published_level)}</td>}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {(test.elsewhere || []).map((p) => (
+        <p key={`${p.day}-${p.barangay}`} className="fc-note">{`${p.day}, ${p.barangay}: ${p.note}`}</p>
+      ))}
+      {eosrs && (
+        <p className="fc-note">
+          {`Typhoon Tino's satellite flood map (EOS-RS, November 2025), over the ${count(eosrs.flagged_buildings)} `
+            + `buildings it marks flooded: Boyce ${fmt(eosrs.boyce, 2)}, AUC ${fmt(eosrs.auc, 2)}. ${eosrs.note}`}
+        </p>
+      )}
+      {test.dry_spots?.length > 0 && (
+        <p className="fc-note">
+          {`Survey spots that stayed dry: ${test.dry_spots.map((d) => fmt(d.share_of_flood_spots_scoring_lower, 0, true))
+            .join(' and ')} of the flooded spots scored lower than them.`}
+        </p>
+      )}
+
+      {report.barangay_check?.length > 0 && (
+        <>
+          <h4>The barangay check{fallback ? ' (the machine-learning model, not in use)' : ''}</h4>
+          <div className="fc-table-wrap">
+            <table className="fc-table fc-table-whole">
+              <thead>
+                <tr>
+                  <th scope="col">Barangay</th><th scope="col">Buildings</th><th scope="col">In Red or Orange</th>
+                  <th scope="col">Tino flood on record</th><th scope="col">Any flood on record</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.barangay_check.map((b) => (
+                  <tr key={b.barangay}>
+                    <td>{b.barangay}</td>
+                    <td>{count(b.buildings)}</td>
+                    <td>{fmt(b.share_red_orange, 0, true)}</td>
+                    <td>{yesNo(b.tino_record)}</td>
+                    <td>{yesNo(b.any_flood_record)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      <h4>The levels</h4>
+      <div className="fc-table-wrap">
+        <table className="fc-table fc-table-whole">
+          <thead>
+            <tr>
+              <th scope="col">Level</th><th scope="col">Areas</th><th scope="col">Buildings</th>
+              <th scope="col">Survey flood spots</th>
+            </tr>
+          </thead>
+          <tbody>
+            {['Red', 'Orange', 'Green'].filter((k) => levels[k]).map((k) => (
+              <tr key={k}>
+                <td>{FLOOD_WORD[k]}</td>
+                <td>{count(levels[k].puroks)}</td>
+                <td>{count(levels[k].buildings)}</td>
+                <td>{count(levels[k].field_spots)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {notAssessed.length > 0 && (
+        <p className="fc-note">
+          {`${NOT_ASSESSED}: ${notAssessed.map(([reason, n]) => `${reason} (${n})`).join('; ')}.`}
+        </p>
+      )}
+
+      <FloodSincePublishing since={report.since_publishing} />
+
+      {report.limits?.length > 0 && (
+        <>
+          <h4>Limits</h4>
+          <ul className="fc-note">{report.limits.map((l) => <li key={l}>{l}</li>)}</ul>
+        </>
+      )}
+      {(report.credits || []).map((c) => <p key={c} className="fc-note">{c}</p>)}
+    </section>
+  );
+}
+
+/** One hazard's entry on the card: its reason when unavailable, else the fire or the flood report */
+export function ForecastAccuracyEntry({ entry }) {
+  if (entry.status === 'unavailable') {
+    return (
+      <section className="fc-accuracy">
+        <h3>{entry.hazard}: unavailable</h3>
+        {entry.reason && <p className="fc-sub">{entry.reason}</p>}
+      </section>
+    );
+  }
+  return entry.kind === 'flood_purok' ? <FloodModelReport report={entry} /> : <FireModelReport report={entry} />;
+}
+
 export default function ForecastAccuracy() {
   const [hazards, setHazards] = useState(null);
   const [error, setError] = useState('');
@@ -219,14 +451,14 @@ export default function ForecastAccuracy() {
     <div className="fc">
       <h2>Model accuracy</h2>
       <p className="db-card-sub">
-        How the fire model did on fires it never saw. Counting past fires is only a comparison here, never the
-        prediction.
+        How the fire model did on fires it never saw, and the flood model on floods it never saw. Counting past
+        fires is only a comparison here, never the prediction.
       </p>
       {error && <p className="db-error" role="alert">{error}</p>}
       {!error && !hazards && <p className="db-empty">Loading the accuracy check…</p>}
       {hazards && !hazards.length && <p className="db-empty">No real records to test a model on yet.</p>}
-      {hazards?.map((report) => <FireModelReport key={report.hazard} report={report} />)}
-      {hazards && <p className="fc-note">Flood and landslide predictions are being rebuilt.</p>}
+      {hazards?.map((entry) => <ForecastAccuracyEntry key={entry.hazard} entry={entry} />)}
+      {hazards && <p className="fc-note">Landslide predictions are being rebuilt.</p>}
     </div>
   );
 }

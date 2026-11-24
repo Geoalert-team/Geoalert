@@ -81,12 +81,13 @@ test('likelihood asks for fire only', async () => {
     .toEqual(['Period', 'Month']);
 });
 
-test('a flood or landslide filter shows the fire-only note and asks for nothing', async () => {
-  for (const hazard of ['Flood', 'Landslide']) {
-    const el = await render(<BarangayLikelihood hazard={hazard} />);
-    expect(el.textContent).toContain('Only fire has a prediction for now.');
-    expect(el.querySelector('table')).toBeNull();
-  }
+test('a flood filter points to the map and a landslide filter says there is no prediction', async () => {
+  let el = await render(<BarangayLikelihood hazard="Flood" />);
+  expect(el.textContent).toContain("Flood shows on the map's \"Likely by month\" view: where floods tend to reach, the same in every month.");
+  expect(el.querySelector('table')).toBeNull();
+  el = await render(<BarangayLikelihood hazard="Landslide" />);
+  expect(el.textContent).toContain('Only fire and flood have a prediction for now.');
+  expect(el.querySelector('table')).toBeNull();
   expect(historyApi.forecast).not.toHaveBeenCalled();
 });
 

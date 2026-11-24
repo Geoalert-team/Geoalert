@@ -1,6 +1,6 @@
-// Likelihood levels from GET /api/history/forecast/. Since 2026-11-22 fire is the only hazard
-// with a prediction model (flood and landslide are being rebuilt). Shown as a heads-up, never
-// as an alert.
+// Likelihood levels from GET /api/history/forecast/: fire's chance by month (since 2026-11-22) and
+// flood susceptibility (since 2026-11-24, the same in every month); landslide is being rebuilt.
+// Shown as a heads-up, never as an alert.
 
 export const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -19,14 +19,21 @@ export const likelihoodInfo = (level) => LIKELIHOOD[level] || LIKELIHOOD.None;
 /** "23%" on a model's row; a row with no model figure has none to give */
 export const chanceText = (row) => (row.method === 'model' ? `${Math.round(row.probability * 100)}%` : '');
 
-/** The forecast's `hazards` parameter: "Fire" when fire is ticked, '' (ask for nothing) otherwise */
-export const hazardsParam = (types) => (new Set(types).has('Fire') ? 'Fire' : '');
+/** The forecast's `hazards` parameter: the ticked predicted hazards ("Fire", "Flood", "Fire,Flood"), '' for none */
+export const hazardsParam = (types) => {
+  const ticked = new Set(types);
+  return ['Fire', 'Flood'].filter((t) => ticked.has(t)).join(',');
+};
 
 /** Whether a page's hazard filter ('' for all) shows the fire forecast; flood and landslide have none */
 export const isFireOnly = (hazard) => !hazard || hazard === 'Fire';
 
-/** Shown where flood or landslide is asked for */
-export const FIRE_ONLY_NOTE = 'Only fire has a prediction for now.';
+/** Shown where no predicted hazard (landslide, or nothing) is asked for */
+export const FORECAST_ONLY_NOTE = 'Only fire and flood have a prediction for now.';
+
+/** The dashboard's fire table with its filter on Flood: flood's levels are on the map */
+export const FLOOD_ON_MAP_NOTE = 'Flood shows on the map\'s "Likely by month" view: where floods tend to reach, the '
+  + 'same in every month.';
 
 /**
  * Identity of a forecast response for the map's layer key: changes whenever what the
@@ -39,7 +46,8 @@ export const likelyKey = (likely) => {
     .map((x) => `${x.barangay_id}:${x.hazard_type}:${x.method}:${x.level}:${x.probability}:${x.actual ?? ''}`)
     .join(',');
   const p = (likely.purok_results || []).map((x) => `${x.purok_id}:${x.level}:${x.probability}`).join(',');
-  return `${likely.error ? 'err' : 'ok'}|${r}|${p}`;
+  const f = (likely.flood_results || []).map((x) => `${x.purok_id}:${x.level}:${x.uncertain}`).join(',');
+  return `${likely.error ? 'err' : 'ok'}|${r}|${p}|${f}|${likely.flood?.model_version || ''}`;
 };
 
 // The fire model (backend apps/history/fire_purok.py), named and credited wherever its figures show
@@ -59,7 +67,38 @@ export function purokLikelyLevels(likely) {
   (likely?.purok_results || []).forEach((r) => {
     map.set(String(r.purok_id), { Fire: { level: r.level, probability: r.probability, limited_data: r.limited_data } });
   });
+  // Flood susceptibility (`flood_results`): level null when the area is not assessed, with the reason
+  (likely?.flood_results || []).forEach((r) => {
+    const key = String(r.purok_id);
+    map.set(key, {
+      ...(map.get(key) || {}),
+      Flood: {
+        level: r.level, uncertain: r.uncertain, not_assessed_reason: r.not_assessed_reason,
+        estimated_outline: r.estimated_outline,
+      },
+    });
+  });
   return map;
+}
+
+// Flood susceptibility words: how flood-prone an area is, never "a flood is coming"
+export const FLOOD_WORD = {
+  Red: 'High flood susceptibility',
+  Orange: 'Moderate flood susceptibility',
+  Green: 'Low flood susceptibility (within the assessed floodplain)',
+};
+export const NOT_ASSESSED = 'Not assessed yet';
+
+/** The map legend's flood line, naming where the levels come from */
+export const floodLegend = (source) => (source === 'noah'
+  ? "Flood: where floods tend to reach (from UP NOAH's 25-year flood model; the same in every month, not a forecast of a flood)"
+  : 'Flood: where floods tend to reach (from a machine-learning model; the same in every month, not a forecast of a flood)');
+
+/** A purok's flood line: "Purok A: High flood susceptibility · Uncertain", or "Not assessed yet (reason)" */
+export function floodTip(row, name) {
+  if (!row.level) return `${name}: ${NOT_ASSESSED} (${row.not_assessed_reason})`;
+  return [`${name}: ${FLOOD_WORD[row.level]}`, row.uncertain && 'Uncertain', row.estimated_outline && 'Estimated outline']
+    .filter(Boolean).join(' · ');
 }
 
 /**
@@ -200,7 +239,9 @@ export function periodYearsText(row, p) {
 export const SEVERITY_WORD = { Red: 'Extreme', Orange: 'Moderate', Green: 'Low' };
 
 export const FORECAST_DISCLAIMER =
-  'Fire chances come from a model trained on past fires; flood and landslide predictions are being rebuilt. '
+  'Fire chances come from a model trained on past fires. Flood levels show where floods tend to reach, from UP '
+  + "NOAH's flood maps and the 2017 UP Mananga flood survey, and are the same in every month. Landslide "
+  + 'predictions are being rebuilt. '
   + 'It is a heads-up for preparing, not a warning that a hazard is coming. '
   + 'Live alerts come only from the DRRMO.';
 

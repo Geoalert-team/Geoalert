@@ -1,14 +1,16 @@
 import * as levels from './forecastLevels';
 import {
-  FIRE_ONLY_NOTE, FORECAST_DISCLAIMER, IN_TRAINING_NOTE, aboutChanceText, chanceText, hazardsParam, isFireOnly,
-  levelLabel, likelyKey, smallChanceText, unavailableNote,
+  FLOOD_WORD, FORECAST_DISCLAIMER, FORECAST_ONLY_NOTE, IN_TRAINING_NOTE, NOT_ASSESSED, aboutChanceText, chanceText,
+  floodLegend, floodTip, hazardsParam, isFireOnly, levelLabel, likelyKey, smallChanceText, unavailableNote,
 } from './forecastLevels';
+import { purokLevel } from '../Map/purokLevels';
 
-// Fire is the only hazard with a prediction model since 2026-11-22
-test('hazardsParam asks for fire whenever fire is ticked, and for nothing otherwise', () => {
+// Fire and flood have prediction models (flood since 2026-11-24)
+test('hazardsParam asks for the ticked predicted hazards', () => {
   expect(hazardsParam(new Set(['Landslide', 'Fire']))).toBe('Fire');
-  expect(hazardsParam(['Fire', 'Flood', 'Landslide'])).toBe('Fire');
-  expect(hazardsParam(['Flood'])).toBe('');
+  expect(hazardsParam(['Fire', 'Flood', 'Landslide'])).toBe('Fire,Flood');
+  expect(hazardsParam(['Flood'])).toBe('Flood');
+  expect(hazardsParam(['Landslide'])).toBe('');
   expect(hazardsParam([])).toBe('');
 });
 
@@ -55,10 +57,13 @@ test('an unavailable row says so instead of None on record', () => {
 
 test('the exact copy', () => {
   expect(FORECAST_DISCLAIMER).toBe(
-    'Fire chances come from a model trained on past fires; flood and landslide predictions are being rebuilt. '
+    // Flood's source is named without claiming a trained model: the NOAH fallback may be what ships
+    'Fire chances come from a model trained on past fires. Flood levels show where floods tend to reach, from UP '
+    + "NOAH's flood maps and the 2017 UP Mananga flood survey, and are the same in every month. Landslide "
+    + 'predictions are being rebuilt. '
     + 'It is a heads-up for preparing, not a warning that a hazard is coming. Live alerts come only from the DRRMO.',
   );
-  expect(FIRE_ONLY_NOTE).toBe('Only fire has a prediction for now.');
+  expect(FORECAST_ONLY_NOTE).toBe('Only fire and flood have a prediction for now.');
   expect(IN_TRAINING_NOTE).toBe(
     'The model learned from this period; see the accuracy check for results on years it never saw.',
   );
@@ -112,4 +117,41 @@ test('the fire model is credited to Pittsburgh', () => {
   expect(levels.FIRE_CREDIT).toContain('MIT');
   expect(levels.FIRE_MODEL_LABEL).toContain('Pittsburgh');
   expect(levels.PUROK_CAVEAT).toMatch(/estimate/i);
+});
+
+// Flood susceptibility in "Likely by month" (plan Task 9)
+const both = {
+  purok_results: [{ purok_id: 4, barangay_id: 3, probability: 0.02, level: 'Orange', interval: [0.01, 0.03], limited_data: false }],
+  flood_results: [
+    { purok_id: 4, barangay_id: 3, level: null, uncertain: false, not_assessed_reason: 'Outside the surveyed floodplain', estimated_outline: false },
+    { purok_id: 9, barangay_id: 3, level: 'Red', uncertain: true, not_assessed_reason: null, estimated_outline: true },
+  ],
+};
+
+test('combined fill keeps the fire level when flood is not assessed', () => {
+  const map = levels.purokLikelyLevels(both);
+  expect(purokLevel(map.get('4'), ['Fire', 'Flood'])).toBe('Orange');
+  expect(purokLevel(map.get('9'), ['Fire', 'Flood'])).toBe('Red');
+  expect(purokLevel(map.get('9'), ['Fire'])).toBeNull();
+  expect(floodTip(map.get('4').Flood, 'Purok A')).toBe('Purok A: Not assessed yet (Outside the surveyed floodplain)');
+  expect(floodTip(map.get('9').Flood, 'Purok B')).toBe('Purok B: High flood susceptibility · Uncertain · Estimated outline');
+});
+
+test('flood words, legend and the not-assessed label', () => {
+  expect(FLOOD_WORD).toEqual({
+    Red: 'High flood susceptibility', Orange: 'Moderate flood susceptibility',
+    Green: 'Low flood susceptibility (within the assessed floodplain)',
+  });
+  expect(NOT_ASSESSED).toBe('Not assessed yet');
+  expect(floodLegend('model')).toBe(
+    'Flood: where floods tend to reach (from a machine-learning model; the same in every month, not a forecast of a flood)',
+  );
+  expect(floodLegend('noah')).toBe(
+    "Flood: where floods tend to reach (from UP NOAH's 25-year flood model; the same in every month, not a forecast of a flood)",
+  );
+});
+
+test('likelyKey changes when the flood classes change', () => {
+  const other = { ...both, flood_results: [{ ...both.flood_results[1], level: 'Green' }] };
+  expect(likelyKey(both)).not.toBe(likelyKey(other));
 });

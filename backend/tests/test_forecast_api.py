@@ -15,7 +15,7 @@ from tests.fire_model_file import model_files
 from tests.fire_setup import FireSetupMixin
 
 NOT_TRAINED = 'The fire model has not been trained yet.'
-FIRE_ONLY = 'Only fire has a prediction model for now.'
+FORECAST_ONLY = 'Only fire and flood have prediction models for now.'
 
 
 @override_settings(HAZARD_LOG_WRITER=False)
@@ -34,11 +34,13 @@ class ForecastApiTests(FireSetupMixin, TestCase):
         self.assertEqual({row['hazard_type'] for row in r.data['results']}, {'Fire'})
         self.assertNotIn('combined', r.data)
 
-    def test_flood_is_a_400(self):
-        for query in ('?hazards=Flood', '?hazard_type_name=Landslide', '?hazards=Fire,Flood'):
+    def test_landslide_is_a_400_and_flood_is_accepted(self):
+        for query in ('?hazards=Landslide', '?hazard_type_name=Landslide', '?hazards=Fire,Landslide'):
             r = self.client.get('/api/history/forecast/' + query)
             self.assertEqual(r.status_code, 400, query)
-            self.assertEqual(r.data['error'], FIRE_ONLY, query)
+            self.assertEqual(r.data['error'], FORECAST_ONLY, query)
+        for query in ('?hazards=Flood', '?hazards=Fire,Flood', '?hazard_type_name=flood'):
+            self.assertEqual(self.client.get('/api/history/forecast/' + query).status_code, 200, query)
 
     def test_fire_any_case_is_accepted(self):
         r = self.client.get('/api/history/forecast/?hazards=fire')
@@ -56,12 +58,12 @@ class ForecastApiTests(FireSetupMixin, TestCase):
         self.assertEqual(r.data['unavailable_hazards'], ['Fire'])
         self.assertEqual(r.data['purok_results'], [])
 
-    def test_accuracy_has_fire_only(self):
+    def test_accuracy_has_fire_then_flood(self):
         with model_files(None):
             r = self.client.get('/api/history/forecast/accuracy/')
         self.assertEqual(r.status_code, 200)
         hazards = r.data['hazards']
-        self.assertEqual([h['hazard'] for h in hazards], ['Fire'])
+        self.assertEqual([h['hazard'] for h in hazards], ['Fire', 'Flood'])
         self.assertEqual(hazards[0]['status'], 'unavailable')
         self.assertEqual(hazards[0]['kind'], 'fire_purok')
         self.assertEqual(hazards[0]['reason'], NOT_TRAINED)

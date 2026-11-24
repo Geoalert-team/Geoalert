@@ -4,6 +4,7 @@ import { severityInfo, hazardIconPath, hazardColor, SEVERITY_RANK } from './haza
 import SpotReading from './SpotReading';
 import AreaHistory from './AreaHistory';
 import LikelyPuroks from './LikelyPuroks';
+import FloodPuroks from './FloodPuroks';
 import { FIRE_MODEL_LABEL } from '../Forecast/forecastLevels';
 
 const PIN_PATH = 'M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7z';
@@ -56,11 +57,16 @@ function HazardList({ items, onSelectHazard }) {
 // purokNames         purok id (string) → name
 // likelyLabel        the period, "June 2027"
 // likelyUnavailable  why there are no figures, '' when there are
+// likelyTypes        the predicted hazards ticked ('Fire', 'Flood')
+// floodPuroks        this barangay's flood_results rows (FloodPuroks)
+// floodNote          the flood source line, or why flood has no levels
+// spotFlood          the flood model's word for the tapped spot (SpotReading)
 export default function BarangayPanel({
   barangay, hazards, allHazards = [], open, onClose, onSelectHazard,
   spot = null, susceptibilityIndex = null, rivers = null,
   purokId = null, onPickPurok = () => {}, historyTypes = [],
   view = 'past', likelyPuroks = [], purokNames = null, likelyLabel = '', likelyUnavailable = '',
+  likelyTypes = ['Fire'], floodPuroks = [], floodNote = '', floodUnavailable = false, spotFlood = null,
 }) {
   const closeRef = useRef(null);
   const [split, setSplit] = useState(null); // { inside: [ids], crossing: [ids] } or null
@@ -112,7 +118,7 @@ export default function BarangayPanel({
             </button>
           </div>
 
-          <SpotReading spot={spot} index={susceptibilityIndex} rivers={rivers} />
+          <SpotReading spot={spot} index={susceptibilityIndex} rivers={rivers} flood={spotFlood} />
 
           {highest ? (
             <span className="pm-badge" style={{ background: highest.tint, color: highest.text }}>
@@ -154,7 +160,15 @@ export default function BarangayPanel({
             )}
           </div>
 
-          {view === 'likely' && (
+          {view === 'likely' && likelyTypes.includes('Flood') && (
+            <div className="pm-tabpanel">
+              <h3>Flood susceptibility</h3>
+              <p className="pm-muted">{floodNote}</p>
+              {!floodUnavailable && <FloodPuroks rows={floodPuroks} purokNames={purokNames} />}
+            </div>
+          )}
+
+          {view === 'likely' && (likelyTypes.includes('Fire') || !likelyTypes.length) && (
             <div className="pm-tabpanel">
               <h3>Likely fire{likelyLabel ? `, ${likelyLabel}` : ''}</h3>
               {likelyUnavailable

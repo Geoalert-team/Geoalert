@@ -257,10 +257,10 @@ def _forecast_events():
 
 
 PUBLIC_CACHE = 'public, max-age=600'
-# Flood and landslide prediction was removed on 2026-11-22 (they are being rebuilt), so fire is the only hazard the
-# forecast covers (docs/design/specs/2026-11-22-fire-purok-model-design.md, section 0)
-FORECAST_HAZARDS = ('Fire',)
-FIRE_ONLY = 'Only fire has a prediction model for now.'
+# Fire's chance by month and flood susceptibility (docs/design/specs/2026-11-24-flood-susceptibility-model-design.md);
+# landslide has no prediction model yet
+FORECAST_HAZARDS = ('Fire', 'Flood')
+FORECAST_ONLY = 'Only fire and flood have prediction models for now.'
 BOTH_PARAMETERS = 'Use hazards or hazard_type_name, not both.'
 BASIS_REBUILDING = ("Fire's prediction model is being rebuilt, so no chances are shown until it is trained. "
                     'Flood and landslide predictions are being rebuilt too.')
@@ -281,21 +281,22 @@ def basis_method(model=None) -> str:
 
 def parse_hazards(params):
     """
-    The hazards a forecast request covers: ?hazards=Fire or ?hazard_type_name=Fire, read without regard to case or
-    spaces; neither means fire. Raises ValueError with a sentence for the page when both are given or any name is
-    not fire (FIRE_ONLY).
+    The hazards a forecast request covers, in the order Fire, Flood: ?hazards=Fire,Flood or ?hazard_type_name=Flood,
+    read without regard to case or spaces; neither means fire. Raises ValueError with a sentence for the page when
+    both are given or any name is neither fire nor flood (FORECAST_ONLY).
     """
     listed = (params.get('hazards') or '').strip()
     single = (params.get('hazard_type_name') or '').strip()
     if listed and single:
         raise ValueError(BOTH_PARAMETERS)
-    names = [n.strip() for n in (listed or single).split(',') if n.strip()]
-    if any(n.lower() != 'fire' for n in names):
-        raise ValueError(FIRE_ONLY)
-    return list(FORECAST_HAZARDS)
+    names = {n.strip().lower() for n in (listed or single).split(',') if n.strip()}
+    known = {h.lower(): h for h in FORECAST_HAZARDS}
+    if any(n not in known for n in names):
+        raise ValueError(FORECAST_ONLY)
+    return [h for h in FORECAST_HAZARDS if h.lower() in names] if names else ['Fire']
 
 
-def forecast_result(*, month, day, year, barangay, years, now) -> dict:
+def forecast_result(*, month, day, year, barangay, years, now, hazards=('Fire',)) -> dict:
     """
     The fire forecast for a period, as GET /api/history/forecast/ serves it
     (HistoricalForecastView, which parses the request into these); `now` is
@@ -305,7 +306,7 @@ def forecast_result(*, month, day, year, barangay, years, now) -> dict:
     used (not trained yet, or trained on another purok map) every row is
     unavailable with the reason, never a counted figure.
     """
-    from apps.history import fire_purok, forecast_rows
+    from apps.history import fire_purok, flood_purok, forecast_rows
     from apps.history.forecast import empty_profile, seasonal_forecast
 
     fires = [e for e in _forecast_events() if (e['hazard'] or '').lower() == 'fire']
@@ -327,6 +328,19 @@ def forecast_result(*, month, day, year, barangay, years, now) -> dict:
         result['purok_results'] = []
     else:
         fire_purok.apply(result, model, month, day, year, now.date())
+    if 'Fire' not in hazards:
+        # Flood alone: no fire rows, and no 12-month chart, since susceptibility is the same every month
+        result.update(results=[], by_barangay=[], purok_results=[], model_hazards=[], unavailable_hazards=[],
+                      hazard_type='Flood')
+        forecast_rows.mark_profile_unavailable(result)
+        result['profile_reason'] = flood_purok.NOT_BY_MONTH
+    if 'Flood' in hazards:
+        flood = flood_purok.load()
+        result['flood'] = flood_purok.flood_block(flood)
+        result['flood_results'] = [] if isinstance(flood, str) else flood_purok.purok_rows(flood)
+        if 'Fire' not in hazards:
+            result['basis'] = {'records': 0,
+                               'method': flood if isinstance(flood, str) else flood_purok.basis(flood)}
     return result
 
 
@@ -353,7 +367,10 @@ class HistoricalForecastView(APIView):
                              started, each row also has `actual`, what
                              happened in it
       ?date=2027-11-15       instead of month: the week around that date
-      ?hazards=Fire          or ?hazard_type_name=Fire; any other name is a 400
+      ?hazards=Fire,Flood    Fire, Flood or both (or ?hazard_type_name=Fire or
+                             Flood, not both); any other name is a 400. Flood
+                             adds `flood` and `flood_results` (flood_purok),
+                             the same for every period
       ?barangay=7            the 12-month profile is that barangay's
       ?years=10              how many past years the history reads (1-10)
 
@@ -394,7 +411,7 @@ class HistoricalForecastView(APIView):
             years = MAX_YEARS
 
         try:
-            parse_hazards(request.query_params)
+            hazards = parse_hazards(request.query_params)
         except ValueError as exc:
             return Response({'error': str(exc)}, status=400)
         barangay = request.query_params.get('barangay')
@@ -403,7 +420,7 @@ class HistoricalForecastView(APIView):
         except ValueError:
             return Response({'error': 'barangay must be an id.'}, status=400)
         return _public(Response(forecast_result(month=month, day=day, year=year, barangay=barangay, years=years,
-                                                now=now)))
+                                                now=now, hazards=hazards)))
 
 
 REPORT_MISSING = "The fire model's report is missing; rerun train_fire_model."
@@ -430,17 +447,54 @@ def fire_accuracy_entry() -> dict:
     return {**base, **model.report, 'status': 'in_use', 'logged': prospective_summary(timezone.localdate())}
 
 
+FLOOD_REPORT_MISSING = "The flood model's report is missing; rerun train_flood_model."
+
+
+def flood_accuracy_entry() -> dict:
+    """
+    Flood's entry on the accuracy card: {'hazard': 'Flood', 'kind': 'flood_purok', 'status', ...}; 'in_use' with the
+    model's report (train_flood_model) and `since_publishing` (new located floods checked against the published
+    classes), else 'unavailable' with the reason.
+    """
+    from apps.history import flood_purok
+
+    base = {'hazard': 'Flood', 'kind': 'flood_purok'}
+    model = flood_purok.load()
+    if isinstance(model, str):
+        return {**base, 'status': 'unavailable', 'reason': model}
+    if model.report is None:
+        return {**base, 'status': 'unavailable', 'reason': FLOOD_REPORT_MISSING}
+    return {**base, **model.report, 'status': 'in_use', 'since_publishing': flood_purok.since_publishing(model)}
+
+
 class ForecastAccuracyView(APIView):
     """
     GET /api/history/forecast/accuracy/
-    How the fire model did on fires it never saw (its saved report). Flood
-    and landslide have no model for now, so fire's is the only entry.
-    Sent with Cache-Control public, max-age=600.
+    How the fire model did on fires it never saw, and how the flood
+    susceptibility model did on floods it never saw (their saved reports).
+    Landslide has no model for now. Sent with Cache-Control public, max-age=600.
     """
     permission_classes = [AllowAny]
 
     def get(self, request):
-        return _public(Response({'hazards': [fire_accuracy_entry()]}))
+        return _public(Response({'hazards': [fire_accuracy_entry(), flood_accuracy_entry()]}))
+
+
+class FloodReadinessView(APIView):
+    """
+    GET /api/history/forecast/readiness/
+    Whether there is enough located flood data to improve the flood
+    predictions (flood_purok.readiness): located flood days on record against
+    what a flood forecast would need, and new located floods since the flood
+    map was published against the review threshold. Counts only, never a
+    location; it changes nothing. Sent with Cache-Control public, max-age=600.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from apps.history import flood_purok
+
+        return _public(Response(flood_purok.readiness()))
 
 
 class EventOptionsView(APIView):

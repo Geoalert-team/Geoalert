@@ -39,7 +39,6 @@
   }
  ],
  "layers": {
-  "flood": "flood.png",
   "landslide": "landslide.png",
   "fire": "fire.png",
   "all": "all.png"
@@ -77,63 +76,6 @@
  },
  "method": "Weighted overlay of reclassified factors, five equal-interval classes",
  "factors": {
-  "flood": [
-   {
-    "factor": "elevation",
-    "breaks": [
-     5,
-     10,
-     20,
-     50
-    ],
-    "direction": "down",
-    "weight": 0.25
-   },
-   {
-    "factor": "hand",
-    "breaks": [
-     2,
-     5,
-     10,
-     20
-    ],
-    "direction": "down",
-    "weight": 0.25
-   },
-   {
-    "factor": "dist_water",
-    "breaks": [
-     100,
-     200,
-     400,
-     800
-    ],
-    "direction": "down",
-    "weight": 0.2
-   },
-   {
-    "factor": "slope",
-    "breaks": [
-     1,
-     3,
-     8,
-     15
-    ],
-    "direction": "down",
-    "weight": 0.15
-   },
-   {
-    "factor": "dist_coast",
-    "breaks": [
-     200,
-     500,
-     1000,
-     2000
-    ],
-    "direction": "down",
-    "weight": 0.15
-   }
-  ],
   "landslide": [
    {
     "factor": "slope",
@@ -266,13 +208,6 @@
  "barangays": {
   "2": {
    "name": "Bulacao",
-   "flood": [
-    4.9,
-    10.1,
-    41.8,
-    43.2,
-    0.0
-   ],
    "landslide": [
     66.1,
     18.3,
@@ -290,13 +225,6 @@
   },
   "23": {
    "name": "Cadulawan",
-   "flood": [
-    74.7,
-    12.4,
-    11.2,
-    1.7,
-    0.0
-   ],
    "landslide": [
     6.3,
     5.4,
@@ -314,13 +242,6 @@
   },
   "5": {
    "name": "Cansojong",
-   "flood": [
-    0.0,
-    0.0,
-    6.0,
-    50.4,
-    43.6
-   ],
    "landslide": [
     80.2,
     16.4,
@@ -338,13 +259,6 @@
   },
   "6": {
    "name": "Dumlog",
-   "flood": [
-    0.0,
-    0.0,
-    4.0,
-    66.2,
-    29.8
-   ],
    "landslide": [
     76.9,
     18.3,
@@ -362,13 +276,6 @@
   },
   "7": {
    "name": "Jaclupan",
-   "flood": [
-    56.2,
-    17.2,
-    20.9,
-    5.8,
-    0.0
-   ],
    "landslide": [
     9.2,
     9.4,
@@ -386,13 +293,6 @@
   },
   "8": {
    "name": "Lagtang",
-   "flood": [
-    62.8,
-    18.2,
-    15.0,
-    4.0,
-    0.0
-   ],
    "landslide": [
     8.6,
     7.2,
@@ -410,13 +310,6 @@
   },
   "9": {
    "name": "Lawaan I",
-   "flood": [
-    13.9,
-    56.9,
-    27.7,
-    1.4,
-    0.0
-   ],
    "landslide": [
     36.5,
     33.6,
@@ -434,13 +327,6 @@
   },
   "12": {
    "name": "Linao",
-   "flood": [
-    0.4,
-    17.9,
-    52.9,
-    27.8,
-    1.1
-   ],
    "landslide": [
     32.5,
     34.5,
@@ -458,13 +344,6 @@
   },
   "13": {
    "name": "Maghaway",
-   "flood": [
-    79.8,
-    12.1,
-    7.5,
-    0.6,
-    0.0
-   ],
    "landslide": [
     1.6,
     3.1,
@@ -482,13 +361,6 @@
   },
   "14": {
    "name": "Manipis",
-   "flood": [
-    85.7,
-    10.3,
-    4.0,
-    0.0,
-    0.0
-   ],
    "landslide": [
     1.1,
     3.3,
@@ -506,13 +378,6 @@
   },
   "15": {
    "name": "Mohon",
-   "flood": [
-    0.0,
-    13.6,
-    63.8,
-    18.4,
-    4.1
-   ],
    "landslide": [
     58.3,
     35.2,
@@ -530,13 +395,6 @@
   },
   "16": {
    "name": "Poblacion",
-   "flood": [
-    0.0,
-    0.0,
-    4.4,
-    77.4,
-    18.2
-   ],
    "landslide": [
     74.8,
     24.0,
@@ -554,13 +412,6 @@
   },
   "17": {
    "name": "Pooc",
-   "flood": [
-    0.0,
-    0.0,
-    5.7,
-    55.0,
-    39.3
-   ],
    "landslide": [
     75.2,
     21.8,
@@ -578,13 +429,6 @@
   },
   "18": {
    "name": "San Isidro",
-   "flood": [
-    0.0,
-    0.8,
-    56.4,
-    42.4,
-    0.4
-   ],
    "landslide": [
     85.0,
     11.0,
@@ -602,13 +446,6 @@
   },
   "19": {
    "name": "San Roque",
-   "flood": [
-    0.0,
-    0.0,
-    4.7,
-    45.4,
-    50.0
-   ],
    "landslide": [
     89.5,
     10.0,
@@ -626,13 +463,6 @@
   },
   "20": {
    "name": "Tabunok",
-   "flood": [
-    0.0,
-    5.6,
-    46.5,
-    47.9,
-    0.0
-   ],
    "landslide": [
     79.2,
     14.9,
@@ -650,13 +480,6 @@
   },
   "21": {
    "name": "Tangke",
-   "flood": [
-    0.0,
-    0.0,
-    0.4,
-    38.9,
-    60.7
-   ],
    "landslide": [
     74.7,
     24.2,
@@ -674,13 +497,6 @@
   },
   "22": {
    "name": "Tapul",
-   "flood": [
-    74.5,
-    15.5,
-    9.9,
-    0.0,
-    0.0
-   ],
    "landslide": [
     1.2,
     2.5,
@@ -698,13 +514,6 @@
   },
   "1": {
    "name": "Biasong",
-   "flood": [
-    0.0,
-    0.0,
-    6.1,
-    46.7,
-    47.3
-   ],
    "landslide": [
     73.4,
     21.8,
@@ -722,13 +531,6 @@
   },
   "4": {
    "name": "Camp IV",
-   "flood": [
-    82.2,
-    9.2,
-    8.5,
-    0.1,
-    0.0
-   ],
    "landslide": [
     0.6,
     1.1,
@@ -746,13 +548,6 @@
   },
   "10": {
    "name": "Lawaan II",
-   "flood": [
-    0.0,
-    4.6,
-    44.2,
-    49.8,
-    1.5
-   ],
    "landslide": [
     59.6,
     30.7,
@@ -770,13 +565,6 @@
   },
   "11": {
    "name": "Lawaan III",
-   "flood": [
-    36.9,
-    37.2,
-    17.6,
-    8.4,
-    0.0
-   ],
    "landslide": [
     18.7,
     35.4,

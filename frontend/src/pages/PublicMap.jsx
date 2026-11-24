@@ -9,6 +9,7 @@ import BarangayPanel from '../components/Map/BarangayPanel';
 import { useSusceptibility } from '../components/Map/susceptibility';
 import PurokLayer from '../components/Map/PurokLayer';
 import PurokHistoryLayer from '../components/Map/PurokHistoryLayer';
+import FloodOverlay from '../components/Map/FloodOverlay';
 import { PUROK_HAZARD_AREA, PUROK_OF_HAZARD, hasEstimates, purokAt, purokStyle, purokTooltip, puroksOf } from '../components/Map/purokStyle';
 import { byPurok, historyLine } from '../components/Map/purokLevels';
 import { HAZARD_TYPES, SEVERITY, severityInfo, hazardKey, hazardIconPath, hazardColor } from '../components/Map/hazardInfo';
@@ -16,9 +17,9 @@ import { hazardsApi } from '../api/hazardsApi';
 import { barangaysApi } from '../api/barangaysApi';
 import { historyApi } from '../api/historyApi';
 import {
-  FIRE_MODEL_LABEL, FIRE_ONLY_NOTE, FORECAST_DISCLAIMER, PUROK_CAVEAT, SEVERITY_WORD, chanceText, defaultPeriod,
-  hazardsParam, levelLabel, likelihoodInfo, likelyKey, periodIn, periodLabel, periodParams, periodYearsText,
-  purokLikelyLevels, purokLikelyTip, unavailableNote,
+  FIRE_MODEL_LABEL, FLOOD_WORD, FORECAST_DISCLAIMER, FORECAST_ONLY_NOTE, NOT_ASSESSED, PUROK_CAVEAT, SEVERITY_WORD,
+  chanceText, defaultPeriod, floodLegend, floodTip, hazardsParam, levelLabel, likelihoodInfo, likelyKey, periodIn,
+  periodLabel, periodParams, periodYearsText, purokLikelyLevels, purokLikelyTip, unavailableNote,
 } from '../components/Forecast/forecastLevels';
 import ForecastPeriodPicker from '../components/Forecast/ForecastPeriodPicker';
 import { hazardAreas, hazardAt, hazardPuroks, markerSpots } from '../components/Map/hazardPins';
@@ -79,7 +80,8 @@ const VIEWS = [
 ];
 
 // The 'likely' view fills puroks by fire level only
-const FIRE_TYPES = ['Fire'];
+const PREDICTED = ['Fire', 'Flood'];
+const TICK_NOTE = `${FORECAST_ONLY_NOTE} Tick the Fire or Flood layer.`;
 
 /* ---------- Helpers ---------- */
 
@@ -674,9 +676,12 @@ export default function PublicMap() {
     setPanelOpen(false);
   }
 
-  // Fire is the only hazard with a prediction model since 2026-11-22: the
-  // view asks for fire while its layer is ticked, and for nothing otherwise
+  // Fire (by month) and flood (susceptibility, the same every month) have
+  // prediction models: the view asks for the ticked ones, nothing otherwise
   const likelyHazards = hazardsParam(activeTypes);
+  const likelyTypes = useMemo(() => PREDICTED.filter((t) => activeTypes.has(t)), [activeTypes]);
+  const showFire = likelyTypes.includes('Fire');
+  const showFlood = likelyTypes.includes('Flood');
 
   // Seasonal likelihood, fetched only while that view is open
   useEffect(() => {
@@ -707,6 +712,33 @@ export default function PublicMap() {
     () => (likely?.purok_results || []).filter((r) => String(r.barangay_id) === String(selectedBarangayId)),
     [likely, selectedBarangayId],
   );
+  const floodPuroks = useMemo(
+    () => (likely?.flood_results || []).filter((r) => String(r.barangay_id) === String(selectedBarangayId)),
+    [likely, selectedBarangayId],
+  );
+  const floodNote = !likely?.flood ? ''
+    : likely.flood.available ? floodLegend(likely.flood.source)
+      : `Flood is unavailable right now: ${likely.flood.reason}`;
+
+  // "This spot"'s flood line: the flood model's level for the purok area under the tap, read once
+  const [spotFloodData, setSpotFloodData] = useState(null);
+  const tappedSpot = selection?.kind === 'barangay' ? selection.spot ?? null : null;
+  useEffect(() => {
+    if (!tappedSpot || spotFloodData) return undefined;
+    let cancelled = false;
+    historyApi.forecast({ hazards: 'Flood' })
+      .then((d) => { if (!cancelled) setSpotFloodData(d); })
+      .catch(() => { if (!cancelled) setSpotFloodData({ error: true }); });
+    return () => { cancelled = true; };
+  }, [tappedSpot, spotFloodData]);
+  const spotFlood = useMemo(() => {
+    if (!tappedSpot || !spotFloodData || spotFloodData.error || !spotFloodData.flood) return null;
+    if (!spotFloodData.flood.available) return { available: false, reason: spotFloodData.flood.reason };
+    const area = purokAt(purokGeo, tappedSpot[1], tappedSpot[0]);
+    const row = area && (spotFloodData.flood_results || []).find((r) => String(r.purok_id) === String(area.id ?? area.properties?.id));
+    return { available: true, level: row?.level ?? null, not_assessed_reason: row?.not_assessed_reason ?? null,
+      name: area?.properties?.name ?? null };
+  }, [tappedSpot, spotFloodData, purokGeo]);
 
   // Thin dark boundaries, like sub-catchment lines on a GIS map. Transparent fill keeps them clickable.
   // In the likely view too: the puroks carry the fire levels, a barangay's chance is on hover.
@@ -731,11 +763,14 @@ export default function PublicMap() {
     let line = '';
     if (view === 'past' && levels) line = historyLine(levels.get(id), visibleTypeList, thresholds.years);
     if (view === 'likely') {
-      const row = likelyLevels.get(id)?.Fire;
-      if (row) line = purokLikelyTip(row, 'Fire', likelySpan);
+      const entry = likelyLevels.get(id);
+      line = [
+        showFire && entry?.Fire && purokLikelyTip(entry.Fire, 'Fire', likelySpan),
+        showFlood && entry?.Flood && floodTip(entry.Flood, 'Flood'),
+      ].filter(Boolean).join('<br>');
     }
     return line ? `${purokTooltip(f)}<br>${line}` : purokTooltip(f);
-  }, [view, levels, thresholds, visibleTypeList, likelyLevels, likelySpan]);
+  }, [view, levels, thresholds, visibleTypeList, likelyLevels, likelySpan, showFire, showFlood]);
   // Fire with no figures, named in the legend with its reason instead of dropped silently
   const unavailableLegend = unavailableNote(likely);
 
@@ -796,15 +831,19 @@ export default function PublicMap() {
             />
           )}
 
-          {/* Likely by month: each purok in its fire level's colour, from the fire risk model */}
+          {/* Likely by month: each purok in its level's colour (fire by month, flood susceptibility; the higher of the ticked) */}
           {view === 'likely' && likelyLevels.size > 0 && (
             <PurokHistoryLayer
               geo={purokGeo}
               levels={likelyLevels}
-              types={FIRE_TYPES}
+              types={likelyTypes}
               tooltipFor={purokTip}
               skipBarangay={selectedPuroks ? selectedBarangayId : null}
             />
+          )}
+          {/* Flood: areas not assessed (grey, dashed) and uncertain levels (dashed) */}
+          {view === 'likely' && showFlood && likely?.flood?.available && (
+            <FloodOverlay geo={purokGeo} levels={likelyLevels} types={likelyTypes} />
           )}
 
           {/* Purok outlines of the selected barangay, under the barangay lines;
@@ -869,11 +908,13 @@ export default function PublicMap() {
                   // A past period also says what happened in it
                   const happened = r && r.actual != null ? `; ${r.actual || 'none'} happened` : '';
                   let line = '';
-                  if (r?.method === 'unavailable') line = `Fire: ${levelLabel(r)}${r.reason ? ` (${r.reason})` : ''}`;
+                  if (!showFire) line = '';
+                  else if (r?.method === 'unavailable') line = `Fire: ${levelLabel(r)}${r.reason ? ` (${r.reason})` : ''}`;
                   else if (r?.method === 'model') line = `Fire: ${likelihoodInfo(r.level).label}, about ${chanceText(r)}${happened}`;
                   else if (r) line = `Fire: ${likelihoodInfo(r.level).label} (${periodYearsText(r, likelyPeriod)}${happened})`;
+                  if (showFlood) line = [line, 'Flood: hover a purok area for its flood level'].filter(Boolean).join('<br>');
                   tip = !likelyHazards
-                    ? `<strong>${name}</strong><br>${FIRE_ONLY_NOTE} Tick the Fire layer to see its chance.`
+                    ? `<strong>${name}</strong><br>${TICK_NOTE}`
                     : line
                     ? `<strong>${name}</strong><br>${line}`
                     : `<strong>${name}</strong><br>Nothing on record in ${periodIn(likelyPeriod)} in past years`;
@@ -1094,7 +1135,11 @@ export default function PublicMap() {
             aria-expanded={legendOpen}
             onClick={() => setLegendOpen((open) => !open)}
           >
-            <span>{view === 'likely' ? 'Likely fire levels' : 'Past hazard levels'}</span>
+            <span>
+              {view !== 'likely' ? 'Past hazard levels'
+                : showFire && showFlood ? 'Likely fire and flood levels'
+                  : showFlood ? 'Flood susceptibility' : 'Likely fire levels'}
+            </span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
           </button>
 
@@ -1102,21 +1147,40 @@ export default function PublicMap() {
             <>
               <p className="pm-legend-title">
                 {!likelyHazards
-                  ? `Likely in ${periodLabel(likelyPeriod)}: ${FIRE_ONLY_NOTE} Tick the Fire layer.`
-                  : `Likely in ${periodLabel(likelyPeriod)}: each purok's fire level`}
+                  ? `Likely in ${periodLabel(likelyPeriod)}: ${TICK_NOTE}`
+                  : showFire
+                    ? `Likely in ${periodLabel(likelyPeriod)}: each purok's fire level${showFlood ? '; flood below' : ''}`
+                    : 'Each purok\'s flood susceptibility, the same in every month'}
               </p>
-              <ul>
-                {['Red', 'Orange', 'Green'].map((k) => (
-                  <li key={k}>
-                    <span className="pm-legend-swatch" style={{ background: SEVERITY[k].color }} />
-                    {SEVERITY_WORD[k]}
+              {showFire && (
+                <ul>
+                  {['Red', 'Orange', 'Green'].map((k) => (
+                    <li key={k}>
+                      <span className="pm-legend-swatch" style={{ background: SEVERITY[k].color }} />
+                      {SEVERITY_WORD[k]}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {showFlood && (
+                <ul>
+                  {['Red', 'Orange', 'Green'].map((k) => (
+                    <li key={`flood-${k}`}>
+                      <span className="pm-legend-swatch" style={{ background: SEVERITY[k].color }} />
+                      {FLOOD_WORD[k]}
+                    </li>
+                  ))}
+                  <li key="flood-none">
+                    <span className="pm-legend-swatch" style={{ background: '#c9c9c9', border: '1px dashed #8a8a8a' }} />
+                    {NOT_ASSESSED}
                   </li>
-                ))}
-              </ul>
+                </ul>
+              )}
+              {showFlood && floodNote && <p className="pm-legend-note">{floodNote}</p>}
               {/* The explanations fold away with the legend; the warnings stay while its colours are on the map */}
               {likely?.error && <p className="pm-legend-note">Could not load the likelihood.</p>}
               {/* Where the colours come from; a past period also says what happened */}
-              {legendOpen && likely && !likely.error && likelyLevels.size > 0 && (
+              {legendOpen && showFire && likely && !likely.error && (likely.purok_results || []).length > 0 && (
                 <>
                   <p className="pm-legend-note">
                     {`${FIRE_MODEL_LABEL}. Hover a barangay for its overall chance.`}
@@ -1223,8 +1287,13 @@ export default function PublicMap() {
           purokNames={purokNames}
           likelyLabel={periodLabel(likelyPeriod)}
           likelyUnavailable={!likelyHazards
-            ? `${FIRE_ONLY_NOTE} Tick the Fire layer.`
+            ? TICK_NOTE
             : unavailableLegend || (likely?.error ? 'Could not load the likelihood.' : '')}
+          likelyTypes={likelyTypes}
+          floodPuroks={floodPuroks}
+          floodNote={likely?.error ? 'Could not load the likelihood.' : floodNote}
+          floodUnavailable={!!likely?.error || !likely?.flood?.available}
+          spotFlood={spotFlood}
         />
       </div>
     </div>

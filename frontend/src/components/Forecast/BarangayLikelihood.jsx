@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { historyApi } from '../../api/historyApi';
 import ForecastPeriodPicker from './ForecastPeriodPicker';
 import {
-  FIRE_CREDIT, FIRE_MODEL_LABEL, FIRE_ONLY_NOTE, FORECAST_DISCLAIMER, IN_TRAINING_NOTE, PUROK_CAVEAT, SEVERITY_WORD, chanceText, defaultPeriod, isFireOnly, levelLabel,
+  FIRE_CREDIT, FIRE_MODEL_LABEL, FLOOD_ON_MAP_NOTE, FORECAST_DISCLAIMER, FORECAST_ONLY_NOTE, IN_TRAINING_NOTE, PUROK_CAVEAT, SEVERITY_WORD, chanceText, defaultPeriod, isFireOnly, levelLabel,
   likelihoodInfo, periodLabel, periodMonth, periodParams, periodPastHeader, periodYearsText, smallChanceText,
   unavailableNote, withMonth,
 } from './forecastLevels';
@@ -15,9 +15,9 @@ import './forecast.css';
  * barangay row to see its whole year. A period that has started also shows
  * what actually happened in it.
  *
- * Fire is the only hazard with a prediction model for now (flood and
- * landslide were removed on 2026-11-22 to be rebuilt): a page filter set to
- * Flood or Landslide shows FIRE_ONLY_NOTE instead of a table. Until the fire
+ * The table is fire's chance by month. A page filter set to Flood points to
+ * the map, where flood susceptibility is (FLOOD_ON_MAP_NOTE: the same in every
+ * month, so not a monthly table); Landslide shows FORECAST_ONLY_NOTE. Until the fire
  * model is trained, every row says it is unavailable. Not a weather forecast.
  *
  * Props:
@@ -49,7 +49,7 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
   if (!fireShown) {
     return (
       <div className="fc">
-        <p className="db-empty">{FIRE_ONLY_NOTE}</p>
+        <p className="db-empty">{hazard === 'Flood' ? FLOOD_ON_MAP_NOTE : FORECAST_ONLY_NOTE}</p>
       </div>
     );
   }

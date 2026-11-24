@@ -13,7 +13,7 @@ instead (spec section 4.2).
 No fire record is read here or in fire_sources.py: every input comes from a
 non-fire source, so no past fire can drive a prediction. Fire records are only
 the yes/no label `fire_occurred`, built in fire_training.py.
-tests.test_fire_features fails if these modules import a fire-record source.
+tests.test_fire_features fails if t hese modules import a fire-record source.
 
 Distances use an equirectangular projection at 10.27° N, the city's middle;
 over Talisay's few kilometres that is within a fraction of a percent.

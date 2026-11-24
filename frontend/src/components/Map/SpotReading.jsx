@@ -3,10 +3,11 @@ import { loadClassGrid } from './hazardLevels';
 import { loadElevation, loadTerrain, readSpot } from '../../utils/terrain';
 import { makeGrid } from '../../utils/gridGeometry';
 import {
-  ACCURACY_NOTE, describeSpot, describeSusceptibility, formatDistance, nearestNamedRiver,
+  ACCURACY_NOTE, describeFloodAtSpot, describeSpot, describeSusceptibility, formatDistance, nearestNamedRiver,
 } from '../../utils/spotText';
 
-const LAYERS = ['flood', 'landslide', 'fire'];
+// Raster layers only: flood comes from the flood model (the `flood` prop)
+const LAYERS = ['landslide', 'fire'];
 
 // Susceptibility class grids, read once per index build
 const classGrids = new Map(); // `${layer}@${generated}` -> Promise<grid | null>
@@ -37,8 +38,9 @@ function classAt(grid, bounds, lat, lng) {
  * spot    [lat, lng] of the tap, or null
  * index   hazard-index metadata (index.json)
  * rivers  rivers.geojson, for the nearest named river
+ * flood   the flood model's word for the purok area here (describeFloodAtSpot), or null
  */
-export default function SpotReading({ spot, index, rivers }) {
+export default function SpotReading({ spot, index, rivers, flood = null }) {
   const [state, setState] = useState(null); // null | { loading: true } | { lines: [...] }
   const lat = spot?.[0];
   const lng = spot?.[1];
@@ -67,11 +69,12 @@ export default function SpotReading({ spot, index, rivers }) {
             waterway,
             river && `Nearest named river: ${river.name}, ${formatDistance(river.distanceM)} away`,
             describeSusceptibility(classes, index.classes),
+            describeFloodAtSpot(flood),
           ].filter(Boolean),
         });
       });
     return () => { current = false; };
-  }, [lat, lng, index, rivers]);
+  }, [lat, lng, index, rivers, flood]);
 
   if (!state) return null;
   return (

@@ -174,3 +174,47 @@ class FirePurokPredictionLog(models.Model):
 
     def __str__(self):
         return f'{self.purok_name} {self.period_start} — {self.probability} {self.level}'
+
+
+FLOOD_LOG_SOURCES = ['model', 'noah']
+
+
+class FloodPurokSusceptibilityLog(models.Model):
+    """
+    A purok's flood susceptibility class as a published flood model version
+    gave it, kept so the model can be checked against floods that came after
+    (spec 8.3; written by apps/history/prediction_log.py once per version).
+    Rows are only ever added: a trigger (migration 0011) refuses any UPDATE or
+    DELETE. The purok is a plain id and its name, never a foreign key, so a
+    purok reload never touches the log.
+    """
+    id                  = models.BigAutoField(primary_key=True, db_column='fpsl_id')
+    purok_id            = models.BigIntegerField(db_column='fpsl_prk_id')
+    purok_name          = models.TextField(db_column='fpsl_prk_name')
+    barangay            = models.ForeignKey(Barangay, on_delete=models.PROTECT, db_column='fpsl_brgy_id')
+    # '<model or noah_fallback>@<sha1 of features, labels and settings, 12 characters>' (train_flood_model)
+    model_version       = models.TextField(db_column='fpsl_model_version')
+    source              = models.TextField(db_column='fpsl_source')
+    # null when the purok is not assessed
+    level               = models.TextField(null=True, db_column='fpsl_level')
+    score               = models.FloatField(null=True, db_column='fpsl_score')
+    uncertain           = models.BooleanField(db_column='fpsl_uncertain')
+    not_assessed_reason = models.TextField(default='', blank=True, db_column='fpsl_not_assessed_reason')
+    outlines_version    = models.TextField(db_column='fpsl_outlines_version')
+    # the Asia/Manila date the version was first logged
+    published_on        = models.DateField(db_column='fpsl_published_on')
+    created_at          = models.DateTimeField(auto_now_add=True, db_column='fpsl_created_at')
+
+    class Meta:
+        db_table = 'flood_purok_susceptibility_log'
+        constraints = [
+            models.UniqueConstraint(fields=['purok_id', 'model_version'], name='flood_purok_susceptibility_log_unique'),
+            models.CheckConstraint(check=models.Q(level__isnull=True) | models.Q(level__in=FIRE_LOG_LEVELS),
+                                   name='flood_purok_susceptibility_log_level'),
+            models.CheckConstraint(check=models.Q(source__in=FLOOD_LOG_SOURCES),
+                                   name='flood_purok_susceptibility_log_source'),
+        ]
+        indexes = [models.Index(fields=['model_version'])]
+
+    def __str__(self):
+        return f'{self.purok_name} {self.model_version} — {self.level or "not assessed"}'

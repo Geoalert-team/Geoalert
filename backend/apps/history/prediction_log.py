@@ -12,6 +12,11 @@ with settings.HAZARD_LOG_WRITER on (the deployed server). Rows are only
 added (bulk_create with ignore_conflicts on the unique key), so a rerun adds
 nothing.
 
+The flood susceptibility log (flood_purok_susceptibility_log, migration
+0011) gets one row per purok per published flood model version
+(write_flood_rows), by the same command and the same daily hook; a rerun adds
+nothing, and a trigger keeps every row as it was written.
+
 The older hazard_prediction_log (migration 0008) held the flood, landslide
 and barangay fire chances of the models removed on 2026-11-22; its rows stay
 unchanged and nothing writes to it.
@@ -75,6 +80,34 @@ def write_month_rows(today) -> int:
     return issued.count() - before
 
 
+def write_flood_rows(today) -> int:
+    """
+    One row per purok of the flood model in use, published today under its
+    version; returns how many were new (0 once the version is logged). Nothing
+    is written unless settings.HAZARD_LOG_WRITER is on and the model can be used.
+    """
+    from apps.barangays.models import Purok
+    from apps.history import flood_purok
+    from apps.history.models import FloodPurokSusceptibilityLog
+
+    if not settings.HAZARD_LOG_WRITER:
+        return 0
+    model = flood_purok.load()
+    if isinstance(model, str):
+        return 0
+    names = dict(Purok.objects.filter(id__in=list(model.areas)).values_list('id', 'name'))
+    outlines = Purok.outlines_version()
+    rows = [FloodPurokSusceptibilityLog(
+        purok_id=pid, purok_name=names.get(pid, ''), barangay_id=area['barangay_id'], model_version=model.version,
+        source=model.source, level=area['level'], score=area.get('score'), uncertain=bool(area['uncertain']),
+        not_assessed_reason=area['not_assessed_reason'] or '', outlines_version=outlines, published_on=today)
+        for pid, area in model.areas.items()]
+    logged = FloodPurokSusceptibilityLog.objects.filter(model_version=model.version)
+    before = logged.count()
+    FloodPurokSusceptibilityLog.objects.bulk_create(rows, ignore_conflicts=True)
+    return logged.count() - before
+
+
 def _done_marker(today):
     return f'fire-purok-log-done:{today.isoformat()}'
 
@@ -82,19 +115,25 @@ def _done_marker(today):
 def log_once_today(today) -> bool:
     """
     Today's rows, at most once a Manila day (a cache marker, set once they are
-    written). True when this call wrote them; False when they were written
-    already, the model can't be used yet, or the database refused (the table
-    not migrated yet, say: logged, and tried again on a later call). The map
-    never depends on it.
+    written): the fire model's month rows and, once per version, the flood
+    model's classes. True when this call wrote them; False when they were
+    written already, neither model can be used yet, or the database refused
+    (a table not migrated yet, say: logged, and tried again on a later call).
+    The map never depends on it.
     """
-    from apps.history import fire_purok
+    from apps.history import fire_purok, flood_purok
 
     if not settings.HAZARD_LOG_WRITER or cache.get(_done_marker(today)):
         return False
-    if isinstance(fire_purok.load(), str):
+    fire_ready = not isinstance(fire_purok.load(), str)
+    flood_ready = not isinstance(flood_purok.load(), str)
+    if not fire_ready and not flood_ready:
         return False
     try:
-        write_month_rows(today)
+        if fire_ready:
+            write_month_rows(today)
+        if flood_ready:
+            write_flood_rows(today)
     except DatabaseError as exc:
         logger.warning('%s', write_failure(exc))
         return False

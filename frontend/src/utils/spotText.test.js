@@ -1,5 +1,5 @@
 import {
-  ACCURACY_NOTE, describeSpot, describeSusceptibility, formatDistance, nearestNamedRiver,
+  ACCURACY_NOTE, describeFloodAtSpot, describeSpot, describeSusceptibility, formatDistance, nearestNamedRiver,
 } from './spotText';
 
 const W = (h) => describeSpot({ elevationM: 5, handM: h, drainsToSea: false }).waterway;
@@ -38,12 +38,21 @@ test('no waterway line against the sea or without data', () => {
   expect(describeSpot({ elevationM: 2, handM: null, drainsToSea: null }).waterway).toBeNull();
 });
 
-test('susceptibility line', () => {
-  const L = ['Very low', 'Low', 'Moderate', 'High', 'Very high'].map((label) => ({ label }));
-  expect(describeSusceptibility({ flood: 4, landslide: 2, fire: 1 }, L))
-    .toBe('Susceptibility: Flood High · Landslide Low · Fire Very low');
-  expect(describeSusceptibility({ flood: 5, landslide: 0, fire: 0 }, L)).toBe('Susceptibility: Flood Very high');
-  expect(describeSusceptibility({ flood: 0, landslide: 0, fire: 0 }, L)).toBeNull();
+test('susceptibility line: landslide and fire only (flood comes from the flood model)', () => {
+  const L = [{ label: 'Very low' }, { label: 'Low' }, { label: 'Moderate' }, { label: 'High' }, { label: 'Very high' }];
+  expect(describeSusceptibility({ flood: 4, landslide: 2, fire: 1 }, L)).toBe('Susceptibility: Landslide Low · Fire Very low');
+  expect(describeSusceptibility({ flood: 5, landslide: 0, fire: 0 }, L)).toBeNull();
+});
+
+test('flood at the spot, from the flood model', () => {
+  expect(describeFloodAtSpot({ available: true, level: 'Red', name: 'Sitio X' })).toBe('Flood: High flood susceptibility (Sitio X)');
+  expect(describeFloodAtSpot({ available: true, level: null, not_assessed_reason: 'Outside the surveyed floodplain', name: 'Purok Y' }))
+    .toBe('Flood: Not assessed yet (Outside the surveyed floodplain)');
+  expect(describeFloodAtSpot({ available: false, reason: 'The flood model has not been trained yet.' }))
+    .toBe('Flood: unavailable (The flood model has not been trained yet.)');
+  expect(describeFloodAtSpot({ available: true, level: null, not_assessed_reason: null, name: null }))
+    .toBe('Flood: Not assessed yet (outside every purok area)');
+  expect(describeFloodAtSpot(null)).toBeNull();
 });
 
 test('nearest named river', () => {

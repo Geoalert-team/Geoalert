@@ -21,6 +21,8 @@ from apps.reports.views import IncidentReportListCreateView
 from tests.fire_setup import FireSetupMixin
 from utils.system_settings import get_setting
 
+HAND_LEVELS = "Levels come from the hazard models and can't be changed by hand."
+
 PASSWORD = 'Correct-horse-9'
 
 
@@ -112,6 +114,23 @@ class NoReopeningTests(FireSetupMixin, TestCase):
             self.assertEqual(self.patch(zone, {'status': status}).status_code, 400, status)
         zone.refresh_from_db()
         self.assertEqual(zone.status, 'Active')
+
+    def test_severity_can_never_be_set_by_hand(self):
+        for zone in (self.zone(self.near, hazard_type=self.flood), self.zone(self.near, hazard_type=self.fire)):
+            for severity in ('Red', 'Green', zone.severity):
+                r = self.patch(zone, {'severity': severity})
+                self.assertEqual((r.status_code, r.data['error']), (400, HAND_LEVELS), (zone.hazard_type.name, severity))
+                zone.refresh_from_db()
+                self.assertEqual((zone.severity, zone.pending_severity), ('Orange', ''))
+
+    def test_resolve_with_severity_is_refused_whole(self):
+        zone = self.zone(self.near, hazard_type=self.flood)
+        figures = {'hazard_subcategory': 'RIVER OVERFLOW'}
+        r = self.patch(zone, {'status': 'Resolved', 'severity': 'Orange', **figures})
+        self.assertEqual(r.status_code, 400)
+        zone.refresh_from_db()
+        self.assertEqual(zone.status, 'Active')
+        self.assertEqual(self.patch(zone, {'status': 'Resolved', **figures}).status_code, 200)
 
     def test_a_resolved_hazard_can_still_be_archived(self):
         zone = self.zone(self.near, hazard_type=self.flood, status='Resolved')

@@ -34,14 +34,10 @@ CLASSES = [
 
 # Factor, 4 thresholds between scores 1..5, direction, weight.
 # 'up' means larger values score higher; 'down' means smaller values score higher.
+# There is no flood layer: flood susceptibility comes from the flood model
+# (apps/history/flood_purok.py), never from hand-picked weights; the terrain
+# (HAND) layer for drawing a flood from an observed depth is still built.
 FACTORS = {
-    'flood': [
-        ('elevation', [5, 10, 20, 50], 'down', 0.25),           # m above sea level
-        ('hand', [2, 5, 10, 20], 'down', 0.25),                 # m above nearest drainage or sea
-        ('dist_water', [100, 200, 400, 800], 'down', 0.20),     # m to river / stream / canal / drain
-        ('slope', [1, 3, 8, 15], 'down', 0.15),                 # degrees
-        ('dist_coast', [200, 500, 1000, 2000], 'down', 0.15),   # m to the sea
-    ],
     'landslide': [
         ('slope', [5, 10, 18, 30], 'up', 0.45),                 # degrees
         ('relief', [5, 15, 30, 60], 'up', 0.15),                # m of local relief within ~150 m
@@ -558,7 +554,7 @@ def build_layers(factors, city_mask):
     layers['landslide'][factors['slope'] < FLAT_SLOPE_DEG] = 1
     empty = (factors['building_density'] < 0.5) & (factors['urban_landuse'] <= 1)
     layers['fire'][empty] = 1
-    layers['all'] = np.maximum.reduce([layers['flood'], layers['landslide'], layers['fire']])
+    layers['all'] = np.maximum.reduce([layers['landslide'], layers['fire']])
     for arr in layers.values():
         arr[~city_mask] = 0
     return layers
@@ -571,6 +567,40 @@ def build_layers(factors, city_mask):
 def _rgb(hex_color):
     n = int(hex_color[1:], 16)
     return (n >> 16) & 255, (n >> 8) & 255, n & 255
+
+
+def read_png(path):
+    """Class numbers (0 outside the city, 1..5) of a layer write_png made, read back from its colours."""
+    rgba = np.asarray(Image.open(path).convert('RGBA'))
+    classes = np.zeros(rgba.shape[:2], np.uint8)
+    for i, c in enumerate(CLASSES, start=1):
+        r, g, b = _rgb(c['color'])
+        hit = (rgba[..., 0] == r) & (rgba[..., 1] == g) & (rgba[..., 2] == b) & (rgba[..., 3] > 0)
+        classes[hit] = i
+    return classes
+
+
+def drop_layer(out_dir, layer):
+    """
+    Take a published layer out of the hazard index: its PNG, its entries in
+    index.json (layers, factors, every barangay's shares), and its part of
+    'all', which is rebuilt as the highest class of the layers left. The
+    terrain and elevation files are left alone. Returns the new index.
+    """
+    out_dir = Path(out_dir)
+    index_file = out_dir / 'index.json'
+    index = json.loads(index_file.read_text())
+    index.get('layers', {}).pop(layer, None)
+    index.get('factors', {}).pop(layer, None)
+    for entry in index.get('barangays', {}).values():
+        entry.pop(layer, None)
+    (out_dir / f'{layer}.png').unlink(missing_ok=True)
+    hazards = [name for name in index.get('layers', {}) if name != 'all']
+    if hazards and 'all' in index.get('layers', {}):
+        write_png(out_dir / index['layers']['all'],
+                  np.maximum.reduce([read_png(out_dir / index['layers'][name]) for name in hazards]))
+    index_file.write_text(json.dumps(index, indent=1))
+    return index
 
 
 def write_png(path, classes):
@@ -660,7 +690,7 @@ def barangay_stats(labels, layers, names):
         if not total:
             continue
         entry = {'name': name}
-        for hazard in ('flood', 'landslide', 'fire'):
+        for hazard in FACTORS:
             counts = np.bincount(layers[hazard][inside], minlength=6)[1:6]
             entry[hazard] = [round(100 * int(n) / total, 1) for n in counts]
         stats[str(bid)] = entry

@@ -123,10 +123,37 @@ Rerun both after a BFP import or a purok reload: if the purok map changed since 
 fire shows "unavailable" with the reason until they are rerun. Until the first training
 run, fire shows "The fire model has not been trained yet."
 
-Flood and landslide prediction and the Rain watch ("Next 3 days") were removed on
-2026-11-22 and will be rebuilt later; asking the forecast for them is a 400. Past hazards,
-the History page and every history record are unchanged. Nothing was dropped from the
-database (the rainwatch tables and hazard_prediction_log are still there, unused).
+Landslide prediction and the Rain watch ("Next 3 days") were removed on 2026-11-22 and
+will be rebuilt later; asking the forecast for landslide is a 400. Past hazards, the History
+page and every history record are unchanged. Nothing was dropped from the database (the
+rainwatch tables and hazard_prediction_log are still there, unused).
+
+--------------------------------------------------------------------------------
+Hazard prediction: flood susceptibility by purok
+
+With Flood ticked, "Likely by month" fills each purok by its flood susceptibility: Red
+(high), Orange (moderate), Green (low, within the assessed floodplain) or grey ("Not
+assessed yet", with the reason). It shows how flood-prone an area is, not whether a flood
+is coming, and it is the same in every month. A machine-learning model learns it from
+where floods reached in the 2017 UP Mananga flood survey (169 reports, typhoons of
+1990-2014), with UP NOAH flood depths and terrain as inputs; it is tested on GeoAlert's
+own flood points and the Tino satellite map, and it is used only if it beats UP NOAH's map
+on its own (otherwise the NOAH-based classes are shown, labelled as such). No person can
+set or change a flood level. History, including the level an approved flood report
+takes from its puroks' past floods, is unchanged.
+
+The model is trained on a developer machine, never on the server (pypdf and xgboost are in
+requirements/development.txt only):
+
+python manage.py build_flood_features  (open map data and UP NOAH maps, to backend/.hazard_cache)
+python manage.py train_flood_model     (reads flood records read-only; writes the model and report)
+
+Both write to backend/apps/history/data/ (commit those files so a deploy carries them).
+The survey points and the satellite map stay in the git-ignored backend/.hazard_cache and
+are never shown or redistributed. Rerun both after a purok reload, after new located
+floods, or when UP NOAH publishes new maps. Design:
+docs/design/specs/2026-11-24-flood-susceptibility-model-design.md. Evidence:
+docs/research/2026-11-24-flood-prediction-assessment.md.
 
 Design: docs/design/specs/2026-11-22-fire-purok-model-design.md. Plan:
 docs/design/plans/2026-11-22-fire-purok-model.md. Background and the data checks behind

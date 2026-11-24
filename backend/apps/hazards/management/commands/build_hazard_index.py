@@ -22,12 +22,20 @@ class Command(BaseCommand):
                             help='Output folder (default: frontend/public/hazard-index).')
         parser.add_argument('--refresh', action='store_true',
                             help='Download elevation and OpenStreetMap data again instead of reusing saved copies.')
+        parser.add_argument('--drop-layer', default=None,
+                            help='Take one published layer (e.g. flood) out of the index, rebuild "all" from the '
+                                 'layers left, and stop; nothing is downloaded.')
         parser.add_argument('--terrain-only', action='store_true',
                             help='Only write terrain.png and elevation.png (heights for the map and for '
                                  'drawing floods from a water depth); leave the published susceptibility '
                                  'layers untouched.')
 
     def handle(self, *args, **options):
+        out = Path(options['out']) if options['out'] else Path(settings.BASE_DIR).parent / 'frontend' / 'public' / 'hazard-index'
+        if options['drop_layer']:
+            index = susceptibility.drop_layer(out, options['drop_layer'])
+            self.stdout.write(f'Dropped {options["drop_layer"]}; layers left: {", ".join(index.get("layers", {}))}')
+            return
         barangays = list(Barangay.objects.exclude(boundary__isnull=True))
         if not barangays:
             raise CommandError('No barangay boundaries in the database. Load the barangays first.')

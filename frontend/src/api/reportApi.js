@@ -87,7 +87,7 @@ export const reportsApi = {
   decision: (id) => client.get(`/api/reports/incidents/${id}/decide/`).then((r) => r.data),
 
   // DRRMO/Admin: decide a fire report. body is
-  //   { action: 'approve', severity?, note? }   a new fire, live on the map
+  //   { action: 'approve', note? }              a new fire, live on the map at its model level (no level is sent)
   //   { action: 'attach', zone, note? }          joins a fire nearby
   //   { action: 'reject', note }
   decide: (id, body) => client.post(`/api/reports/incidents/${id}/decide/`, body).then((r) => r.data),

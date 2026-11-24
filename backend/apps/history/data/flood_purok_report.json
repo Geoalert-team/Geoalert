@@ -1,0 +1,317 @@
+{
+ "candidates": [
+  {
+   "name": "logistic_regression",
+   "boyce": 0.9157,
+   "boyce_low": 0.7776,
+   "boyce_high": 0.9273,
+   "auc": 0.7063
+  },
+  {
+   "name": "maxent_hinge",
+   "boyce": 0.7853,
+   "boyce_low": 0.5425,
+   "boyce_high": 0.864,
+   "auc": 0.6625
+  },
+  {
+   "name": "xgboost",
+   "boyce": 0.6916,
+   "boyce_low": 0.3289,
+   "boyce_high": 0.7814,
+   "auc": 0.677
+  },
+  {
+   "name": "neural_network",
+   "boyce": 0.7667,
+   "boyce_low": 0.5864,
+   "boyce_high": 0.8683,
+   "auc": 0.7047
+  },
+  {
+   "name": "noah_only",
+   "boyce": 1.0,
+   "boyce_low": 0.8,
+   "boyce_high": 1.0,
+   "auc": 0.6783
+  }
+ ],
+ "choice": {
+  "chosen": "logistic_regression",
+  "comparisons": [
+   {
+    "candidate": "maxent_hinge",
+    "against": "logistic_regression",
+    "gain": -0.1304,
+    "low": -0.2938,
+    "high": -0.0205,
+    "adopted": false
+   },
+   {
+    "candidate": "xgboost",
+    "against": "logistic_regression",
+    "gain": -0.224,
+    "low": -0.5408,
+    "high": -0.0896,
+    "adopted": false
+   },
+   {
+    "candidate": "neural_network",
+    "against": "logistic_regression",
+    "gain": -0.149,
+    "low": -0.2563,
+    "high": -0.0056,
+    "adopted": false
+   }
+  ]
+ },
+ "cutoffs": {
+  "red": 0.4366978587286858,
+  "orange": 0.29386506138360313,
+  "red_recall": 0.6,
+  "orange_recall": 0.904762,
+  "target_reached": true
+ },
+ "temporal_test": {
+  "mananga_points": [
+   {
+    "day": "2021-06-12",
+    "barangay": "Dumlog",
+    "purok_id": 820,
+    "level": "Red",
+    "published_level": "Red"
+   },
+   {
+    "day": "2025-11-04",
+    "barangay": "San Isidro",
+    "purok_id": 558,
+    "level": "Red",
+    "published_level": "Red"
+   },
+   {
+    "day": "2025-11-04",
+    "barangay": "Dumlog",
+    "purok_id": 819,
+    "level": "Red",
+    "published_level": "Red"
+   },
+   {
+    "day": "2025-11-04",
+    "barangay": "Tabunok",
+    "purok_id": 1118,
+    "level": "Red",
+    "published_level": "Red"
+   }
+  ],
+  "elsewhere": [
+   {
+    "day": "2025-08-12",
+    "barangay": "Manipis",
+    "note": "Not assessed: upland road runoff is a different kind of flood"
+   },
+   {
+    "day": "2025-10-07",
+    "barangay": "Manipis",
+    "note": "Not assessed: upland road runoff is a different kind of flood"
+   }
+  ],
+  "eosrs": {
+   "boyce": -0.1131,
+   "auc": 0.5584,
+   "flagged_buildings": 1454,
+   "note": "The satellite map is preliminary and less reliable over built-up and vegetated ground."
+  },
+  "dry_spots": [
+   {
+    "score": 0.4455,
+    "share_of_flood_spots_scoring_lower": 0.1524
+   },
+   {
+    "score": 0.2249,
+    "share_of_flood_spots_scoring_lower": 0.019
+   }
+  ]
+ },
+ "barangay_check": [
+  {
+   "barangay": "Biasong",
+   "buildings": 1286,
+   "share_red_orange": 0.9145,
+   "tino_record": true,
+   "any_flood_record": true
+  },
+  {
+   "barangay": "Dumlog",
+   "buildings": 1718,
+   "share_red_orange": 0.943,
+   "tino_record": true,
+   "any_flood_record": true
+  },
+  {
+   "barangay": "Lagtang",
+   "buildings": 469,
+   "share_red_orange": 0.6866,
+   "tino_record": true,
+   "any_flood_record": true
+  },
+  {
+   "barangay": "Lawaan I",
+   "buildings": 671,
+   "share_red_orange": 0.0,
+   "tino_record": false,
+   "any_flood_record": false
+  },
+  {
+   "barangay": "Lawaan II",
+   "buildings": 847,
+   "share_red_orange": 0.7627,
+   "tino_record": true,
+   "any_flood_record": true
+  },
+  {
+   "barangay": "Lawaan III",
+   "buildings": 1097,
+   "share_red_orange": 0.5105,
+   "tino_record": true,
+   "any_flood_record": true
+  },
+  {
+   "barangay": "Linao",
+   "buildings": 3,
+   "share_red_orange": 0.0,
+   "tino_record": false,
+   "any_flood_record": true
+  },
+  {
+   "barangay": "Maghaway",
+   "buildings": 56,
+   "share_red_orange": 0.0,
+   "tino_record": false,
+   "any_flood_record": false
+  },
+  {
+   "barangay": "Mohon",
+   "buildings": 955,
+   "share_red_orange": 0.2911,
+   "tino_record": true,
+   "any_flood_record": true
+  },
+  {
+   "barangay": "Pooc",
+   "buildings": 1536,
+   "share_red_orange": 0.9017,
+   "tino_record": false,
+   "any_flood_record": false
+  },
+  {
+   "barangay": "San Isidro",
+   "buildings": 690,
+   "share_red_orange": 0.8391,
+   "tino_record": true,
+   "any_flood_record": true
+  },
+  {
+   "barangay": "Tabunok",
+   "buildings": 141,
+   "share_red_orange": 0.8582,
+   "tino_record": true,
+   "any_flood_record": true
+  }
+ ],
+ "acceptance": {
+  "adopted": false,
+  "gates": [
+   {
+    "gate": "Better than UP NOAH's map on its own",
+    "passed": false,
+    "detail": "AUC gain 0.028 (95% interval -0.008 to 0.068); Boyce gain -0.084 (-0.210 to 0.103), shown only. Judged on AUC: UP NOAH's map has only four levels, which a continuous Boyce index cannot compare fairly with a continuous score."
+   },
+   {
+    "gate": "GeoAlert Mananga flood points in Red or Orange",
+    "passed": true,
+    "detail": "4 of 4"
+   },
+   {
+    "gate": "Red and Orange cover at most half the buildings",
+    "passed": false,
+    "detail": "71% of the floodplain buildings"
+   },
+   {
+    "gate": "Test data seen last",
+    "passed": true,
+    "detail": "The choice and the cut-offs were fixed before any test point was loaded."
+   }
+  ],
+  "reasons": [
+   "It did not clearly beat UP NOAH's map on its own: the lower end of its AUC gain was -0.008, not above zero.",
+   "Red and Orange would cover 71% of the floodplain's buildings, more than half."
+  ]
+ },
+ "fallback": {
+  "cutoffs": {
+   "red": 0.351598,
+   "orange": 0.15,
+   "red_recall": 0.552381,
+   "orange_recall": 0.904762,
+   "target_reached": true
+  },
+  "note": "UP NOAH's map missed about a third of the survey's flood spots. It flags about 57% of the assessed buildings as Red or Orange, more than the half the machine-learning model was allowed.",
+  "flagged_share": 0.5673
+ },
+ "version": "noah_fallback@9aba6d331a4b",
+ "source": "noah",
+ "built_at": "2026-11-24T08:03:11+08:00",
+ "basis": "From UP NOAH's 25-year flood model, classed by where floods reached in the 2017 UP Mananga flood survey. It shows how flood-prone an area is, not whether a flood is coming, and it is the same in every month.",
+ "columns": [
+  "noah25_class",
+  "noah5_class",
+  "rel_height_river_m",
+  "dist_river_m",
+  "depression_m",
+  "built_share"
+ ],
+ "survey_spots": 105,
+ "dry_spots": 2,
+ "domain_buildings": 9987,
+ "valid_buildings": 9469,
+ "classes": {
+  "levels": {
+   "Red": {
+    "puroks": 151,
+    "buildings": 8288,
+    "field_spots": 58
+   },
+   "Orange": {
+    "puroks": 187,
+    "buildings": 10964,
+    "field_spots": 37
+   },
+   "Green": {
+    "puroks": 271,
+    "buildings": 14684,
+    "field_spots": 10
+   }
+  },
+  "not_assessed": {
+   "No NOAH flood model information here": 41,
+   "No buildings in this area": 20
+  }
+ },
+ "limits": [
+  "The survey points are places where residents remembered floods (typhoons of 1990-2014). The other buildings are not known to be dry, so the levels show how flood-prone an area is compared with the rest, not a chance of flooding.",
+  "Every survey point lies along the lower Mananga River, so areas away from it are not assessed.",
+  "Purok outlines are estimates; areas with a low-confidence outline are marked.",
+  "The Mananga River works planned for 2026 may change where floods reach; the model learned from the river before them.",
+  "UP NOAH's flood maps are labelled beta.",
+  "This is not a forecast: it is the same in every month and does not say a flood is coming."
+ ],
+ "credits": [
+  "Flood survey points: E. C. Paringit and R. S. Otadoy (eds.) (2017), LiDAR Surveys and Flood Mapping of Mananga River, UP Training Center for Applied Geodesy and Photogrammetry / University of San Carlos (Phil-LiDAR 1), used for research and education with acknowledgement",
+  "UP NOAH flood hazard maps (ODbL), via the bettergovph mirror",
+  "Tino flood proxy map: Earth Observatory of Singapore \u2013 Remote Sensing Lab (EOS-RS); contains modified Copernicus Sentinel data (2025)",
+  "produced using Copernicus WorldDEM-30 \u00a9 DLR e.V. 2010-2014 and \u00a9 Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved",
+  "ESA WorldCover 2021 (CC BY 4.0)",
+  "\u00a9 OpenStreetMap contributors",
+  "Microsoft building footprints (ODbL)"
+ ]
+}
