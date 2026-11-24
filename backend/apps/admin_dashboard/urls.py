@@ -5,6 +5,7 @@ from apps.admin_dashboard.views import (
     UserDetailView,
     NextEmployeeIdsView,
     ResetPasswordView,
+    ResendInviteView,
     AuditLogListView,
     AlertMonitorView,
     SystemHealthView,
@@ -21,6 +22,7 @@ urlpatterns = [
     path('users/next-employee-ids/',        NextEmployeeIdsView.as_view(),   name='admin-next-employee-ids'),
     path('users/<uuid:pk>/',                UserDetailView.as_view(),        name='admin-user-detail'),
     path('users/<uuid:pk>/reset-password/', ResetPasswordView.as_view(),     name='admin-reset-password'),
+    path('users/<uuid:pk>/resend-invite/',  ResendInviteView.as_view(),      name='admin-resend-invite'),
     path('logs/',                           AuditLogListView.as_view(),      name='admin-logs'),
     path('alerts/',                         AlertMonitorView.as_view(),      name='admin-alerts'),
 ]

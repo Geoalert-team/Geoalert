@@ -285,6 +285,8 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
 .adm-status.is-active .adm-status-dot { background: #1f9d55; }
 .adm-status.is-inactive { color: var(--db-soft); }
 .adm-status.is-inactive .adm-status-dot { background: #b7c0cd; }
+.adm-status.is-pending { color: var(--warn); }
+.adm-status.is-pending .adm-status-dot { background: transparent; border: 2px solid currentColor; width: 9px; height: 9px; box-sizing: border-box; }
 
 .adm-row-actions { display: flex; gap: 2px; justify-content: flex-end; }
 
@@ -388,6 +390,9 @@ button.adm-system:hover { border-color: var(--adm-line-strong); }
 /* ---------- Credentials dialog ---------- */
 .adm-cred { padding-top: 14px; }
 .adm-cred-badge { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-bottom: 14px; border-radius: 12px; background: var(--good-tint); color: var(--good); }
+.adm-cred-badge.is-warn { background: var(--warn-tint); color: var(--warn); }
+.adm-invite-text { margin: 0 0 10px !important; font-size: .92rem; line-height: 1.5; color: var(--db-heading); }
+.adm-invite-text.is-soft { font-size: .86rem; color: var(--db-soft); }
 .adm-cred-label { font-size: .8rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--db-soft); margin-bottom: 6px !important; }
 .adm-cred-row { display: flex; gap: 8px; align-items: center; }
 .adm-cred-row code {

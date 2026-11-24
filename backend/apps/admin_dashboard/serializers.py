@@ -4,6 +4,7 @@ import string
 
 from rest_framework import serializers
 
+from apps.accounts.invite import is_pending
 from apps.accounts.models import User, Role
 from apps.barangays.models import Barangay
 from apps.admin_dashboard.models import AuditLog
@@ -56,14 +57,19 @@ class BarangayOptionSerializer(serializers.ModelSerializer):
 class UserListSerializer(serializers.ModelSerializer):
     role = RolesSerializer(read_only=True)
     assigned_barangay = BarangayOptionSerializer(read_only=True)
+    # True until the owner chooses a password from their invite email
+    invite_pending = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'full_name', 'first_name', 'middle_initial', 'last_name', 'suffix',
             'email', 'phone', 'employee_id', 'position',
-            'role', 'assigned_barangay', 'is_active', 'last_login', 'created_at',
+            'role', 'assigned_barangay', 'is_active', 'invite_pending', 'last_login', 'created_at',
         ]
+
+    def get_invite_pending(self, obj):
+        return is_pending(obj)
 
 
 class UserWriteSerializer(serializers.ModelSerializer):
@@ -188,7 +194,6 @@ class UserCreateSerializer(UserWriteSerializer):
         role = Role.objects.get(id=validated_data.pop('role_id'))
         barangay_id = validated_data.pop('assigned_barangay_id', None)
         legacy_name = clean_text(validated_data.pop('full_name', None))
-        temp_password = generate_temp_password()
 
         user = User(
             role=role,
@@ -196,12 +201,11 @@ class UserCreateSerializer(UserWriteSerializer):
             **validated_data,
         )
         user.full_name = user.compose_full_name() or legacy_name or user.email
-        user.set_password(temp_password)
-        user.must_change_password = True  # the admin has seen it
+        # No password yet: the owner chooses one from the invite email
+        # (apps/accounts/invite.py), so nobody else ever knows it.
+        user.set_unusable_password()
+        user.must_change_password = False
         user.save()
-
-        # Attach temp password to instance for the view to return
-        user._temp_password = temp_password
         return user
 
 
