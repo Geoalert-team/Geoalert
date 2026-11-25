@@ -163,8 +163,9 @@ export default function HistoricalData() {
             <p>Archived fires in Talisay City, with the BFP figures each was closed with.</p>
           ) : (
             <p>
-              Archived hazard events in Talisay City.{' '}
-              <Link to={TRENDS_PATH}>Trends, places and the seasonal outlook are in Trend Analysis</Link>
+              Every recorded fire, flood and landslide in Talisay City. Filter by hazard, barangay and date, or
+              open a record for its full details. For patterns over time, see{' '}
+              <Link to={TRENDS_PATH}>Trend Analysis</Link>.
             </p>
           )}
         </div>
