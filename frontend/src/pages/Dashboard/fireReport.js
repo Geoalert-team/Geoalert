@@ -37,7 +37,7 @@ export function localNow(now = new Date()) {
 
 // The barangay's puroks not chosen yet, for "+ Add another": named ones
 // A-Z, then the areas no purok name was found for (named after a landmark
-// there), also A-Z and marked as having no purok name yet
+// there), also A-Z
 export function purokOptions(geo, barangayId, chosen = []) {
   const taken = new Set(chosen.map(String));
   const all = (puroksOf(geo, barangayId)?.features || [])
@@ -46,7 +46,7 @@ export function purokOptions(geo, barangayId, chosen = []) {
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
   return [
     ...all.filter((p) => !p.unnamed).map((p) => ({ id: p.id, label: p.name })),
-    ...all.filter((p) => p.unnamed).map((p) => ({ id: p.id, label: `${p.name} (no purok name yet)` })),
+    ...all.filter((p) => p.unnamed).map((p) => ({ id: p.id, label: p.name })),
   ];
 }
 

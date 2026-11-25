@@ -27,7 +27,7 @@ test('FloodPuroks lists the assessed areas worst first, then groups the rest by 
   expect([...el.querySelectorAll('li strong')].map((s) => s.textContent)).toEqual(['Purok 2', 'Purok 3', 'Purok 1']);
   expect(el.textContent).toContain('High flood susceptibility');
   expect(el.textContent).toContain('Uncertain');
-  expect(el.textContent).toContain('Estimated outline');
+  expect(el.textContent).not.toMatch(/estimat/i);
   expect(el.textContent).toContain('Not assessed yet');
   expect(el.textContent).toContain('Outside the surveyed floodplain (3)');
   expect(el.textContent).toContain('No buildings in this area (1)');

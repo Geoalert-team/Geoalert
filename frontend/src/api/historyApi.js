@@ -22,7 +22,7 @@ export const historyApi = {
   // or method 'unavailable' with reason), model_hazards, unavailable_hazards, by_barangay, profile;
   // with Flood asked: flood ({ available, reason, source 'model' or 'noah', basis,
   // varies_by_month: false }) and flood_results (one row per purok: level or null,
-  // not_assessed_reason, uncertain, estimated_outline)
+  // not_assessed_reason, uncertain)
   forecast: (params) =>
     client.get('/api/history/forecast/', { params }).then((r) => r.data),
 

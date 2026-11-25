@@ -36,7 +36,6 @@ export default function FloodPuroks({ rows, purokNames }) {
               <span className="pm-likely-name">
                 <strong>{purokNames?.get(String(r.purok_id)) || `Area ${r.purok_id}`}</strong>
                 {r.uncertain && <small className="pm-likely-tag">Uncertain</small>}
-                {r.estimated_outline && <small className="pm-likely-tag">Estimated outline</small>}
               </span>
               <span className="pm-likely-figure">{FLOOD_WORD[r.level]}</span>
             </li>

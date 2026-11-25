@@ -121,7 +121,7 @@ test('the fire model is credited to Pittsburgh', () => {
   expect(levels.FIRE_CREDIT).toContain('City of Pittsburgh');
   expect(levels.FIRE_CREDIT).toContain('MIT');
   expect(levels.FIRE_MODEL_LABEL).toContain('Pittsburgh');
-  expect(levels.PUROK_CAVEAT).toMatch(/estimate/i);
+  expect(levels.PUROK_CAVEAT).not.toMatch(/estimat/i);
 });
 
 // Flood susceptibility in "Likely by month" (plan Task 9)
@@ -139,7 +139,7 @@ test('combined fill keeps the fire level when flood is not assessed', () => {
   expect(purokLevel(map.get('9'), ['Fire', 'Flood'])).toBe('Red');
   expect(purokLevel(map.get('9'), ['Fire'])).toBeNull();
   expect(floodTip(map.get('4').Flood, 'Purok A')).toBe('Purok A: Not assessed yet (Outside the surveyed floodplain)');
-  expect(floodTip(map.get('9').Flood, 'Purok B')).toBe('Purok B: High flood susceptibility · Uncertain · Estimated outline');
+  expect(floodTip(map.get('9').Flood, 'Purok B')).toBe('Purok B: High flood susceptibility · Uncertain');
 });
 
 // Final review P6: an own-data fit marks the puroks it copied from UP NOAH's map (spec 6.3)

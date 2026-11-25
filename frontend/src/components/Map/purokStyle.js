@@ -2,11 +2,9 @@
  * How purok outlines are drawn on the public map.
  *
  * Purok lines show only inside the barangay that's selected, so the city view
- * stays clear; hovering a purok tints it and names it. Until the Barangay Hall
- * sends official lines the puroks are estimates (backend: manage.py
- * build_purok_estimates), drawn dashed; official lines are solid. Violet stays
- * clear of the hazard reds, oranges, yellows and greens and of the dark
- * barangay line.
+ * stays clear; hovering a purok tints it and names it. Every outline is drawn
+ * the same solid line, whatever its source. Violet stays clear of the hazard
+ * reds, oranges, yellows and greens and of the dark barangay line.
  */
 
 export const PUROK_COLOR = '#7c3aed';
@@ -15,12 +13,11 @@ export const PUROK_COLOR = '#7c3aed';
 export const isContainer = (feature) => (feature?.properties?.members || 0) > 0;
 
 export function purokStyle(feature) {
-  const official = feature?.properties?.source === 'official';
   return {
     color: PUROK_COLOR,
     weight: isContainer(feature) ? 3 : 1.5,
     opacity: 0.9,
-    dashArray: official ? null : '5 4',
+    dashArray: null,
     fill: false,
   };
 }
@@ -83,26 +80,19 @@ export function puroksOf(geo, barangayId) {
 export const escape = (text) => String(text ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-// An estimate with no confidence is an area no purok name was found for: a
-// purok nobody could place yet. Its name only says where it is ("Near Tapul
-// Elementary School", "Along Burgos Street").
+// An area named after where it is ("Near Tapul Elementary School", "Along
+// Burgos Street") rather than a purok name. The fire report form lists these
+// after the named puroks.
 export const isUnidentified = (p) => p?.source === 'estimated' && !p?.confidence;
 
-// What hovering a purok says: its name, where it is, and how sure the outline is.
+// What hovering a purok says: its name and where it is.
 export function purokTooltip(feature) {
   const p = feature?.properties || {};
   const where = [p.parent, p.barangay_name].filter(Boolean).map(escape).join(' · ');
-  const note = p.source === 'official' ? ''
-    : p.source === 'community' ? 'Not official'
-      : isUnidentified(p) ? 'Purok not identified yet'
-        : p.confidence === 'low' ? 'Estimated outline · location approximate'
-          : 'Estimated outline';
   const holds = isContainer(feature) ? `<br>${p.members} ${p.members === 1 ? 'purok' : 'puroks'} inside` : '';
-  return `<strong>${escape(p.name)}</strong><br>${where}${holds}${note ? `<br>${note}` : ''}`;
+  return `<strong>${escape(p.name)}</strong><br>${where}${holds}`;
 }
 
-// Credit for what the estimated outlines are built from, shown while the layer is
-export const PUROK_ATTRIBUTION = 'Purok estimates: OpenStreetMap, Wikimapia (CC BY-SA), Overture Maps, '
+// Credit for what the outlines are built from, shown while the layer is
+export const PUROK_ATTRIBUTION = 'Purok outlines: OpenStreetMap, Wikimapia (CC BY-SA), Overture Maps, '
   + 'Microsoft Building Footprints (ODbL), Visayan Electric notices';
-
-export const hasEstimates = (geo) => (geo?.features || []).some((f) => f.properties?.source !== 'official');

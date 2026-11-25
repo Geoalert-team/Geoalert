@@ -1,20 +1,18 @@
-import { PUROK_COLOR, PUROK_HOVER, PUROK_SELECTED, hasEstimates, isContainer, purokAt, purokStyle, purokTooltip, puroksOf } from './purokStyle';
+import { PUROK_COLOR, PUROK_HOVER, PUROK_SELECTED, isContainer, purokAt, purokStyle, purokTooltip, puroksOf } from './purokStyle';
 
 const feature = (props) => ({ type: 'Feature', properties: props, geometry: null });
 
 describe('purokStyle', () => {
-  test('estimated outlines are dashed violet', () => {
-    const s = purokStyle(feature({ source: 'estimated' }));
-    expect(s.color).toBe(PUROK_COLOR);
-    expect(s.dashArray).toBe('5 4');
+  test('every outline is a solid violet line, whatever its source', () => {
+    ['estimated', 'community', 'official'].forEach((source) => {
+      const s = purokStyle(feature({ source }));
+      expect(s.color).toBe(PUROK_COLOR);
+      expect(s.dashArray).toBeNull();
+    });
   });
 
   test('just the line: nothing covers the map inside', () => {
     expect(purokStyle(feature({ source: 'estimated' })).fill).toBe(false);
-  });
-
-  test("official outlines are solid: they're the real lines", () => {
-    expect(purokStyle(feature({ source: 'official' })).dashArray).toBeNull();
   });
 
   test('the hovered purok is tinted and its line thickened', () => {
@@ -116,51 +114,35 @@ describe('sitios drawn around their puroks', () => {
 });
 
 describe('purokTooltip', () => {
-  test('a named estimate shows its sitio and barangay and says the outline is estimated', () => {
+  test('shows the name, sitio and barangay, and nothing about how the outline was made', () => {
     const html = purokTooltip(feature({
       name: 'Purok Sambag', parent: 'Sitio Laray', source: 'estimated', confidence: 'high', barangay_name: 'San Roque',
     }));
-    expect(html).toContain('<strong>Purok Sambag</strong>');
-    expect(html).toContain('Sitio Laray · San Roque');
-    expect(html).toContain('Estimated outline');
-    expect(html).not.toContain('approximate');
+    expect(html).toBe('<strong>Purok Sambag</strong><br>Sitio Laray · San Roque');
   });
 
-  test('a name placed only roughly says its location is approximate', () => {
-    const html = purokTooltip(feature({ name: 'Purok Okra', source: 'estimated', confidence: 'low', barangay_name: 'Dumlog' }));
-    expect(html).toContain('location approximate');
-  });
-
-  test('an area named after a landmark says the purok is not identified yet', () => {
-    const html = purokTooltip(feature({
-      name: 'Near Tanke National High School', source: 'estimated', confidence: '', barangay_name: 'Tangke',
-    }));
-    expect(html).toContain('<strong>Near Tanke National High School</strong>');
-    expect(html).toContain('Tangke');
-    expect(html).toContain('Purok not identified yet');
+  test('never calls an outline estimated, approximate, unofficial or unidentified', () => {
+    [
+      { name: 'Purok Okra', source: 'estimated', confidence: 'low', barangay_name: 'Dumlog' },
+      { name: 'Near Tanke National High School', source: 'estimated', confidence: '', barangay_name: 'Tangke' },
+      { name: 'Purok Lapu', source: 'community', barangay_name: 'Bulacao' },
+    ].forEach((p) => {
+      const html = purokTooltip(feature(p));
+      expect(html).toContain(`<strong>${p.name}</strong>`);
+      expect(html).not.toMatch(/estimat|approximate|official|not identified/i);
+    });
   });
 
   test('an official purok shows its sitio and barangay', () => {
     const html = purokTooltip(feature({ name: 'Purok Sambag', parent: 'Laray', source: 'official', barangay_name: 'San Roque' }));
     expect(html).toContain('<strong>Purok Sambag</strong>');
     expect(html).toContain('Laray · San Roque');
-    expect(html).not.toContain('Estimated');
+    expect(html).toBe('<strong>Purok Sambag</strong><br>Laray · San Roque');
   });
 
   test('names are shown as text, never run as HTML', () => {
     const html = purokTooltip(feature({ name: '<img src=x onerror=alert(1)>', source: 'official', barangay_name: 'Tangke' }));
     expect(html).not.toContain('<img');
     expect(html).toContain('&lt;img');
-  });
-});
-
-describe('hasEstimates', () => {
-  test('true while any outline is not official', () => {
-    expect(hasEstimates({ features: [feature({ source: 'official' }), feature({ source: 'estimated' })] })).toBe(true);
-  });
-
-  test('false once every outline is official, or when there are none', () => {
-    expect(hasEstimates({ features: [feature({ source: 'official' })] })).toBe(false);
-    expect(hasEstimates(null)).toBe(false);
   });
 });

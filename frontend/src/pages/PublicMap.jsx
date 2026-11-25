@@ -10,7 +10,7 @@ import { useSusceptibility } from '../components/Map/susceptibility';
 import PurokLayer from '../components/Map/PurokLayer';
 import PurokHistoryLayer from '../components/Map/PurokHistoryLayer';
 import FloodOverlay from '../components/Map/FloodOverlay';
-import { PUROK_HAZARD_AREA, PUROK_OF_HAZARD, escape as escapeHtml, hasEstimates, purokAt, purokStyle, purokTooltip, puroksOf } from '../components/Map/purokStyle';
+import { PUROK_HAZARD_AREA, PUROK_OF_HAZARD, escape as escapeHtml, purokAt, purokStyle, purokTooltip, puroksOf } from '../components/Map/purokStyle';
 import { byPurok, historyLine } from '../components/Map/purokLevels';
 import { HAZARD_TYPES, SEVERITY, severityInfo, hazardKey, hazardIconPath, hazardColor } from '../components/Map/hazardInfo';
 import { hazardsApi } from '../api/hazardsApi';
@@ -1095,7 +1095,6 @@ export default function PublicMap() {
               onRetry={loadLayers}
               showPuroks={showPuroks}
               onTogglePuroks={purokGeo?.features?.length ? togglePuroks : undefined}
-              puroksEstimated={hasEstimates(purokGeo)}
             />
           )}
         </div>

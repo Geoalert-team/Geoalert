@@ -57,7 +57,6 @@ LIMITS = [
     'not known to be dry, so the levels show how flood-prone an area is compared with the rest, not a chance of '
     'flooding.',
     'Every survey point lies along the lower Mananga River, so areas away from it are not assessed.',
-    'Purok outlines are estimates; areas with a low-confidence outline are marked.',
     'The Mananga River works planned for 2026 may change where floods reach; the model learned from the river '
     'before them.',
     "UP NOAH's flood maps are labelled beta.",
@@ -76,7 +75,6 @@ LIMITS_OWN = [
     "The flood spots are places where GeoAlert recorded a flood. The other buildings are not known to be dry, so the "
     "levels show how flood-prone an area is compared with the rest, not a chance of flooding.",
     "Outside the area GeoAlert's records cover, levels come from UP NOAH's map.",
-    'Purok outlines are estimates; areas with a low-confidence outline are marked.',
     "UP NOAH's flood maps are labelled beta.",
     'This is not a forecast: it is the same in every month and does not say a flood is coming.',
 ]

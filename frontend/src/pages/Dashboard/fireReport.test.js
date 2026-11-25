@@ -32,16 +32,16 @@ const FIRE = {
 };
 const NOW = new Date('2026-10-25T14:00');
 
-test('options: named first A-Z, then the areas with no purok name yet, A-Z', () => {
+test('options: named first A-Z, then the areas named after a landmark, A-Z, with nothing marked', () => {
   expect(purokOptions(GEO, '19').map((o) => o.label)).toEqual([
     'Purok Agoho', 'Purok Sambag',
-    'Along Burgos Street (no purok name yet)', 'Near Tapul Elementary School (no purok name yet)',
+    'Along Burgos Street', 'Near Tapul Elementary School',
   ]);
 });
 
 test('options leave out puroks already chosen', () => {
   expect(purokOptions(GEO, '19', ['3']).map((o) => o.label)).toEqual([
-    'Purok Agoho', 'Along Burgos Street (no purok name yet)', 'Near Tapul Elementary School (no purok name yet)',
+    'Purok Agoho', 'Along Burgos Street', 'Near Tapul Elementary School',
   ]);
 });
 

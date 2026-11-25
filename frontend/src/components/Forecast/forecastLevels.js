@@ -56,8 +56,7 @@ export const likelyKey = (likely) => {
 export const FIRE_MODEL_LABEL = "Fire risk model adapted from the City of Pittsburgh Bureau of Fire's";
 export const FIRE_CREDIT = 'Adapted from the City of Pittsburgh Bureau of Fire / Carnegie Mellon Metro21 fire risk '
   + 'model (github.com/CityofPittsburgh/fire_risk_analysis, MIT License, © 2017 mmadaio).';
-export const PUROK_CAVEAT = 'Purok chances are estimates: most purok outlines are estimated, and a purok marked '
-  + '"Limited data" has a wide range.';
+export const PUROK_CAVEAT = 'A purok marked "Limited data" has a wide range.';
 
 /**
  * The fire model's purok rows (`purok_results`) as purok id (string) → { Fire: { level, probability,
@@ -75,8 +74,7 @@ export function purokLikelyLevels(likely) {
     map.set(key, {
       ...(map.get(key) || {}),
       Flood: {
-        level: r.level, uncertain: r.uncertain, not_assessed_reason: r.not_assessed_reason,
-        estimated_outline: r.estimated_outline, note: r.note,
+        level: r.level, uncertain: r.uncertain, not_assessed_reason: r.not_assessed_reason, note: r.note,
       },
     });
   });
@@ -104,7 +102,7 @@ export const floodLegend = (source) => (source === 'noah'
 export function floodTip(row, name) {
   const note = row.note ? `. ${escape(row.note)}.` : '';
   if (!row.level) return `${name}: ${NOT_ASSESSED} (${escape(row.not_assessed_reason)})${note}`;
-  return [`${name}: ${FLOOD_WORD[row.level]}`, row.uncertain && 'Uncertain', row.estimated_outline && 'Estimated outline']
+  return [`${name}: ${FLOOD_WORD[row.level]}`, row.uncertain && 'Uncertain']
     .filter(Boolean).join(' · ') + note;
 }
 

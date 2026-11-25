@@ -19,12 +19,11 @@ import { hazardIconPath, hazardColor, SEVERITY } from './hazardInfo';
  *   onToggleOutlines()
  *   showPuroks          whether the purok outlines inside each barangay are shown
  *   onTogglePuroks()
- *   puroksEstimated     true while any purok outline is an estimate
  */
 
 export default function LayerControl({
   types, active, onToggle, onAll, onNone, failed, onRetry, showOutlines, onToggleOutlines,
-  showPuroks, onTogglePuroks, puroksEstimated,
+  showPuroks, onTogglePuroks,
 }) {
   const allOn = types.length > 0 && types.every((t) => active.has(t.name));
   const noneOn = active.size === 0;
@@ -40,10 +39,7 @@ export default function LayerControl({
       />
       <label htmlFor="pm-layer-puroks">
         Purok outlines
-        <small>
-          Select a barangay to see its puroks
-          {puroksEstimated && '. Estimated until official boundaries arrive'}
-        </small>
+        <small>Select a barangay to see its puroks</small>
       </label>
     </div>
   );
