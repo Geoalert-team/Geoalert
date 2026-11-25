@@ -15,7 +15,7 @@ from tests.fire_model_file import model_files
 from tests.fire_setup import FireSetupMixin
 
 NOT_TRAINED = 'The fire model has not been trained yet.'
-FORECAST_ONLY = 'Only fire and flood have prediction models for now.'
+FORECAST_ONLY = 'Only fire, flood and landslide have prediction models.'
 
 
 @override_settings(HAZARD_LOG_WRITER=False)
@@ -34,12 +34,13 @@ class ForecastApiTests(FireSetupMixin, TestCase):
         self.assertEqual({row['hazard_type'] for row in r.data['results']}, {'Fire'})
         self.assertNotIn('combined', r.data)
 
-    def test_landslide_is_a_400_and_flood_is_accepted(self):
-        for query in ('?hazards=Landslide', '?hazard_type_name=Landslide', '?hazards=Fire,Landslide'):
+    def test_unknown_names_are_a_400_and_flood_and_landslide_are_accepted(self):
+        for query in ('?hazards=Tsunami', '?hazard_type_name=Tsunami', '?hazards=Fire,Tsunami'):
             r = self.client.get('/api/history/forecast/' + query)
             self.assertEqual(r.status_code, 400, query)
             self.assertEqual(r.data['error'], FORECAST_ONLY, query)
-        for query in ('?hazards=Flood', '?hazards=Fire,Flood', '?hazard_type_name=flood'):
+        for query in ('?hazards=Flood', '?hazards=Fire,Flood', '?hazard_type_name=flood', '?hazards=Landslide',
+                      '?hazards=Fire,Flood,Landslide', '?hazard_type_name=landslide'):
             self.assertEqual(self.client.get('/api/history/forecast/' + query).status_code, 200, query)
 
     def test_fire_any_case_is_accepted(self):
@@ -58,12 +59,20 @@ class ForecastApiTests(FireSetupMixin, TestCase):
         self.assertEqual(r.data['unavailable_hazards'], ['Fire'])
         self.assertEqual(r.data['purok_results'], [])
 
-    def test_accuracy_has_fire_then_flood(self):
+    # Final review B4 (ruling R49): flood and landslide have shipped, so the basis line no longer says they are
+    # being rebuilt; fire's sentence is kept word for word
+    def test_the_basis_before_fire_is_trained_names_only_fire(self):
+        with model_files(None):
+            r = self.client.get('/api/history/forecast/?hazards=Fire')
+        self.assertEqual(r.data['basis']['method'],
+                         "Fire's prediction model is being rebuilt, so no chances are shown until it is trained.")
+
+    def test_accuracy_has_fire_then_flood_then_landslide(self):
         with model_files(None):
             r = self.client.get('/api/history/forecast/accuracy/')
         self.assertEqual(r.status_code, 200)
         hazards = r.data['hazards']
-        self.assertEqual([h['hazard'] for h in hazards], ['Fire', 'Flood'])
+        self.assertEqual([h['hazard'] for h in hazards], ['Fire', 'Flood', 'Landslide'])
         self.assertEqual(hazards[0]['status'], 'unavailable')
         self.assertEqual(hazards[0]['kind'], 'fire_purok')
         self.assertEqual(hazards[0]['reason'], NOT_TRAINED)

@@ -1,3 +1,5 @@
+import { FLOOD_WORD } from '../components/Forecast/forecastLevels';
+
 /**
  * Plain-language lines about one spot on the map: how high the ground is,
  * how far above the nearest place water drains to, the nearest named river
@@ -18,8 +20,8 @@ const HALF_METRES_BELOW_M = 5;
 const MAX_STATED_M = 10;
 const M_PER_DEG_LAT = 111320;
 
-// The raster layers; flood is not one: it comes from the flood model (describeFloodAtSpot)
-const HAZARDS = [['landslide', 'Landslide'], ['fire', 'Fire']];
+// The raster layers; flood and landslide are not: they come from their models (describeSusceptibilityAtSpot)
+const HAZARDS = [['fire', 'Fire']];
 
 /**
  * { ground, waterway } for a readSpot() result; either is null when there
@@ -93,21 +95,17 @@ export function formatDistance(m) {
   return tens < 1000 ? `${tens} m` : `${(m / 1000).toFixed(1)} km`;
 }
 
-const FLOOD_AT_SPOT = {
-  Red: 'High flood susceptibility',
-  Orange: 'Moderate flood susceptibility',
-  Green: 'Low flood susceptibility (within the assessed floodplain)',
-};
-
 /**
- * "This spot"'s flood line from the flood model: the level of the purok area
- * holding the spot, or why there is none. flood = { available, reason, level,
- * not_assessed_reason, name } (name: the area's), or null for no line.
+ * "This spot"'s susceptibility line from a model: the level of the purok area holding the spot, or why
+ * there is none. entry = { available, reason, level, not_assessed_reason, name, note } (name: the
+ * area's), or null for no line; label 'Flood' or 'Landslide'; words that hazard's level words.
  */
-export function describeFloodAtSpot(flood) {
-  if (!flood) return null;
-  if (!flood.available) return `Flood: unavailable (${flood.reason})`;
-  if (!flood.level) return `Flood: Not assessed yet (${flood.not_assessed_reason || 'outside every purok area'})`;
-  const note = flood.note ? `. ${flood.note}.` : '';
-  return `Flood: ${FLOOD_AT_SPOT[flood.level]} (${flood.name})${note}`;
+export function describeSusceptibilityAtSpot(entry, label, words) {
+  if (!entry) return null;
+  if (!entry.available) return `${label}: unavailable (${entry.reason})`;
+  if (!entry.level) return `${label}: Not assessed yet (${entry.not_assessed_reason || 'outside every purok area'})`;
+  const note = entry.note ? `. ${entry.note}.` : '';
+  return `${label}: ${words[entry.level]} (${entry.name})${note}`;
 }
+
+export const describeFloodAtSpot = (flood) => describeSusceptibilityAtSpot(flood, 'Flood', FLOOD_WORD);

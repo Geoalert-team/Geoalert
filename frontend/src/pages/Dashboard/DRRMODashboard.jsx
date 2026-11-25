@@ -755,7 +755,7 @@ export default function DRRMODashboard() {
               <h2>Likely fires</h2>
               <p>
                 Barangays the fire model rates most likely to have a fire: next month to start, or pick a
-                month, a month and year, or a date. Flood and landslide predictions are being rebuilt.{' '}
+                month, a month and year, or a date. Flood and landslide susceptibility is on the map.{' '}
                 <Link to={MODELS_PATH}>How the prediction models work</Link>
               </p>
             </div>

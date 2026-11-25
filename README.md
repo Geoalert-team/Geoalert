@@ -123,10 +123,15 @@ Rerun both after a BFP import or a purok reload: if the purok map changed since 
 fire shows "unavailable" with the reason until they are rerun. Until the first training
 run, fire shows "The fire model has not been trained yet."
 
-Landslide prediction and the Rain watch ("Next 3 days") were removed on 2026-11-22 and
-will be rebuilt later; asking the forecast for landslide is a 400. Past hazards, the History
+The Rain watch ("Next 3 days") was removed on 2026-11-22 and will be rebuilt later;
+landslide prediction came back as susceptibility by purok (the section below). Past hazards, the History
 page and every history record are unchanged. Nothing was dropped from the database (the
 rainwatch tables and hazard_prediction_log are still there, unused).
+
+Design: docs/design/specs/2026-11-22-fire-purok-model-design.md. Plan:
+docs/design/plans/2026-11-22-fire-purok-model.md. Background and the data checks behind
+it: docs/research/2026-11-22-fire-purok-prediction-audit.md. Data credits:
+backend/apps/history/data/ATTRIBUTION.md.
 
 --------------------------------------------------------------------------------
 Hazard prediction: flood susceptibility by purok
@@ -155,17 +160,48 @@ floods, or when UP NOAH publishes new maps. Design:
 docs/design/specs/2026-11-24-flood-susceptibility-model-design.md. Evidence:
 docs/research/2026-11-24-flood-prediction-assessment.md.
 
-Design: docs/design/specs/2026-11-22-fire-purok-model-design.md. Plan:
-docs/design/plans/2026-11-22-fire-purok-model.md. Background and the data checks behind
-it: docs/research/2026-11-22-fire-purok-prediction-audit.md. Data credits:
-backend/apps/history/data/ATTRIBUTION.md.
+--------------------------------------------------------------------------------
+Landslide predictive analytics
+
+With Landslide ticked, "Likely by month" fills each purok by its landslide susceptibility:
+Red (high), Orange (moderate), Green (low) or grey ("Not assessed yet", with the reason).
+It shows how prone the ground is to sliding, not whether a landslide is coming, and it is
+the same in every month. A machine-learning model learns it from where landslides started
+after Philippine typhoons (NASA's COOLR "new events" inventories, mapped from satellite
+images after recent typhoons, and the Mangkhut inventory at Itogon) and is applied to
+Talisay's terrain, land cover and roads; if it fails its tests, UP NOAH's landslide hazard
+map is shown instead, labelled as such. NASA's Global Landslide Catalog is a test only: its
+points in Talisay are shown on the report and never trained on. History is unchanged.
+
+Run on a developer machine, never on the server:
+
+python manage.py build_landslide_training  (the typhoon landslides and their "no landslide" ground)
+python manage.py build_landslide_features  (Talisay's terrain, land cover and roads)
+python manage.py train_landslide_model     (writes the model and report to backend/apps/history/data/)
+
+The shipped table was built with `build_landslide_training --philippines-only` (Egay, Paeng,
+Agaton and Mangkhut; the 19 world events left out to finish sooner, so the world test did not
+run). The tiles already built stay in the git-ignored backend/.hazard_cache on the machine that
+built them, so a full rebuild there without the option resumes from them; then rerun
+train_landslide_model.
+
+train_landslide_model needs NASA's Global Landslide Catalog export as
+backend/.hazard_cache/nasa_global_landslide_catalog.csv. Its licence is unstated, so it stays
+private in the git-ignored cache and is never committed; without it the command stops
+before training.
+
+Sources: NASA COOLR (CC BY 4.0), Abanco and Jones 2023 (Open Government Licence), UP NOAH
+(ODbL), Esri / Impact Observatory land cover (CC BY 4.0), Copernicus DEM, OpenStreetMap
+and Microsoft building footprints (ODbL). Design:
+docs/design/specs/2026-11-24-landslide-susceptibility-model-design.md.
 
 --------------------------------------------------------------------------------
 Automatic retraining
 
 GitHub retrains the models by itself (.github/workflows/model-retrain.yml): fire at
-03:17 Manila on the 2nd of each month, flood at 03:17 Manila on 5 January (not on the
-hour: GitHub may delay or drop runs scheduled at :00). The job runs
+03:17 Manila on the 2nd of each month, flood at 03:17 Manila on 5 January and landslide at
+03:17 Manila on 6 January (not on the hour: GitHub may delay or drop runs scheduled at
+:00). The job runs
 on GitHub's throw-away runner with a database of its own, never the shared one. It reads
 its training data from the backend with a token, trains, and posts the attempt back. The
 backend keeps every attempt (Predictive models tab, "Model updates") and puts a new model
@@ -173,6 +209,14 @@ live only when it does at least as well as the one in use. It needs the model_fi
 (migration history 0012) on the server. Scheduled runs happen only from main. In a public
 repository, GitHub turns scheduled workflows off after 60 days without repository
 activity; if the runs stop, turn the workflow back on in the Actions tab.
+
+The landslide run only adds GeoAlert's own located landslides to the outside training
+data; the outside-trained model never changes. It tries once there are at least 30
+located spots in at least 3 barangays; below that it saves "Not tried" and the map stays
+as it is. Its job may take up to 360 minutes (fire and flood: 120), and it stops itself
+after 330 minutes with a "Failed" attempt, so a run that is too slow is still recorded.
+It needs migrations history 0013 (the landslide log) and 0014 (model_fit accepts
+landslide) on the server.
 
 Set up once, with one long random token (never write it in a file):
 
@@ -185,13 +229,14 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
                       (https://geoalert-rvqc.onrender.com)
   MODEL_JOB_TOKEN   = the same token
 
-To run it by hand: Actions > Model retraining > Run workflow, then pick fire or flood.
+To run it by hand: Actions > Model retraining > Run workflow, then pick fire, flood or
+landslide.
 Tick "Dry run" to train and print the result without posting anything. A dry run on a
 laptop (set MODEL_JOB_API_URL and MODEL_JOB_TOKEN in the terminal first):
 
 python manage.py run_model_job --hazard fire --dry-run
 
-The flood run loads the purok outlines only into an empty database with
+The flood and landslide runs load the purok outlines only into an empty database with
 MODEL_JOB_SCRATCH_DB=true, which only the workflow sets. On a laptop, once there are
 enough spots to try, it stops with an error before training rather than write to the
 shared database. A run that fails posts a "Failed"

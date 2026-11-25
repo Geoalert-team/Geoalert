@@ -15,7 +15,7 @@ const RESULT_LABEL = {
   skipped: 'Skipped',
   failed: 'Failed',
 };
-const HAZARD_LABEL = { fire: 'Fire', flood: 'Flood' };
+const HAZARD_LABEL = { fire: 'Fire', flood: 'Flood', landslide: 'Landslide' };
 
 const formatDay = (iso) => {
   const d = new Date(iso);

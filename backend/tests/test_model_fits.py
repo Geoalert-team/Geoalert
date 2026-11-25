@@ -11,6 +11,7 @@ from django.test import RequestFactory, TestCase
 
 from apps.barangays.models import Purok
 from apps.history import model_fits
+from apps.history.model_fits import LANDSLIDE_SEASON_LOCK, record_attempt
 from apps.history.models import ModelFit
 
 
@@ -34,6 +35,11 @@ MANILA = ZoneInfo('Asia/Manila')
 def in_month(month):
     """Run as on the 5th of `month` 2027 in Manila (the server's clock for the flood season lock)."""
     return mock.patch('django.utils.timezone.localtime', return_value=datetime(2027, month, 5, 3, 17, tzinfo=MANILA))
+
+
+def freeze_manila(year, month, day):
+    """Run as on that day in Manila (the server's clock for the season locks)."""
+    return mock.patch('django.utils.timezone.localtime', return_value=datetime(year, month, day, 3, 17, tzinfo=MANILA))
 
 
 class ModelFitTests(TestCase):
@@ -78,7 +84,7 @@ class ModelFitTests(TestCase):
             p.update(changes)
             return p
         cases = [
-            bad(hazard='landslide'),
+            bad(hazard='quake'),  # landslide is a hazard since history 0014
             bad(result='won'),
             bad(reason=''),
             bad(reason='x' * 501),
@@ -156,6 +162,55 @@ class ModelFitTests(TestCase):
                 fit = model_fits.record_attempt(payload(hazard='flood'), 'v1')
                 self.assertEqual(fit.is_live, month <= 5)
                 self.assertEqual(fit.result, 'switched' if month <= 5 else 'kept')
+
+    def test_switch_outside_january_to_may_is_kept(self):  # model_fits.record_attempt, Manila July
+        self.switched_landslide_payload = payload(hazard='landslide', outlines='v')
+        in_use = payload(hazard='landslide', outlines='v')
+        in_use['model']['version'] = in_use['report']['version'] = 'x@0'
+        with freeze_manila(2027, 2, 1):
+            live = model_fits.record_attempt(in_use, 'v', check=None)
+        with freeze_manila(2027, 7, 1):
+            fit = record_attempt(self.switched_landslide_payload, 'v', check=None)
+        self.assertEqual((fit.result, fit.reason, fit.is_live), ('kept', LANDSLIDE_SEASON_LOCK, False))
+        fit.refresh_from_db()
+        self.assertEqual(fit.model['version'], 'x@1')
+        self.assertEqual(model_fits.live_fit('landslide').pk, live.pk)  # the live map unchanged
+        self.assertEqual(LANDSLIDE_SEASON_LOCK, 'Landslide maps change only between January and May')
+
+    def test_the_landslide_lock_runs_june_to_december(self):
+        for month in range(1, 13):
+            ModelFit.objects.all().delete()
+            with self.subTest(month=month), in_month(month):
+                fit = model_fits.record_attempt(payload(hazard='landslide'), 'v1')
+                self.assertEqual(fit.is_live, month <= 5)
+                self.assertEqual((fit.result, fit.reason), ('switched', 'r') if month <= 5
+                                 else ('kept', LANDSLIDE_SEASON_LOCK))
+
+    def test_a_landslide_switch_does_not_touch_the_flood_map(self):
+        with in_month(3):
+            flood = model_fits.record_attempt(payload(hazard='flood'), 'v1')
+            landslide = model_fits.record_attempt(payload(hazard='landslide'), 'v1')
+        self.assertEqual(model_fits.live_fit('flood').pk, flood.pk)
+        self.assertEqual(model_fits.live_fit('landslide').pk, landslide.pk)
+
+    def test_the_database_takes_landslide_and_refuses_another_hazard(self):
+        ModelFit.objects.create(hazard='landslide', result='not_tried', reason='2 of 30 …')
+        ModelFit.objects.create(hazard='landslide', result='switched', reason='r', is_live=True)
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                ModelFit.objects.create(hazard='landslide', result='switched', reason='r', is_live=True)
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                ModelFit.objects.create(hazard='quake', result='not_tried', reason='r')
+
+    def test_site_check_reads_a_landslide_fit_as_the_site_does(self):
+        from apps.history import landslide_purok
+
+        with mock.patch.object(landslide_purok, 'parse', return_value='cannot read') as parse:
+            self.assertEqual(model_fits.site_check('landslide', {'m': 1}, {'r': 1}, 'v1'), 'cannot read')
+        parse.assert_called_once_with({'m': 1}, {'r': 1}, 'v1')
+        with mock.patch.object(landslide_purok, 'parse', return_value=object()):
+            self.assertIsNone(model_fits.site_check('landslide', {}, {}, 'v1'))
 
     def test_fire_switches_in_any_month(self):
         for month in range(1, 13):

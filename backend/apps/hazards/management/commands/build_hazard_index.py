@@ -9,7 +9,7 @@ from apps.hazards import susceptibility
 
 class Command(BaseCommand):
     help = (
-        'Build the flood, landslide and fire susceptibility maps shown on the public map, '
+        'Build the fire susceptibility map shown on the public map, '
         'from Copernicus elevation data and OpenStreetMap, clipped to the barangay boundaries.'
     )
 

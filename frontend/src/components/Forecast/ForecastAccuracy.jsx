@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { historyApi } from '../../api/historyApi';
-import { FIRE_CREDIT, FIRE_MODEL_LABEL, FLOOD_WORD, NOT_ASSESSED, SEVERITY_WORD } from './forecastLevels';
+import { FIRE_CREDIT, FIRE_MODEL_LABEL, FLOOD_WORD, LANDSLIDE_WORD, NOT_ASSESSED, SEVERITY_WORD } from './forecastLevels';
 import './forecast.css';
 
 /**
  * How the fire model did on fires it never saw, and how the flood
  * susceptibility model did on floods it never saw (backend
  * views.ForecastAccuracyView, which serves train_fire_model's and
- * train_flood_model's reports). Landslide is being rebuilt. An entry the
+ * train_flood_model's reports) and how the landslide susceptibility model did
+ * on landslides it never saw (train_landslide_model's report). An entry the
  * backend cannot give is shown as unavailable with its reason. It always
  * reads real records, so it takes no filters from the page.
  */
@@ -448,7 +449,425 @@ export function FloodModelReport({ report }) {
   );
 }
 
-/** One hazard's entry on the card: its reason when unavailable, else the fire or the flood report */
+// ---- Landslide (backend landslide_run.run's report, served by views.landslide_accuracy_entry) ----
+
+/** Shown when new located landslides keep falling outside Red and Orange (backend landslide_purok.UNDER_REVIEW) */
+export const LANDSLIDE_UNDER_REVIEW = 'Under review: recent landslides fall outside the flagged areas';
+
+const landslideLevelWord = (level) => LANDSLIDE_WORD[level] || NOT_ASSESSED;
+
+// backend landslide_training's candidates, simplest first, and the benchmark they must beat
+const LANDSLIDE_FAMILY = {
+  logistic_regression: 'Logistic regression',
+  xgboost: 'XGBoost',
+  neural_network: 'Neural network',
+  noah_only: "UP NOAH's map on its own (the benchmark)",
+};
+
+// The clues whose values are held to the training range, in words (backend landslide_features.CLIP_COLUMNS)
+const CLIPPED_CLUE = {
+  dist_road_m: 'distance to a road',
+  lc_trees: 'tree cover',
+  lc_rangeland: 'rangeland',
+  lc_crops: 'cropland',
+  lc_built: 'built-up land',
+  lc_bare: 'bare ground',
+};
+
+const EVENT_REGION = { ph: 'Philippines', world: 'Elsewhere in the world' };
+const capitalise = (word) => `${word.charAt(0).toUpperCase()}${word.slice(1)}`;
+const SHORT_MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const SMALL_WORDS = new Set(['of', 'the', 'and']);
+/**
+ * An event key in words: 'egay' -> 'Egay'; a world event's key, its country and date
+ * (backend landslide_inventories: 'south_africa_20220411') -> 'South Africa, 11 Apr 2022'
+ */
+const eventName = (key) => {
+  if (!key) return '—';
+  const text = String(key);
+  const world = text.match(/^(.+)_(\d{4})(\d{2})(\d{2})$/);
+  const month = world ? Number(world[3]) : 0;
+  if (!world || month < 1 || month > 12) return capitalise(text);
+  const place = world[1].split('_').filter(Boolean)
+    .map((w, i) => (i > 0 && SMALL_WORDS.has(w) ? w : capitalise(w))).join(' ');
+  return `${place}, ${Number(world[4])} ${SHORT_MONTH[month - 1]} ${world[2]}`;
+};
+const foldName = (f) => (f === 'world' ? 'World' : eventName(f));
+
+function LandslideSincePublishing({ since }) {
+  if (!since) return null;
+  return (
+    <>
+      <h4>Since publishing</h4>
+      {since.under_review && <p className="fc-note"><strong>{LANDSLIDE_UNDER_REVIEW}</strong></p>}
+      <p className="fc-note">
+        {since.n
+          ? `${since.in_red_orange} of ${since.n} located ${since.n === 1 ? 'landslide' : 'landslides'} since the `
+            + 'levels were published fell in Red or Orange.'
+          : 'No located landslide has been recorded since the levels were published.'}
+      </p>
+      {since.misses?.length > 0 && (
+        <p className="fc-note">
+          Outside Red and Orange: {since.misses.map((m) => `${m.day} (${m.purok}, ${m.level})`).join(', ')}.
+        </p>
+      )}
+    </>
+  );
+}
+
+function LandslideTrainingSet({ training, own }) {
+  if (!training) return null;
+  const world = training.world || {};
+  // In own mode the counts include GeoAlert's own located landslides and their "no" points
+  const from = own ? "from typhoons in the Philippines, GeoAlert's own landslides and" : 'from typhoons in the Philippines and';
+  return (
+    <>
+      <h4>The training set</h4>
+      <p className="fc-note">
+        {`${count(training.slides)} landslides and the ground around them that did not slide (${count(training.rows)} `
+          + `rows in all) that the chosen training set holds, ${from}, if they joined, events elsewhere in the world.`}
+      </p>
+      <div className="fc-table-wrap">
+        <table className="fc-table fc-table-whole">
+          <thead>
+            <tr>
+              <th scope="col">Event</th><th scope="col">Where</th><th scope="col">Landslides</th>
+              <th scope="col">Ground that did not slide</th><th scope="col">Used to train</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(training.events || []).map((e) => (
+              <tr key={e.event}>
+                <td>{eventName(e.event)}</td>
+                <td>{EVENT_REGION[e.region] || "GeoAlert's own located landslides"}</td>
+                <td>{count(e.slides)}</td>
+                <td>{count(e.no_points)}</td>
+                <td>{yesNo(e.used)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {world.verdict && <p className="fc-note">{world.verdict}</p>}
+      {world.rule && <p className="fc-note">{world.rule}</p>}
+    </>
+  );
+}
+
+/**
+ * How many training rows kept the road clue (spec 3.3), and the events whose mapped area had too few
+ * roads to keep it (backend landslide_run's report['road_check']); a missing key shows nothing
+ */
+function LandslideRoadCheck({ check }) {
+  const kept = check?.rows != null && check?.rows_with_road != null;
+  const without = check?.events_without_road || [];
+  if (!kept && !without.length) return null;
+  return (
+    <p className="fc-note">
+      {kept && `${count(check.rows_with_road)} of ${count(check.rows)} training rows kept the road clue.`}
+      {kept && without.length > 0 && ' '}
+      {without.length > 0
+        && "No road clue for the events whose mapped area has under a tenth of Talisay's road density on steep ground: "
+          + `${without.map(eventName).join('; ')}.`}
+    </p>
+  );
+}
+
+/**
+ * The share of the held-out landslides the cut-offs in use put in Red, and in Red and Orange together,
+ * and whether the 90% target was reached (spec 5.2 step 5; flood_rules.Cutoffs); a missing key shows nothing
+ */
+function LandslideRecall({ cut, own }) {
+  if (cut?.red_recall == null || cut?.orange_recall == null) return null;
+  // A target not reached is rounded down, so 0.8996 reads 89%, never the 90% it missed (the small
+  // epsilon keeps a whole percent whole: 0.57 * 100 is 56.99999999999999)
+  const together = cut.target_reached === false
+    ? `${Math.floor(cut.orange_recall * 100 + 1e-9)}%` : fmt(cut.orange_recall, 0, true);
+  return (
+    <p className="fc-note">
+      {`At the cut-offs in use, Red holds ${fmt(cut.red_recall, 0, true)} of the held-out landslides, and Red and `
+        + `Orange together ${together}.`}
+      {cut.target_reached === false
+        && ' The 90% target for Red and Orange was not reached: the scores tie at the bottom, so Orange stops at the '
+          + 'last distinct score.'}
+      {own && " GeoAlert's own landslides count ten times in these shares."}
+    </p>
+  );
+}
+
+function LandslideCandidates({ report }) {
+  const candidates = report.candidates || [];
+  const rows = candidates.flatMap((c) => (c.folds || []).map((f) => ({ ...f, name: c.name })));
+  // In own mode GeoAlert's own landslides are a held-out fold too
+  const heldOut = `a Philippine typhoon${report.source === 'geoalert' ? " or GeoAlert's own landslides" : ''}`;
+  return (
+    <>
+      <h4>The candidates and the rule</h4>
+      <p className="fc-note">
+        {`Each candidate was scored on landslides it never saw, one held-out event at a time: ${heldOut}. AUC 0.5 is `
+          + 'chance. The neural network is kept unless a simpler model is clearly better.'}
+      </p>
+      <div className="fc-table-wrap">
+        <table className="fc-table fc-table-whole fc-candidates">
+          <thead>
+            <tr><th scope="col">Model</th><th scope="col">AUC (95% interval)</th></tr>
+          </thead>
+          <tbody>
+            {candidates.map((c) => (
+              <tr key={c.name}>
+                <td>{LANDSLIDE_FAMILY[c.name] || c.name}{c.name === report.choice?.chosen ? ' (chosen)' : ''}</td>
+                <td>{scoreText({ value: c.auc, low: c.lo, high: c.hi }, 2, false)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {rows.length > 0 && (
+        <div className="fc-table-wrap">
+          <table className="fc-table fc-table-whole">
+            <caption className="fc-sub">{`AUC on each held-out event (${heldOut})`}</caption>
+            <thead>
+              <tr>
+                <th scope="col">Model</th><th scope="col">Event</th><th scope="col">Landslides</th>
+                <th scope="col">AUC (95% interval)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((f) => (
+                <tr key={`${f.name}-${f.fold}`}>
+                  <td>{LANDSLIDE_FAMILY[f.name] || f.name}</td>
+                  <td>{foldName(f.fold)}</td>
+                  <td>{count(f.slides)}</td>
+                  <td>{scoreText({ value: f.auc, low: f.lo, high: f.hi }, 2, false)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {report.choice?.verdict && <p className="fc-note"><strong>{report.choice.verdict}</strong></p>}
+      {report.choice?.rule && <p className="fc-note">{report.choice.rule}</p>}
+    </>
+  );
+}
+
+function LandslideAcceptance({ acceptance }) {
+  const gates = acceptance?.gates || {};
+  const labels = acceptance?.labels || {};
+  const details = acceptance?.details || {};
+  return (
+    <>
+      <h4>The four checks</h4>
+      <ul className="fc-note">
+        {Object.keys(gates).map((g) => (
+          <li key={g}>{`${labels[g] || g}: ${gates[g] ? 'passed' : 'failed'}. ${details[g] || ''}`.trim()}</li>
+        ))}
+      </ul>
+      {(acceptance?.reasons || []).map((r) => <p key={r} className="fc-note">{r}</p>)}
+    </>
+  );
+}
+
+function LandslideTest({ report, fallback, own }) {
+  const test = report.talisay_test || {};
+  const check = test.barangay_check || {};
+  const catalogue = test.catalogue || [];
+  const held = report.temporal_test?.held_back || [];
+  const catalogueCounts = ['Red', 'Orange', 'Green', null].map((lv) => [
+    lv, catalogue.filter((c) => ((fallback ? c.published_level : c.level) || null) === lv).length,
+  ]).filter(([, n]) => n > 0);
+  return (
+    <>
+      <h4>The Talisay test: landslides it never saw</h4>
+      {fallback && (
+        <p className="fc-note">
+          These checks scored the machine-learning model, which is not in use; the last column gives each purok&apos;s
+          level on the map in use.
+        </p>
+      )}
+      {own && held.length > 0 && (
+        <div className="fc-table-wrap">
+          <table className="fc-table fc-table-whole">
+            <caption className="fc-sub">{`The ${report.temporal_test.season} wet season's landslide spots, held back`}</caption>
+            <thead><tr><th scope="col">Spot</th><th scope="col">Level of its area</th></tr></thead>
+            <tbody>
+              {held.map((p, i) => (
+                // eslint-disable-next-line react/no-array-index-key -- two spots can share a purok
+                <tr key={i}><td>{i + 1}</td><td>{landslideLevelWord(p.level)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {!own && test.puroks?.length > 0 && (
+        <div className="fc-table-wrap">
+          <table className="fc-table fc-table-whole">
+            <caption className="fc-sub">Talisay puroks with a located landslide</caption>
+            <thead>
+              <tr>
+                <th scope="col">Barangay</th><th scope="col">Purok</th>
+                <th scope="col">{fallback ? 'Machine-learning model (not in use)' : 'Level of its area'}</th>
+                {fallback && <th scope="col">Map in use</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {test.puroks.map((p, i) => (
+                // eslint-disable-next-line react/no-array-index-key -- a purok id can be null
+                <tr key={i}>
+                  <td>{p.barangay}</td>
+                  <td>{p.name}</td>
+                  <td>{landslideLevelWord(p.level)}</td>
+                  {fallback && <td>{landslideLevelWord(p.published_level)}</td>}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {catalogueCounts.length > 0 && (
+        <p className="fc-note">
+          {`Landslides in NASA's Global Landslide Catalog inside Talisay, by the level of their area${fallback ? ' on the map in use' : ''}: ${catalogueCounts
+            .map(([lv, n]) => `${landslideLevelWord(lv)} ${n}`).join('; ')}.`}
+        </p>
+      )}
+      {check.barangays?.length > 0 && (
+        <>
+          <h4>The barangay check{fallback ? ' (the machine-learning model, not in use)' : ''}</h4>
+          <div className="fc-table-wrap">
+            <table className="fc-table fc-table-whole">
+              <thead>
+                <tr>
+                  <th scope="col">Barangay</th><th scope="col">Located landslides</th>
+                  <th scope="col">Scoring points</th><th scope="col">In Red or Orange</th>
+                </tr>
+              </thead>
+              <tbody>
+                {check.barangays.map((b) => (
+                  <tr key={b.barangay_id}>
+                    <td>{b.barangay}</td>
+                    <td>{count(b.records)}</td>
+                    <td>{count(b.points)}</td>
+                    <td>{fmt(b.share_red_orange, 0, true)}</td>
+                  </tr>
+                ))}
+                {check.rest && (
+                  <tr>
+                    <td>The rest of the city</td>
+                    <td>—</td>
+                    <td>{count(check.rest.points)}</td>
+                    <td>{fmt(check.rest.share_red_orange, 0, true)}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+function LandslideRange({ range, fallback }) {
+  if (!range) return null;
+  const clipped = Object.entries(range.clipped || {}).filter(([, n]) => n > 0);
+  return (
+    <>
+      <h4>Ground like the training areas{fallback ? ' (the machine-learning model, not in use)' : ''}</h4>
+      <p className="fc-note">
+        {`${count(range.in_range)} of ${count(range.points)} scoring points (${fmt(range.share, 0, true)}) sit on `
+          + `ground like the training areas; ${count(range.unlike_puroks)} puroks are not assessed because their `
+          + 'ground is unlike it.'}
+        {clipped.length > 0
+          && ` Held to the training range: ${clipped.map(([c, n]) => `${CLIPPED_CLUE[c] || c} (${count(n)})`)
+            .join(', ')}.`}
+      </p>
+    </>
+  );
+}
+
+/**
+ * The landslide susceptibility model's report (train_landslide_model), in
+ * order: where the levels come from, the training set and how many of its rows
+ * kept the road clue, the candidates and rule 2's verdict, the four checks, the
+ * Talisay test, how much of the city is on ground like the training areas, the
+ * classes and the recall their cut-offs reach, how it has done since
+ * publishing, its limits and the credits.
+ */
+export function LandslideModelReport({ report }) {
+  const fallback = report.source === 'noah';
+  const own = report.source === 'geoalert';
+  const chosen = LANDSLIDE_FAMILY[report.choice?.chosen] || report.choice?.chosen;
+  const levels = report.classes?.levels || {};
+  const notAssessed = Object.entries(report.classes?.not_assessed || {});
+  const model = chosen ? `the machine-learning model (${chosen})` : 'the machine-learning model';
+  const version = report.version ? `, version ${report.version}` : '';
+  let inUse = `In use: ${model}${version}.`;
+  if (fallback) {
+    inUse = `In use: the NOAH fallback${version}. ${model.charAt(0).toUpperCase()}${model.slice(1)} did not pass `
+      + "every check, so the levels come from UP NOAH's landslide hazard map, classed by where landslides started "
+      + 'after Philippine typhoons.';
+  } else if (own) {
+    inUse = `In use: ${model} trained on typhoon landslides and GeoAlert's own located landslide records${version}.`;
+  }
+  return (
+    <section className="fc-accuracy">
+      <h3>Landslide: susceptibility by purok</h3>
+      {report.basis && <p className="fc-sub">{report.basis}</p>}
+      <p className="fc-sub">
+        {inUse}
+        {report.built_at && ` Built ${report.built_at.slice(0, 10)}.`}
+      </p>
+      {fallback && report.fallback?.note && <p className="fc-note">{report.fallback.note}</p>}
+      {own && report.own_spots != null && (
+        <p className="fc-note">{`${count(report.own_spots)} of GeoAlert's own located landslide spots are in the training set.`}</p>
+      )}
+
+      <LandslideTrainingSet training={report.training_set} own={own} />
+      <LandslideRoadCheck check={report.road_check} />
+      <LandslideCandidates report={report} />
+      <LandslideAcceptance acceptance={report.acceptance} />
+      <LandslideTest report={report} fallback={fallback} own={own} />
+      <LandslideRange range={report.in_range} fallback={fallback} />
+
+      <h4>The levels</h4>
+      <div className="fc-table-wrap">
+        <table className="fc-table fc-table-whole">
+          <thead>
+            <tr><th scope="col">Level</th><th scope="col">Areas</th><th scope="col">Scoring points</th></tr>
+          </thead>
+          <tbody>
+            {['Red', 'Orange', 'Green'].filter((k) => levels[k]).map((k) => (
+              <tr key={k}>
+                <td>{LANDSLIDE_WORD[k]}</td>
+                <td>{count(levels[k].puroks)}</td>
+                <td>{count(levels[k].points)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {/* The cut-offs that ship: the fallback's when UP NOAH's map is in use */}
+      <LandslideRecall cut={fallback ? report.fallback?.cutoffs : report.cutoffs} own={own} />
+      {notAssessed.length > 0 && (
+        <p className="fc-note">
+          {`${NOT_ASSESSED}: ${notAssessed.map(([reason, n]) => `${reason} (${n})`).join('; ')}.`}
+        </p>
+      )}
+
+      <LandslideSincePublishing since={report.since_publishing} />
+
+      {report.limits?.length > 0 && (
+        <>
+          <h4>Limits</h4>
+          <ul className="fc-note">{report.limits.map((l) => <li key={l}>{l}</li>)}</ul>
+        </>
+      )}
+      {(report.credits || []).map((c) => <p key={c} className="fc-note">{c}</p>)}
+    </section>
+  );
+}
+
+/** One hazard's entry on the card: its reason when unavailable, else the fire, flood or landslide report */
 export function ForecastAccuracyEntry({ entry }) {
   if (entry.status === 'unavailable') {
     return (
@@ -458,6 +877,8 @@ export function ForecastAccuracyEntry({ entry }) {
       </section>
     );
   }
+  // Landslide is picked before the fire fallback, so its report never renders under a Fire heading
+  if (entry.kind === 'landslide_purok') return <LandslideModelReport report={entry} />;
   return entry.kind === 'flood_purok' ? <FloodModelReport report={entry} /> : <FireModelReport report={entry} />;
 }
 
@@ -477,14 +898,13 @@ export default function ForecastAccuracy() {
     <div className="fc">
       <h2>Model accuracy</h2>
       <p className="db-card-sub">
-        How the fire model did on fires it never saw, and the flood model on floods it never saw. Counting past
-        fires is only a comparison here, never the prediction.
+        How the fire model did on fires it never saw, the flood model on floods it never saw, and the landslide
+        model on landslides it never saw. Counting past fires is only a comparison here, never the prediction.
       </p>
       {error && <p className="db-error" role="alert">{error}</p>}
       {!error && !hazards && <p className="db-empty">Loading the accuracy check…</p>}
       {hazards && !hazards.length && <p className="db-empty">No real records to test a model on yet.</p>}
       {hazards?.map((entry) => <ForecastAccuracyEntry key={entry.hazard} entry={entry} />)}
-      {hazards && <p className="fc-note">Landslide predictions are being rebuilt.</p>}
     </div>
   );
 }

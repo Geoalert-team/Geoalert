@@ -1,16 +1,19 @@
 import * as levels from './forecastLevels';
 import {
-  FLOOD_WORD, FORECAST_DISCLAIMER, FORECAST_ONLY_NOTE, IN_TRAINING_NOTE, NOT_ASSESSED, aboutChanceText, chanceText,
-  floodLegend, floodTip, hazardsParam, isFireOnly, levelLabel, likelyKey, smallChanceText, unavailableNote,
+  FLOOD_WORD, FORECAST_DISCLAIMER, FORECAST_ONLY_NOTE, IN_TRAINING_NOTE, LANDSLIDE_WORD, NOT_ASSESSED, aboutChanceText,
+  chanceText, floodLegend, floodTip, hazardsParam, isFireOnly, landslideLegend, landslideTip, levelLabel, likelyKey,
+  LANDSLIDE_ON_MAP_NOTE, legendHeading, legendTitle, smallChanceText, susceptibilityNote, susceptibilityTip,
+  unavailableNote,
 } from './forecastLevels';
 import { purokLevel } from '../Map/purokLevels';
 
 // Fire and flood have prediction models (flood since 2026-11-24)
 test('hazardsParam asks for the ticked predicted hazards', () => {
-  expect(hazardsParam(new Set(['Landslide', 'Fire']))).toBe('Fire');
-  expect(hazardsParam(['Fire', 'Flood', 'Landslide'])).toBe('Fire,Flood');
+  expect(hazardsParam(new Set(['Landslide', 'Fire']))).toBe('Fire,Landslide');
+  expect(hazardsParam(['Fire', 'Flood', 'Landslide'])).toBe('Fire,Flood,Landslide');
   expect(hazardsParam(['Flood'])).toBe('Flood');
-  expect(hazardsParam(['Landslide'])).toBe('');
+  expect(hazardsParam(['Landslide'])).toBe('Landslide');
+  expect(hazardsParam(['Tsunami'])).toBe('');
   expect(hazardsParam([])).toBe('');
 });
 
@@ -64,11 +67,13 @@ test('the exact copy', () => {
   expect(FORECAST_DISCLAIMER).toBe(
     // Flood's source is named without claiming a trained model: the NOAH fallback may be what ships
     'Fire chances come from a model trained on past fires. Flood levels show where floods tend to reach, from UP '
-    + "NOAH's flood maps and recorded floods, and are the same in every month. Landslide "
-    + 'predictions are being rebuilt. '
+    + "NOAH's flood maps and recorded floods, and are the same in every month. Landslide levels show where "
+    // Final review FM9 (ruling R48): in model mode UP NOAH is never an input, so its maps are the alternative source
+    + "the ground tends to slide, from landslides mapped after past typhoons or from UP NOAH's landslide maps, and are "
+    + 'the same in every month. '
     + 'It is a heads-up for preparing, not a warning that a hazard is coming. Live alerts come only from the DRRMO.',
   );
-  expect(FORECAST_ONLY_NOTE).toBe('Only fire and flood have a prediction for now.');
+  expect(FORECAST_ONLY_NOTE).toBe('Pick fire, flood or landslide to see a prediction.');
   expect(IN_TRAINING_NOTE).toBe(
     'The model learned from this period; see the accuracy check for results on years it never saw.',
   );
@@ -186,4 +191,92 @@ test('flood words, legend and the not-assessed label', () => {
 test('likelyKey changes when the flood classes change', () => {
   const other = { ...both, flood_results: [{ ...both.flood_results[1], level: 'Green' }] };
   expect(likelyKey(both)).not.toBe(likelyKey(other));
+});
+
+// Landslide susceptibility in "Likely by month" (plan Task 12)
+test('hazardsParam asks for every ticked predicted hazard', () => {
+  expect(hazardsParam(['Landslide', 'Fire'])).toBe('Fire,Landslide');
+  expect(hazardsParam(['Fire', 'Flood', 'Landslide'])).toBe('Fire,Flood,Landslide');
+});
+
+test('three hazards: the highest level fills and each is named', () => {
+  const map = levels.purokLikelyLevels({
+    purok_results: [{ purok_id: 4, level: 'Orange', probability: 0.02 }],
+    flood_results: [{ purok_id: 4, level: null, uncertain: false, not_assessed_reason: 'Outside the surveyed floodplain' }],
+    landslide_results: [{ purok_id: 4, level: 'Red', uncertain: false, not_assessed_reason: '', estimated_outline: true }],
+  });
+  expect(purokLevel(map.get('4'), ['Fire', 'Flood', 'Landslide'])).toBe('Red');
+  expect(purokLevel(map.get('4'), ['Fire', 'Flood'])).toBe('Orange');
+  expect(map.get('4').Landslide).toEqual(expect.objectContaining({ level: 'Red', uncertain: false }));
+  expect(map.get('4').Landslide).not.toHaveProperty('estimated_outline');  // no "estimated outline" anywhere (c0834ac)
+  expect(landslideTip(map.get('4').Landslide, 'Landslide')).toBe('Landslide: High landslide susceptibility');
+  expect(floodTip(map.get('4').Flood, 'Flood')).toBe('Flood: Not assessed yet (Outside the surveyed floodplain)');
+  expect(purokLevel(map.get('4'), ['Landslide'])).toBe('Red');
+});
+
+test('landslide words, tips and legend', () => {
+  expect(LANDSLIDE_WORD).toEqual({
+    Red: 'High landslide susceptibility', Orange: 'Moderate landslide susceptibility', Green: 'Low landslide susceptibility',
+  });
+  expect(landslideTip({ level: 'Orange', uncertain: true }, 'Purok A')).toBe('Purok A: Moderate landslide susceptibility · Uncertain');
+  expect(landslideTip({ level: null, not_assessed_reason: 'No buildings or roads in this area' }, 'Purok A'))
+    .toBe('Purok A: Not assessed yet (No buildings or roads in this area)');
+  expect(landslideTip({ level: null, not_assessed_reason: '<b>x</b>' }, 'L')).toBe('L: Not assessed yet (&lt;b&gt;x&lt;/b&gt;)');
+  expect(susceptibilityTip({ level: 'Green' }, 'Flood', FLOOD_WORD))
+    .toBe('Flood: Low flood susceptibility (within the assessed floodplain)');
+  expect(landslideLegend('model')).toBe(
+    'Landslide: where the ground tends to slide (from a machine-learning model; the same in every month, not a forecast of a landslide)');
+  expect(landslideLegend('geoalert')).toBe(landslideLegend('model'));
+  expect(landslideLegend('noah')).toBe(
+    "Landslide: where the ground tends to slide (from UP NOAH's landslide hazard map; the same in every month, not a forecast of a landslide)");
+});
+
+test('each hazard block gives its own note, not the response top line', () => {
+  const likely = {
+    basis: { method: "Flood's basis sentence" },
+    flood: { available: true, source: 'model', basis: "Flood's basis sentence" },
+    landslide: { available: true, source: 'noah', basis: "Landslide's basis sentence" },
+  };
+  expect(susceptibilityNote(likely, 'Landslide')).toBe(landslideLegend('noah'));
+  expect(susceptibilityNote(likely, 'Flood')).toBe(floodLegend('model'));
+  expect(susceptibilityNote({ landslide: { available: false, reason: 'The landslide model has not been trained yet.' } }, 'Landslide'))
+    .toBe('Landslide is unavailable right now: The landslide model has not been trained yet.');
+  expect(susceptibilityNote({}, 'Landslide')).toBe('');
+});
+
+test('likelyKey changes with the landslide rows', () => {
+  const a = { landslide: { model_version: 'v1' }, landslide_results: [{ purok_id: 1, level: 'Red', uncertain: false }] };
+  const b = { landslide: { model_version: 'v1' }, landslide_results: [{ purok_id: 1, level: 'Green', uncertain: false }] };
+  expect(likelyKey(a)).not.toBe(likelyKey(b));
+});
+
+test('the landslide pointer and the legend heading', () => {
+  expect(LANDSLIDE_ON_MAP_NOTE).toBe('Landslide shows on the map\'s "Likely by month" view: where the ground tends to slide, the same in every month.');
+  expect(legendHeading('past', ['Fire'])).toBe('Past hazard levels');
+  expect(legendHeading('likely', [])).toBe('Likely fire levels');
+  expect(legendHeading('likely', ['Fire'])).toBe('Likely fire levels');
+  expect(legendHeading('likely', ['Fire', 'Flood'])).toBe('Likely fire and flood levels');
+  expect(legendHeading('likely', ['Flood'])).toBe('Flood susceptibility');
+  expect(legendHeading('likely', ['Landslide'])).toBe('Landslide susceptibility');
+  // Final review FM8: hazard names lower-case mid-phrase, as in the fire heading
+  expect(legendHeading('likely', ['Flood', 'Landslide'])).toBe('Flood and landslide susceptibility');
+  expect(legendHeading('likely', ['Fire', 'Flood', 'Landslide'])).toBe('Likely fire, flood and landslide levels');
+});
+
+// Final review F3: the legend's line under the heading is built from the ticked hazards, so flood's
+// wording before landslide (PublicMap at HEAD) comes back exactly and landslide reads in parallel
+test("the legend line keeps flood's old wording and names landslide the same way", () => {
+  // The old text, as PublicMap wrote it before landslide
+  expect(legendTitle(['Fire'], 'June')).toBe("Likely in June: each purok's fire level");
+  expect(legendTitle(['Fire', 'Flood'], 'June')).toBe("Likely in June: each purok's fire level; flood below");
+  expect(legendTitle(['Flood'], 'June')).toBe("Each purok's flood susceptibility, the same in every month");
+  // Landslide in parallel
+  expect(legendTitle(['Fire', 'Landslide'], 'June 2027')).toBe("Likely in June 2027: each purok's fire level; landslide below");
+  expect(legendTitle(['Fire', 'Flood', 'Landslide'], 'June')).toBe(
+    "Likely in June: each purok's fire level; flood and landslide below",
+  );
+  expect(legendTitle(['Landslide'], 'June')).toBe("Each purok's landslide susceptibility, the same in every month");
+  expect(legendTitle(['Flood', 'Landslide'], 'June')).toBe(
+    "Each purok's flood and landslide susceptibility, the same in every month",
+  );
 });

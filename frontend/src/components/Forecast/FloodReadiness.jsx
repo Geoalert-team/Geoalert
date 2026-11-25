@@ -22,6 +22,12 @@ function spotsLine(own) {
     + `${own.barangays_needed} barangays.`;
 }
 
+/** Landslide spots with a map point against the floor for GeoAlert's own landslide data (backend landslide_purok.readiness_line) */
+function landslideLine(own) {
+  return `Located landslide spots with a map point: ${own.n} of ${own.needed}, in ${own.barangays} of `
+    + `${own.barangays_needed} barangays`;
+}
+
 function trainingLine(map) {
   if (map.source === 'geoalert') {
     const n = map.own_spots != null ? ` (${map.own_spots} flood spots)` : '';
@@ -77,6 +83,8 @@ export default function FloodReadiness() {
           ) : (
             <p className="fc-note">{map?.reason || NO_MAP}</p>
           )}
+          {/* Landslide's own line, after the whole flood block */}
+          {data.landslide_spots && <p className="fc-note">{landslideLine(data.landslide_spots)}</p>}
         </>
       )}
     </div>

@@ -126,3 +126,14 @@ class FloodReadinessTests(FireSetupMixin, TestCase):
         for p in (self.near.boundary.point_on_surface, self.far.boundary.point_on_surface):
             self.assertNotIn(f'{p.x:.4f}', text)
             self.assertNotIn(f'{p.y:.4f}', text)
+
+    def test_landslide_line_counts_located_landslide_spots_and_shows_no_location(self):
+        self.record(self.landslide, self.near, self.day1)
+        self.record(self.landslide, self.far, self.day2, location=False)  # no map point: not counted
+        self.flood_at(self.near, self.day3)                                # flood: not counted
+        with flood_model_files(None):
+            data = self.client.get(URL).data
+        self.assertEqual(data['landslide_spots'],
+                         {'n': 1, 'barangays': 1, 'needed': 30, 'barangays_needed': 3, 'enough': False})
+        self.assertEqual(data['located_flood_days'], 1)  # flood's own figures are unchanged
+        self.assertNotRegex(json.dumps(data), r'\d+\.\d{4}')

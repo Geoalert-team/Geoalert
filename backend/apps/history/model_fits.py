@@ -1,8 +1,8 @@
 """
 Stores each automatic retraining attempt as a ModelFit and decides which fit
 is live. At most one fit per hazard is live; only a `switched` fit trained on
-the current purok map can be. A flood fit goes live only between January and
-May, never in the middle of a wet season.
+the current purok map can be. A flood or landslide fit goes live only between
+January and May, never in the middle of a wet season.
 """
 import logging
 from datetime import datetime
@@ -17,6 +17,10 @@ logger = logging.getLogger(__name__)
 STALE_FIT = 'The purok map changed while it trained; the fit was not used'
 FLOOD_SEASON_LOCK = 'Flood maps change only between January and May'
 FLOOD_OPEN_MONTHS = range(1, 6)  # January to May, in Manila: between wet seasons
+LANDSLIDE_SEASON_LOCK = 'Landslide maps change only between January and May'
+LANDSLIDE_OPEN_MONTHS = range(1, 6)  # as flood: rain-triggered slides come in the wet season
+SEASON_LOCKS = {'flood': (FLOOD_OPEN_MONTHS, FLOOD_SEASON_LOCK),
+                'landslide': (LANDSLIDE_OPEN_MONTHS, LANDSLIDE_SEASON_LOCK)}  # {hazard: (open months, sentence)}
 MAX_REASON = 500
 NOT_READ = 'The live %s fit could not be read, so the committed file is used: %s'
 
@@ -112,8 +116,8 @@ def record_attempt(payload, outlines_version, check=None):
                 refusal = check(hazard, model, report, outlines_version)
                 if refusal:
                     raise ValueError(refusal)
-            if hazard == 'flood' and timezone.localtime().month not in FLOOD_OPEN_MONTHS:
-                result, reason = 'kept', FLOOD_SEASON_LOCK  # make_live (an admin's undo) is not locked
+            if hazard in SEASON_LOCKS and timezone.localtime().month not in SEASON_LOCKS[hazard][0]:
+                result, reason = 'kept', SEASON_LOCKS[hazard][1]  # make_live (an admin's undo) is not locked
 
     with transaction.atomic():
         live = result == 'switched'
@@ -129,9 +133,10 @@ def record_attempt(payload, outlines_version, check=None):
 
 def site_check(hazard, model, report, outlines):
     """None when the site can read the model, else the sentence saying why not."""
-    from apps.history import fire_purok, flood_purok
+    from apps.history import fire_purok, flood_purok, landslide_purok
 
-    parsed = (fire_purok if hazard == 'fire' else flood_purok).parse(model, report, outlines)
+    loader = {'fire': fire_purok, 'flood': flood_purok, 'landslide': landslide_purok}[hazard]
+    parsed = loader.parse(model, report, outlines)
     return parsed if isinstance(parsed, str) else None
 
 
@@ -174,14 +179,15 @@ def _geojson(geometry):
 
 def training_data(hazard, outlines=False):
     """
-    What the retraining job needs: fire records by purok, or flood spots (and
-    on request every outline). Served only on the token endpoint; fire data
-    holds no coordinate, flood spots carry their point (the job needs it).
+    What the retraining job needs: fire records by purok, or flood or
+    landslide spots (and on request every outline). Served only on the token
+    endpoint; fire data holds no coordinate, flood and landslide spots carry
+    their point (the job needs it).
     """
     from django.utils import timezone
 
     from apps.barangays.models import Barangay, Purok
-    from apps.history import fire_purok, flood_own, flood_purok
+    from apps.history import fire_purok, flood_own, flood_purok, landslide_own, landslide_purok
 
     before = Purok.outlines_version()
     if hazard == 'fire':
@@ -198,16 +204,18 @@ def training_data(hazard, outlines=False):
                 'barangays': {b.id: b.name for b in Barangay.objects.only('id', 'name')},
                 'fires': fires, 'live': live}
     else:
-        spots = flood_purok.located_spots()
-        loaded = flood_purok.load()
+        # Flood and landslide alike: located spots, the floor, and the map in use (its classes, no point)
+        serving, own = {'flood': (flood_purok, flood_own), 'landslide': (landslide_purok, landslide_own)}[hazard]
+        spots = serving.located_spots()
+        loaded = serving.load()
         live = None
         if not isinstance(loaded, str):
             live = {'version': loaded.version, 'source': loaded.source,
                     'areas': {pid: {'level': a['level'], 'score': a.get('score'),
                                     'not_assessed_reason': a['not_assessed_reason']}
                               for pid, a in loaded.areas.items()}}
-        data = {'hazard': 'flood', 'outlines_version': before, 'spots': spots,
-                'floor': flood_own.floor(spots), 'live': live}
+        data = {'hazard': hazard, 'outlines_version': before, 'spots': spots,
+                'floor': own.floor(spots), 'live': live}
         if outlines:
             data['barangays'] = [{'id': b.id, 'name': b.name, 'boundary': _geojson(b.boundary)}
                                  for b in Barangay.objects.order_by('id')]

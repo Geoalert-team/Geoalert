@@ -1,0 +1,215 @@
+{
+ "built_at": "2026-11-25T13:49:33+08:00",
+ "events": [
+  {
+   "dropped_at_sea_level": 0,
+   "dropped_missing_terrain": 0,
+   "fold": "egay",
+   "key": "egay",
+   "landcover_year": 2022,
+   "no_points": 7042,
+   "noah_zero_no_points": 249,
+   "noah_zero_slides": 51,
+   "outlines_dropped": null,
+   "outlines_repaired": null,
+   "points_left_out": 3043,
+   "region": "ph",
+   "road_kept": false,
+   "road_unknown": 3715,
+   "slides": 2647,
+   "tiles_left_out": 18
+  },
+  {
+   "dropped_at_sea_level": 0,
+   "dropped_missing_terrain": 0,
+   "fold": "mangkhut",
+   "key": "mangkhut",
+   "landcover_year": 2017,
+   "no_points": 3300,
+   "noah_zero_no_points": 225,
+   "noah_zero_slides": 12,
+   "outlines_dropped": 0,
+   "outlines_repaired": 59,
+   "points_left_out": 0,
+   "region": "ph",
+   "road_kept": true,
+   "road_unknown": 0,
+   "slides": 1100,
+   "tiles_left_out": 0
+  },
+  {
+   "dropped_at_sea_level": 0,
+   "dropped_missing_terrain": 0,
+   "fold": "paeng",
+   "key": "paeng",
+   "landcover_year": 2021,
+   "no_points": 160,
+   "noah_zero_no_points": 9,
+   "noah_zero_slides": 0,
+   "outlines_dropped": null,
+   "outlines_repaired": null,
+   "points_left_out": 679,
+   "region": "ph",
+   "road_kept": false,
+   "road_unknown": 0,
+   "slides": 13,
+   "tiles_left_out": 18
+  },
+  {
+   "dropped_at_sea_level": 1,
+   "dropped_missing_terrain": 0,
+   "fold": "agaton",
+   "key": "agaton",
+   "landcover_year": 2021,
+   "no_points": 68,
+   "noah_zero_no_points": 14,
+   "noah_zero_slides": 3,
+   "outlines_dropped": null,
+   "outlines_repaired": null,
+   "points_left_out": 0,
+   "region": "ph",
+   "road_kept": true,
+   "road_unknown": 0,
+   "slides": 23,
+   "tiles_left_out": 0
+  }
+ ],
+ "landcover_ok": true,
+ "road_check": {
+  "events": {
+   "agaton": 0.6523,
+   "egay": 0.131,
+   "mangkhut": 1.8433,
+   "paeng": 0.1573
+  },
+  "share": 0.1,
+  "steep_deg": 10,
+  "talisay_steep_road_density": 2.5272,
+  "threshold": 0.2527
+ },
+ "rows": 14353,
+ "saved_tiles_only": true,
+ "seed": 0,
+ "sources": {
+  "coolr": {
+   "licence": "CC BY 4.0",
+   "sha256": "2a019c6a955a4e9ae8da9b8740c1f64c3cd9a162e90972bb03509a5f119dfd38",
+   "url": "https://ndownloader.figshare.com/files/54363830"
+  },
+  "elevation": {
+   "licence": "Copernicus DEM licence",
+   "notice": "produced using Copernicus WorldDEM-30 \u00a9 DLR e.V. 2010-2014 and \u00a9 Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved",
+   "sha256": null,
+   "url": "https://copernicus-dem-30m.s3.amazonaws.com/{name}/{name}.tif"
+  },
+  "landcover": {
+   "licence": "CC BY 4.0",
+   "sha256": null,
+   "url": "https://lulctimeseries.blob.core.windows.net/lulctimeseriesv003/lc{year}/{tile}_{year}0101-{next_year}0101.tif"
+  },
+  "mangkhut": {
+   "licence": "Open Government Licence",
+   "sha256": {
+    "data/itogon_inventory_v11_wgs84utm51.dbf": "89beefb3f3f3c998300b0e12fbff95d6df6b4fac71974f90c7bb6197d600ca84",
+    "data/itogon_inventory_v11_wgs84utm51.shp": "fd28551e09f95c87c9db234d9c0dbcc2e8e381d76d657277c230bec5c8ad8099",
+    "data/itogon_inventory_v11_wgs84utm51.shx": "d4d8563a08834cd1ea928d1b8252a30394025c8e6cfc100be3d90a0e69e9b79a"
+   },
+   "url": "https://data-package.ceh.ac.uk/data/32765a61-8510-4dfc-b7c7-58bad12f8497.zip"
+  },
+  "noah": {
+   "Abra": {
+    "licence": "ODbL",
+    "sha256": "c4ad06980595b2c4c48959c0638900f6a9ee01622a6387b8399e40457cca7f1a",
+    "url": "https://huggingface.co/datasets/bettergovph/project-noah-hazard-maps/resolve/main/Landslide/LandslideHazards/Abra.zip"
+   },
+   "Apayao": {
+    "licence": "ODbL",
+    "sha256": "87276559db2604c84a3c555782b80538774cf67d66cd3ffecaaabf600ca54b0a",
+    "url": "https://huggingface.co/datasets/bettergovph/project-noah-hazard-maps/resolve/main/Landslide/LandslideHazards/Apayao.zip"
+   },
+   "Benguet": {
+    "licence": "ODbL",
+    "sha256": "b16c42aa06d7639afdea76182135e5f7f2a5d758f3ed4f8b005d18084df440db",
+    "url": "https://huggingface.co/datasets/bettergovph/project-noah-hazard-maps/resolve/main/Landslide/LandslideHazards/Benguet.zip"
+   },
+   "Cotabato": {
+    "licence": "ODbL",
+    "sha256": "8b483f085782ec01eeebdf91220b8eda8c49d3b818f97fd9bcd64a7c08f09842",
+    "url": "https://huggingface.co/datasets/bettergovph/project-noah-hazard-maps/resolve/main/Landslide/LandslideHazards/Cotabato.zip"
+   },
+   "IlocosNorte": {
+    "licence": "ODbL",
+    "sha256": "9586ab5d6f09a3baa2cbb4a8a779fe489e7c354944df018cd50a59dd77c75e0b",
+    "url": "https://huggingface.co/datasets/bettergovph/project-noah-hazard-maps/resolve/main/Landslide/LandslideHazards/IlocosNorte.zip"
+   },
+   "IlocosSur": {
+    "licence": "ODbL",
+    "sha256": "dcee730a67d6f2f5b8df81c785e94fb98c4b86eacbf45ffd10b8775e2c922255",
+    "url": "https://huggingface.co/datasets/bettergovph/project-noah-hazard-maps/resolve/main/Landslide/LandslideHazards/IlocosSur.zip"
+   },
+   "Kalinga": {
+    "licence": "ODbL",
+    "sha256": "03da06e5c421af62775af9c031c8c136d75e5d8cb64ae4f444d94159475731d0",
+    "url": "https://huggingface.co/datasets/bettergovph/project-noah-hazard-maps/resolve/main/Landslide/LandslideHazards/Kalinga.zip"
+   },
+   "Leyte": {
+    "licence": "ODbL",
+    "sha256": "b6a2a3225e6048a4bc4e7b5a308cc9a9f6d1c0aec54a448c52f8dfcb69745603",
+    "url": "https://huggingface.co/datasets/bettergovph/project-noah-hazard-maps/resolve/main/Landslide/LandslideHazards/Leyte.zip"
+   },
+   "Maguindanao": {
+    "licence": "ODbL",
+    "sha256": "b92f05bc418b3f4d88951e8fd0c1fbf1693a57da21f15e8bc057625d9174ebac",
+    "url": "https://huggingface.co/datasets/bettergovph/project-noah-hazard-maps/resolve/main/Landslide/LandslideHazards/Maguindanao.zip"
+   },
+   "MountainProvince": {
+    "licence": "ODbL",
+    "sha256": "ebad91a26e998ec04a2ad0b5f9fd79bf3c7b891444585148fb54f000a83bcce6",
+    "url": "https://huggingface.co/datasets/bettergovph/project-noah-hazard-maps/resolve/main/Landslide/LandslideHazards/MountainProvince.zip"
+   },
+   "SouthernLeyte": {
+    "licence": "ODbL",
+    "sha256": "e7d364e82e46f04590f2e7203e1f4ba63176348b1a2f7f401b3117988c3c899e",
+    "url": "https://huggingface.co/datasets/bettergovph/project-noah-hazard-maps/resolve/main/Landslide/LandslideHazards/SouthernLeyte.zip"
+   },
+   "SultanKudarat": {
+    "licence": "ODbL",
+    "sha256": "6a6f83604f1c660d00050e82daf7a1d376af9e0129f36e9751256bc2d18b0647",
+    "url": "https://huggingface.co/datasets/bettergovph/project-noah-hazard-maps/resolve/main/Landslide/LandslideHazards/SultanKudarat.zip"
+   }
+  },
+  "roads": {
+   "licence": "ODbL",
+   "sha256": null,
+   "url": [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter"
+   ]
+  }
+ },
+ "talisay_steep_road_density": 2.5272,
+ "world_left_out": [
+  "bangladesh_20230806",
+  "brazil_20220215",
+  "brazil_20220402",
+  "brazil_20220528",
+  "brazil_20230219",
+  "china_20230728",
+  "colombia_20230717",
+  "democratic_republic_of_the_congo_20230403",
+  "india_20230709",
+  "indonesia_20230306",
+  "malawi_20230313",
+  "mexico_20220530",
+  "mozambique_20230313",
+  "puerto_rico_20220919",
+  "rwanda_20230502",
+  "south_africa_20190423",
+  "south_africa_20220412",
+  "south_africa_20220522",
+  "south_korea_20230715",
+  "vietnam_20230805"
+ ]
+}

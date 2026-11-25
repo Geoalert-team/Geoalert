@@ -1,6 +1,7 @@
 import {
-  ACCURACY_NOTE, describeFloodAtSpot, describeSpot, describeSusceptibility, formatDistance, nearestNamedRiver,
+  ACCURACY_NOTE, describeFloodAtSpot, describeSusceptibilityAtSpot, describeSpot, describeSusceptibility, formatDistance, nearestNamedRiver,
 } from './spotText';
+import { FLOOD_WORD, LANDSLIDE_WORD } from '../components/Forecast/forecastLevels';
 
 const W = (h) => describeSpot({ elevationM: 5, handM: h, drainsToSea: false }).waterway;
 const RISE = ' above the nearest creek, drain or low channel. Water would have to rise about that much to reach here.';
@@ -38,10 +39,10 @@ test('no waterway line against the sea or without data', () => {
   expect(describeSpot({ elevationM: 2, handM: null, drainsToSea: null }).waterway).toBeNull();
 });
 
-test('susceptibility line: landslide and fire only (flood comes from the flood model)', () => {
+test('susceptibility line: fire only (flood and landslide come from their models)', () => {
   const L = [{ label: 'Very low' }, { label: 'Low' }, { label: 'Moderate' }, { label: 'High' }, { label: 'Very high' }];
-  expect(describeSusceptibility({ flood: 4, landslide: 2, fire: 1 }, L)).toBe('Susceptibility: Landslide Low · Fire Very low');
-  expect(describeSusceptibility({ flood: 5, landslide: 0, fire: 0 }, L)).toBeNull();
+  expect(describeSusceptibility({ flood: 4, landslide: 2, fire: 1 }, L)).toBe('Susceptibility: Fire Very low');
+  expect(describeSusceptibility({ flood: 5, landslide: 3, fire: 0 }, L)).toBeNull();
 });
 
 test('flood at the spot, from the flood model', () => {
@@ -81,4 +82,18 @@ test('accuracy note is the fixed text', () => {
   expect(ACCURACY_NOTE).toBe(
     'Heights come from satellite data (about 30 m detail) and can be off by about 1 m, more among buildings.',
   );
+});
+
+test('landslide at the spot, from the landslide model', () => {
+  const at = (e) => describeSusceptibilityAtSpot(e, 'Landslide', LANDSLIDE_WORD);
+  expect(at({ available: false, reason: 'The landslide model has not been trained yet.' }))
+    .toBe('Landslide: unavailable (The landslide model has not been trained yet.)');
+  expect(at({ available: true, level: 'Orange', name: 'Purok 6' })).toBe('Landslide: Moderate landslide susceptibility (Purok 6)');
+  expect(at({ available: true, level: null, not_assessed_reason: 'No buildings or roads in this area', name: 'Purok 6' }))
+    .toBe('Landslide: Not assessed yet (No buildings or roads in this area)');
+  expect(at({ available: true, level: null, not_assessed_reason: null, name: null }))
+    .toBe('Landslide: Not assessed yet (outside every purok area)');
+  expect(at(null)).toBeNull();
+  const red = { available: true, level: 'Red', name: 'X' };
+  expect(describeFloodAtSpot(red)).toBe(describeSusceptibilityAtSpot(red, 'Flood', FLOOD_WORD));
 });

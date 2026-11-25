@@ -22,7 +22,6 @@ and barangay fire chances of the models removed on 2026-11-22; its rows stay
 unchanged and nothing writes to it.
 """
 import logging
-import math
 import threading
 from calendar import monthrange
 from datetime import datetime, timedelta
@@ -37,17 +36,27 @@ logger = logging.getLogger(__name__)
 MARKER_SECONDS = 2 * 24 * 60 * 60  # the once-a-day marker outlives its Manila day, then goes
 RUNNING_SECONDS = 5 * 60           # one background run at a time
 NO_TABLE = 'is migration history 0010 applied?'
-NOT_WRITTEN = 'The fire purok log was not written (%s): %s'
 NOT_READ = 'The fire purok log could not be read (%s): %s'
+REFUSED = 'the database refused it'
+LOGS = {  # hazard -> (its log, the history migration that makes its table)
+    'fire': ('The fire purok log', '0010'),
+    'flood': ('The flood susceptibility log', '0011'),
+    'landslide': ('The landslide susceptibility log', '0013'),
+}
 
 
 def _why(exc):
-    return NO_TABLE if isinstance(exc, ProgrammingError) else 'the database refused it'
+    return NO_TABLE if isinstance(exc, ProgrammingError) else REFUSED
 
 
-def write_failure(exc) -> str:
-    """What to say of a refused write: the migration hint only for a missing table, else the database's words."""
-    return NOT_WRITTEN % (_why(exc), exc)
+def write_failure(exc, hazard: str = 'fire') -> str:
+    """
+    What to say of a refused write to `hazard`'s log: the migration that makes
+    its table only for a missing table, else the database's words.
+    """
+    name, migration = LOGS[hazard]
+    why = f'is migration history {migration} applied?' if isinstance(exc, ProgrammingError) else REFUSED
+    return f'{name} was not written ({why}): {exc}'
 
 
 def write_month_rows(today) -> int:
@@ -108,6 +117,34 @@ def write_flood_rows(today) -> int:
     return logged.count() - before
 
 
+def write_landslide_rows(today) -> int:
+    """
+    One row per purok of the landslide model in use, published today under its
+    version; returns how many were new (0 once the version is logged). Nothing
+    is written unless settings.HAZARD_LOG_WRITER is on and the model can be used.
+    """
+    from apps.barangays.models import Purok
+    from apps.history import landslide_purok
+    from apps.history.models import LandslidePurokSusceptibilityLog
+
+    if not settings.HAZARD_LOG_WRITER:
+        return 0
+    model = landslide_purok.load()
+    if isinstance(model, str):
+        return 0
+    names = dict(Purok.objects.filter(id__in=list(model.areas)).values_list('id', 'name'))
+    outlines = Purok.outlines_version()
+    rows = [LandslidePurokSusceptibilityLog(
+        purok_id=pid, purok_name=names.get(pid, ''), barangay_id=area['barangay_id'], model_version=model.version,
+        source=model.source, level=area['level'], score=area.get('score'), uncertain=bool(area['uncertain']),
+        not_assessed_reason=area['not_assessed_reason'] or '', outlines_version=outlines, published_on=today)
+        for pid, area in model.areas.items()]
+    logged = LandslidePurokSusceptibilityLog.objects.filter(model_version=model.version)
+    before = logged.count()
+    LandslidePurokSusceptibilityLog.objects.bulk_create(rows, ignore_conflicts=True)
+    return logged.count() - before
+
+
 def _done_marker(today):
     return f'fire-purok-log-done:{today.isoformat()}'
 
@@ -121,21 +158,27 @@ def log_once_today(today) -> bool:
     (a table not migrated yet, say: logged, and tried again on a later call).
     The map never depends on it.
     """
-    from apps.history import fire_purok, flood_purok
+    from apps.history import fire_purok, flood_purok, landslide_purok
 
     if not settings.HAZARD_LOG_WRITER or cache.get(_done_marker(today)):
         return False
     fire_ready = not isinstance(fire_purok.load(), str)
     flood_ready = not isinstance(flood_purok.load(), str)
-    if not fire_ready and not flood_ready:
+    landslide_ready = not isinstance(landslide_purok.load(), str)
+    if not fire_ready and not flood_ready and not landslide_ready:
         return False
+    hazard = 'fire'  # the log being written, so a failure names its own migration
     try:
         if fire_ready:
             write_month_rows(today)
         if flood_ready:
+            hazard = 'flood'
             write_flood_rows(today)
+        if landslide_ready:
+            hazard = 'landslide'
+            write_landslide_rows(today)
     except DatabaseError as exc:
-        logger.warning('%s', write_failure(exc))
+        logger.warning('%s', write_failure(exc, hazard))
         return False
     cache.set(_done_marker(today), True, MARKER_SECONDS)
     return True

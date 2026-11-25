@@ -24,7 +24,7 @@ STALE = 'The purok map changed since the flood model was trained; rerun build_fl
 UNREADABLE = 'The flood model file could not be read; rerun train_flood_model.'
 REPORT_MISSING = "The flood model's report is missing; rerun train_flood_model."
 NOT_BY_MONTH = 'Flood susceptibility does not change by month.'
-FORECAST_ONLY = 'Only fire and flood have prediction models for now.'
+FORECAST_ONLY = 'Only fire, flood and landslide have prediction models.'
 
 
 @override_settings(HAZARD_LOG_WRITER=False)
@@ -82,17 +82,17 @@ class FloodForecastApiTests(FireSetupMixin, TestCase):
             self.assertEqual(self.get('?hazards=Flood').data['flood']['reason'], UNREADABLE)
 
     def test_other_names_are_refused_and_no_names_still_means_fire(self):
-        r = self.get('?hazards=Landslide')
+        r = self.get('?hazards=Tsunami')
         self.assertEqual((r.status_code, r.data['error']), (400, FORECAST_ONLY))
         data = self.get('').data
         self.assertNotIn('flood_results', data)
         self.assertNotIn('flood', data)
         self.assertEqual({row['hazard_type'] for row in data['results']}, {'Fire'})
 
-    def test_accuracy_lists_fire_then_flood(self):
+    def test_accuracy_lists_fire_then_flood_then_landslide(self):
         with flood_model_files(self.levels), model_files(None):
             hazards = self.client.get('/api/history/forecast/accuracy/').data['hazards']
-        self.assertEqual([h['kind'] for h in hazards], ['fire_purok', 'flood_purok'])
+        self.assertEqual([h['kind'] for h in hazards], ['fire_purok', 'flood_purok', 'landslide_purok'])
         self.assertEqual(hazards[1]['status'], 'in_use')
         self.assertEqual(hazards[1]['since_publishing']['n'], 0)
 

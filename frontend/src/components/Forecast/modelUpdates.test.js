@@ -76,3 +76,13 @@ test('error', async () => {
   const el = await render();
   expect(el.textContent).toContain('Model updates could not be loaded right now.');
 });
+
+test('model updates name landslide rows', async () => {
+  historyApi.forecastUpdates.mockResolvedValue({ updates: [{ hazard: 'landslide', result: 'not_tried',
+    reason: '2 of 30 located landslide spots, 1 of 3 barangays', created_at: '2027-01-06T03:17:00+08:00', is_live: false }] });
+  const el = await render();
+  const cells = [...el.querySelectorAll('tbody tr td')].map((td) => td.textContent);
+  expect(cells[0]).toBe('Landslide');
+  expect(cells[2]).toBe('Not tried');
+  expect(cells[3]).toBe('2 of 30 located landslide spots, 1 of 3 barangays');
+});

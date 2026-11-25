@@ -23,14 +23,20 @@ from django.core.management.base import CommandError
 from django.test import SimpleTestCase, TestCase
 
 from apps.barangays.models import Barangay, Purok
-from apps.history import fire_features, flood_features, flood_own, model_job
+from apps.history import fire_features, flood_features, flood_own, landslide_own, model_job
+from apps.history import landslide_features as lf
 from apps.history.fire_run import FIRE_STALE_FEATURES
 from apps.history.fire_training import FireRecord
 from tests.fire_setup import FireSetupMixin
+from tests.test_landslide_own import clues_at
+from tests.test_landslide_own import spots as landslide_spots
 
 ENV = {'MODEL_JOB_API_URL': 'http://geo.test', 'MODEL_JOB_TOKEN': 's3cret'}
 WORKFLOW = Path(__file__).resolve().parents[2] / '.github' / 'workflows' / 'model-retrain.yml'
 TODAY = date(2027, 1, 5)  # the flood run: the 2026 wet season is held back
+LANDSLIDE_TODAY = date(2027, 1, 6)  # the landslide run, a day after flood's
+LANDSLIDE_CRON = '17 19 5 1 *'
+COORDINATE = r'\b1[0-9]\.\d{4}|\b12[0-9]\.\d{4}'  # a Talisay latitude or longitude to 4 decimals
 
 
 def answer(status, body=None):
@@ -330,6 +336,409 @@ class FloodAttemptTests(FloodPatches, TestCase):
         self.assertEqual(self.mocks['train'].call_args.kwargs['outside_source'], 'noah')
 
 
+# Landslide
+
+def landslide_data(spots, live=None):
+    return {'hazard': 'landslide', 'outlines_version': 'server-map-v7', 'spots': spots,
+            'floor': landslide_own.floor(spots), 'live': live}
+
+
+def live_map(held, hits, source):
+    """A landslide map in use whose first `hits` held-back puroks are Red or Orange (JSON keys, as fetched)."""
+    return {'version': 'neural_network@old', 'source': source,
+            'areas': {str(s['purok_id']): {'level': 'Orange' if i < hits else 'Green', 'score': 0.5,
+                                           'not_assessed_reason': None} for i, s in enumerate(held)}}
+
+
+class LandslidePatches:
+    """
+    Everything below the decision patched: the outlines, the features build
+    and read, the committed table, the ground check and the run (which calls
+    load_tests, as the real one does after its cut-offs).
+    """
+
+    def landslide_patches(self, new_levels=(), adopted=True, reasons=()):
+        self.trained_model = {'version': 'neural_network@own', 'source': 'geoalert',
+                              'outlines_version': 'scratch-db-map',
+                              'inputs': {'columns': [], 'landcover_ok': True, 'files': {}}, 'areas': {}}
+        self.table = ({'label': np.zeros(0, int)}, {'landcover_ok': True})
+        self.tests_seen = []
+
+        def run(table, table_meta, features, load_tests, log=print, **kwargs):
+            tests = load_tests()
+            self.tests_seen.append(tests)
+            log('Verdict: passed all four checks (neural_network@own)')
+            held_back = [{'purok_id': p, 'level': lv} for p, lv in zip(tests['test_puroks'], new_levels)]
+            report = {'version': 'neural_network@own', 'source': 'geoalert', 'own_spots': 0,
+                      'acceptance': {'adopted': adopted, 'gates': {}, 'reasons': list(reasons)},
+                      'temporal_test': {'season': tests.get('season'), 'held_back': held_back}}
+            return self.trained_model, report
+
+        def build(name, cache_dir, output_dir):
+            (Path(output_dir) / lf.FEATURES_FILE.name).write_text('purok_id\n1\n', encoding='utf-8')
+            (Path(output_dir) / lf.FEATURES_META.name).write_text('{"m": 1}', encoding='utf-8')
+            (Path(cache_dir) / lf.POINTS_FILE).write_bytes(b'points')
+
+        patches = {
+            'load': mock.patch('apps.history.model_job.load_outlines'),
+            'build': mock.patch('apps.history.model_job.call_command', side_effect=build),
+            'read': mock.patch('apps.history.landslide_features.read_features',
+                               return_value=mock.Mock(meta={'outlines_version': 'scratch-db-map'})),
+            'table': mock.patch('apps.history.landslide_training_table.read_table', return_value=self.table),
+            'at': mock.patch('apps.history.landslide_features.features_at',
+                             side_effect=lambda pts, cache: clues_at(pts)),
+            'ground': mock.patch('apps.history.model_job.talisay_ground',
+                                 return_value=lambda pts: np.ones(len(pts), bool)),
+            'run': mock.patch('apps.history.landslide_run.run', side_effect=run),
+        }
+        self.mocks = {name: p.start() for name, p in patches.items()}
+        for p in patches.values():
+            self.addCleanup(p.stop)
+
+    def attempt(self, data, fetch=None, table_bytes=b'notice\nrows\n', **deadline):
+        """(the attempt, the fetch mock); self.files: the checksums of the five inputs, read before they go."""
+        self.lines = []
+        fetch = fetch or mock.Mock(return_value={**data, 'barangays': [], 'puroks': []})
+        with TemporaryDirectory() as cache, TemporaryDirectory() as work, TemporaryDirectory() as committed:
+            training, meta = Path(committed) / lf.TRAINING_FILE.name, Path(committed) / lf.TRAINING_META.name
+            training.write_bytes(table_bytes)
+            meta.write_text('{"rows": 1}', encoding='utf-8')
+            self.cache, self.work = Path(cache), Path(work)
+            with mock.patch.object(lf, 'TRAINING_FILE', training), mock.patch.object(lf, 'TRAINING_META', meta):
+                out = model_job.landslide_attempt(data, LANDSLIDE_TODAY, self.cache, self.work, 7, 3,
+                                                  log=self.lines.append, fetch=fetch, **deadline)
+            paths = {training.name: training, meta.name: meta,
+                     lf.FEATURES_FILE.name: self.work / lf.FEATURES_FILE.name,
+                     lf.FEATURES_META.name: self.work / lf.FEATURES_META.name,
+                     lf.POINTS_FILE: self.cache / lf.POINTS_FILE}
+            self.files = {name: hashlib.sha1(p.read_bytes()).hexdigest() for name, p in paths.items() if p.exists()}
+        return out, fetch
+
+    def attempt_with(self, new_hits, live_hits, live_source, n_held=5):
+        spots = landslide_spots(40, barangays=4, season_2026=n_held)
+        self.landslide_patches(new_levels=['Red'] * new_hits + ['Green'] * (n_held - new_hits))
+        return self.attempt(landslide_data(spots, live=live_map(spots[-n_held:], live_hits, live_source)))[0]
+
+
+class LandslideAttemptTests(LandslidePatches, TestCase):
+    def spots(self, n, barangays, season_2026=0):
+        return landslide_spots(n, barangays=barangays, season_2026=season_2026)
+
+    def data(self, spots, live=None):
+        return landslide_data(spots, live=live)
+
+    def test_below_the_floor_is_not_tried_and_trains_nothing(self):
+        self.landslide_patches()
+        fetch = mock.Mock()
+        a, _ = self.attempt({'spots': self.spots(2, barangays=1), 'live': None, 'outlines_version': 'v'}, fetch=fetch)
+        self.assertEqual((a['result'], a['reason']), ('not_tried', '2 of 30 located landslide spots, 1 of 3 barangays'))
+        self.assertNotIn('model', a)
+        self.assertEqual(a, {'hazard': 'landslide', 'result': 'not_tried',
+                             'reason': '2 of 30 located landslide spots, 1 of 3 barangays'})
+        fetch.assert_not_called()
+        self.mocks['build'].assert_not_called()
+        self.mocks['run'].assert_not_called()
+
+    def test_too_few_held_back_spots(self):
+        self.landslide_patches()
+        fetch = mock.Mock()
+        a, _ = self.attempt(self.data(spots=self.spots(40, barangays=4, season_2026=4)), fetch=fetch)
+        self.assertEqual(a['reason'], 'Too few new spots to test (4 of 5); tries again next January')
+        self.assertEqual(a['result'], 'not_tried')
+        self.assertNotIn('model', a)
+        fetch.assert_not_called()
+        self.mocks['run'].assert_not_called()
+
+    def test_fewer_season_hits_is_kept(self):  # live own-data map catches 5 of 5, the new fit 4 of 5
+        a = self.attempt_with(new_hits=4, live_hits=5, live_source='geoalert')
+        self.assertEqual(a['result'], 'kept')
+        self.assertEqual(a['reason'], "Fewer of the 2026 wet season's spots in Red or Orange than the map in use "
+                                      '(4 vs 5)')
+        self.assertIs(a['model'], self.trained_model)
+
+    def test_a_tie_switches(self):
+        a = self.attempt_with(new_hits=5, live_hits=5, live_source='geoalert')
+        self.assertEqual(a['result'], 'switched')
+        self.assertEqual(a['reason'], 'Passed all four checks; 5 of 5 held-back spots in Red or Orange')
+
+    def test_more_season_hits_switch(self):
+        a = self.attempt_with(new_hits=4, live_hits=3, live_source='geoalert')
+        self.assertEqual((a['result'], a['reason']),
+                         ('switched', 'Passed all four checks; 4 of 5 held-back spots in Red or Orange'))
+
+    # Ruling R44: spec 6.3 check 5, "no fewer ... than the live map", whatever the live map's source
+    def test_a_live_outside_model_map_with_more_hits_is_kept(self):
+        a = self.attempt_with(new_hits=3, live_hits=5, live_source='model')
+        self.assertEqual((a['result'], a['reason']),
+                         ('kept', "Fewer of the 2026 wet season's spots in Red or Orange than the map in use (3 vs 5)"))
+
+    def test_a_live_outside_model_map_with_as_many_hits_switches(self):
+        a = self.attempt_with(new_hits=4, live_hits=4, live_source='model')
+        self.assertEqual((a['result'], a['reason']),
+                         ('switched', 'Passed all four checks; 4 of 5 held-back spots in Red or Orange'))
+
+    def test_every_live_source_is_compared_on_the_season(self):
+        for source in ('model', 'noah', 'geoalert'):
+            with self.subTest(source=source):
+                self.assertEqual(self.attempt_with(new_hits=3, live_hits=5, live_source=source)['result'], 'kept')
+                self.assertEqual(self.attempt_with(new_hits=5, live_hits=5, live_source=source)['result'], 'switched')
+
+    # Ruling R43: no GeoAlert rows, no fit (BASIS_GEOALERT never labels a fit without them)
+    def test_no_spots_before_the_season_trains_nothing(self):
+        self.landslide_patches()
+        fetch = mock.Mock()
+        a, _ = self.attempt(self.data(self.spots(30, barangays=3, season_2026=30)), fetch=fetch)  # all in 2026
+        self.assertEqual(a, {'hazard': 'landslide', 'result': 'not_tried',
+                             'reason': 'No located spots before the newest season to train on; tries again next '
+                                       'January'})
+        self.assertEqual(landslide_own.LANDSLIDE_NO_TRAINING, a['reason'])
+        fetch.assert_not_called()
+        self.mocks['build'].assert_not_called()
+        self.mocks['run'].assert_not_called()
+
+    def test_no_own_slide_left_on_ground_trains_nothing(self):
+        self.landslide_patches(new_levels=['Red'] * 5)
+        self.mocks['ground'].return_value = lambda pts: np.zeros(len(pts), bool)  # every own point at sea
+        a, _ = self.attempt(self.data(self.spots(40, barangays=4, season_2026=5)))
+        self.assertEqual((a['result'], a['reason']), ('not_tried', landslide_own.LANDSLIDE_NO_TRAINING))
+        self.assertNotIn('model', a)
+        self.mocks['run'].assert_not_called()
+
+    def test_a_failed_gate_is_kept_with_the_reasons(self):
+        spots = self.spots(40, barangays=4, season_2026=5)
+        self.landslide_patches(new_levels=['Red'] * 5, adopted=False, reasons=['One reason.', 'Another.'])
+        a, _ = self.attempt(self.data(spots))
+        self.assertEqual((a['result'], a['reason']), ('kept', 'One reason. Another.'))
+        self.assertIn('report', a)
+
+    def test_the_run_gets_own_rows_the_held_back_season_and_the_job_settings(self):
+        spots = self.spots(40, barangays=4, season_2026=5)
+        self.landslide_patches(new_levels=['Red'] * 5)
+        a, fetch = self.attempt(self.data(spots))
+        self.assertEqual(a['result'], 'switched')
+        fetch.assert_called_once_with('landslide', outlines=True)
+        self.mocks['load'].assert_called_once_with(fetch.return_value)
+        self.mocks['build'].assert_called_once_with('build_landslide_features', cache_dir=str(self.cache),
+                                                    output_dir=str(self.work))
+        self.mocks['read'].assert_called_once_with(self.work / lf.FEATURES_FILE.name,
+                                                   self.work / lf.FEATURES_META.name, cache_dir=self.cache)
+        args, kwargs = self.mocks['run'].call_args
+        self.assertEqual(args[:3], (*self.table, self.mocks['read'].return_value))
+        self.assertEqual((kwargs['mode'], kwargs['reps'], kwargs['stability_reps']), ('own', 7, 3))
+        own = kwargs['own_rows']
+        self.assertEqual(int(own['label'].sum()), 35)  # the spots before June 2026 only
+        self.assertEqual(int((own['label'] == 0).sum()), 105)
+        self.assertEqual(set(own['fold'].tolist()), {'talisay'})
+        self.assertTrue((own['weight'] == 10).all())
+        # One test purok per held-back spot (ruling R30), with the season, only when the run asks
+        self.assertEqual(self.tests_seen, [{'test_puroks': [s['purok_id'] for s in spots[-5:]], 'season': 2026}])
+        self.assertEqual(a['model']['outlines_version'], 'server-map-v7')  # the server's map, not the runner's
+
+    def test_the_fingerprint_covers_the_committed_training_table(self):
+        spots = self.spots(40, barangays=4, season_2026=5)
+        prints = []
+        for table_bytes in (b'notice\nrows\n', b'notice\nother rows\n'):
+            self.landslide_patches(new_levels=['Red'] * 5)
+            a, _ = self.attempt(self.data(spots), table_bytes=table_bytes)
+            fingerprint = self.mocks['run'].call_args.kwargs['fingerprint']
+            self.assertEqual(set(self.files), {'landslide_training.csv', 'landslide_training.meta.json',
+                                               'landslide_purok_features.csv', 'landslide_purok_features.meta.json',
+                                               'landslide_points.npz'})
+            self.assertEqual(fingerprint, hashlib.sha1(json.dumps(self.files, sort_keys=True).encode()).hexdigest())
+            self.assertEqual(a['model']['inputs']['files'], self.files)  # base names only, as the hand-run command
+            prints.append(fingerprint)
+        self.assertNotEqual(prints[0], prints[1])
+
+    def test_the_ground_check_reads_the_cache(self):
+        spots = self.spots(40, barangays=4, season_2026=5)
+        self.landslide_patches(new_levels=['Red'] * 5)
+        self.mocks['ground'].return_value = lambda pts: np.arange(len(pts)) % 2 == 0  # every other point at sea
+        self.attempt(self.data(spots))
+        self.assertEqual(self.mocks['ground'].call_args.args[0], self.cache)
+        own = self.mocks['run'].call_args.kwargs['own_rows']
+        # Every other point at sea by its place in each read: 18 of the 35 training spots kept, then (review m1)
+        # 54 "no" points drawn around those 18 only, 27 of them kept
+        self.assertEqual((int(own['label'].sum()), len(own['label'])), (18, 45))
+
+    # Final review B3: the job's own limit reaches the run's refit loops; without one, none
+    def test_the_run_gets_the_deadline_and_none_without_one(self):
+        from apps.history.landslide_training import Deadline
+
+        spots = self.spots(40, barangays=4, season_2026=5)
+        self.landslide_patches(new_levels=['Red'] * 5)
+        deadline = Deadline(at=12345.0, minutes=330)
+        self.attempt(self.data(spots), deadline=deadline)
+        self.assertIs(self.mocks['run'].call_args.kwargs['deadline'], deadline)
+        self.landslide_patches(new_levels=['Red'] * 5)
+        self.attempt(self.data(spots))
+        self.assertIsNone(self.mocks['run'].call_args.kwargs['deadline'])
+
+    def test_job_prints_and_posts_no_coordinate(self):
+        spots = self.spots(40, barangays=4, season_2026=5)
+        self.landslide_patches(new_levels=['Red'] * 5)
+        self.data_enough = self.data(spots, live=live_map(spots[-5:], 5, 'geoalert'))
+        a, _ = self.attempt(self.data_enough)
+        lines = self.lines
+        self.assertEqual(a['result'], 'switched')
+        self.assertTrue(lines)
+        self.assertNotRegex(' '.join(lines) + json.dumps(model_job._plain(a)), COORDINATE)
+
+
+REAL_FEATURES_AT = lf.features_at        # before any test patches them
+REAL_TALISAY_GROUND = model_job.talisay_ground
+
+
+class LandslideFarSpotTests(LandslidePatches, TestCase):
+    """
+    Final review B1: a located spot off Talisay's padded clue grids (a map point
+    85 km away, say) read the edge cells' clues and went in with its three "no"
+    points at weight 10. Here the real features_at and ground check read saved
+    grids whose edge ring has a slope no inner cell has.
+    """
+    BBOX, ZOOM = (10.24, 123.81, 10.30, 123.89), 12
+    EDGE_SLOPE = 99.0
+
+    def real_clues(self):
+        from apps.hazards.susceptibility import Grid
+
+        grid = Grid(*self.BBOX, self.ZOOM)
+        grids = {c: np.full(grid.shape, 1.0, np.float32) for c in lf.FEATURE_COLUMNS}
+        grids['slope_deg'][:] = 20.0
+        for edge in (np.s_[0, :], np.s_[-1, :], np.s_[:, 0], np.s_[:, -1]):
+            grids['slope_deg'][edge] = self.EDGE_SLOPE
+        grids['noah_class'] = np.full(grid.shape, 2, np.uint8)
+        build = self.mocks['build'].side_effect
+
+        def build_with_grids(name, cache_dir, output_dir):
+            build(name, cache_dir, output_dir)
+            lf.write_grids(self.BBOX, self.ZOOM, grids, cache_dir)
+
+        self.mocks['build'].side_effect = build_with_grids
+        self.mocks['at'].side_effect = REAL_FEATURES_AT
+        self.mocks['ground'].side_effect = REAL_TALISAY_GROUND
+        dem = mock.patch('apps.history.landslide_sources.dem_for',
+                         side_effect=lambda g, cache, log=print: np.full(g.shape, 50.0, np.float32))
+        dem.start()
+        self.addCleanup(dem.stop)
+
+    def test_a_far_spot_and_its_no_points_never_reach_training(self):
+        spots = landslide_spots(40, barangays=4, season_2026=5)
+        spots[0] = {**spots[0], 'lon': spots[0]['lon'] + 0.78}  # a training spot 85 km east
+        self.landslide_patches(new_levels=['Red'] * 5)
+        self.real_clues()
+        a, _ = self.attempt(landslide_data(spots))
+        self.assertEqual(a['result'], 'switched')
+        own = self.mocks['run'].call_args.kwargs['own_rows']
+        self.assertEqual(int(own['label'].sum()), 34)  # the 35 training spots less the far one
+        self.assertNotIn(self.EDGE_SLOPE, own['slope_deg'].tolist())  # nor any "no" point around it
+        np.testing.assert_array_equal(own['slope_deg'], np.full(len(own['label']), 20.0))
+        self.assertTrue((own['weight'] == 10).all())
+
+    def test_a_far_spot_alone_before_the_season_is_not_tried(self):
+        spots = landslide_spots(31, barangays=3, season_2026=30)  # one spot before the 2026 season
+        spots[0] = {**spots[0], 'lon': spots[0]['lon'] + 0.78}
+        self.landslide_patches(new_levels=['Red'] * 30)
+        self.real_clues()
+        a, _ = self.attempt(landslide_data(spots))
+        self.assertEqual(a, {'hazard': 'landslide', 'result': 'not_tried',
+                             'reason': landslide_own.LANDSLIDE_NO_TRAINING})  # ruling R43
+        self.mocks['run'].assert_not_called()
+
+
+class LandslideRealRunTests(TestCase):
+    """
+    The job's wiring through the real run (own mode) on the synthetic typhoon
+    table and city of the run's tests: the spots' points appear nowhere in
+    what the job prints or would post.
+    """
+
+    def real_attempt(self, spots, lines, **deadline):
+        """The job's landslide attempt on the run's synthetic table and city, the runner's steps stubbed."""
+        from tests.test_landslide_run import talisay, training_table
+        from tests.test_landslide_training import ground, valley_floor
+
+        features, table = talisay(), training_table()
+        rng = np.random.default_rng(5)
+
+        def build(name, cache_dir, output_dir):
+            lf.write_features(features, Path(output_dir) / lf.FEATURES_FILE.name,
+                              Path(output_dir) / lf.FEATURES_META.name, cache_dir=cache_dir)
+
+        def clues(points, cache):
+            n = len(points)
+            slides, n_no = 35, n - 35
+            yes, no = ground(rng, slides, 32, 5), valley_floor(rng, n_no)
+            values = {c: np.r_[yes[c], no[c]] for c in lf.FEATURE_COLUMNS}
+            values['noah_class'] = np.r_[np.full(slides, 2.0), np.zeros(n_no)]
+            return values
+
+        with TemporaryDirectory() as cache, TemporaryDirectory() as work, TemporaryDirectory() as committed, \
+                mock.patch('apps.history.model_job.load_outlines'), \
+                mock.patch('apps.history.model_job.call_command', side_effect=build), \
+                mock.patch('apps.history.landslide_training_table.read_table', return_value=table), \
+                mock.patch('apps.history.landslide_features.features_at', side_effect=clues), \
+                mock.patch('apps.history.model_job.talisay_ground', return_value=lambda pts: np.ones(len(pts), bool)):
+            training, meta = Path(committed) / lf.TRAINING_FILE.name, Path(committed) / lf.TRAINING_META.name
+            training.write_text('table', encoding='utf-8')
+            meta.write_text('{}', encoding='utf-8')
+            with mock.patch.object(lf, 'TRAINING_FILE', training), mock.patch.object(lf, 'TRAINING_META', meta):
+                return model_job.landslide_attempt(landslide_data(spots), LANDSLIDE_TODAY, Path(cache), Path(work),
+                                                   20, 2, log=lines.append, fetch=mock.Mock(return_value={}),
+                                                   **deadline)
+
+    # Final review B3: a tiny deadline stops the real run at its first refit loop, with the limit in the words
+    def test_a_tiny_deadline_stops_the_real_run(self):
+        import time
+
+        from apps.history.landslide_training import Deadline, PastDeadline
+
+        spots = landslide_spots(40, barangays=4, season_2026=5)
+        with self.assertRaisesMessage(PastDeadline, 'the run passed its 330-minute limit'):
+            self.real_attempt(spots, [], deadline=Deadline(at=time.monotonic(), minutes=330))
+
+    def test_a_real_own_run_prints_and_posts_no_spot(self):
+        from tests.test_landslide_run import STEEP
+
+        spots = landslide_spots(40, barangays=4, season_2026=5)
+        for s, pid in zip(spots[-5:], (STEEP * 2)[:5]):
+            s['purok_id'] = pid
+        lines = []
+        a = self.real_attempt(spots, lines)
+        self.assertIn(a['result'], ('switched', 'kept'))
+        self.assertEqual(a['model']['outlines_version'], 'server-map-v7')
+        self.assertEqual(a['model']['source'], 'geoalert')
+        self.assertEqual(a['report']['own_spots'], 35)
+        self.assertEqual(a['report']['temporal_test']['season'], 2026)
+        self.assertEqual([h['purok_id'] for h in a['report']['temporal_test']['held_back']],
+                         [s['purok_id'] for s in spots[-5:]])
+        self.assertEqual(a['model']['version'].split('@')[0], a['model']['chosen'])
+        text = ' '.join(lines) + json.dumps(model_job._plain(a))
+        for s in spots:
+            self.assertNotIn(f'{s["lon"]:.4f}', text)
+            self.assertNotIn(f'{s["lat"]:.4f}', text)
+
+
+class TalisayGroundTests(SimpleTestCase):
+    def test_ground_is_height_above_zero_on_the_saved_grid(self):
+        from apps.hazards.susceptibility import Grid
+
+        bbox, zoom = (10.20, 123.80, 10.30, 123.90), 14
+        grid = Grid(*bbox, zoom)
+        dem = np.full(grid.shape, 50.0)
+        dem[:, : grid.width // 2] = 0.0  # the west half is sea
+        with TemporaryDirectory() as cache:
+            np.savez_compressed(Path(cache) / lf.GRIDS_FILE, bbox=np.asarray(bbox, float), zoom=np.asarray(zoom))
+            with mock.patch('apps.history.landslide_sources.dem_for', return_value=dem) as dem_for:
+                on_ground = model_job.talisay_ground(Path(cache), log=lambda m: None)
+        used = dem_for.call_args.args[0]
+        self.assertEqual((used.px0, used.py0, used.width, used.height), (grid.px0, grid.py0, grid.width, grid.height))
+        self.assertEqual(dem_for.call_args.args[1], Path(cache))
+        np.testing.assert_array_equal(on_ground(np.array([[123.81, 10.25], [123.89, 10.25]])), [False, True])
+        # Final review B1: off the grid is not ground, though the nearest edge cell is land
+        np.testing.assert_array_equal(on_ground(np.array([[123.89 + 0.78, 10.25], [123.89, 10.25 + 0.5]])),
+                                      [False, False])
+
+
 class LoadOutlinesTests(FireSetupMixin, TestCase):
     def payload(self):
         return {'barangays': [{'id': b.id, 'name': b.name, 'boundary': json.loads(b.boundary.geojson)}
@@ -454,6 +863,87 @@ class CommandTests(SimpleTestCase):
             with self.assertRaisesMessage(CommandError, 'Failed: OSError: disk'):
                 self.run_job('--hazard', 'fire')
 
+    def test_command_runs_the_landslide_attempt(self):
+        spots = landslide_spots(2, barangays=1)
+        self.fetch.return_value = landslide_data(spots)
+        attempt = {'hazard': 'landslide', 'result': 'not_tried',
+                   'reason': '2 of 30 located landslide spots, 1 of 3 barangays'}
+        with mock.patch('apps.history.model_job.landslide_attempt', return_value=attempt) as landslide:
+            out = self.run_job('--hazard', 'landslide', '--dry-run', '--today', '2027-01-06')
+        self.fetch.assert_called_once_with('landslide')
+        self.assertIn('GeoAlert sent 2 located landslide spots in 1 barangays.', out)
+        self.assertIn('not_tried: 2 of 30 located landslide spots, 1 of 3 barangays', out)
+        self.post.assert_not_called()
+        args, kwargs = landslide.call_args
+        data, today, cache, workdir, reps, stability_reps, log = args
+        self.assertEqual((today, reps, stability_reps), (date(2027, 1, 6), 1000, 20))  # 20 refits in the job (R60)
+        self.assertIs(kwargs['fetch'], model_job.fetch)
+
+    # Final review B3: GitHub stops the landslide job at 360 minutes and then nothing is posted, so the job keeps a
+    # limit of its own 330 minutes after it starts; fire and flood get none
+    def test_the_landslide_run_gets_a_330_minute_deadline_and_fire_and_flood_none(self):
+        import time
+
+        self.fetch.return_value = landslide_data([])
+        attempt = {'hazard': 'landslide', 'result': 'not_tried', 'reason': 'r'}
+        before = time.monotonic()
+        with mock.patch('apps.history.model_job.landslide_attempt', return_value=attempt) as landslide:
+            self.run_job('--hazard', 'landslide', '--dry-run')
+        after = time.monotonic()
+        deadline = landslide.call_args.kwargs['deadline']
+        self.assertEqual(deadline.minutes, 330)
+        self.assertGreaterEqual(deadline.at, before + 330 * 60)
+        self.assertLessEqual(deadline.at, after + 330 * 60)
+        self.fetch.return_value = flood_data([])
+        with mock.patch('apps.history.model_job.flood_attempt',
+                        return_value={'hazard': 'flood', 'result': 'not_tried', 'reason': 'r'}) as flood:
+            self.run_job('--hazard', 'flood', '--dry-run')
+        self.assertNotIn('deadline', flood.call_args.kwargs)
+        self.fetch.return_value = fire_data('v1')
+        with mock.patch('apps.history.model_job.fire_attempt',
+                        return_value={'hazard': 'fire', 'result': 'kept', 'reason': 'r'}) as fire:
+            self.run_job('--hazard', 'fire', '--dry-run')
+        self.assertNotIn('deadline', fire.call_args.kwargs)
+
+    def test_a_passed_deadline_posts_failed_with_the_limit(self):  # a tiny limit, through the real deadline
+        self.fetch.return_value = landslide_data([])
+
+        def slow(*args, deadline, **kwargs):
+            deadline.check()  # the first refit loop's check
+
+        with mock.patch('apps.history.management.commands.run_model_job.LANDSLIDE_LIMIT_MINUTES', 0), \
+                mock.patch('apps.history.model_job.landslide_attempt', side_effect=slow):
+            with self.assertRaisesMessage(CommandError, 'Failed: the run passed its 0-minute limit'):
+                self.run_job('--hazard', 'landslide')
+        self.post.assert_called_once_with({'hazard': 'landslide', 'result': 'failed',
+                                           'reason': 'Failed: the run passed its 0-minute limit'})
+
+    def test_the_330_minute_limit_is_the_reason_posted(self):
+        from apps.history.landslide_training import PastDeadline
+
+        self.fetch.return_value = landslide_data([])
+        with mock.patch('apps.history.model_job.landslide_attempt',
+                        side_effect=PastDeadline('the run passed its 330-minute limit')):
+            with self.assertRaises(CommandError):
+                self.run_job('--hazard', 'landslide')
+        self.post.assert_called_once_with({'hazard': 'landslide', 'result': 'failed',
+                                           'reason': 'Failed: the run passed its 330-minute limit'})
+
+    def test_command_stability_reps_option(self):
+        self.fetch.return_value = landslide_data([])
+        attempt = {'hazard': 'landslide', 'result': 'not_tried', 'reason': 'r'}
+        with mock.patch('apps.history.model_job.landslide_attempt', return_value=attempt) as landslide:
+            self.run_job('--hazard', 'landslide', '--stability-reps', '7', '--dry-run')
+        self.assertEqual(landslide.call_args.args[5], 7)
+
+    def test_command_flood_keeps_its_settings(self):
+        self.fetch.return_value = flood_data([])
+        attempt = {'hazard': 'flood', 'result': 'not_tried', 'reason': 'r'}
+        with mock.patch('apps.history.model_job.flood_attempt', return_value=attempt) as flood:
+            out = self.run_job('--hazard', 'flood', '--dry-run')
+        self.assertIn('GeoAlert sent 0 located flood spots in 0 barangays.', out)
+        self.assertEqual(flood.call_args.args[4:6], (1000, 200))
+
 
 class CommandOutputTests(FloodPatches, TestCase):
     def test_command_prints_no_coordinates(self):
@@ -483,7 +973,7 @@ class WorkflowFileTests(SimpleTestCase):
     def test_workflow_file(self):
         text = WORKFLOW.read_text(encoding='utf-8')
         # Final review P5: :17, since GitHub may delay or drop runs scheduled on the hour
-        self.assertEqual(re.findall(r"cron:\s*'([^']+)'", text), ['17 19 1 * *', '17 19 4 1 *'])
+        self.assertEqual(re.findall(r"cron:\s*'([^']+)'", text), ['17 19 1 * *', '17 19 4 1 *', LANDSLIDE_CRON])
         self.assertNotIn('0 19', text)
         self.assertIn("MODEL_JOB_SCRATCH_DB: 'true'", text)
         block = re.search(r'\npermissions:[ \t]*\n((?:[ \t]+.*\n)+)', text).group(1)
@@ -503,7 +993,9 @@ class WorkflowFileTests(SimpleTestCase):
             self.assertEqual(text.count(f'secrets.{name}'), 1, name)
         self.assertIn("github.event.schedule == '17 19 4 1 *'", text)
         self.assertRegex(text, r'\nconcurrency:\s*model-retrain\s*\n')
-        self.assertIn('timeout-minutes: 120', text)
+        # Fire and flood keep 120 minutes; the landslide run gets GitHub's limit for a job
+        self.assertIn("timeout-minutes: ${{ (inputs.hazard == 'landslide' || github.event.schedule == "
+                      "'17 19 5 1 *') && 360 || 120 }}", text)
         self.assertIn('runs-on: ubuntu-24.04', text)
         self.assertIn('image: postgis/postgis:16-3.4', text)
         # Actions are pinned to a commit, the version in a comment (a tag can be moved)
@@ -515,3 +1007,17 @@ class WorkflowFileTests(SimpleTestCase):
         self.assertIn('python manage.py run_model_job --hazard', text)
         for name in ('hazard:', 'dry_run:', 'workflow_dispatch:', 'type: choice', 'type: boolean'):
             self.assertIn(name, text)
+
+    def test_workflow_runs_landslide_on_6_january_with_20_refits_and_parallel_seeds(self):
+        text = WORKFLOW.read_text(encoding='utf-8')
+        options = re.search(r'\n        options:\n((?:          - .*\n)+)', text).group(1)
+        self.assertEqual([line.strip() for line in options.splitlines()], ['- fire', '- flood', '- landslide'])
+        hazard = re.search(r'\n      HAZARD: (.*)\n', text).group(1)
+        self.assertEqual(hazard, "${{ inputs.hazard || (github.event.schedule == '17 19 4 1 *' && 'flood' || "
+                                 "(github.event.schedule == '17 19 5 1 *' && 'landslide' || 'fire')) }}")
+        stability = re.search(r'\n      STABILITY_REPS: (.*)\n', text).group(1)
+        self.assertEqual(stability, "${{ (inputs.hazard == 'landslide' || github.event.schedule == '17 19 5 1 *') "
+                                    "&& '--stability-reps 20' || '' }}")
+        self.assertRegex(text, r"\n      LANDSLIDE_MLP_JOBS: '4'\n")  # R60: the network's seeds side by side
+        self.assertIn('python manage.py run_model_job --hazard "$HAZARD" $STABILITY_REPS $DRY_RUN', text)
+        self.assertIn("    - cron: '17 19 5 1 *'   # landslide: 03:17 Manila on 6 January", text)

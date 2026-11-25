@@ -1,6 +1,8 @@
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
-import ForecastAccuracy, { FloodModelReport, ForecastAccuracyEntry, UNDER_REVIEW } from './ForecastAccuracy';
+import ForecastAccuracy, {
+  FloodModelReport, ForecastAccuracyEntry, LandslideModelReport, UNDER_REVIEW, LANDSLIDE_UNDER_REVIEW,
+} from './ForecastAccuracy';
 import { historyApi } from '../../api/historyApi';
 
 jest.mock('../../api/historyApi', () => ({ historyApi: { forecastAccuracy: jest.fn() } }));
@@ -26,11 +28,10 @@ test('an untrained fire model says so with its reason', async () => {
   expect(el.querySelectorAll('table')).toHaveLength(0);
 });
 
-test('landslide is named as being rebuilt', async () => {
+test('no "being rebuilt" note for landslide any more, now that its model ships', async () => {
   historyApi.forecastAccuracy.mockResolvedValue({ hazards: [untrained] });
   const el = await render();
-  expect(el.textContent).toContain('Landslide predictions are being rebuilt.');
-  expect(el.textContent).not.toContain('Flood and landslide predictions are being rebuilt.');
+  expect(el.textContent).not.toContain('being rebuilt');
 });
 
 test('no rain credit, combined note or counting benchmark wording any more', async () => {
@@ -358,4 +359,404 @@ test('held-back spots on the same day in the same purok both show, with no key w
   } finally {
     spy.mockRestore();
   }
+});
+
+// ---- Landslide (backend landslide_run.run's report, with views.landslide_accuracy_entry's kind and status) ----
+const BASIS_LANDSLIDE_MODEL = 'From a machine-learning model of where landslides started after Philippine typhoons '
+  + "(mapped from satellite images), applied to Talisay's terrain, land cover and roads. It shows how prone an area is "
+  + 'to sliding, not whether a landslide is coming, and it is the same in every month.';
+const BASIS_LANDSLIDE_NOAH = "From UP NOAH's landslide hazard map, classed by where landslides started after Philippine "
+  + 'typhoons. It shows how prone an area is to sliding, not whether a landslide is coming, and it is the same in every '
+  + 'month.';
+const VERSHEL = 'Landslide inventories: NASA Cooperative Open Online Landslide Repository, Vershel et al. (2025), Open '
+  + 'inventories of rainfall-triggered landslides, Figshare doi 10.6084/m9.figshare.26972467 (CC BY 4.0)';
+const L_GATES = {
+  better_than_noah: true, talisay_test: true, not_everything_flagged: true, tests_seen_last: true,
+};
+const fold = (name, slides, auc, lo, hi) => ({ fold: name, slides, no_points: slides * 3, auc, lo, hi });
+const landslideReport = {
+  hazard: 'Landslide', kind: 'landslide_purok', status: 'in_use',
+  version: 'neural_network@0123456789ab', source: 'model', built_at: '2026-11-26T10:00:00+08:00',
+  basis: BASIS_LANDSLIDE_MODEL,
+  training_set: {
+    chosen: 'ph', rows: 9000, slides: 2250, landcover_ok: true, columns: [],
+    events: [
+      { event: 'egay', fold: 'egay', region: 'ph', slides: 400, no_points: 1200, weight: 1, used: true },
+      { event: 'mangkhut', fold: 'mangkhut', region: 'ph', slides: 1101, no_points: 3303, weight: 1, used: true },
+      { event: 'agaton', fold: 'agaton', region: 'ph', slides: 23, no_points: 69, weight: 1, used: true },
+      // A world event's key as landslide_inventories builds it: the country, then the event date
+      { event: 'south_africa_20220411', fold: 'world', region: 'world', slides: 300, no_points: 900, weight: 1, used: false },
+    ],
+    world: {
+      joined: false, gain: 0.004, lo: -0.02, hi: 0.03, rule: 'World rule text.',
+      verdict: 'The world events did not join: their AUC gain on held-out Philippine typhoons was 0.004 (95% interval '
+        + '-0.020 to 0.030), not wholly above zero.',
+    },
+  },
+  candidates: [
+    { name: 'neural_network', auc: 0.81, lo: 0.77, hi: 0.85, folds: [fold('egay', 400, 0.8, 0.74, 0.86), fold('agaton', 23, 0.7, 0.52, 0.88)] },
+    { name: 'logistic_regression', auc: 0.78, lo: 0.74, hi: 0.82, folds: [fold('egay', 400, 0.77, 0.7, 0.83)] },
+    { name: 'xgboost', auc: 0.8, lo: 0.76, hi: 0.84, folds: [] },
+    { name: 'noah_only', auc: 0.64, lo: 0.6, hi: 0.68, folds: [fold('egay', 400, 0.63, 0.57, 0.69)] },
+  ],
+  choice: {
+    chosen: 'neural_network', rule: 'Rule 2 text.',
+    verdict: 'Neural network kept: neither logistic regression nor XGBoost beat it clearly (the lower end of each AUC '
+      + 'gain over it was not above zero).',
+    comparisons: {},
+  },
+  acceptance: {
+    adopted: true,
+    gates: L_GATES,
+    labels: {
+      better_than_noah: "Better than UP NOAH's landslide map on its own",
+      talisay_test: 'Talisay puroks with a located landslide in Red or Orange',
+      not_everything_flagged: 'Red and Orange hold at most half of the in-range scoring points of assessed puroks',
+      tests_seen_last: 'Test data seen last',
+    },
+    details: {
+      better_than_noah: "AUC gain over UP NOAH's map alone 0.170 (95% interval 0.120 to 0.220) on the held-out "
+        + 'Philippine typhoons',
+      talisay_test: '2 of 2 in Red or Orange (2 needed)',
+      not_everything_flagged: '31% of the in-range scoring points of assessed puroks in Red or Orange',
+      tests_seen_last: 'The training set, the choice and the cut-offs were in the report before any Talisay test '
+        + 'record or catalogue point was loaded.',
+    },
+    reasons: [],
+  },
+  talisay_test: {
+    puroks: [
+      { purok_id: 11, name: 'Purok 3', barangay: 'Manipis', level: 'Red', published_level: 'Red' },
+      { purok_id: 12, name: 'Purok 5', barangay: 'Manipis', level: 'Orange', published_level: 'Orange' },
+    ],
+    barangay_check: {
+      barangays: [{ barangay_id: 1, barangay: 'Manipis', records: 4, points: 800, red_orange: 520,
+        share_red_orange: 0.65, published_share_red_orange: 0.65 }],
+      rest: { points: 9000, red_orange: 2700, share_red_orange: 0.3, published_share_red_orange: 0.3 },
+    },
+    catalogue: [{ level: 'Red', published_level: 'Red' }, { level: 'Green', published_level: 'Green' },
+      { level: null, published_level: null }],
+  },
+  in_range: {
+    points: 12000, in_range: 11400, share: 0.95, unlike_puroks: 3, outside_by_column: {},
+    clipped: { dist_road_m: 140, lc_built: 2210 }, clip_ranges: {},
+  },
+  classes: {
+    levels: { Red: { puroks: 40, points: 3000 }, Orange: { puroks: 70, points: 5000 }, Green: { puroks: 500, points: 20000 } },
+    not_assessed: { 'No buildings or roads in this area': 12, 'Its ground is unlike the areas the model learned from': 3 },
+    assessed_puroks: 610, flagged_point_share: 0.31,
+  },
+  stability: { refits: 200, uncertain_puroks: 9 },
+  road_check: {},
+  limits: ['This is not a forecast: it is the same in every month and does not say a landslide is coming.'],
+  credits: [VERSHEL, 'UP NOAH landslide hazard maps (ODbL), via the bettergovph mirror'],
+  since_publishing: { n: 0, in_red_orange: 0, under_review: false, misses: [] },
+};
+
+test('the card shows the landslide verdict, the NN rule and credits', async () => {
+  const el = await renderNode(<LandslideModelReport report={landslideReport} />);
+  expect(el.querySelector('h3').textContent).toBe('Landslide: susceptibility by purok');
+  expect(el.textContent).toContain('Neural network kept');
+  expect(el.textContent).toContain('Vershel et al. (2025)');
+  expect(el.textContent).toContain(BASIS_LANDSLIDE_MODEL);
+  expect(el.textContent).not.toContain('Fire:');
+});
+
+test('the landslide card names the training set, the world verdict and the candidates with intervals', async () => {
+  const el = await renderNode(<LandslideModelReport report={landslideReport} />);
+  expect(el.textContent).toContain('The world events did not join');
+  expect(el.textContent).toContain('Mangkhut');
+  expect(el.textContent).toContain('1,101');
+  const rows = el.querySelectorAll('table.fc-candidates tbody tr');
+  expect(rows).toHaveLength(4);
+  expect(rows[0].textContent).toContain('0.81 (0.77–0.85)');
+  expect(rows[0].textContent).toContain('chosen');
+  expect(rows[3].textContent).toContain("UP NOAH's map on its own (the benchmark)");
+  expect(el.textContent).toContain('Agaton'); // a per-fold row
+});
+
+test('the landslide card shows each gate, the Talisay test, the in-range share and the classes', async () => {
+  const el = await renderNode(<LandslideModelReport report={landslideReport} />);
+  expect(el.textContent).toContain("AUC gain over UP NOAH's map alone 0.170");
+  expect(el.textContent).toContain('2 of 2 in Red or Orange (2 needed)');
+  expect(el.textContent).toContain('Manipis');
+  expect(el.textContent).toContain('High landslide susceptibility');
+  expect(el.textContent).toContain('Moderate landslide susceptibility');
+  expect(el.textContent).toContain('95%'); // in range
+  expect(el.textContent).toContain('2,210'); // clipped count
+  expect(el.textContent).toContain('Its ground is unlike the areas the model learned from');
+  expect(el.textContent).toContain('This is not a forecast');
+  expect(el.textContent).not.toContain('flood');
+});
+
+test('under review is shown when monitoring flags it', async () => {
+  const flagged = { ...landslideReport, since_publishing: { n: 12, in_red_orange: 8, under_review: true,
+    misses: [{ day: '2027-02-03', purok: 'Purok 9', level: 'Green' }] } };
+  const el = await renderNode(<LandslideModelReport report={flagged} />);
+  expect(el.textContent).toContain('Under review: recent landslides fall outside the flagged areas');
+  expect(LANDSLIDE_UNDER_REVIEW).toBe('Under review: recent landslides fall outside the flagged areas');
+  expect(el.textContent).toContain('8 of 12 located landslides');
+  expect(el.textContent).toContain('2027-02-03');
+  const calm = await renderNode(<LandslideModelReport report={landslideReport} />);
+  expect(calm.textContent).not.toContain('Under review');
+});
+
+test("a NOAH fallback uses UP NOAH's basis and shows the failed gate", async () => {
+  const fallback = { ...landslideReport, source: 'noah', version: 'noah_fallback@abc', basis: BASIS_LANDSLIDE_NOAH,
+    acceptance: { ...landslideReport.acceptance, adopted: false,
+      gates: { ...L_GATES, better_than_noah: false },
+      reasons: ["It did not clearly beat UP NOAH's landslide map on the held-out Philippine typhoons: the lower end "
+        + 'of its AUC gain was -0.010, not above zero.'] } };
+  const el = await renderNode(<LandslideModelReport report={fallback} />);
+  expect(el.textContent).toContain(BASIS_LANDSLIDE_NOAH);
+  expect(el.textContent).toContain('NOAH fallback');
+  expect(el.textContent).toContain('not above zero');
+  expect(el.textContent).toContain('failed');
+});
+
+test('a simpler model that won says why instead of "kept"', async () => {
+  const simpler = { ...landslideReport, choice: { ...landslideReport.choice, chosen: 'logistic_regression',
+    verdict: 'Logistic regression chosen: its AUC gain over the neural network was 0.030 (95% interval 0.010 to '
+      + '0.050), wholly above zero.' } };
+  const el = await renderNode(<LandslideModelReport report={simpler} />);
+  expect(el.textContent).toContain('Logistic regression chosen');
+  expect(el.textContent).not.toContain('Neural network kept');
+});
+
+test('an own-data landslide report names the held-back season', async () => {
+  const own = { ...landslideReport, source: 'geoalert', own_spots: 34, season: 2026,
+    temporal_test: { season: 2026, held_back: [{ purok_id: 11, level: 'Red' }, { purok_id: 12, level: null }] } };
+  const el = await renderNode(<LandslideModelReport report={own} />);
+  expect(el.textContent).toContain("GeoAlert's own located landslide");
+  expect(el.textContent).toContain("The 2026 wet season's landslide spots, held back");
+  expect(el.textContent).toContain('34');
+});
+
+test('landslide entries route to the landslide card, never to a Fire heading', async () => {
+  const el = await renderNode(<ForecastAccuracyEntry entry={landslideReport} />);
+  expect(el.textContent).toContain('Landslide: susceptibility by purok');
+  expect(el.textContent).not.toContain('Fire:');
+  expect(el.textContent).not.toContain('Fire risk model');
+});
+
+test('an unavailable landslide entry shows its reason', async () => {
+  const el = await renderNode(<ForecastAccuracyEntry entry={{ hazard: 'Landslide', kind: 'landslide_purok',
+    status: 'unavailable', reason: 'The landslide model has not been trained yet.' }} />);
+  expect(el.textContent).toContain('Landslide: unavailable');
+  expect(el.textContent).toContain('The landslide model has not been trained yet.');
+});
+
+test('the page shows the fire, flood and landslide entries', async () => {
+  historyApi.forecastAccuracy.mockResolvedValue({ hazards: [untrained, floodReport, landslideReport] });
+  const el = await render();
+  expect(el.textContent).toContain('Fire: unavailable');
+  expect(el.textContent).toContain('Flood: susceptibility by purok');
+  expect(el.textContent).toContain('Landslide: susceptibility by purok');
+});
+
+// ---- Fix round 1 ----
+test('an own-data report labels its own event as GeoAlert\'s own, not "elsewhere in the world"', async () => {
+  const own = { ...landslideReport, source: 'geoalert', own_spots: 34,
+    training_set: { ...landslideReport.training_set, events: [
+      ...landslideReport.training_set.events,
+      { event: 'talisay', fold: 'talisay', region: 'talisay', slides: 34, no_points: 102, weight: 10, used: true },
+    ] } };
+  const el = await renderNode(<LandslideModelReport report={own} />);
+  const row = [...el.querySelectorAll('tr')].find((r) => r.textContent.startsWith('Talisay'));
+  expect([...row.querySelectorAll('td')].map((td) => td.textContent).slice(0, 2))
+    .toEqual(['Talisay', "GeoAlert's own located landslides"]);
+});
+
+test('under the NOAH fallback the range note and the catalogue line name the model not in use or the map in use', async () => {
+  const fb = { ...landslideReport, source: 'noah', basis: BASIS_LANDSLIDE_NOAH,
+    talisay_test: { ...landslideReport.talisay_test,
+      catalogue: [{ level: 'Red', published_level: 'Green' }, { level: 'Red', published_level: 'Green' }] } };
+  const el = await renderNode(<LandslideModelReport report={fb} />);
+  expect(el.textContent).toContain('Ground like the training areas (the machine-learning model, not in use)');
+  expect(el.textContent).toContain('by the level of their area on the map in use: Low landslide susceptibility 2');
+  expect(el.textContent).not.toContain('High landslide susceptibility 2');
+});
+
+test('the basis comes from the entry, and no basis means no line', async () => {
+  const el = await renderNode(<LandslideModelReport report={landslideReport} />);
+  expect(el.textContent).toContain(BASIS_LANDSLIDE_MODEL);
+  const none = await renderNode(<LandslideModelReport report={{ ...landslideReport, basis: undefined }} />);
+  expect(none.textContent).not.toContain('From a machine-learning model of where landslides started');
+});
+
+test('puroks without an id do not collide, and a missing choice or version prints no "undefined"', async () => {
+  const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    const bare = { ...landslideReport, version: undefined, choice: undefined,
+      talisay_test: { ...landslideReport.talisay_test, puroks: [
+        { purok_id: null, name: null, barangay: 'Manipis', level: 'Red', published_level: 'Red' },
+        { purok_id: null, name: null, barangay: 'Manipis', level: 'Red', published_level: 'Red' },
+      ] } };
+    const el = await renderNode(<LandslideModelReport report={bare} />);
+    expect(el.textContent).not.toContain('undefined');
+    expect(el.textContent).toContain('In use: the machine-learning model.');
+    // A null key warns 'unique "key"', not 'same key': match any key warning (final review M13.4)
+    expect(spy.mock.calls.flat().join(' ')).not.toMatch(/key/);
+  } finally {
+    spy.mockRestore();
+  }
+});
+
+test('the checks heading does not claim a fixed count that own mode exceeds', async () => {
+  const el = await renderNode(<LandslideModelReport report={landslideReport} />);
+  expect(el.textContent).toContain('The four checks');
+  expect(el.textContent).not.toContain('all four must pass');
+});
+
+// ---- Final review fix wave ----
+// F1: spec 3.3, "the card reports how many training rows kept the road clue" (landslide_run's report['road_check'])
+const ROAD_CHECK = {
+  talisay_steep_road_density: 2.1, steep_deg: 10, share: 0.1, threshold: 0.21, events: { egay: 1.2, paeng: 0.05 },
+  rows: 9000, rows_with_road: 7800, events_without_road: ['paeng', 'south_africa_20220411'],
+};
+
+test('the card says how many training rows kept the road clue, and which events had none', async () => {
+  const el = await renderNode(<LandslideModelReport report={{ ...landslideReport, road_check: ROAD_CHECK }} />);
+  expect(el.textContent).toContain('7,800 of 9,000 training rows kept the road clue.');
+  expect(el.textContent).toContain(
+    "No road clue for the events whose mapped area has under a tenth of Talisay's road density on steep ground: "
+    + 'Paeng; South Africa, 11 Apr 2022.',
+  );
+});
+
+test('every row kept the road clue: no events line', async () => {
+  const all = { ...ROAD_CHECK, rows_with_road: 9000, events_without_road: [] };
+  const el = await renderNode(<LandslideModelReport report={{ ...landslideReport, road_check: all }} />);
+  expect(el.textContent).toContain('9,000 of 9,000 training rows kept the road clue.');
+  expect(el.textContent).not.toContain('No road clue');
+});
+
+test('a report without the road check keys shows no road line', async () => {
+  const empty = await renderNode(<LandslideModelReport report={landslideReport} />); // road_check: {}
+  expect(empty.textContent).not.toContain('road clue');
+  const none = await renderNode(<LandslideModelReport report={{ ...landslideReport, road_check: undefined }} />);
+  expect(none.textContent).not.toContain('road clue');
+});
+
+// F1: spec 5.2 step 5, "the card states the recall reached" (flood_rules.Cutoffs, as landslide_run writes it)
+const CUT = { red: 0.71, orange: 0.38, red_recall: 0.52, orange_recall: 0.91, target_reached: true };
+const RECALL = 'At the cut-offs in use, Red holds 52% of the held-out landslides, and Red and Orange together 91%.';
+
+test('under the levels, the recall the cut-offs in use reach', async () => {
+  const el = await renderNode(<LandslideModelReport report={{ ...landslideReport, cutoffs: CUT }} />);
+  expect(el.textContent).toContain(RECALL);
+  expect(el.textContent).not.toContain('was not reached');
+  expect(el.textContent).not.toContain('ten times');
+  // the line sits under "The levels"
+  const heads = [...el.querySelectorAll('h4')].map((h) => h.textContent);
+  const line = [...el.querySelectorAll('p.fc-note')].find((p) => p.textContent.includes('At the cut-offs in use'));
+  expect(line.previousElementSibling.querySelector('table')).not.toBeNull();
+  expect(heads.indexOf('The levels')).toBeGreaterThan(-1);
+});
+
+test('a 90% target the cut-offs could not reach is stated', async () => {
+  const short = { ...CUT, orange_recall: 0.84, target_reached: false };
+  const el = await renderNode(<LandslideModelReport report={{ ...landslideReport, cutoffs: short }} />);
+  expect(el.textContent).toContain('Red holds 52% of the held-out landslides, and Red and Orange together 84%.');
+  expect(el.textContent).toContain(
+    'The 90% target for Red and Orange was not reached: the scores tie at the bottom, so Orange stops at the last '
+    + 'distinct score.',
+  );
+});
+
+test("under the NOAH fallback the recall is the fallback's cut-offs, not the unused model's", async () => {
+  const fb = { ...landslideReport, source: 'noah', basis: BASIS_LANDSLIDE_NOAH, cutoffs: CUT,
+    fallback: { cutoffs: { red: 1, orange: 0.67, red_recall: 0.6, orange_recall: 0.88, target_reached: false },
+      flagged_share: 0.4, note: 'Fallback note.' } };
+  const el = await renderNode(<LandslideModelReport report={fb} />);
+  expect(el.textContent).toContain('Red holds 60% of the held-out landslides, and Red and Orange together 88%.');
+  expect(el.textContent).toContain('The 90% target for Red and Orange was not reached');
+  expect(el.textContent).not.toContain('Red holds 52%');
+});
+
+test("in own mode the recall line says GeoAlert's own landslides count ten times", async () => {
+  const own = { ...landslideReport, source: 'geoalert', own_spots: 34, cutoffs: CUT };
+  const el = await renderNode(<LandslideModelReport report={own} />);
+  expect(el.textContent).toContain(`${RECALL} GeoAlert's own landslides count ten times in these shares.`);
+});
+
+// Follow-up round 1: a share just under the target must not round up to it and contradict the sentence
+test('a Red and Orange share just under 90% never reads as 90% when the target was not reached', async () => {
+  const short = { ...CUT, orange_recall: 0.8996, target_reached: false };
+  const el = await renderNode(<LandslideModelReport report={{ ...landslideReport, cutoffs: short }} />);
+  expect(el.textContent).toContain('Red holds 52% of the held-out landslides, and Red and Orange together 89%.');
+  expect(el.textContent).not.toContain('together 90%');
+  expect(el.textContent).toContain('The 90% target for Red and Orange was not reached');
+  // a whole percent stays whole (0.57 * 100 is 56.99999999999999 in floating point)
+  const whole = { ...CUT, orange_recall: 0.57, target_reached: false };
+  const el2 = await renderNode(<LandslideModelReport report={{ ...landslideReport, cutoffs: whole }} />);
+  expect(el2.textContent).toContain('Red and Orange together 57%.');
+  // a reached target keeps today's rounding
+  const reached = { ...CUT, orange_recall: 0.9996, target_reached: true };
+  const el3 = await renderNode(<LandslideModelReport report={{ ...landslideReport, cutoffs: reached }} />);
+  expect(el3.textContent).toContain('Red and Orange together 100%.');
+});
+
+// Follow-up round 1: in own mode the training set's count includes GeoAlert's own rows, and the intro says so
+test("the training set intro names GeoAlert's own landslides in own mode only", async () => {
+  const MODEL_INTRO = '2,250 landslides and the ground around them that did not slide (9,000 rows in all) that the '
+    + 'chosen training set holds, from typhoons in the Philippines and, if they joined, events elsewhere in the world.';
+  const el = await renderNode(<LandslideModelReport report={landslideReport} />);
+  expect(el.textContent).toContain(MODEL_INTRO);
+  const own = await renderNode(<LandslideModelReport report={{ ...landslideReport, source: 'geoalert', own_spots: 34 }} />);
+  expect(own.textContent).toContain(
+    '2,250 landslides and the ground around them that did not slide (9,000 rows in all) that the chosen training set '
+    + "holds, from typhoons in the Philippines, GeoAlert's own landslides and, if they joined, events elsewhere in the "
+    + 'world.',
+  );
+  expect(own.textContent).not.toContain(MODEL_INTRO);
+});
+
+test('no cut-offs, or cut-offs without their recall, show no recall line', async () => {
+  const none = await renderNode(<LandslideModelReport report={landslideReport} />);
+  expect(none.textContent).not.toContain('At the cut-offs in use');
+  const bare = await renderNode(<LandslideModelReport report={{ ...landslideReport, cutoffs: { red: 0.7, orange: 0.4 } }} />);
+  expect(bare.textContent).not.toContain('At the cut-offs in use');
+  expect(bare.textContent).not.toContain('was not reached');
+});
+
+// F2: the catalogue the Talisay points come from is the test-only Global Landslide Catalog (spec 3.1, 3.4)
+test("the catalogue line names NASA's Global Landslide Catalog", async () => {
+  const el = await renderNode(<LandslideModelReport report={landslideReport} />);
+  expect(el.textContent).toContain(
+    "Landslides in NASA's Global Landslide Catalog inside Talisay, by the level of their area: High landslide "
+    + 'susceptibility 1; Low landslide susceptibility 1; Not assessed yet 1.',
+  );
+  expect(el.textContent).not.toContain('NASA catalogue');
+});
+
+// FM6: a world event's key reads as its country and date
+test('a world event reads as its country and date, not its raw key', async () => {
+  const el = await renderNode(<LandslideModelReport report={landslideReport} />);
+  const row = [...el.querySelectorAll('tr')].find((r) => r.textContent.includes('Elsewhere in the world'));
+  expect(row.querySelector('td').textContent).toBe('South Africa, 11 Apr 2022');
+  expect(el.textContent).not.toContain('South_africa');
+  expect(el.textContent).not.toContain('20220411');
+});
+
+// FM7: in own mode the held-out folds include GeoAlert's own landslides, not only typhoons
+test("the per-fold table names held-out events, and in own mode GeoAlert's own landslides", async () => {
+  const el = await renderNode(<LandslideModelReport report={landslideReport} />);
+  const caption = () => [...el.querySelectorAll('caption')].map((c) => c.textContent)
+    .find((t) => t.startsWith('AUC on each'));
+  expect(caption()).toBe('AUC on each held-out event (a Philippine typhoon)');
+  expect(el.textContent).not.toContain("or GeoAlert's own landslides");
+  const ownReport = { ...landslideReport, source: 'geoalert', own_spots: 34,
+    candidates: [{ ...landslideReport.candidates[0], folds: [...landslideReport.candidates[0].folds,
+      fold('talisay', 34, 0.75, 0.6, 0.9)] }] };
+  const own = await renderNode(<LandslideModelReport report={ownReport} />);
+  const ownCaption = [...own.querySelectorAll('caption')].map((c) => c.textContent).find((t) => t.startsWith('AUC on each'));
+  expect(ownCaption).toBe("AUC on each held-out event (a Philippine typhoon or GeoAlert's own landslides)");
+  expect(own.textContent).toContain(
+    "Each candidate was scored on landslides it never saw, one held-out event at a time: a Philippine typhoon or "
+    + "GeoAlert's own landslides.",
+  );
+  const table = [...own.querySelectorAll('table')].find((t) => t.querySelector('caption')?.textContent.startsWith('AUC on each'));
+  expect([...table.querySelectorAll('th')].map((th) => th.textContent)).toEqual(['Model', 'Event', 'Landslides', 'AUC (95% interval)']);
+  expect(own.textContent).not.toContain('held-out typhoon');
 });

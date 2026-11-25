@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { GeoJSON, Pane } from 'react-leaflet';
 import { floodOverlayFeatures, floodOverlayStyle } from './floodMarks';
+import { overlayInput } from '../Forecast/forecastLevels';
 
 /**
  * "Likely by month" with Flood ticked: grey, dashed areas the flood model has
@@ -9,16 +10,20 @@ import { floodOverlayFeatures, floodOverlayStyle } from './floodMarks';
  *
  * geo     every purok outline (/api/barangays/puroks/)
  * levels  purokLikelyLevels() of the forecast response
- * types   the ticked predicted hazards: with Fire, a fire colour is never greyed
+ * types   the ticked predicted hazards: an area with another ticked hazard's colour is never greyed
+ * hazard  'Flood' (default) or 'Landslide': whose rows to mark
  */
-export default function FloodOverlay({ geo, levels, types = ['Flood'] }) {
-  const marked = useMemo(() => floodOverlayFeatures(geo, levels, types), [geo, levels, types]);
+export default function FloodOverlay({ geo, levels, types = ['Flood'], hazard = 'Flood' }) {
+  const marked = useMemo(() => {
+    const input = overlayInput(levels, hazard, types);
+    return floodOverlayFeatures(geo, input.levels, input.types);
+  }, [geo, levels, types, hazard]);
   if (!marked) return null;
   // react-leaflet's GeoJSON only reads its data once: remount when the marks change
   const key = marked.features.map((f) => `${f.id ?? f.properties.id}:${f.properties.flood}`).join('|');
   return (
-    <Pane name="flood-marks" style={{ zIndex: 365, pointerEvents: 'none' }}>
-      <GeoJSON key={key} data={marked} style={floodOverlayStyle} interactive={false} />
+    <Pane name={`${hazard.toLowerCase()}-marks`} style={{ zIndex: hazard === 'Landslide' ? 366 : 365, pointerEvents: 'none' }}>
+      <GeoJSON key={`${hazard}:${key}`} data={marked} style={floodOverlayStyle} interactive={false} />
     </Pane>
   );
 }

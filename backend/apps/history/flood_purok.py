@@ -185,7 +185,7 @@ def _smallest_purok(point):
     return min(found, key=lambda p: p.boundary.area) if found else None
 
 
-def located_floods(since: datetime | None = None) -> list:
+def located_floods(since: datetime | None = None, hazard_name: str = 'Flood') -> list:
     """
     The located floods on record, as (when, source): Flood records with a map
     point or at least one purok (by occurred_at), then "Affected here" marks on
@@ -195,8 +195,8 @@ def located_floods(since: datetime | None = None) -> list:
     from apps.hazards.models import ZoneFieldMark
     from apps.history.models import HistoricalRecord
 
-    records = HistoricalRecord.objects.filter(hazard_type__name='Flood').prefetch_related('puroks')
-    marks = ZoneFieldMark.objects.filter(kind='Affected', zone__hazard_type__name='Flood')
+    records = HistoricalRecord.objects.filter(hazard_type__name=hazard_name).prefetch_related('puroks')
+    marks = ZoneFieldMark.objects.filter(kind='Affected', zone__hazard_type__name=hazard_name)
     if since is not None:
         records, marks = records.filter(occurred_at__gt=since), marks.filter(created_at__gt=since)
     found = [(r.occurred_at, r) for r in records.order_by('occurred_at')
@@ -212,17 +212,19 @@ def _puroks_of(source) -> list:
     return list(source.puroks.all())
 
 
-def since_publishing(model: FloodModel) -> dict:
+def since_publishing(model: FloodModel, hazard_name: str = 'Flood') -> dict:
     """
     New located floods since the model was built, each checked against its
     purok's published class: Flood records with a map point or puroks, and
     "Affected here" marks on flood zones (located_floods). A flood in Green or
     not assessed is a miss. flood_rules.monitoring decides "under review".
+    `model` needs only .built_at and .areas, so landslide passes its own with
+    hazard_name='Landslide'.
     """
     from apps.history.flood_rules import monitoring
 
     built = datetime.fromisoformat(model.built_at)
-    found = [(when, _puroks_of(source)) for when, source in located_floods(built)]
+    found = [(when, _puroks_of(source)) for when, source in located_floods(built, hazard_name=hazard_name)]
     levels, misses = [], []
     for when, puroks in found:
         best, name = None, None
@@ -236,7 +238,7 @@ def since_publishing(model: FloodModel) -> dict:
     return {**monitoring(levels), 'misses': misses}
 
 
-def located_spots() -> list:
+def located_spots(hazard_name: str = 'Flood') -> list:
     """
     Every located flood spot, oldest first, for the retraining job: Flood
     records with a map point (id 'r:<uuid>'), then "Affected here" marks on
@@ -259,9 +261,9 @@ def located_spots() -> list:
         return {'id': sid, 'when': timezone.localtime(when).isoformat(timespec='seconds'),
                 'lon': point.x, 'lat': point.y, 'barangay': name, 'purok_id': purok.id if purok else None}
 
-    records = (HistoricalRecord.objects.filter(hazard_type__name='Flood', location__isnull=False)
+    records = (HistoricalRecord.objects.filter(hazard_type__name=hazard_name, location__isnull=False)
                .select_related('barangay').order_by('occurred_at', 'id'))
-    marks = (ZoneFieldMark.objects.filter(kind='Affected', zone__hazard_type__name='Flood')
+    marks = (ZoneFieldMark.objects.filter(kind='Affected', zone__hazard_type__name=hazard_name)
              .order_by('created_at', 'id'))
     spots = [spot(f'r:{r.id}', r.occurred_at, r.location,
                   r.barangay.name if r.barangay else containing(r.location)) for r in records]

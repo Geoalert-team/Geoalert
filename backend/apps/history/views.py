@@ -268,13 +268,13 @@ def _forecast_events():
 
 
 PUBLIC_CACHE = 'public, max-age=600'
-# Fire's chance by month and flood susceptibility (docs/design/specs/2026-11-24-flood-susceptibility-model-design.md);
-# landslide has no prediction model yet
-FORECAST_HAZARDS = ('Fire', 'Flood')
-FORECAST_ONLY = 'Only fire and flood have prediction models for now.'
+# Fire's chance by month, flood and landslide susceptibility (docs/design/specs/2026-11-24-flood-susceptibility-model-design.md,
+# 2026-11-24-landslide-susceptibility-model-design.md)
+FORECAST_HAZARDS = ('Fire', 'Flood', 'Landslide')
+FORECAST_ONLY = 'Only fire, flood and landslide have prediction models.'
+SUSCEPTIBILITY_NOT_BY_MONTH = 'Flood and landslide susceptibility do not change by month.'
 BOTH_PARAMETERS = 'Use hazards or hazard_type_name, not both.'
-BASIS_REBUILDING = ("Fire's prediction model is being rebuilt, so no chances are shown until it is trained. "
-                    'Flood and landslide predictions are being rebuilt too.')
+BASIS_REBUILDING = "Fire's prediction model is being rebuilt, so no chances are shown until it is trained."
 
 
 def _public(response):
@@ -292,9 +292,9 @@ def basis_method(model=None) -> str:
 
 def parse_hazards(params):
     """
-    The hazards a forecast request covers, in the order Fire, Flood: ?hazards=Fire,Flood or ?hazard_type_name=Flood,
-    read without regard to case or spaces; neither means fire. Raises ValueError with a sentence for the page when
-    both are given or any name is neither fire nor flood (FORECAST_ONLY).
+    The hazards a forecast request covers, in the order Fire, Flood, Landslide: ?hazards=Fire,Flood or
+    ?hazard_type_name=Flood, read without regard to case or spaces; neither means fire. Raises ValueError with a
+    sentence for the page when both are given or any name is not one of the three (FORECAST_ONLY).
     """
     listed = (params.get('hazards') or '').strip()
     single = (params.get('hazard_type_name') or '').strip()
@@ -317,7 +317,7 @@ def forecast_result(*, month, day, year, barangay, years, now, hazards=('Fire',)
     used (not trained yet, or trained on another purok map) every row is
     unavailable with the reason, never a counted figure.
     """
-    from apps.history import fire_purok, flood_purok, forecast_rows
+    from apps.history import fire_purok, flood_purok, forecast_rows, landslide_purok
     from apps.history.forecast import empty_profile, seasonal_forecast
 
     fires = [e for e in _forecast_events() if (e['hazard'] or '').lower() == 'fire']
@@ -340,11 +340,13 @@ def forecast_result(*, month, day, year, barangay, years, now, hazards=('Fire',)
     else:
         fire_purok.apply(result, model, month, day, year, now.date())
     if 'Fire' not in hazards:
-        # Flood alone: no fire rows, and no 12-month chart, since susceptibility is the same every month
+        # No fire rows, and no 12-month chart, since susceptibility is the same every month
+        asked = [h for h in hazards if h in ('Flood', 'Landslide')]
         result.update(results=[], by_barangay=[], purok_results=[], model_hazards=[], unavailable_hazards=[],
-                      hazard_type='Flood')
+                      hazard_type=asked[0])
         forecast_rows.mark_profile_unavailable(result)
-        result['profile_reason'] = flood_purok.NOT_BY_MONTH
+        result['profile_reason'] = (SUSCEPTIBILITY_NOT_BY_MONTH if len(asked) > 1 else
+                                    flood_purok.NOT_BY_MONTH if asked[0] == 'Flood' else landslide_purok.NOT_BY_MONTH)
     if 'Flood' in hazards:
         flood = flood_purok.load()
         result['flood'] = flood_purok.flood_block(flood)
@@ -352,6 +354,13 @@ def forecast_result(*, month, day, year, barangay, years, now, hazards=('Fire',)
         if 'Fire' not in hazards:
             result['basis'] = {'records': 0,
                                'method': flood if isinstance(flood, str) else flood_purok.basis(flood)}
+    if 'Landslide' in hazards:
+        landslide = landslide_purok.load()
+        result['landslide'] = landslide_purok.landslide_block(landslide)
+        result['landslide_results'] = [] if isinstance(landslide, str) else landslide_purok.purok_rows(landslide)
+        if 'Fire' not in hazards and 'Flood' not in hazards:
+            result['basis'] = {'records': 0, 'method': landslide if isinstance(landslide, str)
+                               else landslide_purok.basis(landslide)}
     return result
 
 
@@ -365,8 +374,8 @@ class HistoricalForecastView(APIView):
     from 0 to 1, and `level` is Low, Moderate or High on the chance for the
     MONTH, also in the week view. "None" means no figure: a row with
     `method: unavailable` has a `reason`, and fire is then named in
-    `unavailable_hazards`. Flood and landslide have no prediction model for
-    now (removed 2026-11-22): asking for them is a 400.
+    `unavailable_hazards`. Flood and landslide carry susceptibility classes
+    per purok instead (flood_purok, landslide_purok), the same every period.
 
     `purok_results` has one row per purok from the fire risk model
     (fire_purok): {purok_id, barangay_id, probability, level (Red, Orange or
@@ -378,10 +387,13 @@ class HistoricalForecastView(APIView):
                              started, each row also has `actual`, what
                              happened in it
       ?date=2027-11-15       instead of month: the week around that date
-      ?hazards=Fire,Flood    Fire, Flood or both (or ?hazard_type_name=Fire or
-                             Flood, not both); any other name is a 400. Flood
-                             adds `flood` and `flood_results` (flood_purok),
-                             the same for every period
+      ?hazards=Fire,Flood,Landslide
+                             Any of the three (or ?hazard_type_name=Fire,
+                             Flood or Landslide, not both); any other name is
+                             a 400. Flood adds `flood` and `flood_results`
+                             (flood_purok), Landslide `landslide` and
+                             `landslide_results` (landslide_purok), the same
+                             for every period
       ?barangay=7            the 12-month profile is that barangay's
       ?years=10              how many past years the history reads (1-10)
 
@@ -478,17 +490,35 @@ def flood_accuracy_entry() -> dict:
     return {**base, **model.report, 'status': 'in_use', 'since_publishing': flood_purok.since_publishing(model)}
 
 
+def landslide_accuracy_entry() -> dict:
+    """
+    Landslide's entry on the accuracy card: {'hazard': 'Landslide', 'kind': 'landslide_purok', 'status', ...};
+    'in_use' with the model's report (train_landslide_model), its `basis` sentence and `since_publishing` (new located landslides checked
+    against the published classes), else 'unavailable' with the reason.
+    """
+    from apps.history import landslide_purok
+
+    base = {'hazard': 'Landslide', 'kind': 'landslide_purok'}
+    model = landslide_purok.load()
+    if isinstance(model, str):
+        return {**base, 'status': 'unavailable', 'reason': model}
+    if model.report is None:
+        return {**base, 'status': 'unavailable', 'reason': landslide_purok.REPORT_MISSING}
+    return {**base, **model.report, 'status': 'in_use', 'basis': landslide_purok.basis(model),
+            'since_publishing': landslide_purok.since_publishing(model)}
+
+
 class ForecastAccuracyView(APIView):
     """
     GET /api/history/forecast/accuracy/
     How the fire model did on fires it never saw, and how the flood
-    susceptibility model did on floods it never saw (their saved reports).
-    Landslide has no model for now. Sent with Cache-Control public, max-age=600.
+    susceptibility model did on floods it never saw, and the landslide model on
+    landslides it never saw (their saved reports). Sent with Cache-Control public, max-age=600.
     """
     permission_classes = [AllowAny]
 
     def get(self, request):
-        return _public(Response({'hazards': [fire_accuracy_entry(), flood_accuracy_entry()]}))
+        return _public(Response({'hazards': [fire_accuracy_entry(), flood_accuracy_entry(), landslide_accuracy_entry()]}))
 
 
 class FloodReadinessView(APIView):
@@ -497,15 +527,16 @@ class FloodReadinessView(APIView):
     Whether there is enough located flood data to improve the flood
     predictions (flood_purok.readiness): located flood days on record against
     what a flood forecast would need, and new located floods since the flood
-    map was published against the review threshold. Counts only, never a
+    map was published against the review threshold; `landslide_spots` is the
+    located landslide spots against the floor for own data. Counts only, never a
     location; it changes nothing. Sent with Cache-Control public, max-age=600.
     """
     permission_classes = [AllowAny]
 
     def get(self, request):
-        from apps.history import flood_purok
+        from apps.history import flood_purok, landslide_purok
 
-        return _public(Response(flood_purok.readiness()))
+        return _public(Response({**flood_purok.readiness(), 'landslide_spots': landslide_purok.readiness_line()}))
 
 
 class ModelUpdatesView(APIView):
@@ -524,11 +555,11 @@ class ModelUpdatesView(APIView):
 
 class ModelJobDataView(APIView):
     """
-    GET /api/history/model-job/data/?hazard=fire|flood&outlines=1
+    GET /api/history/model-job/data/?hazard=fire|flood|landslide&outlines=1
     The retraining job's training data. Token only, never cached. Fire has
-    purok ids only; flood spots carry their purok and their lon/lat (the job
-    needs the point), in this token-only response only; outlines come only
-    with outlines=1.
+    purok ids only; flood and landslide spots carry their purok and their
+    lon/lat (the job needs the point), in this token-only response only;
+    outlines come only with outlines=1.
     """
     authentication_classes = []
     permission_classes = [ModelJobTokenPermission]
@@ -537,8 +568,8 @@ class ModelJobDataView(APIView):
         from apps.history import model_fits
 
         hazard = request.query_params.get('hazard')
-        if hazard not in ('fire', 'flood'):
-            response = Response({'detail': 'hazard must be fire or flood.'}, status=400)
+        if hazard not in ('fire', 'flood', 'landslide'):
+            response = Response({'detail': 'hazard must be fire, flood or landslide.'}, status=400)
         else:
             try:
                 data = model_fits.training_data(hazard, outlines=request.query_params.get('outlines') == '1')

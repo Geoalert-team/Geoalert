@@ -6,18 +6,20 @@ const TOP = 5;
 const RANK = { Red: 3, Orange: 2, Green: 1 };
 
 /**
- * A barangay's puroks by flood susceptibility ("Likely by month" with Flood
- * ticked), from the flood model's rows: the 5 most flood-prone, then "Show
- * all"; the areas not assessed are grouped under their reason. Susceptibility
- * says how flood-prone an area is, not that a flood is coming.
+ * A barangay's puroks by flood or landslide susceptibility ("Likely by month"
+ * with that hazard ticked), from the model's rows: the 5 most prone, then
+ * "Show all"; the areas not assessed are grouped under their reason.
+ * Susceptibility says how prone an area is, not that a hazard is coming.
  *
- * rows        the barangay's `flood_results` rows (/api/history/forecast/)
+ * rows        the barangay's `flood_results` or `landslide_results` rows (/api/history/forecast/)
  * purokNames  purok id (string) → name
+ * words       the level words (FLOOD_WORD, or LANDSLIDE_WORD)
+ * noun        'flood' or 'landslide', for the empty line
  */
-export default function FloodPuroks({ rows, purokNames }) {
+export default function FloodPuroks({ rows, purokNames, words = FLOOD_WORD, noun = 'flood' }) {
   const [all, setAll] = useState(false);
   if (!(rows || []).length) {
-    return <p className="pm-muted">No flood levels for this barangay.</p>;
+    return <p className="pm-muted">No {noun} levels for this barangay.</p>;
   }
   const assessed = rows.filter((r) => r.level)
     .sort((a, b) => RANK[b.level] - RANK[a.level] || a.purok_id - b.purok_id);
@@ -37,7 +39,7 @@ export default function FloodPuroks({ rows, purokNames }) {
                 <strong>{purokNames?.get(String(r.purok_id)) || `Area ${r.purok_id}`}</strong>
                 {r.uncertain && <small className="pm-likely-tag">Uncertain</small>}
               </span>
-              <span className="pm-likely-figure">{FLOOD_WORD[r.level]}</span>
+              <span className="pm-likely-figure">{words[r.level]}</span>
             </li>
           ))}
         </ul>

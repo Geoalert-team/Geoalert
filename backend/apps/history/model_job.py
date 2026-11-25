@@ -9,6 +9,9 @@ section 6), run by manage.py run_model_job on a throw-away GitHub runner:
      flood, every January: try the own-data model (flood_own) once there are
      enough located spots, building the features from outlines loaded into
      the runner's own empty database;
+     landslide, every January a day later: the same for GeoAlert's own
+     located landslides (landslide_own), added to the committed outside
+     training table;
   3. post the attempt back. GeoAlert saves every attempt and makes a fit live
      only when it passed.
 
@@ -33,8 +36,9 @@ from django.core.management import call_command
 from django.db import transaction
 
 from apps.barangays.models import Barangay, Purok
-from apps.history import fire_features, fire_run, flood_own
+from apps.history import fire_features, fire_run, flood_own, landslide_own
 from apps.history import flood_features as ff
+from apps.history import landslide_features as lf
 from apps.history.fire_training import FireRecord
 from apps.history.model_fits import MAX_REASON
 
@@ -121,8 +125,15 @@ def mask_decimals(text: str) -> str:
 
 
 def failed_reason(exc: BaseException) -> str:
-    """The failed attempt's reason, with any decimal number (a point a library quoted) taken out."""
-    return FAILED.format(detail=f'{type(exc).__name__}: {mask_decimals(str(exc))[:200]}')
+    """
+    The failed attempt's reason, with any decimal number (a point a library
+    quoted) taken out. An error worded for the card (`own_words`, as
+    landslide_training.PastDeadline, a passed time limit) comes without its type.
+    """
+    detail = mask_decimals(str(exc))[:200]
+    if getattr(exc, 'own_words', False) is True:
+        return FAILED.format(detail=detail)
+    return FAILED.format(detail=f'{type(exc).__name__}: {detail}')
 
 
 # Fire
@@ -232,3 +243,111 @@ def flood_attempt(data: dict, today, cache: Path, workdir: Path, reps: int, stab
             return attempt('kept', flood_own.FLOOD_WORSE.format(season=season, new=new_hits, live=live_hits))
     hits = flood_own.compare(new_levels, [])[0]
     return attempt('switched', flood_own.FLOOD_SWITCHED.format(hits=hits, n=len(new_levels)))
+
+
+# Landslide
+
+def talisay_ground(cache: Path, log):
+    """
+    on_ground(points) -> bool array: True where Talisay's Copernicus height is
+    above 0 (the sea is not ground, ruling R21), on the grid
+    build_landslide_features saved its clue grids on; the height is the one
+    that command cached (landslide_sources.dem_for). A point off that grid is
+    not ground, whatever the nearest edge cell holds.
+    """
+    from apps.hazards.susceptibility import Grid
+    from apps.history import landslide_sources
+
+    with np.load(Path(cache) / lf.GRIDS_FILE, allow_pickle=False) as z:
+        grid = Grid(*(float(v) for v in z['bbox']), int(z['zoom']))  # as landslide_features.features_at reads it
+    dem = landslide_sources.dem_for(grid, cache, log)
+
+    def on_ground(points):
+        pts = np.asarray(points, float).reshape(-1, 2)
+        return lf.on_grid(grid, pts) & (ff.sample_grid(grid, dem, pts) > 0)
+
+    return on_ground
+
+
+def landslide_attempt(data: dict, today, cache: Path, workdir: Path, reps: int, stability_reps: int, log,
+                      fetch=fetch, deadline=None) -> dict:
+    """
+    The landslide attempt: not tried below the floor (30 located spots in 3
+    barangays), with fewer than 5 spots in the held-back wet season, or with
+    no own slide to train on (ruling R43: none before that season, or none
+    left on ground); otherwise the committed outside training table plus
+    GeoAlert's own spots from before that season (landslide_own.own_rows, the
+    Talisay fold, weight 10), trained by landslide_run.run in own mode on
+    clues built from outlines loaded into the runner's own database. Kept
+    when a check fails, or when it puts fewer of the held-back season's spots
+    in Red or Orange than the map in use, whatever its source (spec 6.3 check
+    5, ruling R44; a tie switches); else switched. Prints and returns counts,
+    classes and reasons only, never a spot. `deadline` (a
+    landslide_training.Deadline, the job's own time limit) goes to the run's
+    refit loops, which raise PastDeadline once it has passed.
+    """
+    from apps.history import landslide_run
+    from apps.history import landslide_training_table as ltt
+
+    spots = data['spots']
+    floor = landslide_own.floor(spots)
+    if not floor['enough']:
+        return {'hazard': 'landslide', 'result': 'not_tried',
+                'reason': landslide_own.LANDSLIDE_FLOOR.format(n=floor['n'], b=floor['barangays'])}
+    train_spots, held, season = flood_own.season_split(spots, today)
+    if len(held) < landslide_own.HELD_MIN:
+        return {'hazard': 'landslide', 'result': 'not_tried',
+                'reason': landslide_own.LANDSLIDE_HELD.format(n=len(held))}
+    no_training = {'hazard': 'landslide', 'result': 'not_tried', 'reason': landslide_own.LANDSLIDE_NO_TRAINING}
+    if not train_spots:  # ruling R43: a fit without GeoAlert's rows must never carry the GeoAlert basis
+        return no_training
+
+    load_outlines(fetch('landslide', outlines=True))
+    cache, workdir = Path(cache), Path(workdir)
+    cache.mkdir(parents=True, exist_ok=True)
+    call_command('build_landslide_features', cache_dir=str(cache), output_dir=str(workdir))
+    inputs = {  # name in the model file -> path: the committed outside table and the clues just built
+        lf.TRAINING_FILE.name: lf.TRAINING_FILE,
+        lf.TRAINING_META.name: lf.TRAINING_META,
+        lf.FEATURES_FILE.name: workdir / lf.FEATURES_FILE.name,
+        lf.FEATURES_META.name: workdir / lf.FEATURES_META.name,
+        lf.POINTS_FILE: cache / lf.POINTS_FILE,
+    }
+    table, table_meta = ltt.read_table(inputs[lf.TRAINING_FILE.name], inputs[lf.TRAINING_META.name])
+    features = lf.read_features(inputs[lf.FEATURES_FILE.name], inputs[lf.FEATURES_META.name], cache_dir=cache)
+    # As train_landslide_model: base names only, and the training table is in it (the run adds the own rows)
+    files = {name: hashlib.sha1(path.read_bytes()).hexdigest() for name, path in inputs.items()}
+    fingerprint = hashlib.sha1(json.dumps(files, sort_keys=True).encode('utf-8')).hexdigest()
+    own = landslide_own.own_rows(train_spots, lambda points: lf.features_at(points, cache),
+                                 on_ground=talisay_ground(cache, log))
+    log(f'{len(train_spots)} training spots before the {season} wet season, {len(held)} held back; '
+        f'{int(own["label"].sum())} own slides and {int((own["label"] == 0).sum())} "no" points in the Talisay fold')
+    if not int(own['label'].sum()):  # every training spot was at sea or off the clue grids (no clues): no own rows
+        return no_training
+
+    def load_tests():  # one test purok per held-back spot (ruling R30), read only after the cut-offs
+        return {'test_puroks': [s['purok_id'] for s in held], 'season': season}
+
+    model, report = landslide_run.run(table, table_meta, features, load_tests, log=log, fingerprint=fingerprint,
+                                      reps=reps, stability_reps=stability_reps, mode='own', own_rows=own,
+                                      deadline=deadline)
+    # The runner's own database gives its own map version; the fit is on the server's map
+    model['outlines_version'] = data['outlines_version']
+    model['inputs']['files'] = files
+
+    def attempt(result, reason):
+        return {'hazard': 'landslide', 'result': result, 'reason': reason, 'model': model, 'report': report}
+
+    acceptance = report['acceptance']
+    if not acceptance['adopted']:
+        return attempt('kept', ' '.join(acceptance['reasons']))
+    new_levels = [h['level'] for h in report['temporal_test']['held_back']]
+    live = data['live']
+    if live:  # the map in use, from the outside model, the NOAH fallback or GeoAlert's own (ruling R44)
+        live_levels = [live['areas'].get(str(h['purok_id']), {}).get('level')
+                       for h in report['temporal_test']['held_back']]
+        new_hits, live_hits = flood_own.compare(new_levels, live_levels)
+        if new_hits < live_hits:
+            return attempt('kept', landslide_own.LANDSLIDE_WORSE.format(season=season, new=new_hits, live=live_hits))
+    hits = flood_own.compare(new_levels, [])[0]
+    return attempt('switched', landslide_own.LANDSLIDE_SWITCHED.format(hits=hits, n=len(new_levels)))

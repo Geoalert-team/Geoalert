@@ -1,0 +1,18 @@
+{
+ "buildings": 30702,
+ "built_at": "2026-11-25T09:09:39+08:00",
+ "grid_cell_m": 9.4,
+ "landcover_ok": true,
+ "landcover_year": 2023,
+ "outlines_version": "9a81386469102f1943a969caf4b29be5",
+ "points": 51413,
+ "road_points": 20711,
+ "sources": {
+  "buildings": "Microsoft Global ML Building Footprints (ODbL)",
+  "elevation": "produced using Copernicus WorldDEM-30 \u00a9 DLR e.V. 2010-2014 and \u00a9 Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved",
+  "landcover": "Esri / Impact Observatory 10 m annual land cover (CC BY 4.0)",
+  "noah": "UP NOAH landslide hazard map, Cebu (ODbL), bettergovph mirror on Hugging Face",
+  "roads": "OpenStreetMap highway lines (ODbL)"
+ },
+ "talisay_steep_road_density": 2.5272
+}

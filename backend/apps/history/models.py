@@ -220,7 +220,48 @@ class FloodPurokSusceptibilityLog(models.Model):
         return f'{self.purok_name} {self.model_version} — {self.level or "not assessed"}'
 
 
-MODEL_FIT_HAZARDS = ['fire', 'flood']
+class LandslidePurokSusceptibilityLog(models.Model):
+    """
+    A purok's landslide susceptibility class as a published landslide model
+    version gave it, kept so the model can be checked against landslides that
+    came after (written by apps/history/prediction_log.py once per version).
+    Rows are only ever added: a trigger (migration 0013) refuses any UPDATE or
+    DELETE. The purok is a plain id and its name, never a foreign key, so a
+    purok reload never touches the log.
+    """
+    id                  = models.BigAutoField(primary_key=True, db_column='lpsl_id')
+    purok_id            = models.BigIntegerField(db_column='lpsl_purok_id')
+    purok_name          = models.TextField(db_column='lpsl_purok_name')
+    barangay            = models.ForeignKey(Barangay, on_delete=models.PROTECT, db_column='lpsl_brgy_id')
+    model_version       = models.TextField(db_column='lpsl_model_version')
+    source              = models.TextField(db_column='lpsl_source')
+    # null when the purok is not assessed
+    level               = models.TextField(null=True, db_column='lpsl_level')
+    score               = models.FloatField(null=True, db_column='lpsl_score')
+    uncertain           = models.BooleanField(db_column='lpsl_uncertain')
+    not_assessed_reason = models.TextField(default='', blank=True, db_column='lpsl_not_assessed_reason')
+    outlines_version    = models.TextField(db_column='lpsl_outlines_version')
+    # the Asia/Manila date the version was first logged
+    published_on        = models.DateField(db_column='lpsl_published_on')
+    created_at          = models.DateTimeField(auto_now_add=True, db_column='lpsl_created_at')
+
+    class Meta:
+        db_table = 'landslide_purok_susceptibility_log'
+        constraints = [
+            models.UniqueConstraint(fields=['purok_id', 'model_version'],
+                                    name='landslide_purok_susceptibility_log_unique'),
+            models.CheckConstraint(check=models.Q(level__isnull=True) | models.Q(level__in=FIRE_LOG_LEVELS),
+                                   name='landslide_purok_susceptibility_log_level'),
+            models.CheckConstraint(check=models.Q(source__in=FLOOD_LOG_SOURCES),
+                                   name='landslide_purok_susceptibility_log_source'),
+        ]
+        indexes = [models.Index(fields=['model_version'], name='lpsl_model_version_idx')]
+
+    def __str__(self):
+        return f'{self.purok_name} {self.model_version} — {self.level or "not assessed"}'
+
+
+MODEL_FIT_HAZARDS = ['fire', 'flood', 'landslide']  # landslide since history 0014
 MODEL_FIT_RESULTS = ['switched', 'kept', 'not_tried', 'skipped', 'failed']
 
 

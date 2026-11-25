@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { historyApi } from '../../api/historyApi';
 import ForecastPeriodPicker from './ForecastPeriodPicker';
 import {
-  FIRE_CREDIT, FIRE_MODEL_LABEL, FLOOD_ON_MAP_NOTE, FORECAST_DISCLAIMER, FORECAST_ONLY_NOTE, IN_TRAINING_NOTE, PUROK_CAVEAT, SEVERITY_WORD, chanceText, defaultPeriod, isFireOnly, levelLabel,
+  FIRE_CREDIT, FIRE_MODEL_LABEL, FLOOD_ON_MAP_NOTE, FORECAST_DISCLAIMER, FORECAST_ONLY_NOTE, IN_TRAINING_NOTE, LANDSLIDE_ON_MAP_NOTE, PUROK_CAVEAT, SEVERITY_WORD, chanceText, defaultPeriod, isFireOnly, levelLabel,
   likelihoodInfo, periodLabel, periodMonth, periodParams, periodPastHeader, periodYearsText, smallChanceText,
   unavailableNote, withMonth,
 } from './forecastLevels';
@@ -16,7 +16,7 @@ import './forecast.css';
  *
  * The table is fire's chance by month. A page filter set to Flood points to
  * the map, where flood susceptibility is (FLOOD_ON_MAP_NOTE: the same in every
- * month, so not a monthly table); Landslide shows FORECAST_ONLY_NOTE. Until the fire
+ * month, so not a monthly table); Landslide likewise (LANDSLIDE_ON_MAP_NOTE). Until the fire
  * model is trained, every row says it is unavailable. Not a weather forecast.
  *
  * Props:
@@ -48,7 +48,7 @@ export default function BarangayLikelihood({ compact = false, limit = 5, hazard 
   if (!fireShown) {
     return (
       <div className="fc">
-        <p className="db-empty">{hazard === 'Flood' ? FLOOD_ON_MAP_NOTE : FORECAST_ONLY_NOTE}</p>
+        <p className="db-empty">{hazard === 'Flood' ? FLOOD_ON_MAP_NOTE : hazard === 'Landslide' ? LANDSLIDE_ON_MAP_NOTE : FORECAST_ONLY_NOTE}</p>
       </div>
     );
   }

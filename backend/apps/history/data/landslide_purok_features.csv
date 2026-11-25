@@ -1,0 +1,671 @@
+purok_id,barangay_id,barangay,name,confidence,points,buildings,road_points,noah_p90
+306,1,Biasong,Purok Mahogany,medium,67,47,20,0.0
+307,1,Biasong,Purok Kawayan,medium,68,50,18,0.0
+308,1,Biasong,Zone 2,medium,199,92,107,0.0
+309,1,Biasong,Purok Makulay,low,40,26,14,0.0
+310,1,Biasong,Ranger,medium,67,36,31,0.0
+311,1,Biasong,Zone 3,low,180,125,55,0.0
+312,1,Biasong,Purok Malipayon,high,31,20,11,0.0
+313,1,Biasong,Purok Orchids,low,33,25,8,0.0
+320,2,Bulacao,Purok Panaghiusa,low,107,86,21,0.0
+321,2,Bulacao,Sitio Longdream,medium,14,11,3,0.666667
+322,2,Bulacao,Mansueto Subdivision,high,50,32,18,0.0
+323,2,Bulacao,Sitio Villabusca,medium,71,61,10,0.0
+324,2,Bulacao,Crosan,high,40,37,3,0.0
+325,2,Bulacao,Plainville,high,125,79,46,0.0
+326,2,Bulacao,Sitio Paglaum,high,112,71,41,0.0
+337,23,Cadulawan,Vista Grande,high,942,248,694,0.666667
+338,23,Cadulawan,Purok Tambis,medium,50,33,17,0.0
+339,23,Cadulawan,Purok Miracle,low,32,22,10,0.666667
+340,23,Cadulawan,Purok Kamunggay,low,41,27,14,0.666667
+350,4,Camp IV,Sitio Pangi,high,33,26,7,1.0
+359,5,Cansojong,Bravo,low,53,38,15,0.0
+360,5,Cansojong,Sitio Asan,high,70,59,11,0.0
+361,5,Cansojong,Sitio Kisarca,low,18,9,9,0.0
+362,5,Cansojong,Sitio Panaghi-usa,low,108,44,64,0.0
+363,5,Cansojong,Sitio Balut,high,87,75,12,0.0
+364,5,Cansojong,Sitio Mushroom,medium,74,51,23,0.0
+365,5,Cansojong,Sitio Caneba,low,99,78,21,0.0
+366,5,Cansojong,Sitio Mahayahay,high,77,68,9,0.0
+367,5,Cansojong,Sitio Atisan,medium,163,93,70,0.0
+385,6,Dumlog,Sitio Romahan,medium,73,55,18,0.0
+386,6,Dumlog,Sitio San Jose,medium,56,46,10,0.0
+387,6,Dumlog,Purok Kalabasa,low,90,66,24,0.0
+388,6,Dumlog,Sitio Kamalig,medium,226,159,67,0.0
+389,6,Dumlog,Purok Gemelina,low,60,34,26,0.0
+390,6,Dumlog,Deca Homes,high,120,52,68,0.0
+391,6,Dumlog,Purok Miracle Fruit,low,72,61,11,0.0
+392,6,Dumlog,Sitio Limonsituhan,low,103,46,57,0.0
+393,6,Dumlog,Purok Guyabano,low,67,46,21,0.0
+394,6,Dumlog,Purok Acasia,low,91,45,46,0.0
+395,6,Dumlog,Sitio Litmon,medium,51,37,14,0.0
+396,6,Dumlog,Purok Okra,low,78,48,30,0.0
+397,6,Dumlog,Zone 3,medium,82,43,39,0.0
+398,6,Dumlog,Purok Botig,low,93,55,38,0.0
+399,6,Dumlog,Zone 5,low,137,88,49,0.0
+409,7,Jaclupan,Purok Avocado,low,71,64,7,1.0
+410,7,Jaclupan,Sitio Tabok Sapa,low,18,17,1,1.0
+411,7,Jaclupan,Sitio Kawayan,low,24,24,0,0.333333
+412,7,Jaclupan,Purok Banana,medium,41,21,20,0.0
+413,7,Jaclupan,Sitio Ipilipil,low,34,21,13,0.0
+414,7,Jaclupan,Purok Kasagingan,low,51,17,34,0.0
+415,7,Jaclupan,Purok Sambag,low,33,23,10,0.0
+418,8,Lagtang,Sitio Iba,high,31,0,31,0.666667
+419,8,Lagtang,Sitio Lupa,low,53,28,25,1.0
+420,8,Lagtang,Purok Makugihon,low,52,46,6,0.333333
+421,8,Lagtang,Burlas,high,85,68,17,1.0
+422,8,Lagtang,Sitio Luna,low,70,47,23,1.0
+423,8,Lagtang,Sitio Bagalnga,medium,37,37,0,0.0
+424,8,Lagtang,Purok Lawis,low,147,61,86,0.666667
+425,8,Lagtang,Kishanta Subdivision,high,625,238,387,0.666667
+426,8,Lagtang,Purok Liwanag,low,71,40,31,0.0
+427,8,Lagtang,Sitio Tungasan,medium,126,49,77,1.0
+428,8,Lagtang,Sitio Fatima,medium,34,15,19,0.0
+429,8,Lagtang,Kasambagan,high,56,46,10,0.666667
+430,8,Lagtang,Sitio Hollow Block,high,102,71,31,0.0
+431,8,Lagtang,Purok Emilio Aguinaldo,low,18,9,9,0.0
+432,8,Lagtang,Lahara,medium,50,31,19,0.0
+433,8,Lagtang,Sitio Sta. Catalina,low,77,62,15,1.0
+434,8,Lagtang,Tigib,low,40,27,13,0.666667
+435,8,Lagtang,Sitio Riverside,low,52,33,19,0.0
+436,8,Lagtang,Sitio Kawayan,low,82,70,12,0.0
+437,8,Lagtang,Purok Melchora,low,58,33,25,0.666667
+438,8,Lagtang,Purok Jose Rizal,low,44,27,17,0.0
+439,8,Lagtang,Sitio Mananga,low,54,37,17,0.333333
+443,9,Lawaan I,Tierra Grande,medium,167,106,61,0.0
+444,9,Lawaan I,Seaview Heights,high,468,269,199,0.0
+445,9,Lawaan I,Roseville,low,162,109,53,0.0
+446,9,Lawaan I,Kalmar,medium,187,116,71,0.0
+455,10,Lawaan II,Sitio Oregano,low,29,10,19,0.0
+456,10,Lawaan II,Purok Avocado,low,60,12,48,0.0
+457,10,Lawaan II,Sitio Bayabas,low,43,31,12,0.0
+458,10,Lawaan II,Sitio Sombria,low,35,17,18,0.0
+459,10,Lawaan II,Sitio Kalachuchi,low,46,35,11,0.0
+460,10,Lawaan II,Sitio Kaimito,medium,52,33,19,0.0
+461,10,Lawaan II,Purok Guyabano,low,55,24,31,0.0
+462,10,Lawaan II,Sitio Gumamela,low,45,41,4,0.0
+463,10,Lawaan II,Sitio Gabon,low,56,34,22,0.0
+464,10,Lawaan II,Sitio Mangga,low,53,34,19,0.0
+465,10,Lawaan II,Sitio Iba,low,106,86,20,0.0
+466,10,Lawaan II,Sitio Luy-a,low,108,71,37,0.0
+471,11,Lawaan III,Sitio Villa Raya,high,112,46,66,0.0
+472,11,Lawaan III,Countryside Homes,high,75,53,22,0.666667
+473,11,Lawaan III,Purok Grapes,low,28,5,23,0.0
+474,11,Lawaan III,Purok Orange,low,75,42,33,0.0
+475,11,Lawaan III,Caduldulan,low,182,150,32,0.0
+476,11,Lawaan III,Kamagayan Village,high,88,66,22,0.0
+477,11,Lawaan III,Purok Nangka,low,77,63,14,0.0
+478,11,Lawaan III,Sitio Pungsod,high,93,76,17,0.0
+479,11,Lawaan III,Sitio Crusher,high,96,85,11,0.666667
+480,11,Lawaan III,Purok Lumboy,low,22,21,1,0.0
+486,12,Linao,Sitio San Antonio,medium,77,62,15,0.0
+487,12,Linao,Sitio San Miguel,high,597,300,297,0.0
+488,12,Linao,Bougainvillea Village,high,162,75,87,0.666667
+489,12,Linao,Sitio Pajo,medium,134,102,32,0.333333
+490,12,Linao,Purok Rose,low,97,62,35,0.0
+499,13,Maghaway,Sta. Maria Heights,high,48,2,46,1.0
+500,13,Maghaway,Sitio Lawis,high,196,160,36,0.666667
+501,13,Maghaway,Sitio EEA,high,54,0,54,1.0
+502,13,Maghaway,Azienda Milan,high,143,84,59,0.666667
+503,13,Maghaway,Sitio Abacajan,high,652,404,248,0.666667
+504,13,Maghaway,Azienda Firenze,high,140,95,45,0.0
+505,13,Maghaway,Purok Kulo 3,low,185,113,72,0.0
+506,13,Maghaway,Sitio Ibo,high,65,0,65,1.0
+507,13,Maghaway,Sitio Dikyam,high,121,121,0,0.666667
+509,14,Manipis,Purok Araw-Araw,medium,84,13,71,1.0
+510,14,Manipis,Sitio Camp 5,medium,61,9,52,1.0
+511,14,Manipis,Camp 8,high,34,15,19,0.0
+515,15,Mohon,Sitio Libo,high,127,74,53,0.0
+516,15,Mohon,Saint Michael,low,83,56,27,0.0
+517,15,Mohon,Sitio Greenforest,medium,44,23,21,0.0
+518,15,Mohon,Purok Nangka,medium,103,50,53,0.0
+519,15,Mohon,Purok Kamunggay,high,31,19,12,0.0
+520,15,Mohon,Purok Mangga 3,high,76,59,17,0.0
+521,15,Mohon,Sitio Day-as,medium,80,47,33,0.0
+522,15,Mohon,Valley View Village,high,83,49,34,0.0
+523,15,Mohon,Purok Santol,high,87,43,44,0.0
+524,15,Mohon,Sitio Candaya,low,72,58,14,0.0
+525,15,Mohon,Sitio Nazareno,low,95,69,26,0.0
+529,16,Poblacion,Carmen Village,high,701,382,319,0.0
+530,16,Poblacion,Sitio Litmon,low,112,64,48,0.0
+531,16,Poblacion,Purok Bantiyong,low,124,67,57,0.0
+532,16,Poblacion,Purok Talong,low,79,48,31,0.0
+533,16,Poblacion,Sitio Miramar,high,156,72,84,0.0
+534,16,Poblacion,Garden,low,136,44,92,0.0
+535,16,Poblacion,Purok Kamunggay,medium,18,6,12,0.0
+536,16,Poblacion,Tres Alinos,low,155,99,56,0.0
+537,16,Poblacion,Purok Patatas,low,114,40,74,0.0
+538,16,Poblacion,Purok Repolyo,low,92,65,27,0.0
+541,17,Pooc,Sitio Maharlika,high,78,52,26,0.0
+542,17,Pooc,Corona del Mar,high,784,321,463,0.0
+543,17,Pooc,Sitio Cabutoy,medium,80,46,34,0.0
+544,17,Pooc,Sea Breeze Homes,high,132,59,73,0.0
+545,17,Pooc,Sitio Kanipaan,medium,83,63,20,0.0
+546,17,Pooc,Sitio Cainta,medium,85,57,28,0.0
+547,17,Pooc,Sitio Tambis,medium,152,81,71,0.0
+548,17,Pooc,Sitio Borromeo,medium,77,58,19,0.0
+549,17,Pooc,Roseville Subdivision,medium,96,59,37,0.0
+550,17,Pooc,Purok Ranger,low,196,89,107,0.0
+551,17,Pooc,Purok 3,low,29,21,8,0.0
+552,17,Pooc,Rainbowville,medium,90,67,23,0.0
+558,18,San Isidro,Isla Verde,low,61,26,35,0.0
+559,18,San Isidro,Purok Villa Sta. Cruz,low,95,66,29,0.666667
+560,18,San Isidro,Art Ville,medium,77,40,37,0.0
+561,18,San Isidro,Sitio Pangpang,high,81,62,19,0.0
+562,18,San Isidro,Greenville,low,131,100,31,0.0
+563,18,San Isidro,Sitio Salvador,low,74,60,14,0.0
+564,18,San Isidro,Cantoneville,high,184,112,72,0.0
+565,18,San Isidro,Purok Siba,medium,83,50,33,0.0
+566,18,San Isidro,Zone 3,low,86,52,34,0.0
+567,18,San Isidro,Largo Compound,high,70,51,19,0.0
+568,18,San Isidro,Siloy Compound,high,56,49,7,0.0
+569,18,San Isidro,Sitio Mahayag,high,58,48,10,0.0
+570,18,San Isidro,Corazon Village,low,67,44,23,0.0
+571,18,San Isidro,Sitio Tiago,medium,62,38,24,0.0
+572,18,San Isidro,Sacred Heart Village,high,78,42,36,0.0
+579,19,San Roque,Purok Okra,low,36,12,24,0.0
+580,19,San Roque,Sitio Ramona,medium,79,54,25,0.0
+581,19,San Roque,Purok Lambay,low,49,42,7,0.0
+582,19,San Roque,Purok Kalinao,low,59,18,41,0.0
+583,19,San Roque,Purok Kalapati,low,25,22,3,0.0
+584,19,San Roque,Purok Sayaw,low,20,12,8,0.0
+585,19,San Roque,Purok Kalabasa,low,4,4,0,0.0
+586,19,San Roque,Purok Bayang,low,49,29,20,0.0
+587,19,San Roque,Purok Batong,low,26,5,21,0.0
+588,19,San Roque,Purok Bakasi,low,35,19,16,0.0
+589,19,San Roque,Purok Tilapia,low,70,29,41,0.0
+590,19,San Roque,Purok Tambis,low,49,47,2,0.0
+591,19,San Roque,Purok Guyabano,low,84,40,44,0.0
+592,19,San Roque,Purok Sambag,low,151,92,59,0.0
+593,19,San Roque,Purok Taloroton,low,38,23,15,0.0
+594,19,San Roque,Purok Santan,low,73,52,21,0.0
+595,19,San Roque,Purok San Rafael,low,31,30,1,0.0
+596,19,San Roque,Purok Ilang-Ilang,low,99,67,32,0.0
+597,19,San Roque,Purok Avocado,medium,83,47,36,0.0
+598,19,San Roque,Sitio San Roque Proper,high,462,351,111,0.0
+599,19,San Roque,Purok Kapayas,low,20,12,8,0.0
+600,19,San Roque,Purok Pugapo,low,88,38,50,0.0
+601,19,San Roque,Purok Chicos,medium,21,15,6,0.0
+602,19,San Roque,Purok Gumamela,low,50,50,0,0.0
+603,19,San Roque,Purok Agoho,low,96,16,80,0.0
+604,19,San Roque,Purok Altis,low,46,16,30,0.0
+610,20,Tabunok,Sitio Mananga I,medium,42,17,25,0.0
+611,20,Tabunok,Sitio Mananga II,high,84,58,26,0.0
+612,20,Tabunok,Purok Rafael Palma,low,46,36,10,0.0
+613,20,Tabunok,Zone 3,low,54,20,34,0.0
+614,20,Tabunok,Sitio Mahayahay,low,47,36,11,0.0
+615,20,Tabunok,Purok Lopez Jaena,high,61,37,24,0.0
+616,20,Tabunok,Sitio Paraiso,low,46,39,7,0.0
+617,20,Tabunok,Purok Juan Luna,low,91,41,50,0.0
+618,20,Tabunok,Zone 2,low,116,80,36,0.0
+619,20,Tabunok,Sitio Panaghiusa,low,57,20,37,0.0
+620,20,Tabunok,Purok Makatarunganon,medium,36,8,28,0.0
+622,20,Tabunok,Purok Melchora,low,53,39,14,0.0
+623,20,Tabunok,Purok Kalinaw,medium,37,26,11,0.0
+624,20,Tabunok,Palm View Village,high,68,46,22,0.0
+625,20,Tabunok,Sitio Bahadas,low,58,44,14,0.0
+626,20,Tabunok,Purok Malipayon,low,71,43,28,0.0
+627,20,Tabunok,Purok Mabini,low,52,42,10,0.0
+628,20,Tabunok,Sitio Neighborhood,high,81,68,13,0.0
+629,20,Tabunok,Sitio Kalubihan,high,154,119,35,0.0
+630,20,Tabunok,Friendly Homes,low,46,45,1,0.0
+631,20,Tabunok,Purok Determinado,medium,84,52,32,0.0
+632,20,Tabunok,Purok Matinahuron,low,70,48,22,0.0
+635,21,Tangke,Purok Mamsa,low,48,28,20,0.0
+636,21,Tangke,Sitio Sambagan,low,139,111,28,0.0
+637,21,Tangke,Sitio Magay,low,129,84,45,0.0
+638,21,Tangke,Sitio Galaxy,medium,110,70,40,0.0
+639,21,Tangke,Sitio Rattan,low,73,53,20,0.0
+640,21,Tangke,Sitio Dali-Dali,low,137,105,32,0.0
+641,21,Tangke,Sitio Salvador,high,179,127,52,0.0
+642,21,Tangke,Sitio San Rafael,high,181,70,111,0.0
+643,21,Tangke,Sitio Kalinaw,high,177,79,98,0.0
+653,22,Tapul,Sitio Hawanay,high,57,17,40,0.666667
+654,22,Tapul,Purok 3,high,50,33,17,0.666667
+655,22,Tapul,Sitio Napo,high,189,96,93,1.0
+663,1,Biasong,Raphael Homes,high,47,27,20,0.0
+664,1,Biasong,Central,medium,195,96,99,0.0
+665,1,Biasong,Palm River Subdivision,medium,65,21,44,0.0
+666,4,Camp IV,Purok Lubi,low,32,26,6,1.0
+667,6,Dumlog,Ramona 1,low,198,117,81,0.0
+668,12,Linao,Sitio Antipolo,low,8,4,4,0.0
+669,12,Linao,Sitio Upper,medium,169,126,43,0.0
+670,12,Linao,Azienda Genova,low,4,3,1,0.666667
+671,12,Linao,Sitio Lower,medium,92,63,29,0.0
+672,13,Maghaway,San Jose Maria,medium,55,35,20,0.666667
+673,18,San Isidro,Sitio Crossing,low,48,28,20,0.0
+674,20,Tabunok,Purok Suliman,low,93,50,43,0.0
+675,1,Biasong,Puerto del Sol Subdivision,high,68,44,24,0.0
+676,1,Biasong,Pueblo San Ricardo,high,167,83,84,0.0
+682,2,Bulacao,Villa Verna IV Subdivision,high,155,86,69,0.0
+683,2,Bulacao,Purok Matinabangon,high,75,57,18,0.0
+684,2,Bulacao,Mighty Villa Subdivision,high,146,88,58,0.0
+687,2,Bulacao,Along Natalio Bacalso Avenue,low,113,49,64,0.0
+694,23,Cadulawan,Along Bulacao River,,0,0,0,0.0
+708,5,Cansojong,Santa Teresa Village,high,125,65,60,0.0
+709,5,Cansojong,South City Homes,high,94,54,40,0.0
+710,5,Cansojong,Lemon Ville,high,86,55,31,0.0
+711,5,Cansojong,Alberlyn South Subdivision,high,102,53,49,0.0
+712,5,Cansojong,Garden Village,high,95,73,22,0.0
+713,5,Cansojong,Southwinds Subdivision,high,133,78,55,0.0
+714,5,Cansojong,Sincere Homes Subdivision,high,105,73,32,0.0
+717,5,Cansojong,Along Uldog Street,low,46,24,22,0.0
+718,5,Cansojong,Along Cebu South Coastal Road,low,123,47,76,0.0
+723,5,Cansojong,Near Lokal ng Cansojong,,99,72,27,0.0
+725,6,Dumlog,Deca Homes Phase 2,high,278,137,141,0.0
+730,6,Dumlog,Along Burgos Street,low,61,49,12,0.0
+738,9,Lawaan I,BF Homes,high,183,90,93,0.0
+739,9,Lawaan I,Mundo Ville,high,77,41,36,0.0
+745,9,Lawaan I,Along Cebu South Coastal Road,low,115,69,46,0.0
+746,10,Lawaan II,Fairview Village,high,346,175,171,0.0
+751,11,Lawaan III,Upper Cadicay,high,62,54,8,0.333333
+752,11,Lawaan III,San Jose Village,high,96,58,38,0.0
+756,12,Linao,Christian Ville,high,97,67,30,0.0
+761,14,Manipis,Along Toledo - Tabunok Road,,65,14,51,1.0
+764,15,Mohon,Boxhill Residences,high,241,90,151,0.0
+769,17,Pooc,Bayswater,high,196,93,103,0.0
+773,17,Pooc,Along Burgos Street,low,29,18,11,0.0
+775,18,San Isidro,South Glendale,high,73,52,21,0.0
+776,18,San Isidro,Miami Homes,high,78,51,27,0.0
+780,19,San Roque,Plainville 2,high,90,53,37,0.0
+781,19,San Roque,Jamestown,high,137,86,51,0.0
+782,19,San Roque,Greenfield Village,high,159,120,39,0.0
+783,19,San Roque,Coastal View Subdivision,high,117,58,59,0.0
+787,19,San Roque,Along Cebu South Coastal Road,low,57,15,42,0.0
+802,22,Tapul,Along Camp 8 Road,,230,36,194,0.666667
+806,1,Biasong,Sitio Laguna,high,260,167,93,0.0
+807,1,Biasong,San Lucas,high,169,104,65,0.0
+809,2,Bulacao,Sitio Kabanayan,medium,159,104,55,0.333333
+810,2,Bulacao,Lower Kabanayan,medium,45,24,21,0.0
+811,23,Cadulawan,Purok Boongon,medium,72,44,28,0.333333
+812,23,Cadulawan,Sitio Mahayahay,medium,173,113,60,0.666667
+813,23,Cadulawan,Lower Mahayahay,low,55,39,16,0.666667
+815,4,Camp IV,Sitio Proper,low,38,26,12,1.0
+816,4,Camp IV,Cambawog Upper,low,82,59,23,1.0
+818,5,Cansojong,Kimba,medium,192,111,81,0.0
+819,6,Dumlog,Sitio Paglaom,low,59,49,10,0.0
+820,6,Dumlog,Sitio Bahala,low,103,84,19,0.0
+821,7,Jaclupan,Camp III,low,82,67,15,0.666667
+822,8,Lagtang,Molave,medium,50,37,13,0.0
+823,8,Lagtang,Sitio Ilang-Ilang,medium,134,91,43,0.666667
+824,8,Lagtang,Sitio Diego Silang,low,38,33,5,0.0
+825,8,Lagtang,Purok Jacinto Zamora,low,38,38,0,0.666667
+827,11,Lawaan III,Sitio Pagtambayayong,low,216,141,75,0.666667
+828,11,Lawaan III,Purok Cadicay,medium,102,73,29,0.333333
+829,14,Manipis,Camp 6,high,151,74,77,1.0
+831,15,Mohon,Upper Mohon,high,434,210,224,0.0
+833,17,Pooc,Sitio Sunrise,low,271,212,59,0.0
+834,19,San Roque,Sitio Laray,high,1127,775,352,0.0
+835,19,San Roque,Sitio Ughay,medium,127,77,50,0.0
+836,19,San Roque,Purok Calachuchi,low,66,46,20,0.0
+837,19,San Roque,Sitio Kimba,low,202,162,40,0.0
+838,20,Tabunok,Sitio Nonoc,medium,285,180,105,0.0
+839,21,Tangke,Sitio Tunga,medium,174,132,42,0.0
+840,1,Biasong,Purok Mahayahay,medium,83,67,16,0.0
+841,1,Biasong,Purok Madasigon,medium,110,59,51,0.0
+842,1,Biasong,Purok Crocolandia,medium,49,25,24,0.0
+843,1,Biasong,Purok Pidanna,medium,102,48,54,0.0
+844,1,Biasong,Malibu Residences,medium,30,21,9,0.0
+845,1,Biasong,Peace Subdivision,high,81,32,49,0.0
+846,1,Biasong,Villa Donna Subdivision,medium,93,53,40,0.0
+848,2,Bulacao,Sitio Alegre,medium,61,27,34,0.0
+849,2,Bulacao,Purok Mapailubon,medium,73,49,24,0.0
+850,2,Bulacao,Purok Mapasalamaton,medium,64,31,33,0.0
+851,2,Bulacao,Sitio Bridgeville,medium,43,26,17,0.0
+852,2,Bulacao,Sitio Los Feliz,medium,111,62,49,0.666667
+853,2,Bulacao,Hillside Subdivision,medium,87,59,28,0.0
+854,2,Bulacao,LG Southville Subdivision,medium,88,63,25,0.0
+855,2,Bulacao,Mingcourt Village,high,84,52,32,0.0
+856,2,Bulacao,New Frontier Subdivision,medium,70,48,22,0.0
+857,2,Bulacao,Saint Barachiel Subdivision,high,54,30,24,0.0
+858,2,Bulacao,South Gate Subdivision,medium,100,69,31,0.0
+859,2,Bulacao,Villa Verna Subdivision,high,34,19,15,0.0
+860,2,Bulacao,Villa Estelita Subdivision,high,40,23,17,0.0
+861,2,Bulacao,Princess Village,medium,79,69,10,0.0
+864,23,Cadulawan,Purok Mangga,medium,53,33,20,0.0
+865,23,Cadulawan,Sitio Manggahan,medium,39,26,13,0.333333
+866,23,Cadulawan,Purok Guyabano,medium,52,39,13,1.0
+867,23,Cadulawan,Purok Singuelas,medium,0,0,0,0.0
+868,23,Cadulawan,Sitio Camachili,medium,74,39,35,0.666667
+869,23,Cadulawan,Pacific Heights,high,0,0,0,0.0
+870,23,Cadulawan,1.2 km west of Candulawan National High School,,0,0,0,0.0
+872,4,Camp IV,Purok Santol,low,21,13,8,1.0
+873,5,Cansojong,Sitio Ibacan,medium,88,69,19,0.0
+874,5,Cansojong,Sitio Daghang Bayut,medium,95,75,20,0.0
+875,5,Cansojong,Sitio Olango,medium,69,43,26,0.0
+876,5,Cansojong,Sitio Uldog,medium,48,29,19,0.0
+877,5,Cansojong,Caneba Urban Poor Village,medium,80,37,43,0.0
+878,5,Cansojong,Fortune Plains Village,medium,117,56,61,0.0
+879,5,Cansojong,Jinky's Subdivision,high,36,24,12,0.0
+880,5,Cansojong,Maglasang Subdivision,high,100,67,33,0.0
+881,5,Cansojong,Recoletos Village,high,93,61,32,0.0
+882,5,Cansojong,Remville Subdivision,medium,95,79,16,0.0
+883,5,Cansojong,Sacred Homes Subdivision,medium,100,65,35,0.0
+884,5,Cansojong,Stero Homes,medium,102,65,37,0.0
+885,5,Cansojong,Villa Lucita Subdivision,medium,70,35,35,0.0
+886,5,Cansojong,Fortune Homes Subdivision,high,65,51,14,0.0
+889,6,Dumlog,Upper Riverside,medium,34,16,18,0.0
+890,6,Dumlog,Sta. Cruz,medium,75,34,41,0.0
+891,6,Dumlog,Purok Kamansilis,medium,71,54,17,0.0
+892,6,Dumlog,Purok Bugnay,medium,28,20,8,0.0
+893,6,Dumlog,Sitio Baybay,medium,95,51,44,0.0
+894,6,Dumlog,Sitio Florida,medium,129,105,24,0.0
+895,6,Dumlog,Zone 6,medium,135,85,50,0.0
+896,6,Dumlog,Alden Compound,high,69,60,9,0.0
+897,6,Dumlog,Azcona Compound,high,69,54,15,0.0
+898,6,Dumlog,Champaka Compound,medium,71,48,23,0.0
+899,6,Dumlog,Fernandez Subdivision,high,35,21,14,0.0
+900,6,Dumlog,Larida Village,medium,99,58,41,0.0
+901,6,Dumlog,San Pio Subdivision,high,141,63,78,0.0
+902,6,Dumlog,South Covina,high,100,67,33,0.0
+903,6,Dumlog,Univille Homes,medium,81,42,39,0.0
+904,6,Dumlog,Belleza Compound,medium,112,64,48,0.0
+905,7,Jaclupan,Camp 2,low,43,0,43,1.0
+906,7,Jaclupan,Purok Caimito,medium,49,0,49,1.0
+907,7,Jaclupan,Purok Kolo,medium,54,16,38,0.0
+908,7,Jaclupan,Purok Sabana,medium,117,63,54,1.0
+909,7,Jaclupan,Sitio Badbad,medium,50,0,50,0.666667
+910,7,Jaclupan,Sitio Bugna,medium,0,0,0,0.0
+911,7,Jaclupan,Sitio Dike,low,70,5,65,1.0
+912,8,Lagtang,Sitio Hilltop,medium,22,10,12,0.666667
+913,8,Lagtang,Sitio Pier 7,medium,114,113,1,0.666667
+914,8,Lagtang,Sitio Sambagan,medium,53,48,5,0.666667
+915,8,Lagtang,Sitio Sapa-sapa,medium,39,24,15,1.0
+916,8,Lagtang,Preciousville Subdivision,medium,59,1,58,0.666667
+917,8,Lagtang,Riverview Village,high,47,37,10,0.0
+918,8,Lagtang,Santa Catalina Subdivision,medium,35,24,11,0.533333
+919,8,Lagtang,Harmonis Residences,medium,36,23,13,0.0
+921,9,Lawaan I,Purok Neem Tree 1,medium,154,66,88,0.0
+922,9,Lawaan I,Azienda Roma,high,62,41,21,0.0
+923,9,Lawaan I,Marywood Subdivision,high,54,32,22,0.0
+924,9,Lawaan I,Tahoma Village,medium,168,116,52,0.0
+925,10,Lawaan II,Purok Orange,medium,51,34,17,0.0
+926,10,Lawaan II,Sitio Gawad Kalinga,medium,20,15,5,0.0
+927,10,Lawaan II,Gentle Peace Subdivision,high,63,40,23,0.0
+928,10,Lawaan II,GK Mananga,high,33,10,23,0.0
+929,10,Lawaan II,Santa Monica Estate,medium,75,33,42,0.0
+930,11,Lawaan III,Purok Bayabas,medium,54,49,5,0.0
+931,11,Lawaan III,Purok Ondo,medium,48,32,16,0.0
+932,11,Lawaan III,Alpha Executive Homes,high,44,31,13,0.0
+933,11,Lawaan III,Azienda Lombardi,medium,73,26,47,0.666667
+934,11,Lawaan III,Antara,medium,75,57,18,0.0
+935,11,Lawaan III,Great Homes Subdivision,medium,97,68,29,0.0
+936,11,Lawaan III,Hermelie Homes,high,76,41,35,0.0
+937,12,Linao,Sitio Candaya,medium,218,133,85,0.0
+938,12,Linao,Sitio Didos,medium,122,107,15,0.333333
+939,12,Linao,Saint Therese Homes,medium,78,55,23,0.0
+941,13,Maghaway,Purok Sambag 2,low,165,97,68,0.666667
+942,13,Maghaway,Maghaway Proper,medium,102,68,34,0.666667
+943,13,Maghaway,Purok Avocado 1,medium,98,51,47,0.666667
+944,13,Maghaway,Purok Mangga 3,medium,1,1,0,1.0
+945,13,Maghaway,Purok Sambag 1,medium,75,65,10,0.666667
+946,13,Maghaway,Sitio Babao,medium,92,70,22,0.666667
+947,13,Maghaway,Casa Mira,low,29,15,14,0.666667
+948,13,Maghaway,Azienda Genova,high,146,94,52,0.666667
+949,13,Maghaway,Azienda Subdivision,high,147,75,72,0.666667
+950,13,Maghaway,Azienda Venezia,medium,153,69,84,0.666667
+951,13,Maghaway,"Lessandra Palermo, Camella",medium,164,109,55,0.333333
+952,14,Manipis,Purok Mahogany,medium,79,34,45,0.666667
+953,14,Manipis,Sitio Campinsa,medium,49,25,24,0.666667
+956,14,Manipis,1.2 km northeast of Camp 8 Elementary School,,2,2,0,0.633333
+957,15,Mohon,Lovely Homes Subdivision,high,88,50,38,0.0
+958,15,Mohon,Monterey Homes Subdivision,high,121,78,43,0.0
+959,15,Mohon,Serenis South,medium,76,40,36,0.0
+960,15,Mohon,Villa Plantana,medium,74,29,45,0.0
+962,16,Poblacion,Sitio Kalubihan,medium,25,18,7,0.0
+963,16,Poblacion,Sitio Rojaluca,medium,94,63,31,0.0
+964,16,Poblacion,Lariosa Compound,high,56,34,22,0.0
+965,16,Poblacion,Sarihville Subdivision,medium,104,63,41,0.0
+966,17,Pooc,Sitio Tabay,medium,60,53,7,0.0
+967,17,Pooc,Purok Sunrise 1,medium,71,61,10,0.0
+968,17,Pooc,Escala at Corona del Mar,medium,0,0,0,0.0
+969,17,Pooc,Villa Solana Subdivision,high,60,36,24,0.0
+970,17,Pooc,Woodway Townhomes,high,104,55,49,0.0
+971,17,Pooc,UC Homes,medium,53,28,25,0.0
+973,18,San Isidro,Purok Vischoa,medium,85,59,26,0.0
+974,18,San Isidro,Vergara Village,medium,83,60,23,0.0
+975,18,San Isidro,Zone 2,medium,26,22,4,0.0
+976,18,San Isidro,Cabusas Compound,high,84,51,33,0.0
+977,18,San Isidro,Garces Royal Garden Residences,high,87,48,39,0.0
+978,18,San Isidro,Lines Townhomes,medium,38,17,21,0.0
+979,18,San Isidro,Peaceville Subdivision,high,109,70,39,0.0
+980,18,San Isidro,Treasureville Subdivision,high,65,44,21,0.0
+982,19,San Roque,Purok Banog,medium,56,31,25,0.0
+983,19,San Roque,Purok Kawayan,medium,66,40,26,0.0
+984,19,San Roque,Sitio Noah,medium,22,21,1,0.0
+985,19,San Roque,Sitio Sawsawan,medium,126,113,13,0.0
+986,19,San Roque,88 Brookside,high,6,6,0,0.0
+987,19,San Roque,Asterra Townhomes,high,80,31,49,0.0
+988,19,San Roque,Bihai Subdivision,medium,26,16,10,0.0
+989,19,San Roque,Fatima Village,medium,70,41,29,0.0
+990,19,San Roque,Green Meadows Subdivision,high,84,46,38,0.0
+991,19,San Roque,Ughai Subdivision,high,50,16,34,0.0
+993,20,Tabunok,Purok Alisto,medium,69,61,8,0.0
+994,20,Tabunok,Purok Maalagaron,medium,61,37,24,0.0
+995,20,Tabunok,Purok Sangi,medium,119,42,77,0.0
+996,20,Tabunok,Sitio Dawis,medium,50,31,19,0.0
+997,20,Tabunok,Maharlika Village,high,38,21,17,0.0
+998,20,Tabunok,Bacalso Compound,high,48,39,9,0.0
+999,20,Tabunok,Easy Access Subdivision,high,54,40,14,0.0
+1000,20,Tabunok,Elkwood Homes,medium,35,27,8,0.0
+1001,20,Tabunok,Fairchild Subdivision,medium,71,50,21,0.0
+1002,20,Tabunok,Tali Plains Subdivision,high,104,72,32,0.0
+1003,20,Tabunok,Victoria Village,medium,83,52,31,0.0
+1004,21,Tangke,Sitio Kilawan,medium,108,90,18,0.0
+1005,21,Tangke,Alayon Cresmer Homes,medium,92,76,16,0.0
+1006,21,Tangke,Almond Drive,medium,111,77,34,0.0
+1007,22,Tapul,Purok 4,medium,34,33,1,0.9
+1008,22,Tapul,Purok 7,medium,40,1,39,0.7
+1009,22,Tapul,Tapul Proper,medium,155,50,105,0.666667
+1010,1,Biasong,Purok Nipa,low,103,57,46,0.0
+1011,1,Biasong,Perez Drive Subdivision,medium,59,36,23,0.0
+1012,1,Biasong,Paseo Eustaquia,medium,23,13,10,0.0
+1013,1,Biasong,Zone 1,low,32,16,16,0.0
+1015,2,Bulacao,Casa Ville Subdivision,medium,94,33,61,0.0
+1016,2,Bulacao,Green Homes Subdivision,medium,79,29,50,0.0
+1017,2,Bulacao,Tuastumban,medium,73,56,17,0.0
+1018,2,Bulacao,Purok Rabaya,low,82,44,38,0.0
+1020,23,Cadulawan,Smyrna Subdivision,medium,56,29,27,0.333333
+1022,4,Camp IV,Sitio Bogo,low,134,72,62,1.0
+1025,5,Cansojong,Sitio San Roque,low,33,22,11,0.0
+1028,6,Dumlog,Purok Ilang-Ilang,medium,30,27,3,0.0
+1029,6,Dumlog,Smyrna Homes,medium,70,40,30,0.0
+1030,6,Dumlog,Sitio Minggoy,medium,92,67,25,0.0
+1031,6,Dumlog,Sitio Puwa,medium,77,73,4,0.0
+1032,6,Dumlog,Purok Lemonsito,low,72,37,35,0.0
+1033,6,Dumlog,Purok Madecacao,low,85,46,39,0.0
+1034,6,Dumlog,Purok Narra,low,79,55,24,0.0
+1035,6,Dumlog,Purok Talisay,low,89,27,62,0.0
+1036,6,Dumlog,Zone 4,low,99,48,51,0.0
+1037,6,Dumlog,Zone 9,low,60,50,10,0.0
+1038,7,Jaclupan,Sitio Ibo,low,0,0,0,0.0
+1039,7,Jaclupan,Purok Lubi,low,0,0,0,0.0
+1040,7,Jaclupan,Purok Tambis,low,30,20,10,0.0
+1041,7,Jaclupan,Sitio Acacia,low,70,40,30,1.0
+1042,8,Lagtang,Zone 3,low,38,36,2,1.0
+1043,8,Lagtang,Zone 2,low,5,5,0,0.0
+1044,8,Lagtang,Purok Caimitohan,low,64,8,56,1.0
+1045,8,Lagtang,Purok Neemtree,medium,40,27,13,0.0
+1046,8,Lagtang,Purok Kasadya,medium,57,38,19,0.333333
+1047,9,Lawaan I,Purok Palmera,low,140,85,55,0.0
+1048,9,Lawaan I,Sitio Kamagayan,low,116,37,79,0.0
+1049,9,Lawaan I,Sitio Pajo,low,65,31,34,0.0
+1050,10,Lawaan II,Purok Saging,low,49,6,43,0.0
+1051,11,Lawaan III,Lower Caduldulan,low,133,103,30,0.0
+1052,11,Lawaan III,Purok Cherries,low,83,39,44,0.666667
+1053,11,Lawaan III,Purok Pomelo,low,69,24,45,0.666667
+1054,11,Lawaan III,Sitio Riverside,low,60,54,6,0.666667
+1055,12,Linao,Purok Daisy,medium,60,34,26,0.0
+1056,12,Linao,Purok Sampaguita,low,74,48,26,0.0
+1057,12,Linao,Sitio Molila,low,94,69,25,0.0
+1058,12,Linao,Sitio Orchid Bell,low,93,60,33,0.0
+1060,13,Maghaway,Richview Heights,medium,114,68,46,0.666667
+1061,13,Maghaway,Sitio Bulahan,low,186,119,67,0.0
+1062,13,Maghaway,Sitio Daku,low,61,18,43,1.0
+1063,14,Manipis,Sitio Telepono,medium,19,15,4,1.0
+1065,15,Mohon,Purok Kamunggay 2,low,55,51,4,0.0
+1066,15,Mohon,Sitio Ranger,low,81,48,33,0.0
+1067,15,Mohon,Zone 3,low,169,73,96,0.0
+1069,16,Poblacion,Sitio Cabalan,low,102,55,47,0.0
+1070,17,Pooc,Purok 5B,low,36,32,4,0.0
+1071,17,Pooc,Purok 4,medium,31,17,14,0.0
+1072,18,San Isidro,Maple Residences,medium,17,11,6,0.0
+1073,18,San Isidro,San Isidro Village,medium,87,53,34,0.0
+1074,18,San Isidro,Sabido Compound,medium,91,54,37,0.0
+1075,18,San Isidro,Purok Kalachuchi,low,68,38,30,0.0
+1076,18,San Isidro,Purok Masagana,low,74,56,18,0.0
+1077,18,San Isidro,Sitio Nonoc,low,71,60,11,0.0
+1078,18,San Isidro,Zone 1,low,86,54,32,0.0
+1079,18,San Isidro,Zone 4,low,65,48,17,0.0
+1080,18,San Isidro,Zone 6,low,70,47,23,0.0
+1082,19,San Roque,Purok Maya,medium,43,41,2,0.0
+1083,19,San Roque,Purok Mahogany,medium,37,26,11,0.0
+1084,19,San Roque,Tiara del Sur,medium,72,49,23,0.0
+1085,19,San Roque,William Lines Subdivision,medium,85,50,35,0.0
+1086,19,San Roque,Sitio Gimbuangan,low,53,47,6,0.0
+1087,19,San Roque,Sitio Plangganahan,low,27,23,4,0.0
+1089,20,Tabunok,Happy Homes Subdivision,medium,48,25,23,0.0
+1090,20,Tabunok,Zone 1,low,66,34,32,0.0
+1091,23,Cadulawan,GBC Subdivision,medium,0,0,0,0.0
+1094,5,Cansojong,Sitio Abalo,low,76,63,13,0.0
+1096,6,Dumlog,Sitio Tugas,low,99,63,36,0.0
+1097,17,Pooc,Sitio Centro,low,25,17,8,0.0
+1098,1,Biasong,Purok Maryland,medium,64,36,28,0.0
+1099,2,Bulacao,AAC Compound,low,129,80,49,0.0
+1102,4,Camp IV,Sitio Caolong,low,57,51,6,1.0
+1105,5,Cansojong,Sitio Maya-maya,medium,102,58,44,0.0
+1106,6,Dumlog,Purok Kamatis,low,108,46,62,0.0
+1107,6,Dumlog,Sta. Theresa Village I,medium,101,71,30,0.0
+1108,6,Dumlog,Reubenville Subdivision,low,159,95,64,0.0
+1109,10,Lawaan II,Purok Rambutan,medium,63,52,11,0.0
+1110,10,Lawaan II,Sitio Puso-an,medium,41,32,9,0.0
+1111,10,Lawaan II,Sitio Gangan,low,50,33,17,0.0
+1112,10,Lawaan II,New San Lorenzo Ruiz Village,low,57,38,19,0.0
+1113,11,Lawaan III,Purok Tambis,low,33,27,6,0.0
+1114,13,Maghaway,Purok Lomboy 1,medium,56,29,27,0.666667
+1115,16,Poblacion,Sitio Libra,medium,111,68,43,0.0
+1116,19,San Roque,Purok Macopa,medium,114,103,11,0.0
+1117,19,San Roque,Purok Love Birds,medium,40,29,11,0.0
+1118,20,Tabunok,Sitio Kawatan,medium,34,30,4,0.0
+1119,22,Tapul,Purok 1,medium,115,40,75,0.666667
+1120,1,Biasong,Purok Birde,low,100,49,51,0.0
+1121,1,Biasong,Purok Pag-asa,low,5,2,3,0.0
+1122,2,Bulacao,Purok Malinawon,low,42,27,15,0.0
+1123,2,Bulacao,Purok Mangihatagon,low,101,62,39,0.0
+1124,2,Bulacao,Sitio Holy Child,low,69,45,24,0.0
+1125,2,Bulacao,Kalubihan,low,64,42,22,0.0
+1126,2,Bulacao,Gotianuy Subdivision,low,103,57,46,0.0
+1127,23,Cadulawan,Zone II (Lower),low,64,39,25,0.566667
+1128,23,Cadulawan,Purok Chicos,low,0,0,0,0.0
+1129,23,Cadulawan,Casilda Homes,medium,44,33,11,0.0
+1130,23,Cadulawan,Purok 17,low,2,2,0,1.0
+1131,4,Camp IV,Sitio Crossing,medium,89,59,30,1.0
+1133,5,Cansojong,Casa de la Paz,medium,39,21,18,0.0
+1136,6,Dumlog,Florida County,medium,68,50,18,0.0
+1137,6,Dumlog,Sta. Rita Ville,low,76,55,21,0.0
+1138,8,Lagtang,Gabison Compound,medium,49,41,8,0.066667
+1139,9,Lawaan I,St. Ignatius De Loyola Townhomes,medium,137,96,41,0.0
+1140,10,Lawaan II,Sitio Bonbon,low,44,16,28,0.0
+1141,12,Linao,Camella Homes,low,87,66,21,0.0
+1144,13,Maghaway,St. Arnold Janssen Village,medium,18,13,5,0.666667
+1145,20,Tabunok,Nuñez Compound,low,35,22,13,0.0
+1146,20,Tabunok,Ruiz Compound,low,56,42,14,0.0
+1147,1,Biasong,Purok Mabuhast,low,102,75,27,0.0
+1148,1,Biasong,Sitio Botoy,low,130,77,53,0.0
+1149,2,Bulacao,Rustyville Subdivision,medium,50,38,12,0.333333
+1150,23,Cadulawan,Upper Mahayahay,low,21,10,11,0.666667
+1151,4,Camp IV,Purok Sambag,low,19,14,5,1.0
+1152,4,Camp IV,Purok Pinya,low,47,34,13,1.0
+1153,4,Camp IV,Sitio Camp 5,medium,70,26,44,1.0
+1154,4,Camp IV,Purok Caimito,low,60,30,30,1.0
+1155,4,Camp IV,Purok Mangga,low,56,28,28,1.0
+1156,6,Dumlog,Purok Saging,low,67,51,16,0.0
+1157,6,Dumlog,Sitio Santo Nino,high,62,42,20,0.0
+1158,7,Jaclupan,Sitio Tinubdan,medium,14,0,14,1.0
+1159,7,Jaclupan,Purok Lumboy,medium,14,0,14,1.0
+1160,8,Lagtang,Purok Panas,low,61,60,1,0.666667
+1161,8,Lagtang,Saint Gabriel Village,medium,46,40,6,0.0
+1162,8,Lagtang,Sitio Luyongan,low,20,3,17,1.0
+1163,9,Lawaan I,Merrywood Townhomes,medium,220,148,72,0.0
+1164,10,Lawaan II,Sitio Lemoncito,low,19,14,5,0.0
+1165,10,Lawaan II,Lower Sombria,low,13,13,0,0.0
+1166,11,Lawaan III,Purok Avocado,medium,39,32,7,0.0
+1167,11,Lawaan III,Luzminda Estate Park Subdivision,medium,80,36,44,0.0
+1168,12,Linao,Purok Yellow Bell,low,74,49,25,0.333333
+1169,12,Linao,Upper San Miguel,low,189,81,108,0.0
+1170,12,Linao,Purok Dancing Lady,low,48,35,13,0.0
+1171,12,Linao,Moonlight Hill,medium,6,1,5,0.0
+1172,12,Linao,Casa Lucia,medium,18,6,12,0.433333
+1173,12,Linao,Abucejo Subdivision,medium,10,7,3,0.033333
+1174,13,Maghaway,Purok Lomboy 2,low,114,87,27,0.666667
+1175,13,Maghaway,Talisay View Homes,medium,63,48,15,0.666667
+1177,15,Mohon,Purok Bontory,low,131,67,64,0.0
+1178,15,Mohon,San Rafael Homes de Cebu,high,65,27,38,0.0
+1179,15,Mohon,Sitio Lower,low,97,51,46,0.0
+1180,15,Mohon,Maple Ville,medium,88,56,32,0.0
+1181,15,Mohon,Sitio Gumamela,medium,7,2,5,0.0
+1182,16,Poblacion,Purok Alubati,low,36,7,29,0.0
+1183,16,Poblacion,Purok Saluyot,medium,128,73,55,0.0
+1184,16,Poblacion,Anelan Compound,medium,46,37,9,0.0
+1185,17,Pooc,Purok Sunrise 7,low,62,51,11,0.0
+1186,17,Pooc,Rosepike Residences,medium,68,54,14,0.0
+1188,18,San Isidro,Purok Labayan,low,43,35,8,0.0
+1189,18,San Isidro,Sta. Theresa Village II,medium,58,37,21,0.0
+1190,19,San Roque,Purok Kabayoan 2,low,92,64,28,0.0
+1191,19,San Roque,Purok Bayabas,medium,120,93,27,0.0
+1192,19,San Roque,Skyview Village,medium,69,21,48,0.0
+1193,20,Tabunok,Purok Rizal,low,19,13,6,0.0
+1194,22,Tapul,Sitio Catican,medium,42,3,39,0.666667
+1195,5,Cansojong,Sitio Casare,low,84,62,22,0.0
+1196,5,Cansojong,Sitio Limonsito,low,97,91,6,0.0
+1197,5,Cansojong,Sitio Kimberly,medium,13,10,3,0.0
+1198,5,Cansojong,Along Vicente H. Garces Street,,37,18,19,0.0
+1199,1,Biasong,Joanna Legacy Homes,medium,75,38,37,0.0
+1200,2,Bulacao,Sitio Hawod,medium,65,48,17,0.0
+1201,6,Dumlog,Purok Opal,medium,75,41,34,0.0
+1202,11,Lawaan III,Purok Butyog,medium,50,39,11,0.0
+1203,12,Linao,Purok Scarlet,low,173,66,107,0.0
+1204,20,Tabunok,Purok Maloloy-on,medium,59,41,18,0.0
+1205,6,Dumlog,Purok Magtalisay,medium,66,49,17,0.0
+1206,13,Maghaway,Purok Kamansilis,medium,29,0,29,1.0
+1207,20,Tabunok,Purok Hannos,medium,74,43,31,0.0
+1208,20,Tabunok,Purok Masinabtanon,medium,31,25,6,0.0
+1209,6,Dumlog,Purok Chicos,medium,61,39,22,0.0
+1210,14,Manipis,Purok Mangga,low,39,16,23,1.0
+1211,14,Manipis,Purok Kaimito,medium,29,16,13,1.0
+1212,18,San Isidro,Purok Day Care,medium,56,49,7,0.0
+1213,2,Bulacao,Upper Kabanayan,medium,54,40,14,0.333333
+1214,1,Biasong,Purok 5,high,38,25,13,0.0
+1215,23,Cadulawan,Zone IV (Proper),low,110,63,47,0.666667
+1216,5,Cansojong,Along Mitzi's Drive,,53,33,20,0.0
+1217,6,Dumlog,Purok Emerald,low,78,54,24,0.0
+1218,7,Jaclupan,Manguilamon,high,39,23,16,0.666667
+1219,12,Linao,St. Mary's Heights,low,80,58,22,0.0
+1220,12,Linao,West Boxhill Residences,low,172,70,102,0.0
+1221,17,Pooc,Graceville Subdivision,low,91,60,31,0.0
+1222,18,San Isidro,Sitio Tabulasan,medium,56,42,14,0.0
+1223,18,San Isidro,Sto. Nino Village,low,59,27,32,0.0
+1224,21,Tangke,Kalinao 1,high,39,27,12,0.0
+1225,21,Tangke,Kalinao 2,high,61,30,31,0.0
+1226,1,Biasong,Purok Akasia,low,95,55,40,0.0
+1227,2,Bulacao,Along Andrin Street,,94,59,35,0.0
+1228,5,Cansojong,Along Dawis Road,,79,47,32,0.0
+1229,7,Jaclupan,Purok Bugnay,low,0,0,0,0.0
+1230,8,Lagtang,Purok Centro,low,41,37,4,0.0
+1231,8,Lagtang,Purok Tubig,low,9,9,0,0.0
+1232,8,Lagtang,Near Iba Elementary School,,159,7,152,0.333333
+1233,8,Lagtang,Along Bulacao River,,68,9,59,0.666667
+1234,9,Lawaan I,Sitio Sombria,low,64,35,29,0.0
+1235,9,Lawaan I,Along Beldad Street,,245,155,90,0.0
+1236,10,Lawaan II,Purok Chicos,low,18,16,2,0.0
+1240,16,Poblacion,Purok Atis,low,32,10,22,0.0
+1241,17,Pooc,300 m east of Mohon Elementary School,,8,8,0,0.0
+1242,17,Pooc,400 m southeast of Mohon Elementary School,,64,36,28,0.0
+1243,19,San Roque,Purok Bangus,low,43,37,6,0.0
+1244,19,San Roque,Purok Ito,low,30,30,0,0.0
+1245,20,Tabunok,Purok Julian Felipe,low,29,15,14,0.0
+1246,20,Tabunok,Purok Jacinto Zamora,low,31,25,6,0.0
+1247,21,Tangke,Purok Eto,low,101,61,40,0.0
+1248,14,Manipis,Sitio Langoyon,low,56,20,36,1.0
+1249,14,Manipis,Purok Bamboo,low,29,4,25,1.0
+1250,8,Lagtang,Sitio SDA,low,80,49,31,1.0

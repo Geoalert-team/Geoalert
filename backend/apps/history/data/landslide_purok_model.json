@@ -1,0 +1,6098 @@
+{
+ "version": "noah_fallback@fa3cc240e714",
+ "source": "noah",
+ "chosen": "logistic_regression",
+ "training_set": "ph",
+ "built_at": "2026-11-25T14:04:55+08:00",
+ "outlines_version": "9a81386469102f1943a969caf4b29be5",
+ "cutoffs": {
+  "red": 1.0,
+  "orange": 0.6666666666666666,
+  "red_recall": 0.650013,
+  "orange_recall": 0.940788,
+  "target_reached": true
+ },
+ "clip_ranges": {
+  "dist_road_m": [
+   0.0,
+   2479.17
+  ],
+  "lc_trees": [
+   0.0,
+   1.0
+  ],
+  "lc_rangeland": [
+   0.0,
+   1.0
+  ],
+  "lc_crops": [
+   0.0,
+   0.0
+  ],
+  "lc_built": [
+   0.0,
+   1.0
+  ],
+  "lc_bare": [
+   0.0,
+   0.0
+  ]
+ },
+ "inputs": {
+  "columns": [
+   "slope_deg",
+   "relief_m",
+   "profile_curv",
+   "plan_curv",
+   "hand_m",
+   "twi",
+   "dist_stream_m",
+   "dist_road_m",
+   "lc_trees",
+   "lc_rangeland",
+   "lc_crops",
+   "lc_built",
+   "lc_bare"
+  ],
+  "landcover_ok": true,
+  "files": {
+   "landslide_training.csv": "9d67c88b16165b1d5701507198b14a245f9d5598",
+   "landslide_training.meta.json": "027b89da170c6f85840f9fccd10868517a79b5bb",
+   "landslide_purok_features.csv": "4454908a2dcb1979fe62bd0ff3e4f8cbfbb8c739",
+   "landslide_purok_features.meta.json": "411c62b4986c37daada2c74886820f4eecb444d8",
+   "landslide_points.npz": "420dc0a7527c4aadde3e963d7c4883836b348288"
+  }
+ },
+ "areas": {
+  "306": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 67
+  },
+  "307": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 68
+  },
+  "308": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 199
+  },
+  "309": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 40
+  },
+  "310": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 67
+  },
+  "311": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 180
+  },
+  "312": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 31
+  },
+  "313": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 33
+  },
+  "320": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 107
+  },
+  "321": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 14
+  },
+  "322": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 50
+  },
+  "323": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 71
+  },
+  "324": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 40
+  },
+  "325": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 125
+  },
+  "326": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 112
+  },
+  "337": {
+   "barangay_id": 23,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 942
+  },
+  "338": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 50
+  },
+  "339": {
+   "barangay_id": 23,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 32
+  },
+  "340": {
+   "barangay_id": 23,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 41
+  },
+  "350": {
+   "barangay_id": 4,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 33
+  },
+  "359": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 53
+  },
+  "360": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 70
+  },
+  "361": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 18
+  },
+  "362": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 108
+  },
+  "363": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 87
+  },
+  "364": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 74
+  },
+  "365": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 99
+  },
+  "366": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 77
+  },
+  "367": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 163
+  },
+  "385": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 73
+  },
+  "386": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 56
+  },
+  "387": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 90
+  },
+  "388": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 226
+  },
+  "389": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 60
+  },
+  "390": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 120
+  },
+  "391": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 72
+  },
+  "392": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 103
+  },
+  "393": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 67
+  },
+  "394": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 91
+  },
+  "395": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 51
+  },
+  "396": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 78
+  },
+  "397": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 82
+  },
+  "398": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 93
+  },
+  "399": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 137
+  },
+  "409": {
+   "barangay_id": 7,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 71
+  },
+  "410": {
+   "barangay_id": 7,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 18
+  },
+  "411": {
+   "barangay_id": 7,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 24
+  },
+  "412": {
+   "barangay_id": 7,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 41
+  },
+  "413": {
+   "barangay_id": 7,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 34
+  },
+  "414": {
+   "barangay_id": 7,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 51
+  },
+  "415": {
+   "barangay_id": 7,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 33
+  },
+  "418": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 31
+  },
+  "419": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 53
+  },
+  "420": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 52
+  },
+  "421": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 85
+  },
+  "422": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 70
+  },
+  "423": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 37
+  },
+  "424": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 147
+  },
+  "425": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 625
+  },
+  "426": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 71
+  },
+  "427": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 126
+  },
+  "428": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 34
+  },
+  "429": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 56
+  },
+  "430": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 102
+  },
+  "431": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 18
+  },
+  "432": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 50
+  },
+  "433": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 77
+  },
+  "434": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 40
+  },
+  "435": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 52
+  },
+  "436": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 82
+  },
+  "437": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 58
+  },
+  "438": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 44
+  },
+  "439": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 54
+  },
+  "443": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 167
+  },
+  "444": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 468
+  },
+  "445": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 162
+  },
+  "446": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 187
+  },
+  "455": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 29
+  },
+  "456": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 60
+  },
+  "457": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 43
+  },
+  "458": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 35
+  },
+  "459": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 46
+  },
+  "460": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 52
+  },
+  "461": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 55
+  },
+  "462": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 45
+  },
+  "463": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 56
+  },
+  "464": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 53
+  },
+  "465": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 106
+  },
+  "466": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 108
+  },
+  "471": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 112
+  },
+  "472": {
+   "barangay_id": 11,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 75
+  },
+  "473": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 28
+  },
+  "474": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 75
+  },
+  "475": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 182
+  },
+  "476": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 88
+  },
+  "477": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 77
+  },
+  "478": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 93
+  },
+  "479": {
+   "barangay_id": 11,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 96
+  },
+  "480": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 22
+  },
+  "486": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 77
+  },
+  "487": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 597
+  },
+  "488": {
+   "barangay_id": 12,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 162
+  },
+  "489": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 134
+  },
+  "490": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 97
+  },
+  "499": {
+   "barangay_id": 13,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 48
+  },
+  "500": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 196
+  },
+  "501": {
+   "barangay_id": 13,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 54
+  },
+  "502": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 143
+  },
+  "503": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 652
+  },
+  "504": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 140
+  },
+  "505": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 185
+  },
+  "506": {
+   "barangay_id": 13,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 65
+  },
+  "507": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 121
+  },
+  "509": {
+   "barangay_id": 14,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 84
+  },
+  "510": {
+   "barangay_id": 14,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 61
+  },
+  "511": {
+   "barangay_id": 14,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 34
+  },
+  "515": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 127
+  },
+  "516": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 83
+  },
+  "517": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 44
+  },
+  "518": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 103
+  },
+  "519": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 31
+  },
+  "520": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 76
+  },
+  "521": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 80
+  },
+  "522": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 83
+  },
+  "523": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 87
+  },
+  "524": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 72
+  },
+  "525": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 95
+  },
+  "529": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 701
+  },
+  "530": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 112
+  },
+  "531": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 124
+  },
+  "532": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 79
+  },
+  "533": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 156
+  },
+  "534": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 136
+  },
+  "535": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 18
+  },
+  "536": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 155
+  },
+  "537": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 114
+  },
+  "538": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 92
+  },
+  "541": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 78
+  },
+  "542": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 784
+  },
+  "543": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 80
+  },
+  "544": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 132
+  },
+  "545": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 83
+  },
+  "546": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 85
+  },
+  "547": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 152
+  },
+  "548": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 77
+  },
+  "549": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 96
+  },
+  "550": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 196
+  },
+  "551": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 29
+  },
+  "552": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 90
+  },
+  "558": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 61
+  },
+  "559": {
+   "barangay_id": 18,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 95
+  },
+  "560": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 77
+  },
+  "561": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 81
+  },
+  "562": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 131
+  },
+  "563": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 74
+  },
+  "564": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 184
+  },
+  "565": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 83
+  },
+  "566": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 86
+  },
+  "567": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 70
+  },
+  "568": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 56
+  },
+  "569": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 58
+  },
+  "570": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 67
+  },
+  "571": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 62
+  },
+  "572": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 78
+  },
+  "579": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 36
+  },
+  "580": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 79
+  },
+  "581": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 49
+  },
+  "582": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 59
+  },
+  "583": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 25
+  },
+  "584": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 20
+  },
+  "585": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 4
+  },
+  "586": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 49
+  },
+  "587": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 26
+  },
+  "588": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 35
+  },
+  "589": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 70
+  },
+  "590": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 49
+  },
+  "591": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 84
+  },
+  "592": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 151
+  },
+  "593": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 38
+  },
+  "594": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 73
+  },
+  "595": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 31
+  },
+  "596": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 99
+  },
+  "597": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 83
+  },
+  "598": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 462
+  },
+  "599": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 20
+  },
+  "600": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 88
+  },
+  "601": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 21
+  },
+  "602": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 50
+  },
+  "603": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 96
+  },
+  "604": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 46
+  },
+  "610": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 42
+  },
+  "611": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 84
+  },
+  "612": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 46
+  },
+  "613": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 54
+  },
+  "614": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 47
+  },
+  "615": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 61
+  },
+  "616": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 46
+  },
+  "617": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 91
+  },
+  "618": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 116
+  },
+  "619": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 57
+  },
+  "620": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 36
+  },
+  "622": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 53
+  },
+  "623": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 37
+  },
+  "624": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 68
+  },
+  "625": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 58
+  },
+  "626": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 71
+  },
+  "627": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 52
+  },
+  "628": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 81
+  },
+  "629": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 154
+  },
+  "630": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 46
+  },
+  "631": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 84
+  },
+  "632": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 70
+  },
+  "635": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 48
+  },
+  "636": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 139
+  },
+  "637": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 129
+  },
+  "638": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 110
+  },
+  "639": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 73
+  },
+  "640": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 137
+  },
+  "641": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 179
+  },
+  "642": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 181
+  },
+  "643": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 177
+  },
+  "653": {
+   "barangay_id": 22,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 57
+  },
+  "654": {
+   "barangay_id": 22,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 50
+  },
+  "655": {
+   "barangay_id": 22,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 189
+  },
+  "663": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 47
+  },
+  "664": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 195
+  },
+  "665": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 65
+  },
+  "666": {
+   "barangay_id": 4,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 32
+  },
+  "667": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 198
+  },
+  "668": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 8
+  },
+  "669": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 169
+  },
+  "670": {
+   "barangay_id": 12,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 4
+  },
+  "671": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 92
+  },
+  "672": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 55
+  },
+  "673": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 48
+  },
+  "674": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 93
+  },
+  "675": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 68
+  },
+  "676": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 167
+  },
+  "682": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 155
+  },
+  "683": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 75
+  },
+  "684": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 146
+  },
+  "687": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 113
+  },
+  "694": {
+   "barangay_id": 23,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings or roads in this area",
+   "estimated_outline": false,
+   "points": 0
+  },
+  "708": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 125
+  },
+  "709": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 94
+  },
+  "710": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 86
+  },
+  "711": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 102
+  },
+  "712": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 95
+  },
+  "713": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 133
+  },
+  "714": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 105
+  },
+  "717": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 46
+  },
+  "718": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 123
+  },
+  "723": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 99
+  },
+  "725": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 278
+  },
+  "730": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 61
+  },
+  "738": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 183
+  },
+  "739": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 77
+  },
+  "745": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 115
+  },
+  "746": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 346
+  },
+  "751": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 62
+  },
+  "752": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 96
+  },
+  "756": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 97
+  },
+  "761": {
+   "barangay_id": 14,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 65
+  },
+  "764": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 241
+  },
+  "769": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 196
+  },
+  "773": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 29
+  },
+  "775": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 73
+  },
+  "776": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 78
+  },
+  "780": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 90
+  },
+  "781": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 137
+  },
+  "782": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 159
+  },
+  "783": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 117
+  },
+  "787": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 57
+  },
+  "802": {
+   "barangay_id": 22,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 230
+  },
+  "806": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 260
+  },
+  "807": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 169
+  },
+  "809": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 159
+  },
+  "810": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 45
+  },
+  "811": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 72
+  },
+  "812": {
+   "barangay_id": 23,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 173
+  },
+  "813": {
+   "barangay_id": 23,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 55
+  },
+  "815": {
+   "barangay_id": 4,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 38
+  },
+  "816": {
+   "barangay_id": 4,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 82
+  },
+  "818": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 192
+  },
+  "819": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 59
+  },
+  "820": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 103
+  },
+  "821": {
+   "barangay_id": 7,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 82
+  },
+  "822": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 50
+  },
+  "823": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 134
+  },
+  "824": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 38
+  },
+  "825": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 38
+  },
+  "827": {
+   "barangay_id": 11,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 216
+  },
+  "828": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 102
+  },
+  "829": {
+   "barangay_id": 14,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 151
+  },
+  "831": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 434
+  },
+  "833": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 271
+  },
+  "834": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 1127
+  },
+  "835": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 127
+  },
+  "836": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 66
+  },
+  "837": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 202
+  },
+  "838": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 285
+  },
+  "839": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 174
+  },
+  "840": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 83
+  },
+  "841": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 110
+  },
+  "842": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 49
+  },
+  "843": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 102
+  },
+  "844": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 30
+  },
+  "845": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 81
+  },
+  "846": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 93
+  },
+  "848": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 61
+  },
+  "849": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 73
+  },
+  "850": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 64
+  },
+  "851": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 43
+  },
+  "852": {
+   "barangay_id": 2,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 111
+  },
+  "853": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 87
+  },
+  "854": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 88
+  },
+  "855": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 84
+  },
+  "856": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 70
+  },
+  "857": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 54
+  },
+  "858": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 100
+  },
+  "859": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 34
+  },
+  "860": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 40
+  },
+  "861": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 79
+  },
+  "864": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 53
+  },
+  "865": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 39
+  },
+  "866": {
+   "barangay_id": 23,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 52
+  },
+  "867": {
+   "barangay_id": 23,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings or roads in this area",
+   "estimated_outline": false,
+   "points": 0
+  },
+  "868": {
+   "barangay_id": 23,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 74
+  },
+  "869": {
+   "barangay_id": 23,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings or roads in this area",
+   "estimated_outline": false,
+   "points": 0
+  },
+  "870": {
+   "barangay_id": 23,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings or roads in this area",
+   "estimated_outline": false,
+   "points": 0
+  },
+  "872": {
+   "barangay_id": 4,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 21
+  },
+  "873": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 88
+  },
+  "874": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 95
+  },
+  "875": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 69
+  },
+  "876": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 48
+  },
+  "877": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 80
+  },
+  "878": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 117
+  },
+  "879": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 36
+  },
+  "880": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 100
+  },
+  "881": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 93
+  },
+  "882": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 95
+  },
+  "883": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 100
+  },
+  "884": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 102
+  },
+  "885": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 70
+  },
+  "886": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 65
+  },
+  "889": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 34
+  },
+  "890": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 75
+  },
+  "891": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 71
+  },
+  "892": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 28
+  },
+  "893": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 95
+  },
+  "894": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 129
+  },
+  "895": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 135
+  },
+  "896": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 69
+  },
+  "897": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 69
+  },
+  "898": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 71
+  },
+  "899": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 35
+  },
+  "900": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 99
+  },
+  "901": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 141
+  },
+  "902": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 100
+  },
+  "903": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 81
+  },
+  "904": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 112
+  },
+  "905": {
+   "barangay_id": 7,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 43
+  },
+  "906": {
+   "barangay_id": 7,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 49
+  },
+  "907": {
+   "barangay_id": 7,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 54
+  },
+  "908": {
+   "barangay_id": 7,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 117
+  },
+  "909": {
+   "barangay_id": 7,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 50
+  },
+  "910": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings or roads in this area",
+   "estimated_outline": false,
+   "points": 0
+  },
+  "911": {
+   "barangay_id": 7,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 70
+  },
+  "912": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 22
+  },
+  "913": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 114
+  },
+  "914": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 53
+  },
+  "915": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 39
+  },
+  "916": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 59
+  },
+  "917": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 47
+  },
+  "918": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.533333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 35
+  },
+  "919": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 36
+  },
+  "921": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 154
+  },
+  "922": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 62
+  },
+  "923": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 54
+  },
+  "924": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 168
+  },
+  "925": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 51
+  },
+  "926": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 20
+  },
+  "927": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 63
+  },
+  "928": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 33
+  },
+  "929": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 75
+  },
+  "930": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 54
+  },
+  "931": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 48
+  },
+  "932": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 44
+  },
+  "933": {
+   "barangay_id": 11,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 73
+  },
+  "934": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 75
+  },
+  "935": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 97
+  },
+  "936": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 76
+  },
+  "937": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 218
+  },
+  "938": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 122
+  },
+  "939": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 78
+  },
+  "941": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 165
+  },
+  "942": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 102
+  },
+  "943": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 98
+  },
+  "944": {
+   "barangay_id": 13,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 1
+  },
+  "945": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 75
+  },
+  "946": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 92
+  },
+  "947": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 29
+  },
+  "948": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 146
+  },
+  "949": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 147
+  },
+  "950": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 153
+  },
+  "951": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 164
+  },
+  "952": {
+   "barangay_id": 14,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 79
+  },
+  "953": {
+   "barangay_id": 14,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 49
+  },
+  "956": {
+   "barangay_id": 14,
+   "level": "Green",
+   "score": 0.633333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 2
+  },
+  "957": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 88
+  },
+  "958": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 121
+  },
+  "959": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 76
+  },
+  "960": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 74
+  },
+  "962": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 25
+  },
+  "963": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 94
+  },
+  "964": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 56
+  },
+  "965": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 104
+  },
+  "966": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 60
+  },
+  "967": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 71
+  },
+  "968": {
+   "barangay_id": 17,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings or roads in this area",
+   "estimated_outline": false,
+   "points": 0
+  },
+  "969": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 60
+  },
+  "970": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 104
+  },
+  "971": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 53
+  },
+  "973": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 85
+  },
+  "974": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 83
+  },
+  "975": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 26
+  },
+  "976": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 84
+  },
+  "977": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 87
+  },
+  "978": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 38
+  },
+  "979": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 109
+  },
+  "980": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 65
+  },
+  "982": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 56
+  },
+  "983": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 66
+  },
+  "984": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 22
+  },
+  "985": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 126
+  },
+  "986": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 6
+  },
+  "987": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 80
+  },
+  "988": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 26
+  },
+  "989": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 70
+  },
+  "990": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 84
+  },
+  "991": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 50
+  },
+  "993": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 69
+  },
+  "994": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 61
+  },
+  "995": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 119
+  },
+  "996": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 50
+  },
+  "997": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 38
+  },
+  "998": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 48
+  },
+  "999": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 54
+  },
+  "1000": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 35
+  },
+  "1001": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 71
+  },
+  "1002": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 104
+  },
+  "1003": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 83
+  },
+  "1004": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 108
+  },
+  "1005": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 92
+  },
+  "1006": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 111
+  },
+  "1007": {
+   "barangay_id": 22,
+   "level": "Orange",
+   "score": 0.9,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 34
+  },
+  "1008": {
+   "barangay_id": 22,
+   "level": "Orange",
+   "score": 0.7,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 40
+  },
+  "1009": {
+   "barangay_id": 22,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 155
+  },
+  "1010": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 103
+  },
+  "1011": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 59
+  },
+  "1012": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 23
+  },
+  "1013": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 32
+  },
+  "1015": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 94
+  },
+  "1016": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 79
+  },
+  "1017": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 73
+  },
+  "1018": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 82
+  },
+  "1020": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 56
+  },
+  "1022": {
+   "barangay_id": 4,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 134
+  },
+  "1025": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 33
+  },
+  "1028": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 30
+  },
+  "1029": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 70
+  },
+  "1030": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 92
+  },
+  "1031": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 77
+  },
+  "1032": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 72
+  },
+  "1033": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 85
+  },
+  "1034": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 79
+  },
+  "1035": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 89
+  },
+  "1036": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 99
+  },
+  "1037": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 60
+  },
+  "1038": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings or roads in this area",
+   "estimated_outline": true,
+   "points": 0
+  },
+  "1039": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings or roads in this area",
+   "estimated_outline": true,
+   "points": 0
+  },
+  "1040": {
+   "barangay_id": 7,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 30
+  },
+  "1041": {
+   "barangay_id": 7,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 70
+  },
+  "1042": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 38
+  },
+  "1043": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 5
+  },
+  "1044": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 64
+  },
+  "1045": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 40
+  },
+  "1046": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 57
+  },
+  "1047": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 140
+  },
+  "1048": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 116
+  },
+  "1049": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 65
+  },
+  "1050": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 49
+  },
+  "1051": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 133
+  },
+  "1052": {
+   "barangay_id": 11,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 83
+  },
+  "1053": {
+   "barangay_id": 11,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 69
+  },
+  "1054": {
+   "barangay_id": 11,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 60
+  },
+  "1055": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 60
+  },
+  "1056": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 74
+  },
+  "1057": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 94
+  },
+  "1058": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 93
+  },
+  "1060": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 114
+  },
+  "1061": {
+   "barangay_id": 13,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 186
+  },
+  "1062": {
+   "barangay_id": 13,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 61
+  },
+  "1063": {
+   "barangay_id": 14,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 19
+  },
+  "1065": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 55
+  },
+  "1066": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 81
+  },
+  "1067": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 169
+  },
+  "1069": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 102
+  },
+  "1070": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 36
+  },
+  "1071": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 31
+  },
+  "1072": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 17
+  },
+  "1073": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 87
+  },
+  "1074": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 91
+  },
+  "1075": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 68
+  },
+  "1076": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 74
+  },
+  "1077": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 71
+  },
+  "1078": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 86
+  },
+  "1079": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 65
+  },
+  "1080": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 70
+  },
+  "1082": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 43
+  },
+  "1083": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 37
+  },
+  "1084": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 72
+  },
+  "1085": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 85
+  },
+  "1086": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 53
+  },
+  "1087": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 27
+  },
+  "1089": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 48
+  },
+  "1090": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 66
+  },
+  "1091": {
+   "barangay_id": 23,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings or roads in this area",
+   "estimated_outline": false,
+   "points": 0
+  },
+  "1094": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 76
+  },
+  "1096": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 99
+  },
+  "1097": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 25
+  },
+  "1098": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 64
+  },
+  "1099": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 129
+  },
+  "1102": {
+   "barangay_id": 4,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 57
+  },
+  "1105": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 102
+  },
+  "1106": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 108
+  },
+  "1107": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 101
+  },
+  "1108": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 159
+  },
+  "1109": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 63
+  },
+  "1110": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 41
+  },
+  "1111": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 50
+  },
+  "1112": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 57
+  },
+  "1113": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 33
+  },
+  "1114": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 56
+  },
+  "1115": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 111
+  },
+  "1116": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 114
+  },
+  "1117": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 40
+  },
+  "1118": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 34
+  },
+  "1119": {
+   "barangay_id": 22,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 115
+  },
+  "1120": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 100
+  },
+  "1121": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 5
+  },
+  "1122": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 42
+  },
+  "1123": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 101
+  },
+  "1124": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 69
+  },
+  "1125": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 64
+  },
+  "1126": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 103
+  },
+  "1127": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.566667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 64
+  },
+  "1128": {
+   "barangay_id": 23,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings or roads in this area",
+   "estimated_outline": true,
+   "points": 0
+  },
+  "1129": {
+   "barangay_id": 23,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 44
+  },
+  "1130": {
+   "barangay_id": 23,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 2
+  },
+  "1131": {
+   "barangay_id": 4,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 89
+  },
+  "1133": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 39
+  },
+  "1136": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 68
+  },
+  "1137": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 76
+  },
+  "1138": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.066667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 49
+  },
+  "1139": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 137
+  },
+  "1140": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 44
+  },
+  "1141": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 87
+  },
+  "1144": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 18
+  },
+  "1145": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 35
+  },
+  "1146": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 56
+  },
+  "1147": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 102
+  },
+  "1148": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 130
+  },
+  "1149": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 50
+  },
+  "1150": {
+   "barangay_id": 23,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 21
+  },
+  "1151": {
+   "barangay_id": 4,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 19
+  },
+  "1152": {
+   "barangay_id": 4,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 47
+  },
+  "1153": {
+   "barangay_id": 4,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 70
+  },
+  "1154": {
+   "barangay_id": 4,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 60
+  },
+  "1155": {
+   "barangay_id": 4,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 56
+  },
+  "1156": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 67
+  },
+  "1157": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 62
+  },
+  "1158": {
+   "barangay_id": 7,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 14
+  },
+  "1159": {
+   "barangay_id": 7,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 14
+  },
+  "1160": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 61
+  },
+  "1161": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 46
+  },
+  "1162": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 20
+  },
+  "1163": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 220
+  },
+  "1164": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 19
+  },
+  "1165": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 13
+  },
+  "1166": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 39
+  },
+  "1167": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 80
+  },
+  "1168": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 74
+  },
+  "1169": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 189
+  },
+  "1170": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 48
+  },
+  "1171": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 6
+  },
+  "1172": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.433333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 18
+  },
+  "1173": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.033333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 10
+  },
+  "1174": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 114
+  },
+  "1175": {
+   "barangay_id": 13,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 63
+  },
+  "1177": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 131
+  },
+  "1178": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 65
+  },
+  "1179": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 97
+  },
+  "1180": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 88
+  },
+  "1181": {
+   "barangay_id": 15,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 7
+  },
+  "1182": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 36
+  },
+  "1183": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 128
+  },
+  "1184": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 46
+  },
+  "1185": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 62
+  },
+  "1186": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 68
+  },
+  "1188": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 43
+  },
+  "1189": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 58
+  },
+  "1190": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 92
+  },
+  "1191": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 120
+  },
+  "1192": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 69
+  },
+  "1193": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 19
+  },
+  "1194": {
+   "barangay_id": 22,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 42
+  },
+  "1195": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 84
+  },
+  "1196": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 97
+  },
+  "1197": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 13
+  },
+  "1198": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 37
+  },
+  "1199": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 75
+  },
+  "1200": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 65
+  },
+  "1201": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 75
+  },
+  "1202": {
+   "barangay_id": 11,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 50
+  },
+  "1203": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 173
+  },
+  "1204": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 59
+  },
+  "1205": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 66
+  },
+  "1206": {
+   "barangay_id": 13,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 29
+  },
+  "1207": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 74
+  },
+  "1208": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 31
+  },
+  "1209": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 61
+  },
+  "1210": {
+   "barangay_id": 14,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 39
+  },
+  "1211": {
+   "barangay_id": 14,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 29
+  },
+  "1212": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 56
+  },
+  "1213": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 54
+  },
+  "1214": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 38
+  },
+  "1215": {
+   "barangay_id": 23,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 110
+  },
+  "1216": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 53
+  },
+  "1217": {
+   "barangay_id": 6,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 78
+  },
+  "1218": {
+   "barangay_id": 7,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 39
+  },
+  "1219": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 80
+  },
+  "1220": {
+   "barangay_id": 12,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 172
+  },
+  "1221": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 91
+  },
+  "1222": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 56
+  },
+  "1223": {
+   "barangay_id": 18,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 59
+  },
+  "1224": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 39
+  },
+  "1225": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 61
+  },
+  "1226": {
+   "barangay_id": 1,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 95
+  },
+  "1227": {
+   "barangay_id": 2,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 94
+  },
+  "1228": {
+   "barangay_id": 5,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 79
+  },
+  "1229": {
+   "barangay_id": 7,
+   "level": null,
+   "score": null,
+   "uncertain": false,
+   "not_assessed_reason": "No buildings or roads in this area",
+   "estimated_outline": true,
+   "points": 0
+  },
+  "1230": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 41
+  },
+  "1231": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 9
+  },
+  "1232": {
+   "barangay_id": 8,
+   "level": "Green",
+   "score": 0.333333,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 159
+  },
+  "1233": {
+   "barangay_id": 8,
+   "level": "Orange",
+   "score": 0.666667,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 68
+  },
+  "1234": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 64
+  },
+  "1235": {
+   "barangay_id": 9,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 245
+  },
+  "1236": {
+   "barangay_id": 10,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 18
+  },
+  "1240": {
+   "barangay_id": 16,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 32
+  },
+  "1241": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 8
+  },
+  "1242": {
+   "barangay_id": 17,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": false,
+   "points": 64
+  },
+  "1243": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 43
+  },
+  "1244": {
+   "barangay_id": 19,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 30
+  },
+  "1245": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 29
+  },
+  "1246": {
+   "barangay_id": 20,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 31
+  },
+  "1247": {
+   "barangay_id": 21,
+   "level": "Green",
+   "score": 0.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 101
+  },
+  "1248": {
+   "barangay_id": 14,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 56
+  },
+  "1249": {
+   "barangay_id": 14,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 29
+  },
+  "1250": {
+   "barangay_id": 8,
+   "level": "Red",
+   "score": 1.0,
+   "uncertain": false,
+   "not_assessed_reason": null,
+   "estimated_outline": true,
+   "points": 80
+  }
+ }
+}

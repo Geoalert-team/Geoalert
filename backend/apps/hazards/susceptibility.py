@@ -37,14 +37,9 @@ CLASSES = [
 # There is no flood layer: flood susceptibility comes from the flood model
 # (apps/history/flood_purok.py), never from hand-picked weights; the terrain
 # (HAND) layer for drawing a flood from an observed depth is still built.
+# There is no landslide layer either: landslide susceptibility comes from the
+# landslide model (apps/history/landslide_*.py), not from hand-picked weights.
 FACTORS = {
-    'landslide': [
-        ('slope', [5, 10, 18, 30], 'up', 0.45),                 # degrees
-        ('relief', [5, 15, 30, 60], 'up', 0.15),                # m of local relief within ~150 m
-        ('elevation', [20, 60, 150, 300], 'up', 0.10),          # m above sea level
-        ('dist_water', [50, 150, 300, 500], 'down', 0.15),      # stream undercutting
-        ('dist_road', [50, 100, 200, 400], 'down', 0.15),       # road cuts
-    ],
     'fire': [
         ('building_density', [2, 8, 20, 40], 'up', 0.40),       # buildings per hectare
         ('urban_landuse', [1.5, 2.5, 3.5, 4.5], 'up', 0.15),    # 1 none, 3 residential, 4 commercial, 5 industrial
@@ -56,7 +51,6 @@ FACTORS = {
 SCORE_BREAKS = [1.8, 2.6, 3.4, 4.2]  # equal intervals on the 1-5 weighted score
 
 STREAM_AREA_KM2 = 0.25    # upstream area that starts a DEM-derived channel
-FLAT_SLOPE_DEG = 3        # landslides: flatter than this is always very low
 FIRE_STATION_SEARCH_M = 6000  # look for stations this far outside the city
 
 ROAD_TYPES = {
@@ -550,11 +544,10 @@ def compute_factors(grid, dem, osm, city_mask, log):
 
 def build_layers(factors, city_mask):
     layers = {hazard: classify(factors, hazard) for hazard in FACTORS}
-    # Flat ground does not slide; empty land has little to burn
-    layers['landslide'][factors['slope'] < FLAT_SLOPE_DEG] = 1
+    # Empty land has little to burn; 'all' is the fire layer (the only hand-weighted one left)
     empty = (factors['building_density'] < 0.5) & (factors['urban_landuse'] <= 1)
     layers['fire'][empty] = 1
-    layers['all'] = np.maximum.reduce([layers['landslide'], layers['fire']])
+    layers['all'] = layers['fire'].copy()
     for arr in layers.values():
         arr[~city_mask] = 0
     return layers

@@ -256,7 +256,7 @@ class FloodLayerRetiredTests(BuildTests):
         self.assertNotIn('flood', susc.FACTORS)
         self.assertNotIn('flood', index['layers'])
         self.assertFalse((self.out / 'flood.png').exists())
-        self.assertEqual(set(index['factors']), {'landslide', 'fire'})
+        self.assertEqual(set(index['factors']), {'fire'})
 
     def test_drop_layer(self):
         index = self.build()
@@ -273,6 +273,26 @@ class FloodLayerRetiredTests(BuildTests):
         self.assertNotIn('flood', new['factors'])
         self.assertTrue(all('flood' not in e for e in new['barangays'].values()))
         self.assertFalse((self.out / 'flood.png').exists())
-        expected = np.maximum(png_classes(self.out / 'landslide.png'), png_classes(self.out / 'fire.png'))
-        self.assertEqual(png_classes(self.out / 'all.png').tolist(), expected.tolist())
+        self.assertEqual(png_classes(self.out / 'all.png').tolist(), png_classes(self.out / 'fire.png').tolist())
         self.assertEqual(json.loads((self.out / 'index.json').read_text())['layers'], new['layers'])
+
+
+class LandslideLayerRetiredTests(BuildTests):
+    """The hand-weighted landslide layer is gone: 'all' is the fire layer."""
+
+    def test_no_hand_weighted_landslide_layer(self):
+        self.assertNotIn('landslide', susc.FACTORS)
+        index = self.build()
+        self.assertNotIn('landslide', index['layers'])
+        self.assertNotIn('landslide', index['factors'])
+        self.assertFalse((self.out / 'landslide.png').exists())
+        self.assertTrue(all('landslide' not in e for e in index['barangays'].values()))
+        self.assertEqual(png_classes(self.out / 'all.png').tolist(), png_classes(self.out / 'fire.png').tolist())
+
+    def test_build_layers_has_fire_and_all_only(self):
+        shape = (4, 4)
+        factors = {name: np.zeros(shape, np.float32) for name in (
+            'building_density', 'urban_landuse', 'dist_fire_station', 'dist_main_road', 'dist_road', 'slope')}
+        layers = susc.build_layers(factors, np.ones(shape, bool))
+        self.assertEqual(set(layers), {'fire', 'all'})
+        self.assertEqual(layers['all'].tolist(), layers['fire'].tolist())

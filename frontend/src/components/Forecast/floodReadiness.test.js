@@ -119,3 +119,36 @@ test('the own-data training line', async () => {
   );
   expect(el.textContent).not.toContain('not from these records');
 });
+
+test('the landslide spots line', async () => {
+  historyApi.forecastReadiness.mockResolvedValue({
+    ...ready, landslide_spots: { n: 2, barangays: 1, needed: 30, barangays_needed: 3, enough: false },
+  });
+  const el = await render();
+  expect([...el.querySelectorAll('p')].map((p) => p.textContent))
+    .toContain('Located landslide spots with a map point: 2 of 30, in 1 of 3 barangays');
+});
+
+test('no landslide line without landslide_spots', async () => {
+  historyApi.forecastReadiness.mockResolvedValue(ready);
+  const el = await render();
+  expect(el.textContent).not.toContain('Located landslide spots');
+});
+
+// Final review FM4: the landslide line comes after the whole flood block, never between flood's lines
+test('the landslide line follows every flood line', async () => {
+  const LINE = 'Located landslide spots with a map point: 2 of 30, in 1 of 3 barangays';
+  const landslide = { n: 2, barangays: 1, needed: 30, barangays_needed: 3, enough: false };
+  historyApi.forecastReadiness.mockResolvedValue({ ...ready, landslide_spots: landslide });
+  const el = await render();
+  const notes = [...el.querySelectorAll('p.fc-note')].map((p) => p.textContent);
+  expect(notes[notes.length - 1]).toBe(LINE);
+  expect(notes.indexOf('Not enough located flood days to try flood forecasting yet.')).toBeLessThan(notes.indexOf(LINE));
+  expect(notes.findIndex((t) => t.startsWith('The flood map comes from'))).toBeLessThan(notes.indexOf(LINE));
+  // With no flood map, after the reason line
+  historyApi.forecastReadiness.mockResolvedValue({ ...ready, landslide_spots: landslide,
+    flood_map: { available: false, reason: 'The flood model has not been trained yet.' } });
+  const none = await render();
+  const noneNotes = [...none.querySelectorAll('p.fc-note')].map((p) => p.textContent);
+  expect(noneNotes.slice(-2)).toEqual(['The flood model has not been trained yet.', LINE]);
+});

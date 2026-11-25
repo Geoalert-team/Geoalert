@@ -1,5 +1,5 @@
 // Likelihood levels from GET /api/history/forecast/: fire's chance by month (since 2026-11-22) and
-// flood susceptibility (since 2026-11-24, the same in every month); landslide is being rebuilt.
+// flood and landslide susceptibility (the same in every month).
 // Shown as a heads-up, never as an alert.
 
 import { escape } from '../Map/purokStyle';
@@ -21,17 +21,21 @@ export const likelihoodInfo = (level) => LIKELIHOOD[level] || LIKELIHOOD.None;
 /** "23%" on a model's row; a row with no model figure has none to give */
 export const chanceText = (row) => (row.method === 'model' ? `${Math.round(row.probability * 100)}%` : '');
 
-/** The forecast's `hazards` parameter: the ticked predicted hazards ("Fire", "Flood", "Fire,Flood"), '' for none */
+/** The forecast's `hazards` parameter: the ticked predicted hazards ("Fire", "Fire,Landslide"), '' for none */
 export const hazardsParam = (types) => {
   const ticked = new Set(types);
-  return ['Fire', 'Flood'].filter((t) => ticked.has(t)).join(',');
+  return ['Fire', 'Flood', 'Landslide'].filter((t) => ticked.has(t)).join(',');
 };
 
 /** Whether a page's hazard filter ('' for all) shows the fire forecast; flood and landslide have none */
 export const isFireOnly = (hazard) => !hazard || hazard === 'Fire';
 
-/** Shown where no predicted hazard (landslide, or nothing) is asked for */
-export const FORECAST_ONLY_NOTE = 'Only fire and flood have a prediction for now.';
+/** Shown where no predicted hazard is asked for */
+export const FORECAST_ONLY_NOTE = 'Pick fire, flood or landslide to see a prediction.';
+
+/** The dashboard's fire table with its filter on Landslide: landslide's levels are on the map */
+export const LANDSLIDE_ON_MAP_NOTE = 'Landslide shows on the map\'s "Likely by month" view: where the ground tends to slide, '
+  + 'the same in every month.';
 
 /** The dashboard's fire table with its filter on Flood: flood's levels are on the map */
 export const FLOOD_ON_MAP_NOTE = 'Flood shows on the map\'s "Likely by month" view: where floods tend to reach, the '
@@ -49,7 +53,8 @@ export const likelyKey = (likely) => {
     .join(',');
   const p = (likely.purok_results || []).map((x) => `${x.purok_id}:${x.level}:${x.probability}`).join(',');
   const f = (likely.flood_results || []).map((x) => `${x.purok_id}:${x.level}:${x.uncertain}`).join(',');
-  return `${likely.error ? 'err' : 'ok'}|${r}|${p}|${f}|${likely.flood?.model_version || ''}`;
+  const l = (likely.landslide_results || []).map((x) => `${x.purok_id}:${x.level}:${x.uncertain}`).join(',');
+  return `${likely.error ? 'err' : 'ok'}|${r}|${p}|${f}|${likely.flood?.model_version || ''}|${l}|${likely.landslide?.model_version || ''}`;
 };
 
 // The fire model (backend apps/history/fire_purok.py), named and credited wherever its figures show
@@ -78,7 +83,32 @@ export function purokLikelyLevels(likely) {
       },
     });
   });
+  // Landslide susceptibility (`landslide_results`): the same shape as flood's
+  (likely?.landslide_results || []).forEach((r) => {
+    const key = String(r.purok_id);
+    map.set(key, {
+      ...(map.get(key) || {}),
+      Landslide: {
+        level: r.level, uncertain: r.uncertain, not_assessed_reason: r.not_assessed_reason, note: r.note,
+      },
+    });
+  });
   return map;
+}
+
+/**
+ * What one hazard's overlay (floodMarks) reads from purokLikelyLevels(): that hazard's rows as `Flood`,
+ * and, when another predicted hazard is ticked too, that hazard's colour as `Fire`, so an area not
+ * assessed here but coloured by another hazard keeps its colour (a dashed outline, no grey).
+ */
+export function overlayInput(levels, hazard, types) {
+  const others = (types || []).filter((t) => t !== hazard);
+  const out = new Map();
+  levels.forEach((entry, id) => {
+    const other = others.map((t) => entry[t]).find((row) => row?.level);
+    out.set(id, { Flood: entry[hazard], ...(other ? { Fire: other } : {}) });
+  });
+  return { levels: out, types: others.length ? ['Fire', 'Flood'] : ['Flood'] };
 }
 
 // Flood susceptibility words: how flood-prone an area is, never "a flood is coming"
@@ -94,17 +124,44 @@ export const floodLegend = (source) => (source === 'noah'
   ? "Flood: where floods tend to reach (from UP NOAH's 25-year flood model; the same in every month, not a forecast of a flood)"
   : 'Flood: where floods tend to reach (from a machine-learning model; the same in every month, not a forecast of a flood)');
 
+// Landslide susceptibility words: how prone the ground is to sliding, never "a landslide is coming"
+export const LANDSLIDE_WORD = {
+  Red: 'High landslide susceptibility',
+  Orange: 'Moderate landslide susceptibility',
+  Green: 'Low landslide susceptibility',
+};
+
+/** The map legend's landslide line, naming where the levels come from ('noah' is the fallback map) */
+export const landslideLegend = (source) => (source === 'noah'
+  ? "Landslide: where the ground tends to slide (from UP NOAH's landslide hazard map; the same in every month, not a forecast of a landslide)"
+  : 'Landslide: where the ground tends to slide (from a machine-learning model; the same in every month, not a forecast of a landslide)');
+
 /**
- * A purok's flood line: "Purok A: High flood susceptibility · Uncertain", or "Not assessed yet (reason)";
- * a row's note (an own-data fit's purok copied from UP NOAH's map) follows as describeFloodAtSpot puts it.
+ * The legend line for one hazard's block of the response (`likely.flood`, `likely.landslide`), read
+ * from that block alone (never the response's top `basis`, which is flood's with Flood+Landslide):
+ * its source line, or why it has no levels; '' when the response has no such block.
+ */
+export function susceptibilityNote(likely, hazard) {
+  const block = likely?.[hazard.toLowerCase()];
+  if (!block) return '';
+  if (!block.available) return `${hazard} is unavailable right now: ${block.reason}`;
+  return hazard === 'Landslide' ? landslideLegend(block.source) : floodLegend(block.source);
+}
+
+/**
+ * A purok's susceptibility line: "Purok A: High flood susceptibility · Uncertain", or "Not assessed yet (reason)";
+ * a row's note (an own-data fit's purok copied from UP NOAH's map) follows as describeSusceptibilityAtSpot puts it.
  * The result goes into hover HTML, so the fit's free text (note, reason) is escaped.
  */
-export function floodTip(row, name) {
+export function susceptibilityTip(row, name, words) {
   const note = row.note ? `. ${escape(row.note)}.` : '';
   if (!row.level) return `${name}: ${NOT_ASSESSED} (${escape(row.not_assessed_reason)})${note}`;
-  return [`${name}: ${FLOOD_WORD[row.level]}`, row.uncertain && 'Uncertain']
+  return [`${name}: ${words[row.level]}`, row.uncertain && 'Uncertain']
     .filter(Boolean).join(' · ') + note;
 }
+
+export const floodTip = (row, name) => susceptibilityTip(row, name, FLOOD_WORD);
+export const landslideTip = (row, name) => susceptibilityTip(row, name, LANDSLIDE_WORD);
 
 /**
  * A purok's likely-fire line: "Purok Sambag: Extreme, about 2% this month · Limited data".
@@ -245,10 +302,37 @@ export const SEVERITY_WORD = { Red: 'Extreme', Orange: 'Moderate', Green: 'Low' 
 
 export const FORECAST_DISCLAIMER =
   'Fire chances come from a model trained on past fires. Flood levels show where floods tend to reach, from UP '
-  + "NOAH's flood maps and recorded floods, and are the same in every month. Landslide "
-  + 'predictions are being rebuilt. '
+  + "NOAH's flood maps and recorded floods, and are the same in every month. Landslide levels show where "
+  + "the ground tends to slide, from landslides mapped after past typhoons or from UP NOAH's landslide maps, and are "
+  + 'the same in every month. '
   + 'It is a heads-up for preparing, not a warning that a hazard is coming. '
   + 'Live alerts come only from the DRRMO.';
 
 export const IN_TRAINING_NOTE =
   'The model learned from this period; see the accuracy check for results on years it never saw.';
+
+// The ticked susceptibility hazards in words, lower case: 'flood', 'landslide', 'flood and landslide'; '' for none
+const susceptibilityNames = (types) => types.filter((t) => t !== 'Fire').map((t) => t.toLowerCase()).join(' and ');
+
+/** The public map legend's heading: the ticked predicted hazards (Fire, Flood, Landslide) by name */
+export function legendHeading(view, types) {
+  if (view !== 'likely') return 'Past hazard levels';
+  if (!types.length) return 'Likely fire levels';
+  if (types.includes('Fire')) {
+    return `Likely ${types.map((t) => t.toLowerCase()).join(', ').replace(/, ([a-z]+)$/, ' and $1')} levels`;
+  }
+  const names = susceptibilityNames(types);
+  return `${names.charAt(0).toUpperCase()}${names.slice(1)} susceptibility`;
+}
+
+/**
+ * The legend's line under its heading once a predicted hazard is ticked, from the ticked hazards alone
+ * (never a response field, which can still be another request's while one is in flight): "Likely in
+ * June: each purok's fire level; flood below", or "Each purok's flood susceptibility, the same in every
+ * month". `when` is the period's label ("June", "June 2027").
+ */
+export function legendTitle(types, when) {
+  const names = susceptibilityNames(types);
+  if (types.includes('Fire')) return `Likely in ${when}: each purok's fire level${names ? `; ${names} below` : ''}`;
+  return `Each purok's ${names} susceptibility, the same in every month`;
+}

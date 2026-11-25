@@ -46,10 +46,12 @@ def _barangay_counts(spots: list) -> dict:
     return counts
 
 
-def floor(spots: list) -> dict:
-    """{n, barangays, enough}: whether there are enough spots, in enough barangays, to try."""
+def floor(spots: list, min_spots: int | None = None, min_barangays: int | None = None) -> dict:
+    """{n, barangays, enough}: whether there are enough spots, in enough barangays, to try (the floor defaults to flood's; landslide passes its own)."""
+    min_spots = OWN_MIN_SPOTS if min_spots is None else min_spots
+    min_barangays = OWN_MIN_BARANGAYS if min_barangays is None else min_barangays
     n, barangays = len(spots), len(_barangay_counts(spots))
-    return {'n': n, 'barangays': barangays, 'enough': n >= OWN_MIN_SPOTS and barangays >= OWN_MIN_BARANGAYS}
+    return {'n': n, 'barangays': barangays, 'enough': n >= min_spots and barangays >= min_barangays}
 
 
 def local_day(when: str) -> date:

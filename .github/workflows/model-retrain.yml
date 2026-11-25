@@ -1,6 +1,7 @@
 # Automatic retraining (docs/design/specs/2026-11-24-automatic-retraining-design.md):
-# fire at 03:17 Manila on the 2nd of each month, flood at 03:17 Manila on 5 January
-# (not on the hour: GitHub may delay or drop runs scheduled at :00).
+# fire at 03:17 Manila on the 2nd of each month, flood at 03:17 Manila on 5 January,
+# landslide at 03:17 Manila on 6 January (not on the hour: GitHub may delay or drop
+# runs scheduled at :00).
 # The job reads its training data from GeoAlert with the MODEL_JOB_TOKEN secret,
 # trains on this throw-away runner with a PostGIS database of its own (never the
 # shared one, whose password is not given to GitHub), and posts the attempt back.
@@ -13,6 +14,7 @@ on:
   schedule:
     - cron: '17 19 1 * *'   # fire: 03:17 Manila (UTC+8) on the 2nd of each month
     - cron: '17 19 4 1 *'   # flood: 03:17 Manila on 5 January
+    - cron: '17 19 5 1 *'   # landslide: 03:17 Manila on 6 January
   workflow_dispatch:
     inputs:
       hazard:
@@ -21,6 +23,7 @@ on:
         options:
           - fire
           - flood
+          - landslide
         default: fire
       dry_run:
         description: Dry run (train and print the result, post nothing)
@@ -37,7 +40,8 @@ jobs:
   retrain:
     name: Retrain a model
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    # Fire and flood: 120 minutes. Landslide: GitHub's limit for a job (its training and stability refits are longer)
+    timeout-minutes: ${{ (inputs.hazard == 'landslide' || github.event.schedule == '17 19 5 1 *') && 360 || 120 }}
     services:
       postgres:
         image: postgis/postgis:16-3.4
@@ -68,9 +72,13 @@ jobs:
       # The settings default to the Windows venv's GDAL; here it is the system's
       GDAL_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/libgdal.so
       GEOS_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/libgeos_c.so
-      # Lets the flood run load the purok outlines into this empty database (and nowhere else)
+      # Lets the flood and landslide runs load the purok outlines into this empty database (and nowhere else)
       MODEL_JOB_SCRATCH_DB: 'true'
-      HAZARD: ${{ inputs.hazard || (github.event.schedule == '17 19 4 1 *' && 'flood' || 'fire') }}
+      HAZARD: ${{ inputs.hazard || (github.event.schedule == '17 19 4 1 *' && 'flood' || (github.event.schedule == '17 19 5 1 *' && 'landslide' || 'fire')) }}
+      # The landslide run's stability check: 20 refits here (200 offline), to fit well inside its 360 minutes
+      STABILITY_REPS: ${{ (inputs.hazard == 'landslide' || github.event.schedule == '17 19 5 1 *') && '--stability-reps 20' || '' }}
+      # The landslide network's five seeds are fitted side by side in worker processes (same networks, sooner)
+      LANDSLIDE_MLP_JOBS: '4'
       DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -93,7 +101,7 @@ jobs:
       - name: Set up the runner's own database
         run: python manage.py migrate --noinput
       - name: Retrain
-        run: python manage.py run_model_job --hazard "$HAZARD" $DRY_RUN
+        run: python manage.py run_model_job --hazard "$HAZARD" $STABILITY_REPS $DRY_RUN
         # The job's secrets, given only to the step that runs the job
         env:
           MODEL_JOB_API_URL: ${{ secrets.MODEL_JOB_API_URL }}

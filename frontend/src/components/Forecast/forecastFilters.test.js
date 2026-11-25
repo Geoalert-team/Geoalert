@@ -43,7 +43,8 @@ const modelled = (extra = {}) => ({
 const NOT_TRAINED = 'The fire model has not been trained yet.';
 const untrained = (n = 2) => ({
   ...forecast(n), unavailable_hazards: ['Fire'], profile_method: 'unavailable',
-  basis: { records: 10, method: "Fire's prediction model is being rebuilt, so no chances are shown until it is trained. Flood and landslide predictions are being rebuilt too." },
+  // backend views.BASIS_REBUILDING: fire's sentence alone (final review B4)
+  basis: { records: 10, method: "Fire's prediction model is being rebuilt, so no chances are shown until it is trained." },
   results: Array.from({ length: n }, (_, i) => ({
     ...row(i), method: 'unavailable', probability: null, expected_events: null, level: 'None', reason: NOT_TRAINED,
   })),
@@ -81,12 +82,13 @@ test('likelihood asks for fire only', async () => {
     .toEqual(['Period', 'Month']);
 });
 
-test('a flood filter points to the map and a landslide filter says there is no prediction', async () => {
+test('a flood or landslide filter points to the map', async () => {
   let el = await render(<BarangayLikelihood hazard="Flood" />);
   expect(el.textContent).toContain("Flood shows on the map's \"Likely by month\" view: where floods tend to reach, the same in every month.");
   expect(el.querySelector('table')).toBeNull();
   el = await render(<BarangayLikelihood hazard="Landslide" />);
-  expect(el.textContent).toContain('Only fire and flood have a prediction for now.');
+  expect(el.textContent).toContain('Landslide shows on the map\'s "Likely by month" view: where the ground tends to slide, the same in every month.');
+  expect(el.textContent).not.toContain('Pick fire, flood or landslide');
   expect(el.querySelector('table')).toBeNull();
   expect(historyApi.forecast).not.toHaveBeenCalled();
 });
@@ -172,7 +174,9 @@ test('the method shows the basis line and keeps the cut-offs', async () => {
   historyApi.forecast.mockResolvedValue(untrained());
   const el = await render(<BarangayLikelihood />);
   const method = el.querySelector('.db-method').textContent;
-  expect(method).toContain("Fire's prediction model is being rebuilt");
+  expect(method).toContain("Fire's prediction model is being rebuilt, so no chances are shown until it is trained.");
+  // Flood and landslide have shipped, so the backend's BASIS_REBUILDING no longer says they are being rebuilt
+  expect(method).not.toContain('Flood and landslide predictions are being rebuilt');
   expect(method).toContain('25% or more is High');
   expect(method).not.toContain('counts the years');
   expect(method).not.toContain('daily rain');

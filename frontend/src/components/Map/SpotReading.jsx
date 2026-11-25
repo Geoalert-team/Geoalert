@@ -3,11 +3,13 @@ import { loadClassGrid } from './hazardLevels';
 import { loadElevation, loadTerrain, readSpot } from '../../utils/terrain';
 import { makeGrid } from '../../utils/gridGeometry';
 import {
-  ACCURACY_NOTE, describeFloodAtSpot, describeSpot, describeSusceptibility, formatDistance, nearestNamedRiver,
+  ACCURACY_NOTE, describeFloodAtSpot, describeSpot, describeSusceptibility, describeSusceptibilityAtSpot, formatDistance,
+  nearestNamedRiver,
 } from '../../utils/spotText';
+import { LANDSLIDE_WORD } from '../Forecast/forecastLevels';
 
-// Raster layers only: flood comes from the flood model (the `flood` prop)
-const LAYERS = ['landslide', 'fire'];
+// Raster layers only: flood and landslide come from their models (the `flood` and `landslide` props)
+const LAYERS = ['fire'];
 
 // Susceptibility class grids, read once per index build
 const classGrids = new Map(); // `${layer}@${generated}` -> Promise<grid | null>
@@ -39,8 +41,9 @@ function classAt(grid, bounds, lat, lng) {
  * index   hazard-index metadata (index.json)
  * rivers  rivers.geojson, for the nearest named river
  * flood   the flood model's word for the purok area here (describeFloodAtSpot), or null
+ * landslide  the landslide model's, likewise (describeSusceptibilityAtSpot), or null
  */
-export default function SpotReading({ spot, index, rivers, flood = null }) {
+export default function SpotReading({ spot, index, rivers, flood = null, landslide = null }) {
   const [state, setState] = useState(null); // null | { loading: true } | { lines: [...] }
   const lat = spot?.[0];
   const lng = spot?.[1];
@@ -70,11 +73,12 @@ export default function SpotReading({ spot, index, rivers, flood = null }) {
             river && `Nearest named river: ${river.name}, ${formatDistance(river.distanceM)} away`,
             describeSusceptibility(classes, index.classes),
             describeFloodAtSpot(flood),
+            describeSusceptibilityAtSpot(landslide, 'Landslide', LANDSLIDE_WORD),
           ].filter(Boolean),
         });
       });
     return () => { current = false; };
-  }, [lat, lng, index, rivers, flood]);
+  }, [lat, lng, index, rivers, flood, landslide]);
 
   if (!state) return null;
   return (

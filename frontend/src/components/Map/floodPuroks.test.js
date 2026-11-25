@@ -2,6 +2,7 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import FloodPuroks from './FloodPuroks';
 import { floodOverlayFeatures, floodOverlayStyle } from './floodMarks';
+import { LANDSLIDE_WORD, overlayInput } from '../Forecast/forecastLevels';
 
 beforeAll(() => { global.IS_REACT_ACT_ENVIRONMENT = true; });
 
@@ -74,4 +75,36 @@ test('a sitio is marked only on its part outside its puroks, like the fills', ()
   expect(mark.geometry).toBe(own);
   const covered = { ...sitio, properties: { ...sitio.properties, leftover: null } };
   expect(floodOverlayFeatures({ features: [covered] }, levels, ['Flood'])).toBeNull();
+});
+
+test('the panel list uses the landslide words', async () => {
+  const el = await render({
+    rows: [{ purok_id: 1, level: 'Orange' }, { purok_id: 2, level: null, not_assessed_reason: 'No buildings or roads in this area' }],
+    purokNames: new Map([['1', 'Camp 6']]), words: LANDSLIDE_WORD, noun: 'landslide',
+  });
+  expect(el.textContent).toContain('Moderate landslide susceptibility');
+  expect(el.textContent).not.toContain('flood');
+  expect(el.textContent).toContain('No buildings or roads in this area (1)');
+  const empty = await render({ rows: [], purokNames, words: LANDSLIDE_WORD, noun: 'landslide' });
+  expect(empty.textContent).toContain('No landslide levels for this barangay.');
+});
+
+test('the landslide overlay marks landslide rows and keeps another ticked hazard\'s colour', () => {
+  const geo = { type: 'FeatureCollection', features: [4, 5].map((id) => ({ type: 'Feature', id, properties: { id }, geometry: null })) };
+  const none = { level: null, uncertain: false, not_assessed_reason: 'No buildings or roads in this area' };
+  const levels = new Map([
+    ['4', { Landslide: none, Flood: { level: 'Red', uncertain: false } }],
+    ['5', { Landslide: { level: 'Red', uncertain: true } }],
+  ]);
+  const marks = (hazard, types) => {
+    const input = overlayInput(levels, hazard, types);
+    return floodOverlayFeatures(geo, input.levels, input.types).features.map((f) => [f.id, f.properties.flood]);
+  };
+  // Flood is Red there: landslide's grey becomes a dashed outline over it
+  expect(marks('Landslide', ['Flood', 'Landslide'])).toEqual([[4, 'not_assessed_outline'], [5, 'uncertain']]);
+  // Landslide alone: grey, as flood is
+  expect(marks('Landslide', ['Landslide'])).toEqual([[4, 'not_assessed'], [5, 'uncertain']]);
+  // Flood's overlay reads flood rows only
+  expect(overlayInput(levels, 'Flood', ['Flood']).levels.get('4').Flood).toBe(levels.get('4').Flood);
+  expect(overlayInput(levels, 'Flood', ['Flood']).levels.get('5').Flood).toBeUndefined();
 });
